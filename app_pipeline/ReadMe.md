@@ -6,8 +6,11 @@
 文件下载
 ```shell
 cd app_pipeline
-aws s3 sync s3://backup/weiwie/DeepPrep/app_pipeline/resources ./resources
-aws s3 sync s3://backup/weiwie/DeepPrep/app_pipeline/data ./data
+aws s3 sync s3://backupng/weiwei/DeepPrep/app_pipeline/resources ./resources
+aws s3 sync s3://backupng/weiwei/DeepPrep/app_pipeline/data ./data
+# mri_vol2vol_ext
+sudo aws s3 cp s3://backupng/weiwei/DeepPrep/app_pipeline/bin/mri_vol2vol_ext $FREESURFER_HOME/bin/mri_vol2vol_ext
+sudo chmod 755 $FREESURFER_HOME/bin/mri_vol2vol_ext
 ```
 reources：程序运行依赖文件
 
