@@ -53,6 +53,12 @@ if __name__ == '__main__':
             entities['task'] = 'rest'
             entities['suffix'] = 'bold'
             layout.write_to_file(entities, copy_from=bold_file_path)
+
+            meta_dict = dict()
+            meta_dict['RepetitionTime'] = 2.0
+            # meta_file = layout.build_path()
+            layout.write_to_file(entities, copy_from=bold_file_path)
+
         # freesurfer
         recon_all_file = data_path / subj / f'{subj}_reconall.zip'
         with zipfile.ZipFile(recon_all_file) as zf:
