@@ -17,4 +17,10 @@ if __name__ == '__main__':
 
     validator = bids.BIDSValidator()
     validator.is_bids(str(data_path))
+
+    layout = bids.BIDSLayout()
+    entities = dict()
+    entities['subject'] = '001'
+    entities['suffix'] = 'T1w'
+    layout.build_path(entities)
     pass
