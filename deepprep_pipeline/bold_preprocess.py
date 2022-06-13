@@ -170,7 +170,7 @@ def bold_smooth_6(t12mm_file, t12mm_sm6_file):
                 '--i', t12mm_file,
                 '--o', t12mm_sm6_file)
 
-
+@timing_func
 def bold_smooth_6_ants(t12mm, t12mm_sm6_file, verbose=False):
     # mask file
     MNI152_T1_2mm_brain_mask = '/usr/local/fsl/data/standard/MNI152_T1_2mm_brain_mask.nii.gz'
@@ -199,7 +199,7 @@ def bold_smooth_6_ants(t12mm, t12mm_sm6_file, verbose=False):
         ants.image_write(masked_img, str(t12mm_sm6_file))
     return masked_img
 
-
+@timing_func
 def vxm_warp_bold_2mm(resid_t1, affine_file, warp_file, warped_file, verbose=False):
     atlas_file = Path(__file__).parent / 'model' / 'voxelmorph' / 'MNI152_T1_2mm' / 'MNI152_T1_2mm_brain_vxm.nii.gz'
     MNI152_2mm_file = Path(__file__).parent / 'model' / 'voxelmorph' / 'MNI152_T1_2mm' / 'MNI152_T1_2mm_brain.nii.gz'
@@ -537,13 +537,7 @@ if __name__ == '__main__':
     layout = bids.BIDSLayout(data_path, derivatives=True)
     subjs = layout.get_subjects()
 
-    derivatives_path = data_path / 'derivatives'
-    derivatives_path.mkdir(exist_ok=True)
-    derivative_freesurfer_path = data_path / 'derivatives' / 'freesurfer'
-    if not derivative_freesurfer_path.exists():
-        derivative_freesurfer_path = None
-
-    # DeepPrep
+    # DeepPrep dataset_description
     derivative_deepprep_path = data_path / 'derivatives' / 'deepprep'
     derivative_deepprep_path.mkdir(exist_ok=True)
     dataset_description = dict()
@@ -566,10 +560,11 @@ if __name__ == '__main__':
         subj_func_path = deepprep_subj_path / 'func'
         subj_func_path.mkdir(exist_ok=True)
 
+        # temp dir
         workdir = Path('workdir')
         workdir.mkdir(exist_ok=True)
 
-        # T1 warp to MNI2mm
+        # T1 to MNI152 2mm
         model_file = Path(__file__).parent / 'model' / 'voxelmorph' / atlas_type / 'model.h5'
         norm_file = freesurfer_subjects_path / f'sub-{subj}' / 'mri' / 'norm.mgz'
         trf_file = subj_func_path / f'sub-{subj}_affine.mat'
@@ -577,6 +572,7 @@ if __name__ == '__main__':
         warped_file = subj_func_path / f'sub-{subj}_warped.nii.gz'
         vxm_registraion(atlas_type, model_file, workdir, norm_file, trf_file, warp_file, warped_file)
 
+        # native bold preprocess
         bids_bolds = layout.get(subject=subj, suffix='bold', extension='.nii.gz')
         preprocess(layout, subj, subj_func_path, workdir)
 
@@ -584,7 +580,7 @@ if __name__ == '__main__':
             bold_file = bids_bold.path
             run = f"{bids_bold.entities['run']:03}"
 
-            # bold warp
+            # native bold to MNI152 2mm
             resid_file = subj_func_path / f'sub-{subj}_run-{run}_resid.nii.gz'
             reg_file = subj_func_path / f'sub-{subj}_run-{run}_bbregister.register.dat'
             save_file = subj_func_path / f'sub-{subj}_resid_MIN2mm_sm6.nii.gz'
