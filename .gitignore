@@ -1,3 +1,4 @@
 /app_pipeline/data/
 /app_pipeline/resources/
 .idea
+__pycache__
