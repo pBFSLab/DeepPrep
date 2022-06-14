@@ -9,6 +9,7 @@ cd app_pipeline
 aws s3 sync s3://backupng/weiwei/DeepPrep/app_pipeline/resources ./resources
 aws s3 sync s3://backupng/weiwei/DeepPrep/app_pipeline/data ./data
 
+# mri_vol2vol_ext
 aws s3 cp s3://backupng/weiwei/DeepPrep/app_pipeline/bin/mri_vol2vol_ext $HOME/Downloads
 sudo cp $HOME/Downloads/mri_vol2vol_ext $FREESURFER_HOME/bin/mri_vol2vol_ext
 sudo chmod +x $FREESURFER_HOME/bin/mri_vol2vol_ext
