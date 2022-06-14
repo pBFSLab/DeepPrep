@@ -2,11 +2,14 @@ import os
 from pathlib import Path
 import json
 import zipfile
+
+import ants
 import bids
 
 if __name__ == '__main__':
-    data_path = Path('/home/weiwei/workspace/DeepPrep/app_pipeline/data/NC_15/upload')
-    save_path = Path('/home/weiwei/workdata/DeepPrep/BoldPipeline/TestData')
+    data_path = Path.home() / Path('workspace/DeepPrep/app_pipeline/data/NC_15/upload')
+    save_path = Path.home() / Path('workdata/DeepPrep/BoldPipeline/TestData')
+    save_path.mkdir(exist_ok=True)
 
     dataset_description = dict()
     dataset_description['Name'] = 'DeepPrep/test/V001'
@@ -54,10 +57,13 @@ if __name__ == '__main__':
             entities['suffix'] = 'bold'
             layout.write_to_file(entities, copy_from=bold_file_path)
 
+            bold_img = ants.image_read(str(bold_file_path))
             meta_dict = dict()
-            meta_dict['RepetitionTime'] = 2.0
-            # meta_file = layout.build_path()
-            layout.write_to_file(entities, copy_from=bold_file_path)
+            meta_dict['RepetitionTime'] = bold_img.spacing[3]
+            entities['extension'] = '.json'
+            meta_file = layout.build_path(entities)
+            with open(meta_file, 'w') as jf:
+                json.dump(meta_dict, jf, indent=4)
 
         # freesurfer
         recon_all_file = data_path / subj / f'{subj}_reconall.zip'
