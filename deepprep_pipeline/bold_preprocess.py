@@ -1,4 +1,5 @@
 import os
+import argparse
 import sys
 from pathlib import Path
 import json
@@ -531,17 +532,34 @@ def preprocess(layout, subj, subj_func_path, workdir):
     shutil.copytree(preprocess_dir / f'sub-{subj}' / 'surf', subj_func_path / 'surf')
 
 
-if __name__ == '__main__':
-    data_path = Path('/home/weiwei/workdata/DeepPrep/BoldPipeline/TestData')
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--bd', required=True, help='directory of bids type')
+    parser.add_argument('--fsd', default=os.environ.get('FREESURFER_HOME'),
+                        help='Output directory $FREESURFER_HOME (pass via environment or here)')
 
-    layout = bids.BIDSLayout(data_path, derivatives=True)
+    args = parser.parse_args()
+    args_dict = vars(args)
+
+    if args.fsd is None:
+        args_dict['fsd'] = '/usr/local/freesurfer'
+
+    return argparse.Namespace(**args_dict)
+
+
+if __name__ == '__main__':
+    args = parse_args()
+
+    data_path = Path(args.bd)
+
+    layout = bids.BIDSLayout(str(data_path), derivatives=True)
     subjs = layout.get_subjects()
 
     # DeepPrep dataset_description
     derivative_deepprep_path = data_path / 'derivatives' / 'deepprep'
     derivative_deepprep_path.mkdir(exist_ok=True)
     dataset_description = dict()
-    dataset_description['Name'] = 'DeepPrep Outputs"'
+    dataset_description['Name'] = 'DeepPrep Outputs'
     dataset_description['BIDSVersion'] = '1.4.0'
     dataset_description['DatasetType'] = 'derivative'
     dataset_description['GeneratedBy'] = [{'Name': 'deepprep', 'Version': '0.0.1'}]
