@@ -5,13 +5,15 @@ import zipfile
 import bids
 
 if __name__ == '__main__':
-    data_path = Path('/home/weiwei/workspace/DeepPrep/app_pipeline/data/NC_15/upload')
-    save_path = Path('/home/weiwei/workdata/DeepPrep/BoldPipeline/TestData')
+    home = Path.home()
+    data_path = Path(f'/{home}/workspace/DeepPrep/app_pipeline/data/NC_15/upload')
+    save_path = Path(f'/{home}/workdata/DeepPrep/BoldPipeline/TestData')
 
     dataset_description = dict()
     dataset_description['Name'] = 'DeepPrep/test/V001'
     dataset_description['BIDSVersion'] = '1.4.0'
 
+    save_path.mkdir(parents=True, exist_ok=True)
     dataset_description_file = save_path / 'dataset_description.json'
     with open(dataset_description_file, 'w') as jf:
         json.dump(dataset_description, jf, indent=4)
@@ -57,7 +59,7 @@ if __name__ == '__main__':
             meta_dict = dict()
             meta_dict['RepetitionTime'] = 2.0
             # meta_file = layout.build_path()
-            layout.write_to_file(entities, copy_from=bold_file_path)
+            # layout.write_to_file(entities, copy_from=bold_file_path)
 
         # freesurfer
         recon_all_file = data_path / subj / f'{subj}_reconall.zip'
