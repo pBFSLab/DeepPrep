@@ -1,0 +1,50 @@
+## Start from this Docker image
+FROM nvidia/cuda:11.3.1-cudnn8-runtime-ubuntu20.04
+
+## Install * in Docker image
+RUN apt-get upgrade && apt-get update && apt-get install -y git vim python3 python3-pip
+RUN ln -sf /usr/bin/python3 /usr/bin/python
+
+## Install DeepPrep
+RUN cd /root
+RUN git clone https://github.com/PurkinjeGroup/DeepPrep.git
+RUN cd DeepPrep/deepprep_pipeline
+
+## Install FastSurfer
+RUN pip install nibabel scikit-image h5py pandas open3d simpleitk
+RUN git clone https://github.com/Deep-MI/FastSurfer
+RUN cd FastSurfer
+RUN git checkout v1.1.0
+RUN git clone https://github.com/Deep-MI/LaPy.git
+RUN pip install LaPy
+RUN cd ..
+
+## Install FastCSR
+RUN pip install torch==1.11.0+cu113 torchvision==0.12.0+cu113 torchaudio==0.11.0 --extra-index-url https://download.pytorch.org/whl/cu113
+RUN apt install openjdk-11-jdk -y (安装的过程中安装了tzone，需要手动设置时区)
+RUN pip install nighres==1.2.0
+RUN pip install -U numpy
+RUN pip install antspyx
+RUN pip install nnunet
+
+## Install FeatReg
+RUN git clone https://github.com/facebookresearch/pytorch3d.git
+RUN pip install pyvista
+COPY ./whl .
+RUN pip install FeatReg
+
+## Install FreeSurfer
+RUN apt-get -y install bc binutils libgomp1 perl psmisc sudo tar tcsh unzip uuid-dev vim-common libjpeg62-dev
+
+## Install DeepPrep
+RUN pip install bids sh
+
+## clean cache
+pip cache purge
+apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+## set ENV
+ENV LD_LIBRARY_PATH=/usr/lib/jvm/java-11-openjdk-amd64/lib:/usr/lib/jvm/java-11-openjdk-amd64/lib/server
+
+
+# docker cp workspace/DeepPrep/deepprep_pipeline/structure_preprocess_fs720.py 82accb0faf90:/root/workspace/DeepPrep/deepprep_pipeline/structure_preprocess_fs720.py
