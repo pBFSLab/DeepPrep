@@ -49,7 +49,7 @@ def fastsurfer_seg(t1_input: str, fs_home: Path, sub_mri_dir: Path):
     fastsurfer_eval = fs_home / 'FastSurferCNN' / 'eval.py'
     weight_dir = fs_home / 'checkpoints'
 
-    cmd = f'python3 {fastsurfer_eval} ' \
+    cmd = f'{python} {fastsurfer_eval} ' \
           f'--in_name {t1_input} ' \
           f'--out_name {aseg_o} ' \
           f'--conformed_name {orig_o} ' \
@@ -85,7 +85,7 @@ def creat_aseg_noccseg(fs_bin: Path, sub_mri_dir: Path):
     # output will be uchar (else mri_cc will fail below)
     py = fs_bin / 'reduce_to_aseg.py'
     mask = sub_mri_dir / 'mask.mgz'
-    cmd = f'python {py} ' \
+    cmd = f'{python} {py} ' \
           f'-i {sub_mri_dir}/aparc.DKTatlas+aseg.orig.mgz ' \
           f'-o {sub_mri_dir}/aseg.auto_noCCseg.mgz --outmask {mask} --fixwm'
     run_with_timing(cmd)
@@ -95,7 +95,7 @@ def creat_aseg_noccseg(fs_bin: Path, sub_mri_dir: Path):
 def creat_talairach_and_nu(fs_bin: Path, sub_mri_dir: Path, threads: int):
     # orig_nu nu correct
     py = fs_bin / 'N4_bias_correct.py'
-    cmd = f"python {py} --in {sub_mri_dir}/orig.mgz --out {sub_mri_dir}/orig_nu.mgz " \
+    cmd = f"{python} {py} --in {sub_mri_dir}/orig.mgz --out {sub_mri_dir}/orig_nu.mgz " \
           f"--mask {sub_mri_dir}/mask.mgz  --threads {threads}"
     run_with_timing(cmd)
 
@@ -154,7 +154,7 @@ def update_aseg(fs_bin: Path, sub_mri_dir: Path,
 
     # 0.8s
     seg = sub_mri_dir / 'aparc.DKTatlas+aseg.deep.mgz'
-    cmd = f'python {fs_bin}/paint_cc_into_pred.py -in_cc {sub_mri_dir}/aseg.auto.mgz -in_pred {seg} ' \
+    cmd = f'{python} {fs_bin}/paint_cc_into_pred.py -in_cc {sub_mri_dir}/aseg.auto.mgz -in_pred {seg} ' \
           f'-out {sub_mri_dir}/aparc.DKTatlas+aseg.deep.withCC.mgz'
     run_with_timing(cmd)
 
@@ -221,7 +221,7 @@ def create_orig_nofixed(fs_bin: Path, sub_mri_dir: Path, sub_surf_dir: Path,
         run_with_timing(cmd)
 
         # Rewrite surface orig.nofix to fix vertex locs bug (scannerRAS instead of surfaceRAS set with mc)
-        cmd = f"python {fs_bin}/rewrite_mc_surface.py --input {sub_surf_dir}/{hemi}.orig.nofix " \
+        cmd = f"{python} {fs_bin}/rewrite_mc_surface.py --input {sub_surf_dir}/{hemi}.orig.nofix " \
               f"--output {sub_surf_dir}/{hemi}.orig.nofix " \
               f"--filename_pretess {sub_mri_dir}/filled-pretess{hemivalue}.mgz"
         run_with_timing(cmd)
@@ -256,8 +256,8 @@ def create_qsphere(fs_bin: Path, sub_surf_dir: Path,
         # instead of mris_sphere, directly project to sphere with spectral approach
         # equivalent to -qsphere
         # (23sec)
-        cmd = f"python {fs_bin}/spherically_project_wrapper.py --hemi {hemi} --sdir {sub_surf_dir} " \
-              f"--subject {subject} --threads={threads} --py python --binpath {fs_bin}"
+        cmd = f"{python} {fs_bin}/spherically_project_wrapper.py --hemi {hemi} --sdir {sub_surf_dir} " \
+              f"--subject {subject} --threads={threads} --py {python} --binpath {fs_bin}/"
         run_with_timing(cmd)
 
 
@@ -283,7 +283,7 @@ def create_orig_fix(fs_bin: Path, fc_bin: Path, sub_mri_dir: Path, sub_surf_dir:
         sd = subj_mri.parent.parent
         t1 = sub_mri_dir / 'orig' / '001.mgz'
         py = fc_bin / 'pipeline.py'
-        cmd = f'python {py} --sd {sd} --sid {subject}  --t1 {t1} --optimizing_surface off --parallel_scheduling off'
+        cmd = f'{python} {py} --sd {sd} --sid {subject}  --t1 {t1} --optimizing_surface off --parallel_scheduling off'
         run_with_timing(cmd)
         for hemi in ['lh', 'rh']:
             orig_premesh = sub_surf_dir / f'{hemi}.orig.premesh'
@@ -336,7 +336,7 @@ def create_surfreg(fs_bin: Path, fr_bin: Path, sub_mri_dir: Path, sub_surf_dir: 
         # 1. get alpha, beta, gamma for global alignment (rotation) based on aseg centers
         # (note the former fix, initializing with pre-central label, is not working in FS7.2
         # as they broke the label initializiation in mris_register)
-        cmd = f"python {fs_bin}/rotate_sphere.py \
+        cmd = f"{python} {fs_bin}/rotate_sphere.py \
                --srcsphere {sub_surf_dir}/{hemi}.sphere \
                --srcaparc {sub_label_dir}/{hemi}.aparc.DKTatlas.mapped.annot \
                --trgsphere {freesufer_home}/subjects/fsaverage/surf/{hemi}.sphere \
@@ -373,7 +373,7 @@ def create_surfreg(fs_bin: Path, fr_bin: Path, sub_mri_dir: Path, sub_surf_dir: 
         sid = subject
         sd = sub_mri_dir.parent.parent
         fsd = freesufer_home
-        cmd = f'python {py} --sid {sid} --sd {sd} --fsd {fsd} --hemi {hemi}'
+        cmd = f'{python} {py} --sid {sid} --sd {sd} --fsd {fsd} --hemi {hemi}'
         run_with_timing(cmd)
 
         if delete_curv:
@@ -405,7 +405,7 @@ def map_seg_to_surf(fs_bin: Path, sub_surf_dir: Path, sub_label_dir: Path,
           f"-surf white.preaparc {subject} {hemi} aparc.DKTatlas+aseg.orig.mgz aparc.DKTatlas.mapped.prefix.annot"
     run_with_timing(cmd)
 
-    cmd = f"python {fs_bin}/smooth_aparc.py --insurf {sub_surf_dir}/{hemi}.white.preaparc " \
+    cmd = f"{python} {fs_bin}/smooth_aparc.py --insurf {sub_surf_dir}/{hemi}.white.preaparc " \
           f"--inaparc {sub_label_dir}/{hemi}.aparc.DKTatlas.mapped.prefix.annot " \
           f"--incort {sub_label_dir}/{hemi}.cortex.label --outaparc {sub_label_dir}/{hemi}.aparc.DKTatlas.mapped.annot"
     run_with_timing(cmd)
@@ -487,16 +487,27 @@ def create_ribbon(fsthreads: str,
 
 
 @timing_func
-def create_fs_aseg_stats(fsthreads: str,
+def create_fs_aseg_stats(sub_mri_dir: Path, sub_surf_dir: Path,  sub_label_dir: Path,
+                         threads: int, fsthreads: str,
                          fsstats: bool,
                          subject='recon'):
     if fsstats:
-        cmd = f"recon-all -subject {subject} -parcstats -cortparc2 -parcstats2 -cortparc3 -parcstats3 " \
-              f"-pctsurfcon -hyporelabel -aparc2aseg -apas2aseg {fsthreads}"
+        # cmd = f"recon-all -subject {subject} -parcstats -cortparc2 -parcstats2 -cortparc3 -parcstats3 " \
+        #       f"-pctsurfcon -hyporelabel -aparc2aseg -apas2aseg {fsthreads}"
+        # run_with_timing(cmd)
+
+        cmd = f"recon-all -subject {subject} -parcstats " \
+              f"-pctsurfcon -hyporelabel -apas2aseg {fsthreads}"
         run_with_timing(cmd)
 
-        # cmd = f"recon-all -subject {subject}   {fsthreads}"
-        # run_with_timing(cmd)
+        cmd = f'cd {sub_mri_dir} && mri_surf2volseg --o aparc+aseg.mgz --label-cortex --i aseg.mgz ' \
+              f'--threads {threads} ' \
+              f'--lh-annot {sub_label_dir}/lh.aparc.annot 1000 ' \
+              f'--lh-cortex-mask {sub_label_dir}/lh.cortex.label --lh-white {sub_surf_dir}/lh.white ' \
+              f'--lh-pial {sub_surf_dir}/lh.pial --rh-annot {sub_label_dir}/rh.aparc.annot 2000 ' \
+              f'--rh-cortex-mask {sub_label_dir}/rh.cortex.label --rh-white {sub_surf_dir}/rh.white ' \
+              f'--rh-pial {sub_surf_dir}/rh.pial '
+        run_with_timing(cmd)
 
         cmd = f"recon-all -subject {subject} -segstats  {fsthreads}"
         run_with_timing(cmd)
@@ -511,7 +522,6 @@ def create_fs_aseg_stats(fsthreads: str,
 @timing_func
 def map_stats(sub_label_dir: Path, sub_stats_dir: Path,
               subject='recon'):
-
     # 2x18sec create stats from mapped aparc
     for hemi in ['lh', 'rh']:
         cmd = f"mris_anatomical_stats -th3 -mgz -cortex {sub_label_dir}/{hemi}.cortex.label " \
@@ -524,10 +534,10 @@ def map_stats(sub_label_dir: Path, sub_stats_dir: Path,
 @timing_func
 def create_pctsurcon_hypo_segstats(sub_mri_dir: Path, sub_surf_dir: Path, sub_label_dir: Path,
                                    threads: int, fsthreads: str,
-                                   fsaparc: bool, fssurfreg: bool,
+                                   fsstats: bool, fssurfreg: bool,
                                    subject='recon'):
     # ====== Creating surfaces - pctsurfcon, hypo, segstats ======
-    if not fsaparc:
+    if not fsstats:
         # pctsurfcon (has no way to specify which annot to use, so we need to link ours as aparc is not available)
         # cddir = f'cd {sub_label_dir} &&'
         # cmd = f"{cddir} ln -sf lh.aparc.DKTatlas.mapped.annot lh.aparc.annot"
@@ -561,18 +571,6 @@ def create_pctsurcon_hypo_segstats(sub_mri_dir: Path, sub_surf_dir: Path, sub_la
           f"--rh-cortex-mask {sub_label_dir}/rh.cortex.label --rh-white {sub_surf_dir}/rh.white " \
           f"--rh-pial {sub_surf_dir}/rh.pial"
     run_with_timing(cmd)
-
-    if not fsaparc:
-        # get stats for the aseg (note these are surface fine tuned, that may be good or bad,
-        # below we also do the stats for the input aseg (plus some processing)
-        cmd = f"recon-all -subject {subject} -segstats {fsthreads}"
-        run_with_timing(cmd)
-
-        if fssurfreg:
-            # balabels need sphere.reg
-            # can be produced if surf registration exists
-            cmd = f"recon-all -subject {subject} -balabels {fsthreads}"
-            run_with_timing(cmd)
 
 
 @timing_func
@@ -633,11 +631,22 @@ def create_wmparc_from_mapped(sub_mri_dir: Path, sub_surf_dir: Path, sub_label_d
         run_with_timing(cmd)
 
 
+@timing_func
+def create_balabels(fsthreads: str,
+                    subject='recon'):
+    # balabels need sphere.reg
+    # can be produced if surf registration exists
+    cmd = f"recon-all -subject {subject} -balabels {fsthreads}"
+    run_with_timing(cmd)
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--bd', required=True, help='directory of bids type')
     parser.add_argument('--fsd', default=os.environ.get('FREESURFER_HOME'),
                         help='Output directory $FREESURFER_HOME (pass via environment or here)')
+    parser.add_argument('--python', default='python3',
+                        help='which python version to use')
 
     args = parser.parse_args()
     args_dict = vars(args)
@@ -654,6 +663,8 @@ if __name__ == '__main__':
     args = parse_args()
 
     data_path = Path(args.bd)
+
+    python = args.python
 
     threads = 1
     need_t1 = True
@@ -722,41 +733,41 @@ if __name__ == '__main__':
         bids_t1s = layout.get(subject=subj, suffix='T1w', extension='.nii.gz')
         sub_t1 = bids_t1s[0].path
 
-        # # =============== Volume =============== #
-        #
-        # # Create seg
-        # fastsurfer_seg(sub_t1, fs_home, subj_mri)
-        #
-        # # # Creating orig and rawavg from input
-        # creat_orig_and_rawavg(subj_mri)
-        #
-        # # # Create noccseg
-        # creat_aseg_noccseg(fs_recon_bin, subj_mri)
-        #
-        # # # Computing Talairach Transform and NU (bias corrected)
-        # creat_talairach_and_nu(fs_recon_bin, subj_mri, threads)
-        #
-        # # Creating brainmask from aseg and norm, and update aseg
-        # creat_brainmask(subj_mri, need_t1=need_t1)
-        #
-        # # update aseg
-        # update_aseg(fs_recon_bin, subj_mri)
-        #
-        # # Create segstats, stats/aparc.DKTatlas+aseg.deep.volume.stats
-        # if need_vol_segstats:
-        #     create_segstats(subj_mri, subj_stats)
-        #
-        # # Creating filled from brain
-        # create_filled_from_brain(fsthreads=fsthreads)
-        #
+        # =============== Volume =============== #
+
+        # Create seg
+        fastsurfer_seg(sub_t1, fs_home, subj_mri)
+
+        # # Creating orig and rawavg from input
+        creat_orig_and_rawavg(subj_mri)
+
+        # # Create noccseg
+        creat_aseg_noccseg(fs_recon_bin, subj_mri)
+
+        # # Computing Talairach Transform and NU (bias corrected)
+        creat_talairach_and_nu(fs_recon_bin, subj_mri, threads)
+
+        # Creating brainmask from aseg and norm, and update aseg
+        creat_brainmask(subj_mri, need_t1=need_t1)
+
+        # update aseg
+        update_aseg(fs_recon_bin, subj_mri)
+
+        # Create segstats, stats/aparc.DKTatlas+aseg.deep.volume.stats
+        if need_vol_segstats:
+            create_segstats(subj_mri, subj_stats)
+
+        # Creating filled from brain
+        create_filled_from_brain(fsthreads=fsthreads)
+
         # # =============== SURFACES =============== #
-        # create_orig_fix(fs_recon_bin, fc_home, subj_mri, subj_surf,
-        #                 threads, fsthreads,
-        #                 fsfixed, fstess, fsqsphere,
-        #                 subject='recon')
+        create_orig_fix(fs_recon_bin, fc_home, subj_mri, subj_surf,
+                        threads, fsthreads,
+                        fsfixed, fstess, fsqsphere,
+                        subject='recon')
 
         for hemi in ['lh', 'rh']:
-        # for hemi in ['lh']:
+            # for hemi in ['lh']:
             create_white_preaparc(hemi, threads, fsthreads,
                                   fswhitepreaparc,
                                   subject='recon')
@@ -778,22 +789,23 @@ if __name__ == '__main__':
 
         # =============== STATS =============== #
         for hemi in ['lh', 'rh']:
-        # for hemi in ['lh']:
+            # for hemi in ['lh']:
             # 2*2s ?h.curv.stats
             create_curvstats(hemi, fsthreads,
                              subject='recon')
 
         create_ribbon(fsthreads, subject='recon')
 
-        create_fs_aseg_stats(fsthreads, fsstats, subject='recon')
+        create_fs_aseg_stats(subj_mri, subj_surf, subj_label, threads, fsthreads, fsstats, subject='recon')
 
         # =============== OPTIONAL STATS =============== #
         # stats DKatlas
         # map_stats(subj_label, subj_stats, subject='recon')
 
         # create_pctsurcon_hypo_segstats(subj_mri, subj_surf, subj_label, threads, fsthreads,
-        #                                fsaparc, fssurfreg, subject='recon')
+        #                                fsstats, fssurfreg, subject='recon')
         # create_wmparc_from_mapped(subj_mri, subj_surf, subj_label, subj_stats, threads, fsaparc,
         #                           subject='recon')
+        create_balabels(fsthreads, subject='recon')
 
     print('time: ', time.time() - start_time)
