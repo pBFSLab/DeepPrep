@@ -125,10 +125,10 @@ def native_bold_to_T1_2mm(residual_file, subj, subj_t1_file, reg_file, save_file
 
 def register_dat_to_fslmat(mov_file, ref_file, reg_file, fslmat_file):
     sh.tkregister2('--mov', mov_file,
-                  '--targ', ref_file,
-                  '--reg', reg_file,
-                  '--fslregout', fslmat_file,
-                  '--noedit')
+                   '--targ', ref_file,
+                   '--reg', reg_file,
+                   '--fslregout', fslmat_file,
+                   '--noedit')
 
 
 def register_dat_to_trf(mov_file, ref_file, reg_file, workdir, trf_file):
@@ -575,9 +575,8 @@ if __name__ == '__main__':
         json.dump(dataset_description, jf, indent=4)
 
     set_envrion()
-    freesurfer_subjects_path = Path(layout.derivatives['freesurfer'].root)
+    freesurfer_subjects_path = derivative_deepprep_path / 'Recon'
     os.environ['SUBJECTS_DIR'] = str(freesurfer_subjects_path)
-
     atlas_type = 'MNI152_T1_2mm'
     for subj in subjs:
         deepprep_subj_path = derivative_deepprep_path / f'sub-{subj}'
@@ -586,7 +585,8 @@ if __name__ == '__main__':
         subj_func_path.mkdir(exist_ok=True)
 
         # temp dir
-        workdir = Path('workdir')
+        workdir = deepprep_subj_path / 'tmp'
+        # workdir = Path('workdir')
         workdir.mkdir(exist_ok=True)
 
         # T1 to MNI152 2mm
