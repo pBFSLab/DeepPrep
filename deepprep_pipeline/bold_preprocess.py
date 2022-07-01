@@ -124,7 +124,7 @@ def native_bold_to_T1_2mm(residual_file, subj, subj_t1_file, reg_file, save_file
 
 
 def register_dat_to_fslmat(mov_file, ref_file, reg_file, fslmat_file):
-    sh.tkregister('--mov', mov_file,
+    sh.tkregister2('--mov', mov_file,
                   '--targ', ref_file,
                   '--reg', reg_file,
                   '--fslregout', fslmat_file,
@@ -135,7 +135,13 @@ def register_dat_to_trf(mov_file, ref_file, reg_file, workdir, trf_file):
     fsltrf_file = os.path.join(workdir, 'fsl_trf.fsl')
     register_dat_to_fslmat(mov_file, ref_file, reg_file, fsltrf_file)
     first_frame_file = os.path.join(workdir, 'frame0.nii.gz')
-    sh.fslroi(mov_file, first_frame_file, 0, 1)
+    bold = ants.image_read(str(mov_file))
+    frame0_np = bold[:, :, :, 0]
+    origin = bold.origin[:3]
+    spacing = bold.spacing[:3]
+    direction = bold.direction[:3, :3].copy()
+    frame0 = ants.from_numpy(frame0_np, origin=origin, spacing=spacing, direction=direction)
+    ants.image_write(frame0, str(first_frame_file))
     tfm_file = os.path.join(workdir, 'itk_trf.tfm')
     base_path, _ = os.path.split(os.path.abspath(__file__))
     c3d_affine_tool = os.path.join(base_path, 'resource', 'c3d_affine_tool')
@@ -171,6 +177,7 @@ def bold_smooth_6(t12mm_file, t12mm_sm6_file):
                 '--i', t12mm_file,
                 '--o', t12mm_sm6_file)
 
+
 @timing_func
 def bold_smooth_6_ants(t12mm, t12mm_sm6_file, verbose=False):
     # mask file
@@ -199,6 +206,7 @@ def bold_smooth_6_ants(t12mm, t12mm_sm6_file, verbose=False):
         # save
         ants.image_write(masked_img, str(t12mm_sm6_file))
     return masked_img
+
 
 @timing_func
 def vxm_warp_bold_2mm(resid_t1, affine_file, warp_file, warped_file, verbose=False):
@@ -334,7 +342,7 @@ def swapdim(infile, a, b, c, outfile):
 
 @timing_func
 def bold_skip_reorient(preprocess_dir, subj):
-    runs = os.listdir(preprocess_dir / subj / 'bold')
+    runs = [d.name for d in (preprocess_dir / subj / 'bold').iterdir() if d.is_dir()]
     for run in runs:
         bold_file = preprocess_dir / subj / 'bold' / run / f'{subj}_bld{run}_rest.nii.gz'
         skip_bold_file = preprocess_dir / subj / 'bold' / run / f'{subj}_bld{run}_rest_skip.nii.gz'
@@ -348,7 +356,7 @@ def bold_skip_reorient(preprocess_dir, subj):
 @timing_func
 def preprocess_common(preprocess_dir, subj, subj_func_path, workdir):
     bold_skip_reorient(preprocess_dir, subj)
-    runs = os.listdir(preprocess_dir / subj / 'bold')
+    runs = [d.name for d in (preprocess_dir / subj / 'bold').iterdir() if d.is_dir()]
     for run in runs:
         src_bold_file = preprocess_dir / subj / 'bold' / run / f'{subj}_bld{run}_rest_reorient_skip.nii.gz'
         dst_bold_file = preprocess_dir / subj / 'bold' / run / f'{subj}_bld_rest_reorient_skip.nii.gz'
@@ -484,8 +492,7 @@ def smooth_downsampling(preprocess_dir, bold_path, bldrun, subject):
 
 @timing_func
 def preprocess_rest(layout, preprocess_dir, subj, subj_func_path, workdir):
-    runs = os.listdir(preprocess_dir / subj / 'bold')
-    runs = [run for run in runs if os.path.isdir(preprocess_dir / subj / 'bold' / run)]
+    runs = [d.name for d in (preprocess_dir / subj / 'bold').iterdir() if d.is_dir()]
 
     fcmri_dir = preprocess_dir / subj / 'fcmri'
     fcmri_dir.mkdir(exist_ok=True)
