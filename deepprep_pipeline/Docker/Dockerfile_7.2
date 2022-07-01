@@ -34,10 +34,14 @@ COPY ./whl .
 RUN pip install FeatReg
 
 ## Install FreeSurfer
-RUN apt-get -y install bc binutils libgomp1 perl psmisc sudo tar tcsh unzip uuid-dev vim-common libjpeg62-dev
+RUN apt-get -y install bc binutils libgomp1 perl psmisc sudo tar tcsh unzip uuid-dev vim-common libjpeg62-dev libglu1-mesa
+
+## Install Bold
+RUN apt-get install gfortran gawk
+RUN pip install tensorflow neurite pystrum
 
 ## Install DeepPrep
-RUN pip install bids sh
+RUN pip install bids sh path
 
 ## clean cache
 pip cache purge
