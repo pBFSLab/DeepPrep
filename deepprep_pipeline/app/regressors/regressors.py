@@ -173,19 +173,11 @@ def build_movement_regressors(subject, bldrun, bold_path: Path, movement_path: P
 
 def compile_regressors(preprocess_dir, bold_path, bldrun, subject, fcmri_path, bpss_path):
     # Compile the regressors.
-
-    # build_movement_regressors = sh.Command(Path(__file__).parent / 'build_movement_regressors.csh')
-
     movement_path = preprocess_dir / subject / 'movement'
     movement_path.mkdir(exist_ok=True)
 
     # wipe mov regressors, if there
     mov_regressor_common_path = fcmri_path / ('%s_mov_regressor.dat' % subject)
-
-    # build_movement_regressors(
-    #     subject, bldrun, bold_path, movement_path, fcmri_path,
-    #     _out=sys.stdout
-    # )
     build_movement_regressors(subject, bldrun, bold_path, movement_path, fcmri_path)
     mov_regressor_path = fcmri_path / ('%s_bld%s_mov_regressor.dat' % (subject, bldrun))
     os.rename(mov_regressor_common_path, mov_regressor_path)
