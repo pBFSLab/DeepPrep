@@ -546,7 +546,10 @@ def preprocess(layout, subj, deepprep_subj_path, preprocess_dir):
             subj_ses_bold_dir.mkdir(parents=True, exist_ok=True)
             subj_func_path = deepprep_subj_path / f'ses-{ses}' / 'func'
             bids_bolds = layout.get(subject=subj, session=ses, suffix='bold', extension='.nii.gz')
+            if len(bids_bolds) == 0:
+                continue
             for bids_bold in bids_bolds:
+                print(bids_bold)
                 run = f"{bids_bold.entities['run']:03}"
                 (subj_ses_bold_dir / run).mkdir(exist_ok=True)
                 bold_file = bids_bold.path
@@ -592,14 +595,16 @@ if __name__ == '__main__':
     # DeepPrep dataset_description
     derivative_deepprep_path = data_path / 'derivatives' / 'deepprep'
     derivative_deepprep_path.mkdir(exist_ok=True)
-    dataset_description = dict()
-    dataset_description['Name'] = 'DeepPrep Outputs'
-    dataset_description['BIDSVersion'] = '1.4.0'
-    dataset_description['DatasetType'] = 'derivative'
-    dataset_description['GeneratedBy'] = [{'Name': 'deepprep', 'Version': '0.0.1'}]
     dataset_description_file = derivative_deepprep_path / 'dataset_description.json'
-    with open(dataset_description_file, 'w') as jf:
-        json.dump(dataset_description, jf, indent=4)
+    if not os.path.exists(dataset_description_file):
+        dataset_description = dict()
+        dataset_description['Name'] = 'DeepPrep Outputs'
+        dataset_description['BIDSVersion'] = '1.4.0'
+        dataset_description['DatasetType'] = 'derivative'
+        dataset_description['GeneratedBy'] = [{'Name': 'deepprep', 'Version': '0.0.1'}]
+
+        with open(dataset_description_file, 'w') as jf:
+            json.dump(dataset_description, jf, indent=4)
 
     set_envrion()
     freesurfer_subjects_path = derivative_deepprep_path / 'Recon'
@@ -630,6 +635,9 @@ if __name__ == '__main__':
             shutil.copy(warped_file, subj_func_path / f'sub-{subj}_warped.nii.gz')
         else:
             for ses in sess:
+                bids_bolds = layout.get(subject=subj, session=ses, suffix='bold', extension='.nii.gz')
+                if len(bids_bolds) == 0:
+                    continue
                 subj_func_path = deepprep_subj_path / f'ses-{ses}' / 'func'
                 subj_func_path.mkdir(parents=True, exist_ok=True)
                 shutil.copy(trf_file, subj_func_path / f'sub-{subj}_affine.mat')
@@ -641,6 +649,7 @@ if __name__ == '__main__':
         bids_bolds = layout.get(subject=subj, suffix='bold', extension='.nii.gz')
         for bids_bold in bids_bolds:
             ses = bids_bold.entities.get('session')
+            print(bids_bold)
             run = f"{bids_bold.entities['run']:03}"
             if ses is None:
                 subj_func_path = deepprep_subj_path / 'func'
