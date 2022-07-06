@@ -13,6 +13,7 @@ import numpy as np
 import voxelmorph as vxm
 import tensorflow as tf
 import SimpleITK as sitk
+from bidict import bidict
 from app.surface_projection import surface_projection as sp
 from app.volume_projection import volume_projection as vp
 from app.utils.utils import timing_func
@@ -342,7 +343,7 @@ def swapdim(infile, a, b, c, outfile):
 
 @timing_func
 def bold_skip_reorient(preprocess_dir, subj):
-    runs = [d.name for d in (preprocess_dir / subj / 'bold').iterdir() if d.is_dir()]
+    runs = sorted([d.name for d in (preprocess_dir / subj / 'bold').iterdir() if d.is_dir()])
     for run in runs:
         bold_file = preprocess_dir / subj / 'bold' / run / f'{subj}_bld{run}_rest.nii.gz'
         skip_bold_file = preprocess_dir / subj / 'bold' / run / f'{subj}_bld{run}_rest_skip.nii.gz'
@@ -356,7 +357,7 @@ def bold_skip_reorient(preprocess_dir, subj):
 @timing_func
 def preprocess_common(preprocess_dir, subj):
     bold_skip_reorient(preprocess_dir, subj)
-    runs = [d.name for d in (preprocess_dir / subj / 'bold').iterdir() if d.is_dir()]
+    runs = sorted([d.name for d in (preprocess_dir / subj / 'bold').iterdir() if d.is_dir()])
     for run in runs:
         src_bold_file = preprocess_dir / subj / 'bold' / run / f'{subj}_bld{run}_rest_reorient_skip.nii.gz'
         dst_bold_file = preprocess_dir / subj / 'bold' / run / f'{subj}_bld_rest_reorient_skip.nii.gz'
@@ -452,8 +453,7 @@ def preprocess_common(preprocess_dir, subj):
         sh.mri_binarize(*shargs, _out=sys.stdout)
 
 
-@timing_func
-def smooth_downsampling(preprocess_dir, bold_path, bldrun, subject):
+def setenv_smooth_downsampling():
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     fsaverage6_dir = subjects_dir / 'fsaverage6'
     if not fsaverage6_dir.exists():
@@ -470,6 +470,9 @@ def smooth_downsampling(preprocess_dir, bold_path, bldrun, subject):
         src_fsaverage4_dir = Path(os.environ['FREESURFER_HOME']) / 'subjects' / 'fsaverage4'
         os.symlink(src_fsaverage4_dir, fsaverage4_dir)
 
+
+@timing_func
+def smooth_downsampling(preprocess_dir, bold_path, bldrun, subject):
     logs_path = preprocess_dir / subject / 'logs'
     logs_path.mkdir(exist_ok=True)
 
@@ -491,16 +494,19 @@ def smooth_downsampling(preprocess_dir, bold_path, bldrun, subject):
 
 
 @timing_func
-def preprocess_rest(layout, preprocess_dir, subj):
-    runs = [d.name for d in (preprocess_dir / subj / 'bold').iterdir() if d.is_dir()]
-
+def preprocess_rest(layout, bids_bolds, preprocess_dir, subj):
     fcmri_dir = preprocess_dir / subj / 'fcmri'
     fcmri_dir.mkdir(exist_ok=True)
     bold_dir = preprocess_dir / subj / 'bold'
-    for run in runs:
-        # spatial_smooth
-        TR = layout.get_tr(subject=subj[4:], run=int(run))
 
+    for idx, bids_bold in enumerate(bids_bolds):
+        entities = dict(bids_bold.entities)
+        if 'RepetitionTime' in entities:
+            TR = entities['RepetitionTime']
+        else:
+            bold = ants.image_read(bids_bold.path)
+            TR = bold.spacing[3]
+        run = f'{idx + 1:03}'
         mc_path = preprocess_dir / subj / 'bold' / run / f'{subj}_bld_rest_reorient_skip_faln_mc.nii.gz'
         gauss_path = gauss_nifti(str(mc_path), 1000000000)
 
@@ -512,61 +518,45 @@ def preprocess_rest(layout, preprocess_dir, subj):
         regression(bpss_path, all_regressors_path)
 
         # smooth_downsampling
-        smooth_downsampling(preprocess_dir, bold_dir, run, subj)
+        # smooth_downsampling(preprocess_dir, bold_dir, run, subj)
 
 
 @timing_func
-def preprocess(layout, subj, deepprep_subj_path, preprocess_dir):
-    sess = layout.get_session(subject=subj)
-    if len(sess) == 0:
-        bids_bolds = layout.get(subject=subj, suffix='bold', extension='.nii.gz')
-        subj_bold_dir = preprocess_dir / f'sub-{subj}' / 'bold'
-        subj_bold_dir.mkdir(parents=True, exist_ok=True)
-        for bids_bold in bids_bolds:
-            run = f"{bids_bold.entities['run']:03}"
-            (subj_bold_dir / run).mkdir(exist_ok=True)
-            bold_file = bids_bold.path
-            shutil.copy(bold_file, subj_bold_dir / run / f'sub-{subj}_bld{run}_rest.nii.gz')
-        preprocess_common(preprocess_dir, f'sub-{subj}')
-        preprocess_rest(layout, preprocess_dir, f'sub-{subj}')
-        subj_func_path = deepprep_subj_path / 'func'
-        for bids_bold in bids_bolds:
-            run = f"{bids_bold.entities['run']:03}"
-            src_resid_file = subj_bold_dir / run / f'sub-{subj}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss_resid.nii.gz'
-            dst_resid_file = subj_func_path / f'sub-{subj}_run-{run}_resid.nii.gz'
-            shutil.copy(src_resid_file, dst_resid_file)
-            src_reg_file = subj_bold_dir / run / f'sub-{subj}_bld_rest_reorient_skip_faln_mc.register.dat'
-            dst_reg_file = subj_func_path / f'sub-{subj}_run-{run}_bbregister.register.dat'
-            shutil.copy(src_reg_file, dst_reg_file)
-        shutil.copytree(preprocess_dir / f'sub-{subj}' / 'surf', subj_func_path / 'surf')
-    else:
-        for ses in sess:
-            ses_preprocess_dir = preprocess_dir / f'ses-{ses}'
-            subj_ses_bold_dir = preprocess_dir / f'ses-{ses}' / f'sub-{subj}' / 'bold'
-            subj_ses_bold_dir.mkdir(parents=True, exist_ok=True)
-            subj_func_path = deepprep_subj_path / f'ses-{ses}' / 'func'
-            bids_bolds = layout.get(subject=subj, session=ses, suffix='bold', extension='.nii.gz')
-            if len(bids_bolds) == 0:
-                continue
-            for bids_bold in bids_bolds:
-                print(bids_bold)
-                run = f"{bids_bold.entities['run']:03}"
-                (subj_ses_bold_dir / run).mkdir(exist_ok=True)
-                bold_file = bids_bold.path
-                shutil.copy(bold_file, subj_ses_bold_dir / run / f'sub-{subj}_bld{run}_rest.nii.gz')
-            preprocess_common(ses_preprocess_dir, f'sub-{subj}')
-            preprocess_rest(layout, ses_preprocess_dir, f'sub-{subj}')
-            for bids_bold in bids_bolds:
-                run = f"{bids_bold.entities['run']:03}"
-                subj_func_path = deepprep_subj_path / f'ses-{ses}' / 'func'
-                subj_func_path.mkdir(parents=True, exist_ok=True)
-                src_resid_file = subj_ses_bold_dir / run / f'sub-{subj}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss_resid.nii.gz'
-                dst_resid_file = subj_func_path / f'sub-{subj}_run-{run}_resid.nii.gz'
-                shutil.copy(src_resid_file, dst_resid_file)
-                src_reg_file = subj_ses_bold_dir / run / f'sub-{subj}_bld_rest_reorient_skip_faln_mc.register.dat'
-                dst_reg_file = subj_func_path / f'sub-{subj}_run-{run}_bbregister.register.dat'
-                shutil.copy(src_reg_file, dst_reg_file)
-            shutil.copytree(ses_preprocess_dir / f'sub-{subj}' / 'surf', subj_func_path / 'surf')
+def preprocess(layout, bids_bolds, subj, deepprep_subj_path, preprocess_dir):
+    subj_bold_dir = preprocess_dir / f'sub-{subj}' / 'bold'
+    subj_bold_dir.mkdir(parents=True, exist_ok=True)
+    for idx, bids_bold in enumerate(bids_bolds):
+        bids_file = Path(bids_bold.path)
+        run = f'{idx + 1:03}'
+        (subj_bold_dir / run).mkdir(exist_ok=True)
+        shutil.copy(bids_file, subj_bold_dir / run / f'sub-{subj}_bld{run}_rest.nii.gz')
+    preprocess_common(preprocess_dir, f'sub-{subj}')
+    preprocess_rest(layout, bids_bolds, preprocess_dir, f'sub-{subj}')
+    setenv_smooth_downsampling()
+    for idx, bids_bold in enumerate(bids_bolds):
+        run = f"{idx + 1:03}"
+        entities = dict(bids_bold.entities)
+        subj = entities['subject']
+        file_prefix = Path(bids_bold.path).name.replace('.nii.gz', '')
+        if 'session' in entities:
+            subj_func_path = deepprep_subj_path / f"ses-{entities['session']}" / 'func'
+            subj_surf_path = deepprep_subj_path / f"ses-{entities['session']}" / 'surf'
+        else:
+            subj_func_path = deepprep_subj_path / 'func'
+            subj_surf_path = deepprep_subj_path / 'surf'
+        subj_surf_path.mkdir(exist_ok=True)
+        src_resid_file = subj_bold_dir / run / f'sub-{subj}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss_resid.nii.gz'
+        dst_resid_file = subj_func_path / f'{file_prefix}_resid.nii.gz'
+        shutil.copy(src_resid_file, dst_resid_file)
+        src_reg_file = subj_bold_dir / run / f'sub-{subj}_bld_rest_reorient_skip_faln_mc.register.dat'
+        dst_reg_file = subj_func_path / f'{file_prefix}_bbregister.register.dat'
+        shutil.copy(src_reg_file, dst_reg_file)
+
+        # smooth_downsampling
+        for hemi in ['lh', 'rh']:
+            fs6_path = sp.indi_to_fs6(subj_surf_path, f'sub-{subj}', dst_resid_file, dst_reg_file, hemi)
+            sm6_path = sp.smooth_fs6(fs6_path, hemi)
+            sp.downsample_fs6_to_fs4(sm6_path, hemi)
 
 
 def parse_args():
@@ -626,6 +616,7 @@ if __name__ == '__main__':
         warp_file = workdir / f'sub-{subj}_warp.nii.gz'
         warped_file = workdir / f'sub-{subj}_warped.nii.gz'
         vxm_registraion(atlas_type, model_file, workdir, norm_file, trf_file, warp_file, warped_file)
+
         sess = layout.get_session(subject=subj)
         if len(sess) == 0:
             subj_func_path = deepprep_subj_path / 'func'
@@ -643,24 +634,25 @@ if __name__ == '__main__':
                 shutil.copy(trf_file, subj_func_path / f'sub-{subj}_affine.mat')
                 shutil.copy(warp_file, subj_func_path / f'sub-{subj}_warp.nii.gz')
                 shutil.copy(warped_file, subj_func_path / f'sub-{subj}_warped.nii.gz')
-        # native bold preprocess
-        preprocess(layout, subj, deepprep_subj_path, workdir)
 
         bids_bolds = layout.get(subject=subj, suffix='bold', extension='.nii.gz')
+        # native bold preprocess
+        preprocess(layout, bids_bolds, subj, deepprep_subj_path, workdir)
+
         for bids_bold in bids_bolds:
-            ses = bids_bold.entities.get('session')
             print(bids_bold)
-            run = f"{bids_bold.entities['run']:03}"
-            if ses is None:
-                subj_func_path = deepprep_subj_path / 'func'
-            else:
+            entities = dict(bids_bold.entities)
+            subj = entities['subject']
+            file_prefix = Path(bids_bold.path).name.replace('.nii.gz', '')
+            if 'session' in entities:
+                ses = entities['session']
                 subj_func_path = deepprep_subj_path / f'ses-{ses}' / 'func'
-            bold_file = bids_bold.path
+            else:
+                subj_func_path = deepprep_subj_path / 'func'
 
             # native bold to MNI152 2mm
-            resid_file = subj_func_path / f'sub-{subj}_run-{run}_resid.nii.gz'
-            reg_file = subj_func_path / f'sub-{subj}_run-{run}_bbregister.register.dat'
-            save_file = subj_func_path / f'sub-{subj}_resid_MIN2mm_sm6.nii.gz'
-            warp_bold_2mm(subj_func_path, subj, workdir, norm_file, resid_file, reg_file, save_file,
-                          verbose=False)
+            resid_file = subj_func_path / f'{file_prefix}_resid.nii.gz'
+            reg_file = subj_func_path / f'{file_prefix}_bbregister.register.dat'
+            save_file = subj_func_path / f'{file_prefix}_resid_MIN2mm_sm6.nii.gz'
+            warp_bold_2mm(subj_func_path, subj, workdir, norm_file, resid_file, reg_file, save_file, verbose=False)
         # shutil.rmtree(workdir)
