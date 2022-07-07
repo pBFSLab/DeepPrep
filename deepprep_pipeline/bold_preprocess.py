@@ -560,11 +560,18 @@ def preprocess(layout, bids_bolds, subj, deepprep_subj_path, preprocess_dir):
 
 
 def parse_args():
+    def _drop_sub(value):
+        return value[4:] if value.startswith("sub-") else value
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--bd', required=True, help='directory of bids type')
     parser.add_argument('--fsd', default=os.environ.get('FREESURFER_HOME'),
                         help='Output directory $FREESURFER_HOME (pass via environment or here)')
-
+    parser.add_argument("-t", "--task", action='store', nargs='+',
+                        help='a space delimited list of tasks identifiers or a single task')
+    parser.add_argument("-s", "--subject", action="store", nargs="+", type=_drop_sub,
+                        help="a space delimited list of subject identifiers or a single "
+                             "identifier (the sub- prefix can be removed)")
     args = parser.parse_args()
     args_dict = vars(args)
 
@@ -580,7 +587,10 @@ if __name__ == '__main__':
     data_path = Path(args.bd)
 
     layout = bids.BIDSLayout(str(data_path), derivatives=True)
-    subjs = sorted(layout.get_subjects())
+    if args.subject is None:
+        subjs = sorted(layout.get_subjects())
+    else:
+        subjs = args.subject
 
     # DeepPrep dataset_description
     derivative_deepprep_path = data_path / 'derivatives' / 'deepprep'
@@ -626,7 +636,11 @@ if __name__ == '__main__':
             shutil.copy(warped_file, subj_func_path / f'sub-{subj}_warped.nii.gz')
         else:
             for ses in sess:
-                bids_bolds = layout.get(subject=subj, session=ses, suffix='bold', extension='.nii.gz')
+                if args.task is None:
+                    bids_bolds = layout.get(subject=subj, session=ses, suffix='bold', extension='.nii.gz')
+                else:
+                    bids_bolds = layout.get(subject=subj, session=ses, task=args.task, suffix='bold',
+                                            extension='.nii.gz')
                 if len(bids_bolds) == 0:
                     continue
                 subj_func_path = deepprep_subj_path / f'ses-{ses}' / 'func'
@@ -634,13 +648,14 @@ if __name__ == '__main__':
                 shutil.copy(trf_file, subj_func_path / f'sub-{subj}_affine.mat')
                 shutil.copy(warp_file, subj_func_path / f'sub-{subj}_warp.nii.gz')
                 shutil.copy(warped_file, subj_func_path / f'sub-{subj}_warped.nii.gz')
-
-        bids_bolds = layout.get(subject=subj, suffix='bold', extension='.nii.gz')
+        if args.task is None:
+            bids_bolds = layout.get(subject=subj, suffix='bold', extension='.nii.gz')
+        else:
+            bids_bolds = layout.get(subject=subj, task=args.task, suffix='bold', extension='.nii.gz')
         # native bold preprocess
         preprocess(layout, bids_bolds, subj, deepprep_subj_path, workdir)
 
         for bids_bold in bids_bolds:
-            print(bids_bold)
             entities = dict(bids_bold.entities)
             subj = entities['subject']
             file_prefix = Path(bids_bold.path).name.replace('.nii.gz', '')
