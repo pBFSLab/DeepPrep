@@ -76,7 +76,7 @@ def vxm_registraion(atlas_type, model_file, workdir, norm_path, trf_path, warp_p
 
     # voxelmorph
     # tensorflow device handling
-    gpuid = '-1'
+    gpuid = '0'
     device, nb_devices = vxm.tf.utils.setup_device(gpuid)
 
     # load moving and fixed images
@@ -222,7 +222,8 @@ def vxm_warp_bold_2mm(resid_t1, affine_file, warp_file, warped_file, verbose=Fal
     n_frame = bold_img.shape[3]
 
     # tensorflow device handling
-    device, nb_devices = vxm.tf.utils.setup_device(-1)
+    gpuid = '0'
+    device, nb_devices = vxm.tf.utils.setup_device(gpuid)
 
     fwdtrf_MNI152_2mm = [str(affine_file)]
     trf_file = Path(__file__).parent / 'model' / 'voxelmorph' / 'MNI152_T1_2mm' / 'MNI152_T1_2mm_vxm2atlas.mat'
@@ -586,13 +587,15 @@ if __name__ == '__main__':
 
     data_path = Path(args.bd)
 
-    layout = bids.BIDSLayout(str(data_path), derivatives=True)
+    devices = tf.config.list_physical_devices('GPU')
+
+    layout = bids.BIDSLayout(str(data_path), derivatives=False)
     if args.subject is None:
         subjs = sorted(layout.get_subjects())
     else:
         subjs = args.subject
 
-    # DeepPrep dataset_description
+    # DeepPrep dataset_description    devices = tf.config.list_physical_devices('GPU')
     derivative_deepprep_path = data_path / 'derivatives' / 'deepprep'
     derivative_deepprep_path.mkdir(exist_ok=True)
     dataset_description_file = derivative_deepprep_path / 'dataset_description.json'
@@ -611,6 +614,9 @@ if __name__ == '__main__':
     os.environ['SUBJECTS_DIR'] = str(freesurfer_subjects_path)
     atlas_type = 'MNI152_T1_2mm'
     for subj in subjs:
+        if subj == 'MSC01':
+            continue
+
         deepprep_subj_path = derivative_deepprep_path / f'sub-{subj}'
         deepprep_subj_path.mkdir(exist_ok=True)
 
@@ -625,35 +631,35 @@ if __name__ == '__main__':
         trf_file = workdir / f'sub-{subj}_affine.mat'
         warp_file = workdir / f'sub-{subj}_warp.nii.gz'
         warped_file = workdir / f'sub-{subj}_warped.nii.gz'
-        vxm_registraion(atlas_type, model_file, workdir, norm_file, trf_file, warp_file, warped_file)
-
-        sess = layout.get_session(subject=subj)
-        if len(sess) == 0:
-            subj_func_path = deepprep_subj_path / 'func'
-            subj_func_path.mkdir(exist_ok=True)
-            shutil.copy(trf_file, subj_func_path / f'sub-{subj}_affine.mat')
-            shutil.copy(warp_file, subj_func_path / f'sub-{subj}_warp.nii.gz')
-            shutil.copy(warped_file, subj_func_path / f'sub-{subj}_warped.nii.gz')
-        else:
-            for ses in sess:
-                if args.task is None:
-                    bids_bolds = layout.get(subject=subj, session=ses, suffix='bold', extension='.nii.gz')
-                else:
-                    bids_bolds = layout.get(subject=subj, session=ses, task=args.task, suffix='bold',
-                                            extension='.nii.gz')
-                if len(bids_bolds) == 0:
-                    continue
-                subj_func_path = deepprep_subj_path / f'ses-{ses}' / 'func'
-                subj_func_path.mkdir(parents=True, exist_ok=True)
-                shutil.copy(trf_file, subj_func_path / f'sub-{subj}_affine.mat')
-                shutil.copy(warp_file, subj_func_path / f'sub-{subj}_warp.nii.gz')
-                shutil.copy(warped_file, subj_func_path / f'sub-{subj}_warped.nii.gz')
+        # vxm_registraion(atlas_type, model_file, workdir, norm_file, trf_file, warp_file, warped_file)
+        #
+        # sess = layout.get_session(subject=subj)
+        # if len(sess) == 0:
+        #     subj_func_path = deepprep_subj_path / 'func'
+        #     subj_func_path.mkdir(exist_ok=True)
+        #     shutil.copy(trf_file, subj_func_path / f'sub-{subj}_affine.mat')
+        #     shutil.copy(warp_file, subj_func_path / f'sub-{subj}_warp.nii.gz')
+        #     shutil.copy(warped_file, subj_func_path / f'sub-{subj}_warped.nii.gz')
+        # else:
+        #     for ses in sess:
+        #         if args.task is None:
+        #             bids_bolds = layout.get(subject=subj, session=ses, suffix='bold', extension='.nii.gz')
+        #         else:
+        #             bids_bolds = layout.get(subject=subj, session=ses, task=args.task, suffix='bold',
+        #                                     extension='.nii.gz')
+        #         if len(bids_bolds) == 0:
+        #             continue
+        #         subj_func_path = deepprep_subj_path / f'ses-{ses}' / 'func'
+        #         subj_func_path.mkdir(parents=True, exist_ok=True)
+        #         shutil.copy(trf_file, subj_func_path / f'sub-{subj}_affine.mat')
+        #         shutil.copy(warp_file, subj_func_path / f'sub-{subj}_warp.nii.gz')
+        #         shutil.copy(warped_file, subj_func_path / f'sub-{subj}_warped.nii.gz')
         if args.task is None:
             bids_bolds = layout.get(subject=subj, suffix='bold', extension='.nii.gz')
         else:
             bids_bolds = layout.get(subject=subj, task=args.task, suffix='bold', extension='.nii.gz')
         # native bold preprocess
-        preprocess(layout, bids_bolds, subj, deepprep_subj_path, workdir)
+        # preprocess(layout, bids_bolds, subj, deepprep_subj_path, workdir)
 
         for bids_bold in bids_bolds:
             entities = dict(bids_bold.entities)
