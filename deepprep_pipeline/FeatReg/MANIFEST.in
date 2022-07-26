@@ -1,0 +1,5 @@
+recursive-include featreg/utils/neigh_indices *.mat
+recursive-include featreg/utils/neigh_indices *.txt
+recursive-include featreg/utils/neigh_indices *.npy
+recursive-include featreg/utils/neigh_indices *.npz
+recursive-include featreg/utils/neigh_indices *.vtk
