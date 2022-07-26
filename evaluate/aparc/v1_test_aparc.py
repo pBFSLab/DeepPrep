@@ -197,24 +197,24 @@ if __name__ == '__main__':
     # # 分区截图
     # method = 'DeepPrep'
     # src_dir = f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon'
-    # screenshot_result_dir = f'/mnt/ngshare/DeepPrep/Validation/v1_aparc/aparc_map_image_{method}'
+    # screenshot_result_dir = f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/aparc_map_image_{method}'
     # aparc_screenshot(src_dir, screenshot_result_dir)
     #
     # method = 'FreeSurfer'
     # src_dir = f'/mnt/ngshare/DeepPrep/MSC/derivatives/FreeSurfer'
-    # screenshot_result_dir = f'/mnt/ngshare/DeepPrep/Validation/v1_aparc/aparc_map_image_{method}'
+    # screenshot_result_dir = f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/aparc_map_image_{method}'
     # aparc_screenshot(src_dir, screenshot_result_dir)
 
     # cat screenshot
-    concat_screenshot(f'/mnt/ngshare/DeepPrep/Validation/v1_aparc')
+    concat_screenshot(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc')
 
     # # cal DICE
     # deepprep_recon_dir = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon')
     # freesurfer_recon_dir = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/FreeSurfer')
-    # deepprep_interp_freesurfer = Path(f'/mnt/ngshare/DeepPrep/Validation/v1_aparc/recon_aparc_DeepPrep_interp_FreeSufer')
-    # concat_dp_and_fs_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/v1_aparc/recon_dir_concat_DeepPrep_and_FreeSurfer')
+    # deepprep_interp_freesurfer = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/recon_aparc_DeepPrep_interp_FreeSufer')
+    # concat_dp_and_fs_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/recon_dir_concat_DeepPrep_and_FreeSurfer')
     # ln_subject(deepprep_recon_dir, freesurfer_recon_dir, concat_dp_and_fs_dir)
-    # dice_csv = Path(f'/mnt/ngshare/DeepPrep/Validation/v1_aparc/DICE_DeepPrep_FreeSurfer/dice_lh.csv')
+    # dice_csv = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/DICE_DeepPrep_FreeSurfer/dice_lh.csv')
     # dice(concat_dp_and_fs_dir, deepprep_interp_freesurfer, dice_csv, 'lh')
-    # dice_csv = Path(f'/mnt/ngshare/DeepPrep/Validation/v1_aparc/DICE_DeepPrep_FreeSurfer/dice_rh.csv')
+    # dice_csv = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/DICE_DeepPrep_FreeSurfer/dice_rh.csv')
     # dice(concat_dp_and_fs_dir, deepprep_interp_freesurfer, dice_csv, 'rh')

@@ -382,62 +382,62 @@ if __name__ == '__main__':
                                      [('0', '0.35'), ('0', '0.05'), ('0', '1.3')],):
         # method = 'DeepPrep'
         # src_dir = f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon'
-        # screenshot_result_dir = f'/mnt/ngshare/DeepPrep/Validation/v1_feature/{feature}/feature_map_image_{method}'
+        # screenshot_result_dir = f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/{feature}/feature_map_image_{method}'
         # feature_screenshot(src_dir, screenshot_result_dir, feature=feature, vmin=vmin, vmax=vmax)
         #
         # method = 'FreeSurfer'
         # src_dir = f'/mnt/ngshare/DeepPrep/MSC/derivatives/FreeSurfer'
-        # screenshot_result_dir = f'/mnt/ngshare/DeepPrep/Validation/v1_feature/{feature}/feature_map_image_{method}'
+        # screenshot_result_dir = f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/{feature}/feature_map_image_{method}'
         # feature_screenshot(src_dir, screenshot_result_dir, feature=feature, vmin=vmin, vmax=vmax)
         #
         # # ############# cat screenshot
-        # concat_screenshot(f'/mnt/ngshare/DeepPrep/Validation/v1_feature/{feature}')
+        # concat_screenshot(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/{feature}')
 
         # # ############# cal DICE, save to csv
         # # 将DeepPrep的Recon结果和FreeSurfer的Recon结果link到一个目录下（mris_surf2surf需要）
         # deepprep_recon_dir = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon')
         # freesurfer_recon_dir = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/FreeSurfer')
-        # concat_dp_and_fs_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/v1_feature/recon_dir_concat_DeepPrep_and_FreeSurfer')
+        # concat_dp_and_fs_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_dir_concat_DeepPrep_and_FreeSurfer')
         # ln_subject(deepprep_recon_dir, freesurfer_recon_dir, concat_dp_and_fs_dir)
 
         # ############# 将结果投影到fs6
         for hemi in ['lh', 'rh']:
             # 投影到fs6
-            native_interp_fsaverage6_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/v1_feature/'
+            native_interp_fsaverage6_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/'
                                                 f'recon_interp_fsaverage6')
             # project_fsaverage6(concat_dp_and_fs_dir, native_interp_fsaverage6_dir, feature, hemi=hemi)
 
             # # 在fs6 space计算组水平
-            # individual_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/v1_feature/recon_individual_fsaverage6')
+            # individual_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_individual_fsaverage6')
             # cal_individual_fsaverage6(interp_dir=native_interp_fsaverage6_dir, individual_dir=individual_dir, feature=feature, hemi=hemi)
             #
             # # 在fs6 space计算稳定性
-            # stability_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/v1_feature/recon_stability_fsaverage6')
+            # stability_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_stability_fsaverage6')
             # cal_stability_fsaverage6(individual_dir, stability_dir, feature=feature, hemi=hemi)
 
             # # 在fs6 space计算组水平
-            # group_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/v1_feature/recon_group_fsaverage6')
+            # group_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_group_fsaverage6')
             # cal_group_fsaverage6(interp_dir=native_interp_fsaverage6_dir, group_dir=group_dir, feature=feature, hemi=hemi)
 
         # individual_screenshot
         for project in ['DeepPrep', 'FreeSurfer']:
-            individual_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/v1_feature/recon_individual_fsaverage6/{project}')
-            individual_screenshot_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/v1_feature/recon_individual_fsaverage6_screenshot/{project}')
+            individual_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_individual_fsaverage6/{project}')
+            individual_screenshot_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_individual_fsaverage6_screenshot/{project}')
             group_screenshot(individual_dir, individual_screenshot_dir, feature=feature, vmin1=vmin, vmax1=vmax, vmin2=vmin2,vmax2=vmax2)
 
         # group_screenshot
-        # group_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/v1_feature/recon_group_fsaverage6')
-        # group_screenshot_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/v1_feature/recon_group_fsaverage6_screenshot')
+        # group_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_group_fsaverage6')
+        # group_screenshot_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_group_fsaverage6_screenshot')
         # group_screenshot(group_dir, group_screenshot_dir, feature=feature, vmin1=vmin, vmax1=vmax, vmin2=vmin2, vmax2=vmax2)
 
-        # group_screenshot_concat_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/v1_feature/recon_group_fsaverage6_screenshot_concat')
+        # group_screenshot_concat_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_group_fsaverage6_screenshot_concat')
         # concat_group_screenshot(group_screenshot_dir, group_screenshot_concat_dir, feature=feature)
 
         # # stability_screenshot
-        # stability_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/v1_feature/recon_stability_fsaverage6')
-        # stability_screenshot_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/v1_feature/recon_stability_fsaverage6_screenshot')
+        # stability_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_stability_fsaverage6')
+        # stability_screenshot_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_stability_fsaverage6_screenshot')
         # # stability_screenshot(stability_dir, stability_screenshot_dir, feature=feature, vmin=vmin3, vmax=vmax3)
         #
-        # stability_screenshot_concat_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/v1_feature/recon_stability_fsaverage6_screenshot_concat')
+        # stability_screenshot_concat_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_stability_fsaverage6_screenshot_concat')
         # # concat_stability_screenshot(stability_screenshot_dir, stability_screenshot_concat_dir, feature=feature)
 

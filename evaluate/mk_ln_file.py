@@ -4,9 +4,9 @@ from pathlib import Path
 
 def make_mirror_dir(root_dir, target_dir):
     for root, dirs, files in os.walk(root_dir):
-        for file_ in files:
-            source_file = Path(root) / file_
-            target_file = Path(root.replace(root_dir, target_dir)) / file_
+        for filename in files:
+            source_file = Path(root) / filename
+            target_file = Path(root.replace(root_dir, target_dir)) / filename
             target_parent = target_file.parent
             if not target_parent.exists():
                 target_parent.mkdir(parents=True, exist_ok=True)
