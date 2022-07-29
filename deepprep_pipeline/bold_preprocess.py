@@ -614,8 +614,6 @@ if __name__ == '__main__':
     os.environ['SUBJECTS_DIR'] = str(freesurfer_subjects_path)
     atlas_type = 'MNI152_T1_2mm'
     for subj in subjs:
-        if subj == 'MSC01':
-            continue
 
         deepprep_subj_path = derivative_deepprep_path / f'sub-{subj}'
         deepprep_subj_path.mkdir(exist_ok=True)
