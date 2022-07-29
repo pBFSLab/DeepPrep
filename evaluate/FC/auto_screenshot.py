@@ -24,11 +24,11 @@ def set_environ():
 
     # workbench
     os.environ['PATH'] = '/opt/workbench/bin_linux64:' + os.environ['PATH']
+    os.environ['PATH'] = '/usr/local/workbench/bin_linux64:' + os.environ['PATH']
 
 
-def screenshot_vol_fc():
-    pipeline = 'deepprep'
-    data_path = Path('/home/weiwei/workdata/DeepPrep/workdir/ds000224')
+def screenshot_vol_fc(pipeline):
+    data_path = Path('/mnt/ngshare/DeepPrep/MSC')
     save_path = data_path / 'derivatives' / 'analysis' / pipeline
     save_path.mkdir(parents=True, exist_ok=True)
     layout = bids.BIDSLayout(str(data_path))
@@ -48,7 +48,7 @@ def screenshot_vol_fc():
             shutil.copy(src_fc_file, dst_fc_file)
             screen_fc_file = subj_fc_path / src_fc_file.name.replace('.nii.gz', '.png')
             sh.wb_command('-show-scene', scene_file, 1, screen_fc_file, 1200, 600)
-        exit()
+            print(f'screen_fc_file >>> {screen_fc_file}')
     shutil.rmtree(workdir)
 
 
@@ -78,9 +78,8 @@ def montage_fsaverage_file(lh_lateral, rh_lateral, lh_medial, rh_medial, montage
     cv2.imwrite(str(montage_file), img_montage)
 
 
-def screenshot_surf_fc():
-    pipeline = 'fmriprep'
-    data_path = Path('/home/weiwei/workdata/DeepPrep/workdir/ds000224')
+def screenshot_surf_fc(pipeline):
+    data_path = Path('/mnt/ngshare/DeepPrep/MSC')
     save_path = data_path / 'derivatives' / 'analysis' / pipeline
     save_path.mkdir(parents=True, exist_ok=True)
     layout = bids.BIDSLayout(str(data_path))
@@ -133,11 +132,13 @@ def screenshot_surf_fc():
 
             surf_fc_file = save_path / f'sub-{subj}' / f'fc_{seed_name}.tiff'
             montage_fsaverage_file(lh_lateral, rh_lateral, lh_medial, rh_medial, surf_fc_file)
-        exit()
+            print(f'>>> {surf_fc_file}')
     shutil.rmtree(workdir)
 
 
 # /usr/local/fsl/data/standard/MNI152_T1_2mm.nii.gz
 if __name__ == '__main__':
-    # screenshot_vol_fc()
-    screenshot_surf_fc()
+    pipeline = 'app'
+
+    screenshot_vol_fc(pipeline)
+    screenshot_surf_fc(pipeline)

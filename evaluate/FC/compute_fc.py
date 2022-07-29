@@ -67,9 +67,8 @@ def compute_surf_fc(seed, surf_bold):
     return surf_fc
 
 
-def batch_vol_fc():
-    pipeline = 'deepprep'
-    data_path = Path('/home/weiwei/workdata/DeepPrep/workdir/ds000224')
+def batch_vol_fc(pipeline):
+    data_path = Path('/mnt/ngshare/DeepPrep/MSC')
     save_path = data_path / 'derivatives' / 'analysis' / pipeline
     save_path.mkdir(parents=True, exist_ok=True)
     layout = bids.BIDSLayout(str(data_path))
@@ -116,14 +115,15 @@ def batch_vol_fc():
             if pipeline == 'app':
                 vol_fc_resample = ants.resample_image_to_target(vol_fc, MNI152_T1_2mm_ref)
                 ants.image_write(vol_fc_resample, str(vol_fc_file))
+                print(f'>>> {vol_fc_file}')
             else:
                 ants.image_write(vol_fc, str(vol_fc_file))
-        exit()
+                print(f'>>> {vol_fc_file}')
+        # exit()
 
 
-if __name__ == '__main__':
-    pipeline = 'fmriprep'
-    data_path = Path('/home/weiwei/workdata/DeepPrep/workdir/ds000224')
+def batch_surf_fc(pipeline):
+    data_path = Path('/mnt/ngshare/DeepPrep/MSC')
     save_path = data_path / 'derivatives' / 'analysis' / pipeline
     save_path.mkdir(parents=True, exist_ok=True)
     layout = bids.BIDSLayout(str(data_path))
@@ -194,9 +194,11 @@ if __name__ == '__main__':
             lh_fc = ants.from_numpy(lh_lh_fc.reshape((-1, 1, 1)))
             lh_fc_file = save_path / f'sub-{subj}' / f"lh_{seed_name}_fc.mgh"
             ants.image_write(lh_fc, str(lh_fc_file))
+            print(f'>>> {lh_fc_file}')
             rh_fc = ants.from_numpy(lh_rh_fc.reshape((-1, 1, 1)))
             rh_fc_file = save_path / f'sub-{subj}' / f"rh_{seed_name}_fc.mgh"
             ants.image_write(rh_fc, str(rh_fc_file))
+            print(f'>>> {rh_fc_file}')
 
         for rh_seed_dict in rh_seeds:
             seed_name = rh_seed_dict['name']
@@ -207,7 +209,15 @@ if __name__ == '__main__':
             lh_fc = ants.from_numpy(rh_lh_fc.reshape((-1, 1, 1)))
             lh_fc_file = save_path / f'sub-{subj}' / f"lh_{seed_name}_fc.mgh"
             ants.image_write(lh_fc, str(lh_fc_file))
+            print(f'>>> {lh_fc_file}')
             rh_fc = ants.from_numpy(rh_rh_fc.reshape((-1, 1, 1)))
             rh_fc_file = save_path / f'sub-{subj}' / f"rh_{seed_name}_fc.mgh"
             ants.image_write(rh_fc, str(rh_fc_file))
-        exit()
+            print(f'>>> {rh_fc_file}')
+        # exit()
+
+
+if __name__ == '__main__':
+    pipeline = 'app'
+    batch_vol_fc(pipeline)
+    # batch_surf_fc(pipeline)
