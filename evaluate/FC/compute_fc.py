@@ -67,8 +67,7 @@ def compute_surf_fc(seed, surf_bold):
     return surf_fc
 
 
-def batch_vol_fc(pipeline):
-    data_path = Path('/mnt/ngshare/DeepPrep/MSC')
+def batch_vol_fc(data_path: Path, pipeline):
     save_path = data_path / 'derivatives' / 'analysis' / pipeline
     save_path.mkdir(parents=True, exist_ok=True)
     layout = bids.BIDSLayout(str(data_path))
@@ -122,8 +121,7 @@ def batch_vol_fc(pipeline):
         # exit()
 
 
-def batch_surf_fc(pipeline):
-    data_path = Path('/mnt/ngshare/DeepPrep/MSC')
+def batch_surf_fc(data_path: Path, pipeline):
     save_path = data_path / 'derivatives' / 'analysis' / pipeline
     save_path.mkdir(parents=True, exist_ok=True)
     layout = bids.BIDSLayout(str(data_path))
@@ -218,6 +216,8 @@ def batch_surf_fc(pipeline):
 
 
 if __name__ == '__main__':
+    # data_path = Path('/mnt/ngshare/DeepPrep/MSC')
+    data_path = Path('/home/weiwei/workdata/DeepPrep/workdir/ds000224')
     pipeline = 'app'
-    batch_vol_fc(pipeline)
-    # batch_surf_fc(pipeline)
+    batch_vol_fc(data_path, pipeline)
+    # batch_surf_fc(data_path, pipeline)
