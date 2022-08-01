@@ -67,7 +67,7 @@ def compute_surf_fc(seed, surf_bold):
     return surf_fc
 
 
-def batch_vol_fc(data_path: Path, pipeline):
+def batch_vol_fc(data_path: Path, pipeline, bold_num):
     save_path = data_path / 'derivatives' / 'analysis' / pipeline
     save_path.mkdir(parents=True, exist_ok=True)
     layout = bids.BIDSLayout(str(data_path))
@@ -83,7 +83,7 @@ def batch_vol_fc(data_path: Path, pipeline):
         subj_save_path = save_path / f'sub-{subj}'
         subj_save_path.mkdir(exist_ok=True)
         if pipeline == 'deepprep':
-            vol_bold_files = sorted(subj_path.glob('ses-func*/func/*task-rest_bold_resid_MIN2mm_sm6.nii.gz'))[:2]
+            vol_bold_files = sorted(subj_path.glob('ses-*/func/*task-rest_*_bold_resid_MIN2mm_sm6.nii.gz'))[:bold_num]
         elif pipeline == 'app':
             vol_bold_files = sorted(subj_path.glob('*/Preprocess/vol/*_resid_FS1mm_MNI1mm_MNI2mm_sm6_*.nii.gz'))
             bld_ids = list()
@@ -91,12 +91,12 @@ def batch_vol_fc(data_path: Path, pipeline):
                 file_name = vol_bold_file.name
                 bld_idx = vol_bold_file.name.find('bld')
                 bld_ids.append(file_name[bld_idx + 3:bld_idx + 6])
-            bld_selected = sorted(list(set(bld_ids)))[0:2]
+            bld_selected = sorted(list(set(bld_ids)))[0:bold_num]
             vol_bold_files = [vol_bold_file for vol_bold_file, bld_id in zip(vol_bold_files, bld_ids) if
                               bld_id in bld_selected]
         elif pipeline == 'fmriprep':
             vol_bold_files = sorted(subj_path.glob(
-                'ses-func*/func/*task-rest_space-MNI152NLin6Asym_res-02_desc-preproc_bold.nii.gz'))[:2]
+                'ses-*/func/*task-rest_space-MNI152NLin6Asym_res-02_desc-preproc_bold.nii.gz'))[:bold_num]
         else:
             raise Exception()
         vol_bold = load_vol_bolds(vol_bold_files)
@@ -155,18 +155,18 @@ def batch_surf_fc(data_path: Path, pipeline):
         subj_save_path.mkdir(exist_ok=True)
         if pipeline == 'deepprep':
             lh_surf_bold_files = sorted(
-                subj_path.glob('*/surf/lh.*_task-rest*_resid_fsaverage6_sm6_fsaverage4.nii.gz'))[:2]
+                subj_path.glob('*/surf/lh.*_task-rest*_resid_fsaverage6_sm6_fsaverage4.nii.gz'))[:bold_num]
             rh_surf_bold_files = sorted(
-                subj_path.glob('*/surf/rh.*_task-rest*_resid_fsaverage6_sm6_fsaverage4.nii.gz'))[:2]
+                subj_path.glob('*/surf/rh.*_task-rest*_resid_fsaverage6_sm6_fsaverage4.nii.gz'))[:bold_num]
         elif pipeline == 'app':
             lh_surf_bold_files = sorted(
-                subj_path.glob('*/Preprocess/surf/lh.*_resid_fsaverage6_sm6_fsaverage4.nii.gz'))[:2]
+                subj_path.glob('*/Preprocess/surf/lh.*_resid_fsaverage6_sm6_fsaverage4.nii.gz'))[:bold_num]
             rh_surf_bold_files = sorted(
-                subj_path.glob('*/Preprocess/surf/rh.*_resid_fsaverage6_sm6_fsaverage4.nii.gz'))[:2]
+                subj_path.glob('*/Preprocess/surf/rh.*_resid_fsaverage6_sm6_fsaverage4.nii.gz'))[:bold_num]
         elif pipeline == 'fmriprep':
             workdir.mkdir(exist_ok=True)
             vol_bold_files = sorted(subj_path.glob(
-                'ses-func*/func/*task-rest_space-MNI152NLin6Asym_res-02_desc-preproc_bold.nii.gz'))[:2]
+                'ses-*/func/*task-rest_space-MNI152NLin6Asym_res-02_desc-preproc_bold.nii.gz'))[:bold_num]
             for vol_bold_file in vol_bold_files:
                 lh_surf_fc_file = workdir / f'lh_{vol_bold_file.name}'
                 sh.mri_vol2surf('--mov', vol_bold_file, '--mni152reg', '--trgsubject', 'fsaverage4', '--hemi', 'lh',
@@ -174,8 +174,8 @@ def batch_surf_fc(data_path: Path, pipeline):
                 rh_surf_fc_file = workdir / f'rh_{vol_bold_file.name}'
                 sh.mri_vol2surf('--mov', vol_bold_file, '--mni152reg', '--trgsubject', 'fsaverage4', '--hemi', 'rh',
                                 '--o', rh_surf_fc_file)
-            lh_surf_bold_files = sorted(workdir.glob('lh_*.nii.gz'))[:2]
-            rh_surf_bold_files = sorted(workdir.glob('rh_*.nii.gz'))[:2]
+            lh_surf_bold_files = sorted(workdir.glob('lh_*.nii.gz'))[:bold_num]
+            rh_surf_bold_files = sorted(workdir.glob('rh_*.nii.gz'))[:bold_num]
         else:
             raise Exception()
         lh_surf_bold = load_surf_bolds(lh_surf_bold_files)
@@ -217,7 +217,8 @@ def batch_surf_fc(data_path: Path, pipeline):
 
 if __name__ == '__main__':
     # data_path = Path('/mnt/ngshare/DeepPrep/MSC')
-    data_path = Path('/home/weiwei/workdata/DeepPrep/workdir/ds000224')
-    pipeline = 'app'
-    batch_vol_fc(data_path, pipeline)
+    data_path = Path('/mnt/ngshare/DeepPrep/HNU_1')
+    pipeline = 'deepprep'
+    bold_num = 1
+    batch_vol_fc(data_path, pipeline, bold_num)
     # batch_surf_fc(data_path, pipeline)
