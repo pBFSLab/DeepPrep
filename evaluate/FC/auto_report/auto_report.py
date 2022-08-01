@@ -53,16 +53,17 @@ def add_surf_fc_report(prs, data_path, pipeline1, pipeline2, subj, fc_file_name)
 
 
 if __name__ == '__main__':
-    data_path = Path('/home/weiwei/workdata/DeepPrep/workdir/ds000224/derivatives/analysis')
-    subjs = os.listdir(data_path / 'deepprep')
+    pipeline = 'deepprep'
+    data_path = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/analysis')
+    subjs = os.listdir(data_path / pipeline)
     prs = pptx.Presentation('report_template.pptx')
     for idx, subj in enumerate(subjs):
-        print(f'{idx}/{len(subjs)}: {subj}')
-        vol_fc_files = sorted((data_path / 'app' / subj).glob('*.png'))
+        print(f'{idx + 1}/{len(subjs)}: {subj}')
+        vol_fc_files = sorted((data_path / pipeline / subj).glob('*.png'))
         for vol_fc_file in vol_fc_files:
-            add_vol_fc_report(prs, data_path, 'app', 'deepprep', subj, vol_fc_file.name)
+            add_vol_fc_report(prs, data_path, 'app', pipeline, subj, vol_fc_file.name)
 
-        surf_fc_files = sorted((data_path / 'app' / subj).glob('*.tiff'))
+        surf_fc_files = sorted((data_path / pipeline / subj).glob('*.tiff'))
         for surf_fc_file in surf_fc_files:
-            add_surf_fc_report(prs, data_path, 'app', 'deepprep', subj, surf_fc_file.name)
+            add_surf_fc_report(prs, data_path, 'app', pipeline, subj, surf_fc_file.name)
     prs.save(f'auto_report.pptx')
