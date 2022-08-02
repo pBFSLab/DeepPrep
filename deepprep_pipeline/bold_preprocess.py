@@ -21,6 +21,10 @@ from app.filters.filters import gauss_nifti, bandpass_nifti
 from app.regressors.regressors import compile_regressors, regression
 
 
+# from memory_profiler import profile
+# import gc
+
+
 def set_envrion():
     # FreeSurfer recon-all env
     os.environ['FREESURFER_HOME'] = '/usr/local/freesurfer'
@@ -155,6 +159,7 @@ def register_dat_to_trf(mov_file, ref_file, reg_file, workdir, trf_file):
     ants.write_transform(trf, trf_file)
 
 
+# @profile
 def native_bold_to_T1_2mm_ants(residual_file, subj, subj_t1_file, reg_file, save_file, workdir, verbose=False):
     subj_t1_2mm_file = os.path.join(os.path.split(save_file)[0], 'norm_2mm.nii.gz')
     sh.mri_convert('-ds', 2, 2, 2,
@@ -179,7 +184,7 @@ def bold_smooth_6(t12mm_file, t12mm_sm6_file):
                 '--o', t12mm_sm6_file)
 
 
-@timing_func
+# @profile
 def bold_smooth_6_ants(t12mm, t12mm_sm6_file, verbose=False):
     # mask file
     MNI152_T1_2mm_brain_mask = '/usr/local/fsl/data/standard/MNI152_T1_2mm_brain_mask.nii.gz'
@@ -190,26 +195,32 @@ def bold_smooth_6_ants(t12mm, t12mm_sm6_file, verbose=False):
     else:
         bold_img = t12mm
 
+    bold_origin = bold_img.origin
+    bold_spacing = bold_img.spacing
+    bold_direction = bold_img.direction.copy()
+
     # smooth
-    smoothed_img = ants.from_numpy(bold_img.numpy(), bold_img.origin[:3], bold_img.spacing[:3],
-                                   bold_img.direction[:3, :3].copy(), has_components=True)
-    smoothed_img = ants.smooth_image(smoothed_img, sigma=6, FWHM=True)
+    smoothed_img = ants.from_numpy(bold_img.numpy(), bold_origin[:3], bold_spacing[:3],
+                                   bold_direction[:3, :3].copy(), has_components=True)
+    # smoothed_img = ants.smooth_image(smoothed_img, sigma=6, FWHM=True)
 
     # mask
-    smoothed_np = smoothed_img.numpy()
+    smoothed_np = ants.smooth_image(smoothed_img, sigma=6, FWHM=True).numpy()
+    del smoothed_img
     mask_np = brain_mask.numpy()
-    masked_np = np.zeros(smoothed_np.shape)
+    masked_np = np.zeros(smoothed_np.shape, dtype=np.float32)
     idx = mask_np == 1
     masked_np[idx, :] = smoothed_np[idx, :]
-    masked_img = ants.from_numpy(masked_np, bold_img.origin, bold_img.spacing, bold_img.direction)
-
+    del smoothed_np
+    masked_img = ants.from_numpy(masked_np, bold_origin, bold_spacing, bold_direction)
+    del masked_np
     if verbose:
         # save
         ants.image_write(masked_img, str(t12mm_sm6_file))
     return masked_img
 
 
-@timing_func
+# @profile
 def vxm_warp_bold_2mm(resid_t1, affine_file, warp_file, warped_file, verbose=False):
     atlas_file = Path(__file__).parent / 'model' / 'voxelmorph' / 'MNI152_T1_2mm' / 'MNI152_T1_2mm_brain_vxm.nii.gz'
     MNI152_2mm_file = Path(__file__).parent / 'model' / 'voxelmorph' / 'MNI152_T1_2mm' / 'MNI152_T1_2mm_brain.nii.gz'
@@ -220,6 +231,9 @@ def vxm_warp_bold_2mm(resid_t1, affine_file, warp_file, warped_file, verbose=Fal
     else:
         bold_img = resid_t1
     n_frame = bold_img.shape[3]
+    bold_origin = bold_img.origin
+    bold_spacing = bold_img.spacing
+    bold_direction = bold_img.direction.copy()
 
     # tensorflow device handling
     gpuid = '0'
@@ -232,17 +246,18 @@ def vxm_warp_bold_2mm(resid_t1, affine_file, warp_file, warped_file, verbose=Fal
 
     # affine to MNI152 croped
     tic = time.time()
-    affined_img = ants.apply_transforms(atlas, bold_img, fwdtrf_MNI152_2mm, imagetype=3)
-    affined_np = affined_img.numpy()
+    # affined_img = ants.apply_transforms(atlas, bold_img, fwdtrf_MNI152_2mm, imagetype=3)
+    affined_np = ants.apply_transforms(atlas, bold_img, fwdtrf_MNI152_2mm, imagetype=3).numpy()
+    # print(sys.getrefcount(affined_img))
+    # del affined_img
     toc = time.time()
     print(toc - tic)
-
+    # gc.collect()
     # voxelmorph warp
     tic = time.time()
-    warped_np = np.zeros(shape=(*atlas.shape, n_frame))
+    warped_np = np.zeros(shape=(*atlas.shape, n_frame), dtype=np.float32)
     with tf.device(device):
-        transform = vxm.networks.Transform(atlas.shape, interp_method='linear',
-                                           nb_feats=1)
+        transform = vxm.networks.Transform(atlas.shape, interp_method='linear', nb_feats=1)
         # for idx in range(affined_np.shape[3]):
         #     frame_np = affined_np[:, :, :, idx]
         #     frame_np = frame_np[..., np.newaxis]
@@ -251,6 +266,7 @@ def vxm_warp_bold_2mm(resid_t1, affine_file, warp_file, warped_file, verbose=Fal
         #     moved = transform.predict([frame_np, deform])
         #     warped_np[:, :, :, idx] = moved.squeeze()
         tf_dataset = tf.data.Dataset.from_tensor_slices(np.transpose(affined_np, (3, 0, 1, 2)))
+        del affined_np
         batch_size = 16
         deform = tf.convert_to_tensor(deform)
         deform = tf.keras.backend.tile(deform, [batch_size, 1, 1, 1, 1])
@@ -261,34 +277,41 @@ def vxm_warp_bold_2mm(resid_t1, affine_file, warp_file, warped_file, verbose=Fal
             moved_data = np.transpose(moved, (1, 2, 3, 0))
             warped_np[:, :, :, idx * batch_size:(idx + 1) * batch_size] = moved_data
             print(f'batch: {idx}')
+        del transform
+        del tf_dataset
+        del moved
+        del moved_data
     toc = time.time()
     print(toc - tic)
 
     # affine to MNI152
     tic = time.time()
-    origin = (*atlas.origin, bold_img.origin[3])
-    spacing = (*atlas.spacing, bold_img.spacing[3])
-    direction = bold_img.direction.copy()
+    origin = (*atlas.origin, bold_origin[3])
+    spacing = (*atlas.spacing, bold_spacing[3])
+    direction = bold_direction.copy()
     direction[:3, :3] = atlas.direction
 
     warped_img = ants.from_numpy(warped_np, origin=origin, spacing=spacing, direction=direction)
+    del warped_np
     moved_img = ants.apply_transforms(MNI152_2mm, warped_img, fwdtrf_atlas2MNI152_2mm, imagetype=3)
+    del warped_img
     moved_np = moved_img.numpy()
+    del moved_img
     toc = time.time()
     print(toc - tic)
 
     # save
-    origin = (*MNI152_2mm.origin, bold_img.origin[3])
-    spacing = (*MNI152_2mm.spacing, bold_img.spacing[3])
-    direction = bold_img.direction.copy()
+    origin = (*MNI152_2mm.origin, bold_origin[3])
+    spacing = (*MNI152_2mm.spacing, bold_spacing[3])
+    direction = bold_direction.copy()
     direction[:3, :3] = MNI152_2mm.direction
     warped_bold_img = ants.from_numpy(moved_np, origin=origin, spacing=spacing, direction=direction)
+    del moved_np
     if verbose:
         ants.image_write(warped_bold_img, warped_file)
     return warped_bold_img
 
 
-@timing_func
 def warp_bold_2mm(subj_func_path, subj, workdir, norm_file, resid_file, reg_file, save_file, verbose=False):
     resid_t1_file = subj_func_path / f'{subj}_native_t1_2mm.nii.gz'
     # native_bold_to_T1_2mm(residual_file, subj, subj_t1_file, reg_file, resid_t1_file)
@@ -297,9 +320,13 @@ def warp_bold_2mm(subj_func_path, subj, workdir, norm_file, resid_file, reg_file
     warp_file = subj_func_path / f'sub-{subj}_warp.nii.gz'
     affine_file = subj_func_path / f'sub-{subj}_affine.mat'
     warped_file = subj_func_path / f'sub-{subj}_MNI2mm.nii.gz'
+
     warped_img = vxm_warp_bold_2mm(resid_t1, affine_file, warp_file, warped_file, verbose=verbose)
+
     # bold_smooth_6(warped_file, smoothed_file)
     bold_smooth_6_ants(warped_img, save_file, verbose=True)
+    # exit()
+    # gc.collect()
 
 
 def dimstr2dimno(dimstr):
