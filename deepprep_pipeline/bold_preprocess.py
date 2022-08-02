@@ -659,37 +659,37 @@ if __name__ == '__main__':
         trf_file = workdir / f'sub-{subj}_affine.mat'
         warp_file = workdir / f'sub-{subj}_warp.nii.gz'
         warped_file = workdir / f'sub-{subj}_warped.nii.gz'
-        # vxm_registraion(atlas_type, model_file, workdir, norm_file, trf_file, warp_file, warped_file)
-        #
-        # sess = layout.get_session(subject=subj)
-        # if len(sess) == 0:
-        #     subj_func_path = deepprep_subj_path / 'func'
-        #     subj_func_path.mkdir(exist_ok=True)
-        #     shutil.copy(trf_file, subj_func_path / f'sub-{subj}_affine.mat')
-        #     shutil.copy(warp_file, subj_func_path / f'sub-{subj}_warp.nii.gz')
-        #     shutil.copy(warped_file, subj_func_path / f'sub-{subj}_warped.nii.gz')
-        # else:
-        #     for ses in sess:
-        #         if args.task is None:
-        #             bids_bolds = layout.get(subject=subj, session=ses, suffix='bold', extension='.nii.gz')
-        #         else:
-        #             bids_bolds = layout.get(subject=subj, session=ses, task=args.task, suffix='bold',
-        #                                     extension='.nii.gz')
-        #         if len(bids_bolds) == 0:
-        #             continue
-        #         subj_func_path = deepprep_subj_path / f'ses-{ses}' / 'func'
-        #         subj_func_path.mkdir(parents=True, exist_ok=True)
-        #         shutil.copy(trf_file, subj_func_path / f'sub-{subj}_affine.mat')
-        #         shutil.copy(warp_file, subj_func_path / f'sub-{subj}_warp.nii.gz')
-        #         shutil.copy(warped_file, subj_func_path / f'sub-{subj}_warped.nii.gz')
+        vxm_registraion(atlas_type, model_file, workdir, norm_file, trf_file, warp_file, warped_file)
+
+        sess = layout.get_session(subject=subj)
+        if len(sess) == 0:
+            subj_func_path = deepprep_subj_path / 'func'
+            subj_func_path.mkdir(exist_ok=True)
+            shutil.copy(trf_file, subj_func_path / f'sub-{subj}_affine.mat')
+            shutil.copy(warp_file, subj_func_path / f'sub-{subj}_warp.nii.gz')
+            shutil.copy(warped_file, subj_func_path / f'sub-{subj}_warped.nii.gz')
+        else:
+            for ses in sess:
+                if args.task is None:
+                    bids_bolds = layout.get(subject=subj, session=ses, suffix='bold', extension='.nii.gz')
+                else:
+                    bids_bolds = layout.get(subject=subj, session=ses, task=args.task, suffix='bold',
+                                            extension='.nii.gz')
+                if len(bids_bolds) == 0:
+                    continue
+                subj_func_path = deepprep_subj_path / f'ses-{ses}' / 'func'
+                subj_func_path.mkdir(parents=True, exist_ok=True)
+                shutil.copy(trf_file, subj_func_path / f'sub-{subj}_affine.mat')
+                shutil.copy(warp_file, subj_func_path / f'sub-{subj}_warp.nii.gz')
+                shutil.copy(warped_file, subj_func_path / f'sub-{subj}_warped.nii.gz')
         if args.task is None:
             bids_bolds = layout.get(subject=subj, suffix='bold', extension='.nii.gz')
         else:
             bids_bolds = layout.get(subject=subj, task=args.task, suffix='bold', extension='.nii.gz')
         # native bold preprocess
-        # preprocess(layout, bids_bolds, subj, deepprep_subj_path, workdir)
+        preprocess(layout, bids_bolds, subj, deepprep_subj_path, workdir)
 
-        for bids_bold in bids_bolds[7:]:
+        for bids_bold in bids_bolds:
             entities = dict(bids_bold.entities)
             subj = entities['subject']
             file_prefix = Path(bids_bold.path).name.replace('.nii.gz', '')
