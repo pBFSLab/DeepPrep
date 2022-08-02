@@ -27,8 +27,7 @@ def set_environ():
     os.environ['PATH'] = '/usr/local/workbench/bin_linux64:' + os.environ['PATH']
 
 
-def screenshot_vol_fc(pipeline):
-    data_path = Path('/mnt/ngshare/DeepPrep/MSC')
+def screenshot_vol_fc(data_path, pipeline):
     save_path = data_path / 'derivatives' / 'analysis' / pipeline
     save_path.mkdir(parents=True, exist_ok=True)
     layout = bids.BIDSLayout(str(data_path))
@@ -78,8 +77,7 @@ def montage_fsaverage_file(lh_lateral, rh_lateral, lh_medial, rh_medial, montage
     cv2.imwrite(str(montage_file), img_montage)
 
 
-def screenshot_surf_fc(pipeline):
-    data_path = Path('/mnt/ngshare/DeepPrep/MSC')
+def screenshot_surf_fc(data_path, pipeline):
     save_path = data_path / 'derivatives' / 'analysis' / pipeline
     save_path.mkdir(parents=True, exist_ok=True)
     layout = bids.BIDSLayout(str(data_path))
@@ -138,7 +136,8 @@ def screenshot_surf_fc(pipeline):
 
 # /usr/local/fsl/data/standard/MNI152_T1_2mm.nii.gz
 if __name__ == '__main__':
-    pipeline = 'app'
-
-    screenshot_vol_fc(pipeline)
-    screenshot_surf_fc(pipeline)
+    # data_path = Path('/mnt/ngshare/DeepPrep/MSC')
+    data_path = Path('/mnt/ngshare/DeepPrep/HNU_1')
+    pipeline = 'deepprep'
+    screenshot_vol_fc(data_path, pipeline)
+    screenshot_surf_fc(data_path, pipeline)
