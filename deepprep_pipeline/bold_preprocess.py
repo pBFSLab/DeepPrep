@@ -274,7 +274,10 @@ def vxm_warp_bold_2mm(resid_t1, affine_file, warp_file, warped_file, verbose=Fal
             if batch_data.shape[0] != deform.shape[0]:
                 deform = deform[:batch_data.shape[0], :, :, :, :]
             moved = transform.predict([batch_data, deform]).squeeze()
-            moved_data = np.transpose(moved, (1, 2, 3, 0))
+            if len(moved.shape) == 4:
+                moved_data = np.transpose(moved, (1, 2, 3, 0))
+            else:
+                moved_data = moved[:, :, :, np.newaxis]
             warped_np[:, :, :, idx * batch_size:(idx + 1) * batch_size] = moved_data
             print(f'batch: {idx}')
         del transform
@@ -686,7 +689,7 @@ if __name__ == '__main__':
         # native bold preprocess
         # preprocess(layout, bids_bolds, subj, deepprep_subj_path, workdir)
 
-        for bids_bold in bids_bolds:
+        for bids_bold in bids_bolds[7:]:
             entities = dict(bids_bold.entities)
             subj = entities['subject']
             file_prefix = Path(bids_bold.path).name.replace('.nii.gz', '')
