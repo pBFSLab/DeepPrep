@@ -55,6 +55,7 @@ def add_surf_fc_report(prs, data_path, pipeline1, pipeline2, subj, fc_file_name)
 def main(pipeline1, pipeline2, dataset, ppt_outpath):
     data_path = Path(f'/mnt/ngshare/DeepPrep/{dataset}/derivatives/analysis')
     subjs = os.listdir(data_path / pipeline1)
+    subjs = sorted(subjs)
     prs = pptx.Presentation('report_template.pptx')
     for idx, subj in enumerate(subjs):
         print(f'{idx + 1}/{len(subjs)}: {subj}')
