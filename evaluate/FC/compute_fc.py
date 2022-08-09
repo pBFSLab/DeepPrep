@@ -123,7 +123,7 @@ def batch_vol_fc(data_path: Path, pipeline, bold_num):
         subj_save_path = save_path / f'sub-{subj}'
         subj_save_path.mkdir(exist_ok=True)
         if pipeline == 'deepprep':
-            vol_bold_files = sorted(subj_path.glob('ses-*/func/*task-rest_*_bold_resid_MIN2mm_sm6.nii.gz'))[:bold_num]
+            vol_bold_files = sorted(subj_path.glob('ses-*/func/*task-rest_*bold_resid_MIN2mm_sm6.nii.gz'))[:bold_num]
         elif pipeline == 'app':
             vol_bold_files = sorted(subj_path.glob('*/Preprocess/vol/*_resid_FS1mm_MNI1mm_MNI2mm_sm6_*.nii.gz'))
             bld_ids = list()
@@ -261,4 +261,4 @@ if __name__ == '__main__':
     pipeline = 'deepprep'
     bold_num = 1
     batch_vol_fc(data_path, pipeline, bold_num)
-    # batch_surf_fc(data_path, pipeline)
+    batch_surf_fc(data_path, pipeline)
