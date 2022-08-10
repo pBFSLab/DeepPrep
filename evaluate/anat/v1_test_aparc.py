@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import nibabel as nib
 from pathlib import Path
+from multiprocessing import Pool
 
 
 def set_environ():
@@ -34,10 +35,10 @@ def aparc_screenshot(recon_dir, out_dir):
     """
 
     subject_list = os.listdir(recon_dir)
+    args_list1 = []
+    args_list2 = []
     for subject in subject_list:
         if not 'sub' in subject:
-            continue
-        if 'sub-MSC05_ses-struct02_run-01' not in subject:
             continue
         # if 'ses' in subject:
         #     continue
@@ -50,9 +51,18 @@ def aparc_screenshot(recon_dir, out_dir):
 
             overlay_file = os.path.join(recon_dir, subject, 'label', f'{hemi}.aparc.annot')
             save_file = os.path.join(out_dir, f'{subject}_{hemi}_lateral.png')
-            image_screenshot(surf_file, overlay_file, save_file, min='', max='')
+            # image_screenshot(surf_file, overlay_file, save_file, min='', max='')
+            if not os.path.exists(save_file):
+                args_list1.append([surf_file, overlay_file, save_file, '', ''])
             save_file = os.path.join(out_dir, f'{subject}_{hemi}_medial.png')
-            image_screenshot_azimuth_180(surf_file, overlay_file, save_file, min='', max='')
+            # image_screenshot_azimuth_180(surf_file, overlay_file, save_file, min='', max='')
+            if not os.path.exists(save_file):
+                args_list2.append([surf_file, overlay_file, save_file, '', ''])
+    pool = Pool(10)
+    pool.starmap(image_screenshot, args_list1)
+    pool.starmap(image_screenshot_azimuth_180, args_list2)
+    pool.close()
+    pool.join()
 
 
 def concat_screenshot(screenshot_dir: str):
@@ -60,7 +70,7 @@ def concat_screenshot(screenshot_dir: str):
     拼接DeepPrep和FreeSurfer的分区结果图像
     """
 
-    filenames = os.listdir(os.path.join(screenshot_dir, 'aparc_map_image_FreeSurfer'))
+    filenames = os.listdir(os.path.join(screenshot_dir, 'aparc_map_image_DeepPrep'))
     subjects = set(['_'.join(i.split('_')[0:-2]) for i in filenames])
 
     for subject in subjects:
@@ -194,27 +204,29 @@ if __name__ == '__main__':
 
     # DeepPrep和FreeSurfer的结果计算DICE
 
-    # # 分区截图
-    # method = 'DeepPrep'
-    # src_dir = f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon'
-    # screenshot_result_dir = f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/aparc_map_image_{method}'
-    # aparc_screenshot(src_dir, screenshot_result_dir)
-    #
-    # method = 'FreeSurfer'
-    # src_dir = f'/mnt/ngshare/DeepPrep/MSC/derivatives/FreeSurfer'
-    # screenshot_result_dir = f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/aparc_map_image_{method}'
-    # aparc_screenshot(src_dir, screenshot_result_dir)
+    # 分区截图
+    method = 'DeepPrep'
+    src_dir = f'/mnt/ngshare/Data_Mirror/FreeSurferFastSurfer/MSC/derivatives/deepprep/Recon'
+    screenshot_result_dir = f'/mnt/ngshare/Data_Mirror/FreeSurferFastSurfer/Validation/MSC/v1_aparc/aparc_map_image_{method}'
+    aparc_screenshot(src_dir, screenshot_result_dir)
+
+    method = 'FreeSurfer'
+    src_dir = f'/mnt/ngshare/Data_Mirror/FreeSurferFastSurfer/MSC/derivatives/FreeSurfer'
+    screenshot_result_dir = f'/mnt/ngshare/Data_Mirror/FreeSurferFastSurfer/Validation/MSC/v1_aparc/aparc_map_image_{method}'
+    aparc_screenshot(src_dir, screenshot_result_dir)
 
     # cat screenshot
-    concat_screenshot(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc')
+    concat_screenshot(f'/mnt/ngshare/Data_Mirror/FreeSurferFastSurfer/Validation/MSC/v1_aparc')
 
     # # cal DICE
-    # deepprep_recon_dir = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon')
-    # freesurfer_recon_dir = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/FreeSurfer')
-    # deepprep_interp_freesurfer = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/recon_aparc_DeepPrep_interp_FreeSufer')
-    # concat_dp_and_fs_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/recon_dir_concat_DeepPrep_and_FreeSurfer')
-    # ln_subject(deepprep_recon_dir, freesurfer_recon_dir, concat_dp_and_fs_dir)
-    # dice_csv = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/DICE_DeepPrep_FreeSurfer/dice_lh.csv')
-    # dice(concat_dp_and_fs_dir, deepprep_interp_freesurfer, dice_csv, 'lh')
-    # dice_csv = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/DICE_DeepPrep_FreeSurfer/dice_rh.csv')
-    # dice(concat_dp_and_fs_dir, deepprep_interp_freesurfer, dice_csv, 'rh')
+    deepprep_recon_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFastSurfer/MSC/derivatives/deepprep/Recon')
+    freesurfer_recon_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFastSurfer/MSC/derivatives/FreeSurfer')
+    deepprep_interp_freesurfer = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFastSurfer/Validation/MSC/v1_aparc/recon_aparc_DeepPrep_interp_FreeSufer')
+    concat_dp_and_fs_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFastSurfer/Validation/MSC/v1_aparc/recon_dir_concat_DeepPrep_and_FreeSurfer')
+    ln_subject(deepprep_recon_dir, freesurfer_recon_dir, concat_dp_and_fs_dir)
+    dice_csv = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFastSurfer/Validation/MSC/v1_aparc/DICE_DeepPrep_FreeSurfer/dice_lh.csv')
+    if not dice_csv.parent.exists():
+        dice_csv.parent.mkdir(parents=True, exist_ok=True)
+    dice(concat_dp_and_fs_dir, deepprep_interp_freesurfer, dice_csv, 'lh')
+    dice_csv = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFastSurfer/Validation/MSC/v1_aparc/DICE_DeepPrep_FreeSurfer/dice_rh.csv')
+    dice(concat_dp_and_fs_dir, deepprep_interp_freesurfer, dice_csv, 'rh')
