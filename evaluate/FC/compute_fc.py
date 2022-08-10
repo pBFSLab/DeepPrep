@@ -5,6 +5,8 @@ import glob
 import ants
 import numpy as np
 from scipy import stats
+from scipy.stats import PearsonRConstantInputWarning, PearsonRNearConstantInputWarning
+import warnings
 import bids
 import sh
 
@@ -47,23 +49,61 @@ def load_surf_bolds(surf_bold_files):
     return surf_bold
 
 
-def compute_vol_fc(seed, vol_bold):
-    n_i, n_j, n_k = vol_bold.shape[:3]
-    vol_fc = np.zeros(shape=(n_i, n_j, n_k), dtype=np.float32)
-    for i in range(n_i):
-        for j in range(n_j):
-            for k in range(n_k):
-                r, _ = stats.pearsonr(vol_bold[i, j, k, :], seed)
-                vol_fc[i, j, k] = r
+def compute_vol_fc(seed: np.ndarray, vol_bold: np.ndarray):
+    n_frame = vol_bold.shape[3]
+    n = len(seed)
+    if n != n_frame:
+        raise ValueError('seed and surf_bold must have the same number of frames.')
+
+    if n <= 2:
+        raise ValueError('n_frame must be greater than 2.')
+    if len(vol_bold.shape) != 4:
+        raise ValueError('vol_bold must be a 4-dimensional ndarray')
+    dtype = np.float32
+    seed_mean = seed.mean(dtype=dtype)
+    vol_bold_mean = vol_bold.mean(dtype=dtype, axis=3)
+
+    seed_m = (seed.astype(dtype) - seed_mean)[np.newaxis, np.newaxis, np.newaxis, :]
+    vol_bold_m = vol_bold.astype(dtype) - vol_bold_mean[:, :, :, np.newaxis]
+
+    norm_seed_m = np.linalg.norm(seed_m)
+    norm_vol_bold_m = np.linalg.norm(vol_bold_m, axis=3)[:, :, :, np.newaxis]
+
+    vol_fc = ((vol_bold_m / norm_vol_bold_m) * (seed_m / norm_seed_m)).sum(axis=3).clip(-1, 1)
+
     return vol_fc
 
 
-def compute_surf_fc(seed, surf_bold):
-    n_vertex = surf_bold.shape[0]
-    surf_fc = np.zeros((n_vertex))
-    for i in range(n_vertex):
-        r, _ = stats.pearsonr(surf_bold[i, :], seed)
-        surf_fc[i] = r
+
+def compute_surf_fc(seed: np.ndarray, surf_bold: np.ndarray):
+    n_frame = surf_bold.shape[1]
+    n = len(seed)
+    if n != n_frame:
+        raise ValueError('seed and surf_bold must have the same number of frames.')
+
+    # If an input is constant, the correlation coefficient is not defined.
+    if (seed == seed[0]).all() or (surf_bold == surf_bold[0][0]).all():
+        warnings.warn(PearsonRConstantInputWarning())
+        return None
+
+    if n <= 2:
+        raise ValueError('n_frame must be greater than 2.')
+    dtype = np.float32
+    seed_mean = seed.mean(dtype=dtype)
+    surf_bold_mean = surf_bold.mean(dtype=dtype, axis=1).reshape((-1, 1))
+
+    seed_m = seed.astype(dtype).reshape((-1, 1)) - seed_mean
+    surf_bold_m = surf_bold.astype(dtype) - surf_bold_mean
+
+    norm_seed_m = np.linalg.norm(seed_m)
+    norm_surf_bold_m = np.linalg.norm(surf_bold_m, axis=1).reshape((-1, 1))
+
+    threshold = 1e-13
+    if np.any(norm_seed_m < threshold * abs(seed_m)) or np.any(norm_surf_bold_m < threshold * abs(surf_bold_m)):
+        warnings.warn(PearsonRNearConstantInputWarning())
+
+    surf_fc = np.dot(surf_bold_m / norm_surf_bold_m, seed_m / norm_seed_m).flatten().clip(-1, 1)
+
     return surf_fc
 
 
@@ -83,7 +123,7 @@ def batch_vol_fc(data_path: Path, pipeline, bold_num):
         subj_save_path = save_path / f'sub-{subj}'
         subj_save_path.mkdir(exist_ok=True)
         if pipeline == 'deepprep':
-            vol_bold_files = sorted(subj_path.glob('ses-*/func/*task-rest_*_bold_resid_MIN2mm_sm6.nii.gz'))[:bold_num]
+            vol_bold_files = sorted(subj_path.glob('ses-*/func/*task-rest_*bold_resid_MIN2mm_sm6.nii.gz'))[:bold_num]
         elif pipeline == 'app':
             vol_bold_files = sorted(subj_path.glob('*/Preprocess/vol/*_resid_FS1mm_MNI1mm_MNI2mm_sm6_*.nii.gz'))
             bld_ids = list()
@@ -221,4 +261,4 @@ if __name__ == '__main__':
     pipeline = 'deepprep'
     bold_num = 1
     batch_vol_fc(data_path, pipeline, bold_num)
-    # batch_surf_fc(data_path, pipeline)
+    batch_surf_fc(data_path, pipeline)

@@ -37,6 +37,7 @@ def set_envrion():
 def recon_step():
     pass
 
+
 @timing_func
 def discover_upload_step(data_path, subj):
     # decompression
@@ -104,6 +105,7 @@ def swapdim(infile, a, b, c, outfile):
     newimg = img.as_reoriented(ornt)
     nib.save(newimg, outfile)
 
+
 @timing_func
 def bold_skip_reorient(preprocess_dir, subj):
     runs = os.listdir(preprocess_dir / subj / 'bold')
@@ -115,6 +117,7 @@ def bold_skip_reorient(preprocess_dir, subj):
         # reorient
         reorient_bold_file = preprocess_dir / subj / 'bold' / run / f'{subj}_bld{run}_rest_reorient_skip.nii.gz'
         swapdim(str(skip_bold_file), 'x', '-y', 'z', str(reorient_bold_file))
+
 
 @timing_func
 def preprocess_common(data_path, subj):
@@ -263,6 +266,7 @@ def smooth_downsampling(preprocess_dir, bold_path, bldrun, subject):
         sm6_path = sp.smooth_fs6(fs6_path, hemi)
         sp.downsample_fs6_to_fs4(sm6_path, hemi)
 
+
 @timing_func
 def preprocess_rest(data_path, subj):
     preprocess_dir = (data_path / subj / 'preprocess')
@@ -295,6 +299,7 @@ def preprocess_rest(data_path, subj):
 def preprocess(data_path, subj):
     preprocess_common(data_path, subj)
     preprocess_rest(data_path, subj)
+
 
 @timing_func
 def res_proj(data_path, subj):
@@ -342,6 +347,10 @@ def res_proj(data_path, subj):
         vp.group_nii(FS2mm_dirpath, smooth_path, part_num, brain_mask_fs2mm_binary)
 
 
+def snm_task(data_path, subj):
+    # snm_task_step
+    pass
+
 if __name__ == '__main__':
     data_path = Path('data').absolute()
     subj = 'NC_15'
@@ -351,3 +360,4 @@ if __name__ == '__main__':
     # recon_step()
     preprocess(data_path, subj)
     res_proj(data_path, subj)
+    snm_task(data_path, subj)

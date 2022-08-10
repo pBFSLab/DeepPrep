@@ -52,24 +52,26 @@ def add_surf_fc_report(prs, data_path, pipeline1, pipeline2, subj, fc_file_name)
     slide = add_picture(slide, str(pipeline2_fc_file), 101.26, 95.5, 136.15, 95)
 
 
-def main(pipeline, dataset, ppt_outpath):
+def main(pipeline1, pipeline2, dataset, ppt_outpath):
     data_path = Path(f'/mnt/ngshare/DeepPrep/{dataset}/derivatives/analysis')
-    subjs = os.listdir(data_path / pipeline)
+    subjs = os.listdir(data_path / pipeline1)
+    subjs = sorted(subjs)
     prs = pptx.Presentation('report_template.pptx')
     for idx, subj in enumerate(subjs):
         print(f'{idx + 1}/{len(subjs)}: {subj}')
-        vol_fc_files = sorted((data_path / pipeline / subj).glob('*.png'))
+        vol_fc_files = sorted((data_path / pipeline2 / subj).glob('*.png'))
         for vol_fc_file in vol_fc_files:
-            add_vol_fc_report(prs, data_path, pipeline, pipeline, subj, vol_fc_file.name)
+            add_vol_fc_report(prs, data_path, pipeline1, pipeline2, subj, vol_fc_file.name)
 
-        surf_fc_files = sorted((data_path / pipeline / subj).glob('*.tiff'))
+        surf_fc_files = sorted((data_path / pipeline2 / subj).glob('*.tiff'))
         for surf_fc_file in surf_fc_files:
-            add_surf_fc_report(prs, data_path, pipeline, pipeline, subj, surf_fc_file.name)
+            add_surf_fc_report(prs, data_path, pipeline1, pipeline2, subj, surf_fc_file.name)
     prs.save(ppt_outpath)
 
 
 if __name__ == '__main__':
-    pipeline = 'app'
-    dataset = 'MSC'
-    ppt_outpath = f'/home/zhenyu/Nutstore Files/ODOT/zhenyu/DeepPrep/ppt/{dataset}_{pipeline}.pptx'
-    main(pipeline, dataset, ppt_outpath)
+    pipeline1 = 'deepprep'
+    pipeline2 = 'app'
+    dataset = 'HNU_1'
+    ppt_outpath = f'/home/zhenyu/Nutstore Files/ODOT/zhenyu/DeepPrep/ppt/{dataset}.pptx'
+    main(pipeline1, pipeline2, dataset, ppt_outpath)
