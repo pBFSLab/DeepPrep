@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import nibabel as nib
 from pathlib import Path
+from multiprocessing import Pool
 
 
 def set_environ():
@@ -18,16 +19,16 @@ def set_environ():
 
 
 def image_screenshot(surf_file, overlay_file, save_path, min, max):
-    cmd = f'freeview --viewsize 600 600 -viewport 3D  -layout 1 -hide-3d-slices -f {surf_file}:overlay={overlay_file}:overlay_threshold={min},{max}:overlay_color=colorwheel,inverse -cam dolly 1.4 azimuth 0 -ss {save_path}'
-    # cmd = f'freeview --viewsize 600 600 -viewport 3D  -layout 1 -hide-3d-slices -f {surf_file}:overlay={overlay_file}:overlay_threshold={min},{max}:overlay_color=colorwheel,inverse -colorscale -cam dolly 1.4 azimuth 0 -ss {save_path}'
+    cmd = f'freeview --viewsize 800 600 -viewport 3D  -layout 1 -hide-3d-slices -f {surf_file}:overlay={overlay_file}:overlay_threshold={min},{max}:overlay_color=colorwheel,inverse -cam dolly 1.4 azimuth 0 -ss {save_path}'
+    # cmd = f'freeview --viewsize 800 600 -viewport 3D  -layout 1 -hide-3d-slices -f {surf_file}:overlay={overlay_file}:overlay_threshold={min},{max}:overlay_color=colorwheel,inverse -colorscale -cam dolly 1.4 azimuth 0 -ss {save_path}'
     # cmd = f'freeview --viewsize 800 600 -viewport 3D  -layout 1 -hide-3d-slices -f "{surf_file}":annotation="{overlay_file}" -cam dolly 1.4 azimuth 0 -ss {save_path}'
     print(cmd)
     os.system(cmd)
 
 
 def image_screenshot_azimuth_180(surf_file, overlay_file, save_path, min, max):
-    cmd = f'freeview --viewsize 600 600 -viewport 3D  -layout 1 -hide-3d-slices -f {surf_file}:overlay={overlay_file}:overlay_threshold={min},{max}:overlay_color=colorwheel,inverse -cam dolly 1.4 azimuth 180 -ss {save_path}'
-    # cmd = f'freeview --viewsize 600 600 -viewport 3D  -layout 1 -hide-3d-slices -f {surf_file}:overlay={overlay_file}:overlay_threshold={min},{max}:overlay_color=colorwheel,inverse -colorscale -cam dolly 1.4 azimuth 180 -ss {save_path}'
+    cmd = f'freeview --viewsize 800 600 -viewport 3D  -layout 1 -hide-3d-slices -f {surf_file}:overlay={overlay_file}:overlay_threshold={min},{max}:overlay_color=colorwheel,inverse -cam dolly 1.4 azimuth 180 -ss {save_path}'
+    # cmd = f'freeview --viewsize 800 600 -viewport 3D  -layout 1 -hide-3d-slices -f {surf_file}:overlay={overlay_file}:overlay_threshold={min},{max}:overlay_color=colorwheel,inverse -colorscale -cam dolly 1.4 azimuth 180 -ss {save_path}'
     # cmd = f'freeview --viewsize 800 600 -viewport 3D  -layout 1 -hide-3d-slices -f "{surf_file}":annotation="{overlay_file}" -cam dolly 1.4 azimuth 180 -ss {save_path}'
     print(cmd)
     os.system(cmd)
@@ -40,6 +41,8 @@ def feature_screenshot(recon_dir, out_dir, feature='thickness', vmin='', vmax=''
     """
 
     subject_list = os.listdir(recon_dir)
+    args_list1 = []
+    args_list2 = []
     for subject in subject_list:
         if not 'sub' in subject:
             continue
@@ -54,9 +57,16 @@ def feature_screenshot(recon_dir, out_dir, feature='thickness', vmin='', vmax=''
 
             overlay_file = os.path.join(recon_dir, subject, 'surf', f'{hemi}.{feature}')
             save_file = os.path.join(out_dir, f'{subject}_{hemi}_lateral.png')
-            image_screenshot(surf_file, overlay_file, save_file, min=vmin, max=vmax)
+            args_list1.append([surf_file, overlay_file, save_file, vmin, vmax])
+            # image_screenshot(surf_file, overlay_file, save_file, min=vmin, max=vmax)
             save_file = os.path.join(out_dir, f'{subject}_{hemi}_medial.png')
-            image_screenshot_azimuth_180(surf_file, overlay_file, save_file, min=vmin, max=vmax)
+            args_list2.append([surf_file, overlay_file, save_file, vmin, vmax])
+            # image_screenshot_azimuth_180(surf_file, overlay_file, save_file, min=vmin, max=vmax)
+    pool = Pool(10)
+    pool.starmap(image_screenshot, args_list1)
+    pool.starmap(image_screenshot_azimuth_180, args_list2)
+    pool.close()
+    pool.join()
 
 
 def concat_screenshot(screenshot_dir: str):
@@ -64,7 +74,7 @@ def concat_screenshot(screenshot_dir: str):
     拼接DeepPrep和FreeSurfer的分区结果图像
     """
 
-    filenames = os.listdir(os.path.join(screenshot_dir, 'feature_map_image_FreeSurfer'))
+    filenames = os.listdir(os.path.join(screenshot_dir, 'feature_map_image_DeepPrep'))
     subjects = set(['_'.join(i.split('_')[0:-2]) for i in filenames])
 
     for subject in subjects:
@@ -191,6 +201,8 @@ def individual_screenshot(recon_dir, out_dir, feature='thickness', vmin1='', vma
     """
 
     subject_list = os.listdir(recon_dir)
+    args_list1 = []
+    args_list2 = []
     for subject in subject_list:
         if not 'sub' in subject:
             continue
@@ -208,10 +220,17 @@ def individual_screenshot(recon_dir, out_dir, feature='thickness', vmin1='', vma
                 overlay_file = os.path.join(recon_dir, subject, 'surf', f'{hemi}.{stats_type}.{feature}')
                 save_file = os.path.join(out_dir, f'{subject}_{feature}_{stats_type}_{hemi}_lateral.png')
                 if not os.path.exists(save_file):
-                    image_screenshot(surf_file, overlay_file, save_file, min=vmin, max=vmax)
+                    # image_screenshot(surf_file, overlay_file, save_file, min=vmin, max=vmax)
+                    args_list1.append([surf_file, overlay_file, save_file, vmin, vmax])
                 save_file = os.path.join(out_dir, f'{subject}_{feature}_{stats_type}_{hemi}_medial.png')
                 if not os.path.exists(save_file):
-                    image_screenshot_azimuth_180(surf_file, overlay_file, save_file, min=vmin, max=vmax)
+                    # image_screenshot_azimuth_180(surf_file, overlay_file, save_file, min=vmin, max=vmax)
+                    args_list2.append([surf_file, overlay_file, save_file, vmin, vmax])
+    pool = Pool(10)
+    pool.starmap(image_screenshot, args_list1)
+    pool.starmap(image_screenshot_azimuth_180, args_list2)
+    pool.close()
+    pool.join()
 
 
 def cal_stability_fsaverage6(group_dir: Path, stability_dir: Path, feature='thickness', hemi='lh'):
@@ -245,6 +264,8 @@ def stability_screenshot(recon_dir, out_dir, feature='thickness', vmin='', vmax=
     """
 
     subject_list = os.listdir(recon_dir)
+    args_list1 = []
+    args_list2 = []
     for subject in subject_list:
 
         for hemi in ['lh', 'rh']:
@@ -255,9 +276,16 @@ def stability_screenshot(recon_dir, out_dir, feature='thickness', vmin='', vmax=
 
             overlay_file = os.path.join(recon_dir, subject, 'surf', f'{hemi}.{feature}')
             save_file = os.path.join(out_dir, f'{subject}_{feature}_{hemi}_lateral.png')
-            image_screenshot(surf_file, overlay_file, save_file, min=vmin, max=vmax)
+            # image_screenshot(surf_file, overlay_file, save_file, min=vmin, max=vmax)
+            args_list1.append([surf_file, overlay_file, save_file, vmin, vmax])
             save_file = os.path.join(out_dir, f'{subject}_{feature}_{hemi}_medial.png')
-            image_screenshot_azimuth_180(surf_file, overlay_file, save_file, min=vmin, max=vmax)
+            # image_screenshot_azimuth_180(surf_file, overlay_file, save_file, min=vmin, max=vmax)
+            args_list2.append([surf_file, overlay_file, save_file, vmin, vmax])
+    pool = Pool(10)
+    pool.starmap(image_screenshot, args_list1)
+    pool.starmap(image_screenshot_azimuth_180, args_list2)
+    pool.close()
+    pool.join()
 
 
 def concat_stability_screenshot(screenshot_dir: Path, out_dir: Path, feature=''):
@@ -327,6 +355,8 @@ def group_screenshot(recon_dir, out_dir, feature='thickness', vmin1='', vmax1=''
     """
 
     subject_list = os.listdir(recon_dir)
+    args_list1 = []
+    args_list2 = []
     for subject in subject_list:
         for hemi in ['lh', 'rh']:
             surf_file = os.path.join('/usr/local/freesurfer600/subjects/fsaverage6', 'surf', f'{hemi}.pial')
@@ -338,9 +368,16 @@ def group_screenshot(recon_dir, out_dir, feature='thickness', vmin1='', vmax1=''
 
                 overlay_file = os.path.join(recon_dir, subject, 'surf', f'{hemi}.{stats_type}.{feature}')
                 save_file = os.path.join(out_dir, f'{subject}_{feature}_{stats_type}_{hemi}_lateral.png')
-                image_screenshot(surf_file, overlay_file, save_file, min=vmin, max=vmax)
+                # image_screenshot(surf_file, overlay_file, save_file, min=vmin, max=vmax)
+                args_list1.append([surf_file, overlay_file, save_file, vmin, vmax])
                 save_file = os.path.join(out_dir, f'{subject}_{feature}_{stats_type}_{hemi}_medial.png')
-                image_screenshot_azimuth_180(surf_file, overlay_file, save_file, min=vmin, max=vmax)
+                # image_screenshot_azimuth_180(surf_file, overlay_file, save_file, min=vmin, max=vmax)
+                args_list2.append([surf_file, overlay_file, save_file, vmin, vmax])
+    pool = Pool(10)
+    pool.starmap(image_screenshot, args_list1)
+    pool.starmap(image_screenshot_azimuth_180, args_list2)
+    pool.close()
+    pool.join()
 
 
 def concat_group_screenshot(screenshot_dir: Path, out_dir: Path, feature=''):
@@ -370,6 +407,7 @@ def concat_group_screenshot(screenshot_dir: Path, out_dir: Path, feature=''):
 
 if __name__ == '__main__':
     set_environ()
+    Multi_CPU_Num = 10
 
     # DeepPrep和FreeSurfer的结果计算DICE
 
@@ -380,64 +418,64 @@ if __name__ == '__main__':
                                      [('1', '3.5'), ('-0.5', '0.25'), ('-13', '13'),],
                                      [('0', '0.35'), ('0', '0.05'), ('0', '1.3'),],
                                      [('0', '0.35'), ('0', '0.05'), ('0', '1.3')],):
-        # method = 'DeepPrep'
-        # src_dir = f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon'
-        # screenshot_result_dir = f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/{feature}/feature_map_image_{method}'
-        # feature_screenshot(src_dir, screenshot_result_dir, feature=feature, vmin=vmin, vmax=vmax)
+
+        method = 'DeepPrep'
+        src_dir = f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon'
+        screenshot_result_dir = f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/{feature}/feature_map_image_{method}'
+        feature_screenshot(src_dir, screenshot_result_dir, feature=feature, vmin=vmin, vmax=vmax)
+
+        method = 'FreeSurfer'
+        src_dir = f'/mnt/ngshare/DeepPrep/MSC/derivatives/FreeSurfer'
+        screenshot_result_dir = f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/{feature}/feature_map_image_{method}'
+        feature_screenshot(src_dir, screenshot_result_dir, feature=feature, vmin=vmin, vmax=vmax)
+
+        # ############# cat screenshot
+        concat_screenshot(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/{feature}')
+
+        # ############# cal DICE, save to csv
+        # 将DeepPrep的Recon结果和FreeSurfer的Recon结果link到一个目录下（mris_surf2surf需要）
+        deepprep_recon_dir = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon')
+        freesurfer_recon_dir = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/FreeSurfer')
+        concat_dp_and_fs_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_dir_concat_DeepPrep_and_FreeSurfer')
+        ln_subject(deepprep_recon_dir, freesurfer_recon_dir, concat_dp_and_fs_dir)
+
+        # # ############# 将结果投影到fs6
+        # for hemi in ['lh', 'rh']:
+        #     # ## 投影到fs6
+        #     native_interp_fsaverage6_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/'
+        #                                         f'recon_interp_fsaverage6')
+        #     project_fsaverage6(concat_dp_and_fs_dir, native_interp_fsaverage6_dir, feature, hemi=hemi)
         #
-        # method = 'FreeSurfer'
-        # src_dir = f'/mnt/ngshare/DeepPrep/MSC/derivatives/FreeSurfer'
-        # screenshot_result_dir = f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/{feature}/feature_map_image_{method}'
-        # feature_screenshot(src_dir, screenshot_result_dir, feature=feature, vmin=vmin, vmax=vmax)
+        #     # ## 在fs6 space计算组水平
+        #     individual_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_individual_fsaverage6')
+        #     cal_individual_fsaverage6(interp_dir=native_interp_fsaverage6_dir, individual_dir=individual_dir, feature=feature, hemi=hemi)
         #
-        # # ############# cat screenshot
-        # concat_screenshot(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/{feature}')
+        #     # ## 在fs6 space计算稳定性
+        #     stability_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_stability_fsaverage6')
+        #     cal_stability_fsaverage6(individual_dir, stability_dir, feature=feature, hemi=hemi)
+        #
+        #     # ## 在fs6 space计算组水平
+        #     group_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_group_fsaverage6')
+        #     cal_group_fsaverage6(interp_dir=native_interp_fsaverage6_dir, group_dir=group_dir, feature=feature, hemi=hemi)
 
-        # # ############# cal DICE, save to csv
-        # # 将DeepPrep的Recon结果和FreeSurfer的Recon结果link到一个目录下（mris_surf2surf需要）
-        # deepprep_recon_dir = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon')
-        # freesurfer_recon_dir = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/FreeSurfer')
-        # concat_dp_and_fs_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_dir_concat_DeepPrep_and_FreeSurfer')
-        # ln_subject(deepprep_recon_dir, freesurfer_recon_dir, concat_dp_and_fs_dir)
-
-        # ############# 将结果投影到fs6
-        for hemi in ['lh', 'rh']:
-            # 投影到fs6
-            native_interp_fsaverage6_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/'
-                                                f'recon_interp_fsaverage6')
-            # project_fsaverage6(concat_dp_and_fs_dir, native_interp_fsaverage6_dir, feature, hemi=hemi)
-
-            # # 在fs6 space计算组水平
-            # individual_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_individual_fsaverage6')
-            # cal_individual_fsaverage6(interp_dir=native_interp_fsaverage6_dir, individual_dir=individual_dir, feature=feature, hemi=hemi)
-            #
-            # # 在fs6 space计算稳定性
-            # stability_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_stability_fsaverage6')
-            # cal_stability_fsaverage6(individual_dir, stability_dir, feature=feature, hemi=hemi)
-
-            # # 在fs6 space计算组水平
-            # group_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_group_fsaverage6')
-            # cal_group_fsaverage6(interp_dir=native_interp_fsaverage6_dir, group_dir=group_dir, feature=feature, hemi=hemi)
-
-        # individual_screenshot
+        # ## individual_screenshot
         for project in ['DeepPrep', 'FreeSurfer']:
             individual_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_individual_fsaverage6/{project}')
             individual_screenshot_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_individual_fsaverage6_screenshot/{project}')
             group_screenshot(individual_dir, individual_screenshot_dir, feature=feature, vmin1=vmin, vmax1=vmax, vmin2=vmin2,vmax2=vmax2)
 
-        # group_screenshot
-        # group_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_group_fsaverage6')
-        # group_screenshot_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_group_fsaverage6_screenshot')
-        # group_screenshot(group_dir, group_screenshot_dir, feature=feature, vmin1=vmin, vmax1=vmax, vmin2=vmin2, vmax2=vmax2)
+        # ## group_screenshot
+        group_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_group_fsaverage6')
+        group_screenshot_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_group_fsaverage6_screenshot')
+        group_screenshot(group_dir, group_screenshot_dir, feature=feature, vmin1=vmin, vmax1=vmax, vmin2=vmin2, vmax2=vmax2)
 
-        # group_screenshot_concat_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_group_fsaverage6_screenshot_concat')
-        # concat_group_screenshot(group_screenshot_dir, group_screenshot_concat_dir, feature=feature)
+        group_screenshot_concat_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_group_fsaverage6_screenshot_concat')
+        concat_group_screenshot(group_screenshot_dir, group_screenshot_concat_dir, feature=feature)
 
-        # # stability_screenshot
-        # stability_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_stability_fsaverage6')
-        # stability_screenshot_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_stability_fsaverage6_screenshot')
-        # # stability_screenshot(stability_dir, stability_screenshot_dir, feature=feature, vmin=vmin3, vmax=vmax3)
-        #
-        # stability_screenshot_concat_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_stability_fsaverage6_screenshot_concat')
-        # # concat_stability_screenshot(stability_screenshot_dir, stability_screenshot_concat_dir, feature=feature)
+        # ## stability_screenshot
+        stability_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_stability_fsaverage6')
+        stability_screenshot_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_stability_fsaverage6_screenshot')
+        stability_screenshot(stability_dir, stability_screenshot_dir, feature=feature, vmin=vmin3, vmax=vmax3)
 
+        stability_screenshot_concat_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_stability_fsaverage6_screenshot_concat')
+        concat_stability_screenshot(stability_screenshot_dir, stability_screenshot_concat_dir, feature=feature)
