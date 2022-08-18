@@ -11,6 +11,7 @@ from pathlib import Path
 from multiprocessing import Pool
 from statsmodels.stats.weightstats import ztest
 import shutil
+from glob import glob
 
 
 def set_environ():
@@ -598,10 +599,9 @@ def info_label(aseg = True):
                            255: "CC_Anterior"}
         return aseg_label, aseg_label_dict
     else:
-        aparc_label = [ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,
-       17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33,
-       34, 35]
-        aparc_label_dict = {0: 'unknown',
+        aparc_label = [-1,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,
+       17, 18]
+        aparc_label_dict = {-1: 'unknown',
                             1: 'bankssts',
                             2: 'caudalanteriorcingulate',
                             3: 'caudalmiddlefrontal',
@@ -619,24 +619,7 @@ def info_label(aseg = True):
                             15: 'middletemporal',
                             16: 'parahippocampal',
                             17: 'paracentral',
-                            18: 'parsopercularis',
-                            19: 'parsorbitalis',
-                            20: 'parstriangularis',
-                            21: 'pericalcarine',
-                            22: 'postcentral',
-                            23: 'posteriorcingulate',
-                            24: 'precentral',
-                            25: 'precuneus',
-                            26: 'rostralanteriorcingulate',
-                            27: 'rostralmiddlefrontal',
-                            28: 'superiorfrontal',
-                            29: 'superiorparietal',
-                            30: 'superiortemporal',
-                            31: 'supramarginal',
-                            32: 'frontalpole',
-                            33: 'temporalpole',
-                            34: 'transversetemporal',
-                            35: 'insula'}
+                            18: 'parsopercularis'}
         return aparc_label, aparc_label_dict
 
 def dc(pred, gt):
@@ -757,6 +740,29 @@ def aseg_stability(fs_dir, output_dir, aseg=True):
 
 def aparc_stability(input_dir, output_dir, aseg):
     label, label_dict = info_label(aseg=aseg)
+    sub_id = [sub for sub in sorted(os.listdir(input_dir))]
+    dict = {}
+    for sub in sub_id:
+        sub_dir = Path(input_dir, sub)
+        dict[sub] = sorted(os.listdir(sub_dir))
+
+    for hemi in ['lh', 'rh']:
+
+        for sub in sorted(dict.keys()):
+            print(sub)
+
+            i = 0
+            while i < len(dict[sub]):
+                aparc_i = dict[sub][i]
+                for j in range(i+1, len(dict[sub])):
+                    aparc_j = dict[sub][j]
+                    i_dir = glob(os.path.join(input_dir, sub, aparc_i, f'parc/{aparc_i}/*/{hemi}_parc_result.annot'))[0]
+                    j_dir = glob(os.path.join(input_dir, sub, aparc_j, f'parc/{aparc_j}/*/{hemi}_parc_result.annot'))[0]
+                    print(aparc_i, aparc_j)
+                i += 1
+
+
+
 
 
 if __name__ == '__main__':
@@ -777,13 +783,14 @@ if __name__ == '__main__':
     # DeepPrep和FreeSurfer的结果计算稳定性
     fs_dir = '/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/aparc_fsreg_to_mni152'
     deepprep_dir = '/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/aparc_deepprepreg_to_mni152'
-    fs_output_dir = '/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/aparc_fsreg_mni152_stability.csv'
-    deepprep_output_dir = '/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/aparc_deepprepreg_mni152_stability.csv'
+    fs_output_dir = '/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/aseg_fsreg_mni152_stability.csv'
+    deepprep_output_dir = '/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/aseg_deepprepreg_mni152_stability.csv'
     # aseg_stability(fs_dir, fs_output_dir)
     # aseg_stability(deepprep_dir, deepprep_output_dir)
 
     # 功能分区稳定性
     input_dir = '/run/user/1000/gvfs/sftp:host=30.30.30.66,user=zhenyu/home/zhenyu/workdata/App/MSC'
+    output_dir = '/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/aparc_MSC_stability.csv'
     aparc_stability(input_dir, output_dir, aseg=False)
 
 
