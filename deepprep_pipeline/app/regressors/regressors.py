@@ -112,12 +112,13 @@ def build_movement_regressors(subject, bldrun, bold_path: Path, movement_path: P
     with open(ddat_file, 'w') as f:
         f.write('\n'.join(ddat_txt))
 
-    # *.par -> *.ddat
+    # *.par -> *.rdat
     rdat_file = movement_path / f'{subject}_bld{bldrun}_rest_reorient_skip_faln_mc.rdat'
     rdat = mcdat[:, [4, 5, 6, 1, 2, 3]]
-    rdat_average = np.zeros(rdat.shape[1])
-    for idx, row in enumerate(rdat):
-        rdat_average = (row + rdat_average * idx) / (idx + 1)
+    # rdat_average = np.zeros(rdat.shape[1])
+    # for idx, row in enumerate(rdat):
+    #     rdat_average = (row + rdat_average * idx) / (idx + 1)
+    rdat_average = rdat.mean(axis=0)
     rdat = rdat - rdat_average
     rdat_txt = list()
     for idx, row in enumerate(rdat):
