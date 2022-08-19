@@ -738,7 +738,7 @@ def aseg_stability(fs_dir, output_dir, aseg=True):
 
     df_dice.to_csv(output_dir)
 
-def aparc_stability(input_dir, output_dir, aseg):
+def aparc_stability(input_dir, output_dir, aseg, pipline='DeepPrep'):
     label, label_dict = info_label(aseg=aseg)
     sub_id = [sub for sub in sorted(os.listdir(input_dir))]
     dict = {}
@@ -748,8 +748,12 @@ def aparc_stability(input_dir, output_dir, aseg):
 
     for hemi in ['lh', 'rh']:
 
+        df_dice = pd.DataFrame(columns=label_dict.values(), index=sorted(dict.keys()))
+
         for sub in sorted(dict.keys()):
             print(sub)
+            dice_dict = {}
+            df_sub_dice = None
 
             i = 0
             while i < len(dict[sub]):
@@ -759,9 +763,30 @@ def aparc_stability(input_dir, output_dir, aseg):
                     i_dir = glob(os.path.join(input_dir, sub, aparc_i, f'parc/{aparc_i}/*/{hemi}_parc_result.annot'))[0]
                     j_dir = glob(os.path.join(input_dir, sub, aparc_j, f'parc/{aparc_j}/*/{hemi}_parc_result.annot'))[0]
                     print(aparc_i, aparc_j)
+                    dice_dict['sub'] = aparc_i + ' & ' + aparc_j
+                    i_aseg = nib.freesurfer.read_annot(i_dir)[0]
+                    j_aseg = nib.freesurfer.read_annot(j_dir)[0]
+
+                    for l in label:
+                        dice = evaluate_aseg(i_aseg, j_aseg, l)
+                        dice_dict[label_dict[l]] = [dice]
+
+                    df = pd.DataFrame.from_dict(dice_dict)
+
+                    if df_sub_dice is None:
+                        df_sub_dice = df
+                    else:
+                        df_sub_dice = pd.concat((df_sub_dice, df), axis=0)
+
                 i += 1
+            sub_output = Path(output_dir, f'{pipline}_{hemi}_{sub}_aparc_dice.csv')
+            df_sub_dice.loc['mean'] = df_sub_dice.mean(axis=0)
+            df_sub_dice.loc['std'] = df_sub_dice.std(axis=0)
+            df_sub_dice.to_csv(sub_output, index=False)
+            df_dice.loc[sub] = df_sub_dice.loc['std']
 
-
+        stability_output_dir = Path(output_dir, f'{pipline}_{hemi}.csv')
+        df_dice.to_csv(stability_output_dir)
 
 
 
@@ -790,8 +815,9 @@ if __name__ == '__main__':
 
     # 功能分区稳定性
     input_dir = '/run/user/1000/gvfs/sftp:host=30.30.30.66,user=zhenyu/home/zhenyu/workdata/App/MSC'
-    output_dir = '/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/aparc_MSC_stability.csv'
-    aparc_stability(input_dir, output_dir, aseg=False)
+    output_dir = '/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/aparc_deepprepreg_to_mni152'
+    aparc_stability(input_dir, output_dir, aseg=False, pipline='DeepPrep')
+    exit()
 
 
     # ############# 分区截图
