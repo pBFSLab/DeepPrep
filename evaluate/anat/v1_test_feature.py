@@ -621,7 +621,6 @@ def info_label(aseg = True):
                             17: 'Language Network A',
                             18: 'Upper-limb Sensorimotor Network'}
         return aparc_label, aparc_label_dict
-
 def dc(pred, gt):
     result = np.atleast_1d(pred.astype(bool))
     reference = np.atleast_1d(gt.astype(bool))
@@ -738,8 +737,45 @@ def aseg_stability(fs_dir, output_dir, aseg=True):
 
     df_dice.to_csv(output_dir)
 
-def aparc_stability(input_dir, output_dir, aseg, pipline='DeepPrep'):
-    label, label_dict = info_label(aseg=aseg)
+
+def get_info_label(parc):
+    if parc == 18:
+        aparc_label = [-1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+                       17, 18]
+        aparc_label_dict = {-1: 'unknown',
+                            1: 'bankssts',
+                            2: 'caudalanteriorcingulate',
+                            3: 'caudalmiddlefrontal',
+                            4: 'corpuscallosum',
+                            5: 'cuneus',
+                            6: 'entorhinal',
+                            7: 'fusiform',
+                            8: 'inferiorparietal',
+                            9: 'inferiortemporal',
+                            10: 'isthmuscingulate',
+                            11: 'lateraloccipital',
+                            12: 'lateralorbitofrontal',
+                            13: 'lingual',
+                            14: 'medialorbitofrontal',
+                            15: 'middletemporal',
+                            16: 'parahippocampal',
+                            17: 'paracentral',
+                            18: 'parsopercularis'}
+        return aparc_label, aparc_label_dict
+    elif parc == 92:
+        index, ctab, names = nib.freesurfer.read_annot('aparc_template/lh_parc92_fs6.annot')
+        aparc_label = set(index)
+        aparc_label_dict = {}
+        for i in aparc_label:
+            if i != 112:
+                aparc_label_dict[i] = f'Network_{i}'
+            else:
+                aparc_label_dict[i] = f'none'
+        return aparc_label, aparc_label_dict
+
+def aparc_stability(input_dir, output_dir, parc, aseg, pipline='App'):
+    label, label_dict = get_info_label(parc)
+    # label, label_dict = info_label(aseg=aseg)
     sub_id = [sub for sub in sorted(os.listdir(input_dir))]
     dict = {}
     for sub in sub_id:
@@ -760,8 +796,14 @@ def aparc_stability(input_dir, output_dir, aseg, pipline='DeepPrep'):
                 aparc_i = dict[sub][i]
                 for j in range(i+1, len(dict[sub])):
                     aparc_j = dict[sub][j]
-                    i_dir = glob(os.path.join(input_dir, sub, aparc_i, f'parc/{aparc_i}/*/{hemi}_parc_result.annot'))[0]
-                    j_dir = glob(os.path.join(input_dir, sub, aparc_j, f'parc/{aparc_j}/*/{hemi}_parc_result.annot'))[0]
+                    if parc != 92:
+                        i_dir = glob(os.path.join(input_dir, sub, aparc_i, f'parc/{aparc_i}/*/{hemi}_parc_result.annot'))[0]
+                        j_dir = glob(os.path.join(input_dir, sub, aparc_j, f'parc/{aparc_j}/*/{hemi}_parc_result.annot'))[0]
+                    elif parc == 92:
+                        i_dir = glob(os.path.join(input_dir, sub, aparc_i, f'parc92/{hemi}_parc92_result.annot'))[0]
+                        j_dir = glob(os.path.join(input_dir, sub, aparc_j, f'parc92/{hemi}_parc92_result.annot'))[0]
+                    else:
+                        pass
                     print(aparc_i, aparc_j)
                     dice_dict['sub'] = aparc_i + ' & ' + aparc_j
                     i_aseg = nib.freesurfer.read_annot(i_dir)[0]
@@ -815,9 +857,9 @@ if __name__ == '__main__':
     # aseg_stability(deepprep_dir, deepprep_output_dir)
 
     # 功能分区稳定性
-    input_dir = '/run/user/1000/gvfs/sftp:host=30.30.30.66,user=zhenyu/mnt/ngshare2/App/MSC_app'
-    output_dir = '/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/aparc_app_to_mni152'
-    aparc_stability(input_dir, output_dir, aseg=False, pipline='DeepPrep')
+    input_dir = '/mnt/ngshare2/App/MSC_app'
+    output_dir = '/mnt/ngshare2/App/csv/92'
+    aparc_stability(input_dir, output_dir, parc=92, aseg=False, pipline='App')
     exit()
 
 

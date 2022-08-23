@@ -38,9 +38,14 @@ def set_envrion():
     # FreeSurfer fsfast env
     os.environ['FSF_OUTPUT_FORMAT'] = 'nii.gz'
     os.environ['FSLOUTPUTTYPE'] = 'NIFTI_GZ'
-
     # FSL
     os.environ['PATH'] = '/usr/local/fsl/bin:' + os.environ['PATH']
+    # ANFI
+    os.environ['PATH'] = '/usr/local/abin:' + os.environ['PATH']
+    # ANTs
+    os.environ['PATH'] = '/usr/local/ANTs/bin:' + os.environ['PATH']
+    # Convert3D
+    os.environ['PATH'] = '/usr/local/c3d-1.1.0-Linux-x86_64/bin:' + os.environ['PATH']
 
 
 @timing_func
@@ -386,9 +391,9 @@ def bold_skip_reorient(preprocess_dir, subj):
 
 
 @timing_func
-def preprocess_common(preprocess_dir, subj):
-    bold_skip_reorient(preprocess_dir, subj)
+def preprocess_common(layout, bids_bolds, preprocess_dir, subj):
     runs = sorted([d.name for d in (preprocess_dir / subj / 'bold').iterdir() if d.is_dir()])
+    bold_skip_reorient(preprocess_dir, subj)
     for run in runs:
         src_bold_file = preprocess_dir / subj / 'bold' / run / f'{subj}_bld{run}_rest_reorient_skip.nii.gz'
         dst_bold_file = preprocess_dir / subj / 'bold' / run / f'{subj}_bld_rest_reorient_skip.nii.gz'
@@ -483,6 +488,27 @@ def preprocess_common(preprocess_dir, subj):
             '--min', 0.0001]
         sh.mri_binarize(*shargs, _out=sys.stdout)
 
+    # sdc
+    from preprocess_sdc import sdc_single_subject_wf, config
+    config.workflow.ignore = []
+    config.workflow.use_syn_sdc = False
+    config.workflow.force_syn = False
+    config.execution.task_id = None
+    config.execution.echo_idx = None
+    config.nipype.omp_nthreads = 2
+
+    work_dir = preprocess_dir / subj / 'sdc_work_dir'
+    result_dir = preprocess_dir / subj / 'sdc_result_dir'
+    subject_id = subj.split('-')[1]
+    workflow = sdc_single_subject_wf(layout, bids_bolds, preprocess_dir, result_dir, subject_id)
+    workflow.base_dir = work_dir
+    workflow.write_graph(graph2use='flat', simple_form=False)
+    workflow.run()
+    for run in runs:
+        src_bold_file = preprocess_dir / subj / 'bold' / run / 'sdc' / f'{subj}_bld_rest_reorient_skip_faln_mc_sdc.nii.gz'
+        dst_bold_file = preprocess_dir / subj / 'bold' / run / f'{subj}_bld_rest_reorient_skip_faln_mc_sdc.nii.gz'
+        os.rename(src_bold_file, dst_bold_file)
+
 
 def setenv_smooth_downsampling():
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
@@ -515,7 +541,7 @@ def smooth_downsampling(preprocess_dir, bold_path, bldrun, subject):
     reg_path = bldrun_path / reg_name
 
     resid_name = '%s_bld_rest_reorient_skip_faln' % (subject)
-    resid_name += '_mc_g1000000000_bpss_resid.nii.gz'
+    resid_name += '_mc_sdc_g1000000000_bpss_resid.nii.gz'
     resid_path = bldrun_path / resid_name
 
     for hemi in ['lh', 'rh']:
@@ -538,7 +564,7 @@ def preprocess_rest(layout, bids_bolds, preprocess_dir, subj):
             bold = ants.image_read(bids_bold.path)
             TR = bold.spacing[3]
         run = f'{idx + 1:03}'
-        mc_path = preprocess_dir / subj / 'bold' / run / f'{subj}_bld_rest_reorient_skip_faln_mc.nii.gz'
+        mc_path = preprocess_dir / subj / 'bold' / run / f'{subj}_bld_rest_reorient_skip_faln_mc_sdc.nii.gz'
         gauss_path = gauss_nifti(str(mc_path), 1000000000)
 
         # bandpass_filtering
@@ -561,14 +587,14 @@ def preprocess(layout, bids_bolds, subj, deepprep_subj_path, preprocess_dir):
         run = f'{idx + 1:03}'
         (subj_bold_dir / run).mkdir(exist_ok=True)
         shutil.copy(bids_file, subj_bold_dir / run / f'sub-{subj}_bld{run}_rest.nii.gz')
-    preprocess_common(preprocess_dir, f'sub-{subj}')
+    preprocess_common(layout, bids_bolds, preprocess_dir, f'sub-{subj}')
     preprocess_rest(layout, bids_bolds, preprocess_dir, f'sub-{subj}')
     setenv_smooth_downsampling()
     for idx, bids_bold in enumerate(bids_bolds):
         run = f"{idx + 1:03}"
         entities = dict(bids_bold.entities)
         subj = entities['subject']
-        file_prefix = Path(bids_bold.path).name.replace('.nii.gz', '')
+        file_prefix = Path(bids_bold.path).name.replace('.nii.gz', '_sdc')
         if 'session' in entities:
             subj_func_path = deepprep_subj_path / f"ses-{entities['session']}" / 'func'
             subj_surf_path = deepprep_subj_path / f"ses-{entities['session']}" / 'surf'
@@ -576,7 +602,7 @@ def preprocess(layout, bids_bolds, subj, deepprep_subj_path, preprocess_dir):
             subj_func_path = deepprep_subj_path / 'func'
             subj_surf_path = deepprep_subj_path / 'surf'
         subj_surf_path.mkdir(exist_ok=True)
-        src_resid_file = subj_bold_dir / run / f'sub-{subj}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss_resid.nii.gz'
+        src_resid_file = subj_bold_dir / run / f'sub-{subj}_bld_rest_reorient_skip_faln_mc_sdc_g1000000000_bpss_resid.nii.gz'
         dst_resid_file = subj_func_path / f'{file_prefix}_resid.nii.gz'
         shutil.copy(src_resid_file, dst_resid_file)
         src_reg_file = subj_bold_dir / run / f'sub-{subj}_bld_rest_reorient_skip_faln_mc.register.dat'

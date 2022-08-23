@@ -75,8 +75,9 @@ def creat_orig_and_rawavg(sub_mri_dir: Path):
 
     # link to rawavg (needed by pctsurfcon)
     rawavg = sub_mri_dir / 'rawavg.mgz'
-    cmd = f'ln -sf {t1} {rawavg}'
-    run_with_timing(cmd)
+    if not os.path.exists(rawavg):
+        cmd = f'ln -sf {t1} {rawavg}'
+        run_with_timing(cmd)
 
 
 @timing_func
@@ -92,37 +93,36 @@ def creat_aseg_noccseg(fs_bin: Path, sub_mri_dir: Path):
 
 
 @timing_func
-def creat_talairach_and_nu(fs_bin: Path, sub_mri_dir: Path, threads: int, fs: str='FreeSurfer720'):
-    if fs == 'FreeSurfer720':
-        # orig_nu nu correct
-        py = fs_bin / 'N4_bias_correct.py'
-        cmd = f"{python} {py} --in {sub_mri_dir}/orig.mgz --out {sub_mri_dir}/orig_nu.mgz " \
-              f"--mask {sub_mri_dir}/mask.mgz  --threads {threads}"
-        run_with_timing(cmd)
+def creat_talairach_and_nu(fs_bin: Path, sub_mri_dir: Path, threads: int):
+    # orig_nu nu correct
+    py = fs_bin / 'N4_bias_correct.py'
+    cmd = f"{python} {py} --in {sub_mri_dir}/orig.mgz --out {sub_mri_dir}/orig_nu.mgz " \
+          f"--mask {sub_mri_dir}/mask.mgz  --threads {threads}"
+    run_with_timing(cmd)
 
-        # talairach.xfm: compute talairach full head (25sec)
-        cmd = f'cd {sub_mri_dir} && ' \
-              f'talairach_avi --i {sub_mri_dir}/orig_nu.mgz --xfm {sub_mri_dir}/transforms/talairach.auto.xfm'
-        run_with_timing(cmd)
-        cmd = f'cp {sub_mri_dir}/transforms/talairach.auto.xfm {sub_mri_dir}/transforms/talairach.xfm'
-        run_with_timing(cmd)
+    # talairach.xfm: compute talairach full head (25sec)
+    cmd = f'cd {sub_mri_dir} && ' \
+          f'talairach_avi --i {sub_mri_dir}/orig_nu.mgz --xfm {sub_mri_dir}/transforms/talairach.auto.xfm'
+    run_with_timing(cmd)
+    cmd = f'cp {sub_mri_dir}/transforms/talairach.auto.xfm {sub_mri_dir}/transforms/talairach.xfm'
+    run_with_timing(cmd)
 
-        # talairach.lta:  convert to lta
-        freesufer_home = os.environ['FREESURFER_HOME']
-        cmd = f"lta_convert --src {sub_mri_dir}/orig.mgz --trg {freesufer_home}/average/mni305.cor.mgz " \
-              f"--inxfm {sub_mri_dir}/transforms/talairach.xfm --outlta {sub_mri_dir}/transforms/talairach.xfm.lta " \
-              f"--subject fsaverage --ltavox2vox"
-        run_with_timing(cmd)
+    # talairach.lta:  convert to lta
+    freesufer_home = os.environ['FREESURFER_HOME']
+    cmd = f"lta_convert --src {sub_mri_dir}/orig.mgz --trg {freesufer_home}/average/mni305.cor.mgz " \
+          f"--inxfm {sub_mri_dir}/transforms/talairach.xfm --outlta {sub_mri_dir}/transforms/talairach.xfm.lta " \
+          f"--subject fsaverage --ltavox2vox"
+    run_with_timing(cmd)
 
-        # Since we do not run mri_em_register we sym-link other talairach transform files here
-        cmd = f"ln -sf {sub_mri_dir}/transforms/talairach.xfm.lta {sub_mri_dir}/transforms/talairach_with_skull.lta"
-        run_with_timing(cmd)
-        cmd = f"ln -sf {sub_mri_dir}/transforms/talairach.xfm.lta {sub_mri_dir}/transforms/talairach.lta"
-        run_with_timing(cmd)
+    # Since we do not run mri_em_register we sym-link other talairach transform files here
+    cmd = f"ln -sf {sub_mri_dir}/transforms/talairach.xfm.lta {sub_mri_dir}/transforms/talairach_with_skull.lta"
+    run_with_timing(cmd)
+    cmd = f"ln -sf {sub_mri_dir}/transforms/talairach.xfm.lta {sub_mri_dir}/transforms/talairach.lta"
+    run_with_timing(cmd)
 
-        # Add xfm to nu
-        cmd = f'mri_add_xform_to_header -c {sub_mri_dir}/transforms/talairach.xfm {sub_mri_dir}/orig_nu.mgz {sub_mri_dir}/nu.mgz'
-        run_with_timing(cmd)
+    # Add xfm to nu
+    cmd = f'mri_add_xform_to_header -c {sub_mri_dir}/transforms/talairach.xfm {sub_mri_dir}/orig_nu.mgz {sub_mri_dir}/nu.mgz'
+    run_with_timing(cmd)
 
 
 @timing_func
@@ -650,7 +650,11 @@ def create_rawavg(files: str,
 
 
 @timing_func
-def preprocess(subject_id, sub_t1: str, sub_recon_path: Path):
+def preprocess(subject_id, sub_t1: str, sub_recon_path: Path, rewrite=True):
+    if (not rewrite) and os.path.exists(sub_recon_path):
+        print(f'path is already exists : {sub_recon_path}')
+        return
+
     # FastSurfer seg
     fs_home = Path.cwd() / 'FastSurfer'
     fs_recon_bin = fs_home / 'recon_surf'
@@ -750,6 +754,8 @@ def parse_args():
                         help='Output directory $FREESURFER_HOME (pass via environment or here)')
     parser.add_argument('--respective', default='off',
                         help='if on, while processing T1w file respectively')
+    parser.add_argument('--rewrite', default='on',
+                        help='set off, while not preprocess if subject recon path exist')
     parser.add_argument('--python', default='python3',
                         help='which python version to use')
 
@@ -759,6 +765,7 @@ def parse_args():
     if args.fsd is None:
         args_dict['fsd'] = '/usr/local/freesurfer'
     args_dict['respective'] = True if args.respective == 'on' else False
+    args_dict['rewrite'] = True if args.rewrite == 'on' else False
 
     return argparse.Namespace(**args_dict)
 
@@ -814,6 +821,7 @@ if __name__ == '__main__':
     else:
         fsthreads = ''
 
+    subjs.sort()
     for subj in subjs:
 
         bids_t1s = layout.get(subject=subj, datatype='anat', suffix='T1w', extension='.nii.gz')
@@ -823,27 +831,33 @@ if __name__ == '__main__':
             subject_id = f'sub-{subj}'
             subj_recon_path = deepprep_subj_path / subject_id
             sub_t1 = bids_t1s[0].path
-            preprocess(subject_id, sub_t1, subj_recon_path)
+            print(f'{subject_id}  :  {subj_recon_path}  :  {str(sub_t1)}')
+            preprocess(subject_id, sub_t1, subj_recon_path, rewrite=args.rewrite)
 
         else:
             if args.respective:
                 for bids_t1 in bids_t1s:
                     subject = f'sub-{subj}'
-                    session = f'ses-{bids_t1.session}' if hasattr(bids_t1, 'session') else None
-                    run = f'run-{bids_t1.run}' if hasattr(bids_t1, 'run') else None
+                    session = f'ses-{bids_t1.entities["session"]}' if ('session' in bids_t1.entities) else None
+                    run = f'run-{bids_t1.entities["run"]}' if ('run' in bids_t1.entities) else None
                     filters = [i for i in [subject, session, run] if i]
                     subject_id = f'_'.join(filters)
                     subj_recon_path = deepprep_subj_path / subject_id
-                    sub_t1 = bids_t1s[0].path
-                    preprocess(subject_id, sub_t1, subj_recon_path)
+                    sub_t1 = bids_t1.path
+                    print(f'{subject_id}  :  {subj_recon_path}  :  {str(sub_t1)}')
+                    preprocess(subject_id, sub_t1, subj_recon_path, rewrite=args.rewrite)
             # combine T1
             else:
                 subject_id = f'sub-{subj}'
                 subj_recon_path = deepprep_subj_path / subject_id
+                if (not args.rewrite) and os.path.exists(subj_recon_path):
+                    print(f'path is already exists : {subj_recon_path}')
+                    continue
                 t1_list = [i.path for i in bids_t1s]
                 t1_list_str = ' -i '.join(t1_list)
                 create_rawavg(t1_list_str, fsthreads=fsthreads, subject=subject_id)
                 sub_t1 = subj_recon_path / 'mri' / 'rawavg.mgz'
+                print(f'{subject_id}  :  {subj_recon_path}  :  {str(sub_t1)}')
                 preprocess(subject_id, str(sub_t1), subj_recon_path)
 
     print('time: ', time.time() - start_time)
