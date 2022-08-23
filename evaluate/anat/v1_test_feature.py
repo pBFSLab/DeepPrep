@@ -820,6 +820,8 @@ if __name__ == '__main__':
     aparc_stability(input_dir, output_dir, aseg=False, pipline='DeepPrep')
     exit()
 
+
+
     # ############# 分区截图
     # for feature in ['thickness', 'sulc', 'curv']:
     # for feature, (vmin, vmax) in zip(['thickness'], [('1', '3.5')]):
