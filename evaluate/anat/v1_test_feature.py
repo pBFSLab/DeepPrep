@@ -771,9 +771,9 @@ def get_info_label(parc):
                 aparc_label_dict[i] = f'Network_{i}'
             else:
                 aparc_label_dict[i] = f'none'
-        print()
+        return aparc_label, aparc_label_dict
 
-def aparc_stability(input_dir, output_dir, parc, aseg, pipline='DeepPrep'):
+def aparc_stability(input_dir, output_dir, parc, aseg, pipline='App'):
     label, label_dict = get_info_label(parc)
     # label, label_dict = info_label(aseg=aseg)
     sub_id = [sub for sub in sorted(os.listdir(input_dir))]
@@ -796,8 +796,14 @@ def aparc_stability(input_dir, output_dir, parc, aseg, pipline='DeepPrep'):
                 aparc_i = dict[sub][i]
                 for j in range(i+1, len(dict[sub])):
                     aparc_j = dict[sub][j]
-                    i_dir = glob(os.path.join(input_dir, sub, aparc_i, f'parc/{aparc_i}/*/{hemi}_parc_result.annot'))[0]
-                    j_dir = glob(os.path.join(input_dir, sub, aparc_j, f'parc/{aparc_j}/*/{hemi}_parc_result.annot'))[0]
+                    if parc != 92:
+                        i_dir = glob(os.path.join(input_dir, sub, aparc_i, f'parc/{aparc_i}/*/{hemi}_parc_result.annot'))[0]
+                        j_dir = glob(os.path.join(input_dir, sub, aparc_j, f'parc/{aparc_j}/*/{hemi}_parc_result.annot'))[0]
+                    elif parc == 92:
+                        i_dir = glob(os.path.join(input_dir, sub, aparc_i, f'parc92/{hemi}_parc92_result.annot'))[0]
+                        j_dir = glob(os.path.join(input_dir, sub, aparc_j, f'parc92/{hemi}_parc92_result.annot'))[0]
+                    else:
+                        pass
                     print(aparc_i, aparc_j)
                     dice_dict['sub'] = aparc_i + ' & ' + aparc_j
                     i_aseg = nib.freesurfer.read_annot(i_dir)[0]
@@ -851,9 +857,9 @@ if __name__ == '__main__':
     # aseg_stability(deepprep_dir, deepprep_output_dir)
 
     # 功能分区稳定性
-    input_dir = '/run/user/1000/gvfs/sftp:host=30.30.30.66,user=zhenyu/home/zhenyu/workdata/App/MSC'
-    output_dir = '/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/aparc_deepprepreg_to_mni152'
-    aparc_stability(input_dir, output_dir, parc=92, aseg=False, pipline='DeepPrep')
+    input_dir = '/mnt/ngshare2/App/MSC_app'
+    output_dir = '/mnt/ngshare2/App/csv/92'
+    aparc_stability(input_dir, output_dir, parc=92, aseg=False, pipline='App')
     exit()
 
     # ############# 分区截图
