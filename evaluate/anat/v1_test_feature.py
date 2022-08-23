@@ -514,7 +514,7 @@ def concat_pvalue_screenshot(screenshot_dir: str, feature='thickness'):
     print()
 
 
-def ants_reg(moving_dir: Path, dest_dir: Path, type_of_transform='SyN'):
+def ants_reg(moving_dir, dest_dir,  fixed_dir, type_of_transform='SyN'):
     fixed_dir = '/usr/local/fsl/data/standard/MNI152_T1_1mm_brain.nii.gz'
     dest_dir = Path(dest_dir)
     if not dest_dir.exists():
@@ -599,27 +599,27 @@ def info_label(aseg = True):
                            255: "CC_Anterior"}
         return aseg_label, aseg_label_dict
     else:
-        aparc_label = [-1,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,
+        aparc_label = [0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,
        17, 18]
-        aparc_label_dict = {-1: 'unknown',
-                            1: 'bankssts',
-                            2: 'caudalanteriorcingulate',
-                            3: 'caudalmiddlefrontal',
-                            4: 'corpuscallosum',
-                            5: 'cuneus',
-                            6: 'entorhinal',
-                            7: 'fusiform',
-                            8: 'inferiorparietal',
-                            9: 'inferiortemporal',
-                            10: 'isthmuscingulate',
-                            11: 'lateraloccipital',
-                            12: 'lateralorbitofrontal',
-                            13: 'lingual',
-                            14: 'medialorbitofrontal',
-                            15: 'middletemporal',
-                            16: 'parahippocampal',
-                            17: 'paracentral',
-                            18: 'parsopercularis'}
+        aparc_label_dict = {0: 'Null',
+                            1: 'Lateral Visual Network',
+                            2: 'Medial Visual Network',
+                            3: 'Lower-limb Sensorimotor Network',
+                            4: 'Facial Sensorimotor Network',
+                            5: 'Dorsal Attention Network A',
+                            6: 'Dorsal Attention Network B',
+                            7: 'Ventral Attention Network A',
+                            8: 'Ventral Attention Network B',
+                            9: 'Temporal Limbic Network A',
+                            10: 'Frontal Limbic Network',
+                            11: 'Medial Parietal Network',
+                            12: 'Executive Control Network A',
+                            13: 'Executive Control Network B',
+                            14: 'Language Network B',
+                            15: 'Episodic Memory Network',
+                            16: 'Default Mode Network',
+                            17: 'Language Network A',
+                            18: 'Upper-limb Sensorimotor Network'}
         return aparc_label, aparc_label_dict
 def dc(pred, gt):
     result = np.atleast_1d(pred.astype(bool))
@@ -821,7 +821,7 @@ def aparc_stability(input_dir, output_dir, parc, aseg, pipline='DeepPrep'):
             df_sub_dice.to_csv(sub_output, index=False)
             df_dice.loc[sub] = df_sub_dice.loc['std']
 
-        stability_output_dir = Path(output_dir, f'{pipline}_{hemi}.csv')
+        stability_output_dir = Path(output_dir, f'{pipline}_{hemi}_aparc_stability.csv')
         df_dice.to_csv(stability_output_dir)
 
 
@@ -831,19 +831,20 @@ if __name__ == '__main__':
     Multi_CPU_Num = 10
 
     t1_moving_dir = '/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon'
-    dest_dir = '/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/aparc_deepprepreg_to_mni152'
+    dest_dir = '/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/aseg_deepprepreg_to_mni152'
+    fixed_dir = '/usr/local/fsl/data/standard/MNI152_T1_1mm_brain.nii.gz'
 
-    # ants_reg(t1_moving_dir, dest_dir, type_of_transform='SyN')
+    # ants_reg(t1_moving_dir, dest_dir, fixed_dir=fixed_dir, type_of_transform='SyN')
 
     # DeepPrep和FreeSurfer的结果计算精度DICE
-    fs_dir = '/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/aparc_fsreg_to_mni152'
-    deepprep_dir = '/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/aparc_deepprepreg_to_mni152'
-    output_dir = '/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/aparc_fsreg_deepprep_mni152_dc.csv'
+    fs_dir = '/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/aseg_fsreg_to_mni152'
+    deepprep_dir = '/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/aseg_deepprepreg_to_mni152'
+    output_dir = '/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/aseg_fsreg_deepprep_mni152_dc.csv'
     # aseg_acc(fs_dir, deepprep_dir, output_dir)
 
     # DeepPrep和FreeSurfer的结果计算稳定性
-    fs_dir = '/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/aparc_fsreg_to_mni152'
-    deepprep_dir = '/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/aparc_deepprepreg_to_mni152'
+    fs_dir = '/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/aseg_fsreg_to_mni152'
+    deepprep_dir = '/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/aseg_deepprepreg_to_mni152'
     fs_output_dir = '/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/aseg_fsreg_mni152_stability.csv'
     deepprep_output_dir = '/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/aseg_deepprepreg_mni152_stability.csv'
     # aseg_stability(fs_dir, fs_output_dir)
@@ -854,7 +855,6 @@ if __name__ == '__main__':
     output_dir = '/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/aparc_deepprepreg_to_mni152'
     aparc_stability(input_dir, output_dir, parc=92, aseg=False, pipline='DeepPrep')
     exit()
-
 
     # ############# 分区截图
     # for feature in ['thickness', 'sulc', 'curv']:
