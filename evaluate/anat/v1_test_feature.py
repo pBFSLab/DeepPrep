@@ -740,28 +740,16 @@ def aseg_stability(fs_dir, output_dir, aseg=True):
 
 def get_info_label(parc):
     if parc == 18:
-        aparc_label = [-1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
-                       17, 18]
-        aparc_label_dict = {-1: 'unknown',
-                            1: 'bankssts',
-                            2: 'caudalanteriorcingulate',
-                            3: 'caudalmiddlefrontal',
-                            4: 'corpuscallosum',
-                            5: 'cuneus',
-                            6: 'entorhinal',
-                            7: 'fusiform',
-                            8: 'inferiorparietal',
-                            9: 'inferiortemporal',
-                            10: 'isthmuscingulate',
-                            11: 'lateraloccipital',
-                            12: 'lateralorbitofrontal',
-                            13: 'lingual',
-                            14: 'medialorbitofrontal',
-                            15: 'middletemporal',
-                            16: 'parahippocampal',
-                            17: 'paracentral',
-                            18: 'parsopercularis'}
-        return aparc_label, aparc_label_dict
+        if parc == 18:
+            index, ctab, names = nib.freesurfer.read_annot('aparc_template/lh_parc_fs6.annot')
+            aparc_label = set(index)
+            aparc_label_dict = {}
+            for i in aparc_label:
+                if i != -1:
+                    aparc_label_dict[i] = f'Network_{i}'
+                else:
+                    aparc_label_dict[i] = f'none'
+            return aparc_label, aparc_label_dict
     elif parc == 92:
         index, ctab, names = nib.freesurfer.read_annot('aparc_template/lh_parc92_fs6.annot')
         aparc_label = set(index)
@@ -859,8 +847,7 @@ if __name__ == '__main__':
     # 功能分区稳定性
     input_dir = '/mnt/ngshare2/App/MSC_app'
     output_dir = '/mnt/ngshare2/App/csv/92'
-    aparc_stability(input_dir, output_dir, parc=92, aseg=False, pipline='App')
-    exit()
+    # aparc_stability(input_dir, output_dir, parc=92, aseg=False, pipline='App')
 
 
 
@@ -951,6 +938,6 @@ if __name__ == '__main__':
         # print("DONE")
 
         p_value_dir_screenshot_concat_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFastCSR/Validation/MSC/v1_feature/recon_interp_fsaverage6_pvalue_screenshot')
-        # concat_pvalue_screenshot(p_value_dir_screenshot_concat_dir, feature=feature)
+        concat_pvalue_screenshot(p_value_dir_screenshot_concat_dir, feature=feature)
 
     # break
