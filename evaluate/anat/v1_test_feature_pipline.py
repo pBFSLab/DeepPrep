@@ -97,6 +97,35 @@ def info_label_aparc(parc):
             else:
                 aparc_label_dict[i] = f'Unknown'
         return aparc_label, aparc_label_dict
+    elif parc == 152:
+        index = np.squeeze(ants.image_read('aparc_template/lh.Clustering_76_fs6.mgh').numpy())
+        aparc_label = set(index)
+        aparc_label_dict = {}
+        for i in aparc_label:
+            if i != 0:
+                aparc_label_dict[i] = f'Network_{int(i)}'
+            else:
+                aparc_label_dict[i] = f'Unknown'
+        return aparc_label, aparc_label_dict
+    elif parc == 213:
+        index_l = np.squeeze(ants.image_read('aparc_template/lh.Clustering_108_fs6.mgh').numpy())
+        index_r = np.squeeze(ants.image_read('aparc_template/rh.Clustering_108_fs6.mgh').numpy())
+        aparc_label_l = set(index_l)
+        aparc_label_r = set(index_r)
+        aparc_label_dict_l = {}
+        aparc_label_dict_r = {}
+        for i in aparc_label_l:
+            if i != 0:
+                aparc_label_dict_l[i] = f'Network_{int(i)}'
+            else:
+                aparc_label_dict_l[i] = f'Unknown'
+        for i in aparc_label_r:
+            if i != 0:
+                aparc_label_dict_r[i] = f'Network_{int(i)}'
+            else:
+                aparc_label_dict_r[i] = f'Unknown'
+
+        return aparc_label_l, aparc_label_dict_l, aparc_label_r, aparc_label_dict_r
     else:
         raise RuntimeError("parc = 18 or 92")
 
@@ -338,13 +367,15 @@ class AccAndStability:
 
     def aparc_stability(self, input_dir, parc, method='DeepPrep'):
         """
-        calculate 18 or 92 aparc stability (std of dice) for each sub
+        calculate 18, 92 , 152 or 213 aparc stability (std of dice) for each sub
 
         Arguments
         ---------
         method: aparc method
         aparc: 18 -- get 18 aparc labels
               92 -- get 92 aparc labels
+              152 -- get 152 aparc labels
+              213 -- get 213 aparc labels
 
         Returns
         -------
@@ -353,8 +384,10 @@ class AccAndStability:
         output_dir = Path(self.output_dir, f'aparc{parc}_{method}_csv')
         if not output_dir.exists():
             output_dir.mkdir(parents=True, exist_ok=True)
-
-        label, label_dict = info_label_aparc(parc)
+        if parc == 213:
+            label_lh, label_dict_lh, label_rh, label_dict_rh = info_label_aparc(parc)
+        else:
+            label, label_dict = info_label_aparc(parc)
         sub_id = [sub for sub in sorted(os.listdir(input_dir))]
         dict = {}
         for sub in sub_id:
@@ -362,7 +395,14 @@ class AccAndStability:
             dict[sub] = sorted(os.listdir(sub_dir))
 
         for hemi in ['lh', 'rh']:
-
+            if parc == 213 and hemi == 'lh':
+                label = label_lh
+                label_dict = label_dict_lh
+            elif parc == 213 and hemi == 'rh':
+                label = label_rh
+                label_dict = label_dict_rh
+            else:
+                pass
             df_dice_mean = pd.DataFrame(columns=label_dict.values(), index=sorted(dict.keys()))
             df_dice_std = pd.DataFrame(columns=label_dict.values(), index=sorted(dict.keys()))
 
@@ -376,7 +416,7 @@ class AccAndStability:
                     aparc_i = dict[sub][i]
                     for j in range(i + 1, len(dict[sub])):
                         aparc_j = dict[sub][j]
-                        if parc != 92:
+                        if parc == 18:
                             i_dir = \
                                 glob(os.path.join(input_dir, sub, aparc_i,
                                                   f'parc/{aparc_i}/*/{hemi}_parc_result.annot'))[0]
@@ -1178,8 +1218,8 @@ if __name__ == '__main__':
         '/run/user/1000/gvfs/sftp:host=30.30.30.66,user=zhenyu/home/zhenyu/workdata/App/MSC_DeepPrep_processed',
         92, method="DeepPrep")
     cls.aparc_stability(
-        '/run/user/1000/gvfs/sftp:host=30.30.30.66,user=zhenyu/mnt/ngshare2/App/MSC_app',
-        92, method="App")
+        '/mnt/ngshare2/App/MSC_app',
+        213, method="App")
     exit()
 
     method1 = 'DeepPrep'
