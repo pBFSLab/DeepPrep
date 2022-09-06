@@ -12,7 +12,7 @@ from multiprocessing import Pool
 from statsmodels.stats.weightstats import ztest
 import shutil
 from glob import glob
-
+import torch
 
 def set_environ():
     # FreeSurfer
@@ -899,16 +899,258 @@ class ScreenShot:
 
         self.concat_pvalue_screenshot(out_dir, feature=feature)
 
+class NegTriangleCount:
+    """
+    Calculate area of negative triangle and sum/average statistically
+    """
+    def __init__(self, dataset, method):
+        self.dataset = dataset
+        self.method = method
+        if method == 'deepprep':
+            self.subject_path = Path(f'/mnt/ngshare/DeepPrep/{self.dataset}/derivatives/{self.method}/Recon')
+            self.save_path = Path(f'/mnt/ngshare/DeepPrep/Validation/{self.dataset}/v1_feature/neg/{self.method}/Recon')
+        elif method == 'FreeSurfer':
+            self.subject_path = Path(f'/mnt/ngshare/DeepPrep/{self.dataset}/derivatives/{self.method}')
+            self.save_path = Path(f'/mnt/ngshare/DeepPrep/Validation/{self.dataset}/v1_feature/neg/{self.method}')
+    def negative_area(self,faces, xyz):
+        n = faces[:, 0]
+        n0 = faces[:, 2]
+        n1 = faces[:, 1]
 
+        v0 = xyz[n] - xyz[n0]
+        v1 = xyz[n1] - xyz[n]
+
+        d1 = -v1[:, 1] * v0[:, 2] + v0[:, 1] * v1[:, 2]
+        d2 = v1[:, 0] * v0[:, 2] - v0[:, 0] * v1[:, 2]
+        d3 = -v1[:, 0] * v0[:, 1] + v0[:, 0] * v1[:, 1]
+
+        dot = xyz[n][:, 0] * d1 + xyz[n][:, 1] * d2 + xyz[n][:, 2] * d3  # dot neg area neg
+        area = torch.sqrt(d1 * d1 + d2 * d2 + d3 * d3)
+        area[dot < 0] *= -1
+        return area
+    def negative_area_1(self,faces, xyz):
+        n = faces[:, 0]
+        n0 = faces[:, 2]
+        n1 = faces[:, 1]
+
+        v0 = xyz[n] - xyz[n0]
+        v1 = xyz[n1] - xyz[n]
+
+        d1 = -v1[:, 1] * v0[:, 2] + v0[:, 1] * v1[:, 2]
+        d2 = v1[:, 0] * v0[:, 2] - v0[:, 0] * v1[:, 2]
+        d3 = -v1[:, 0] * v0[:, 1] + v0[:, 0] * v1[:, 1]
+
+        dot = xyz[n][:, 0] * d1 + xyz[n][:, 1] * d2 + xyz[n][:, 2] * d3  # dot neg area neg
+        mask = dot < 0
+        count = torch.zeros(xyz.shape[0])
+        for i in range(len(mask)):
+            if mask[i] == True:
+                for j in range(len(faces[i])):
+                    count[faces[i][j]] = 1
+        return count
+    def count_negative_area(self):
+        """
+        Count the negative triangle area and save it as neg and annot format
+        """
+        subject_list = os.listdir(self.subject_path)
+        subject_list.sort()
+        i = 0
+        while i < len(subject_list):
+            if 'fsaverage' in subject_list[i]:
+                subject_list.remove(subject_list[i])
+                i -= 1
+            i += 1
+        count_num = 1
+        for hemi in ['lh', 'rh']:
+            fs6_annot_path = Path(
+                f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon/fsaverage6/label/{hemi}.aparc.annot')
+            _, ctab, names = nib.freesurfer.io.read_annot(fs6_annot_path)
+            for subject in subject_list:
+                if not (self.subject_path / subject).is_dir():
+                    continue
+                sphere_file = self.subject_path / subject / 'surf' / f'{hemi}.sphere.reg'
+                xyz_sphere, faces_sphere = nib.freesurfer.read_geometry(str(sphere_file))
+                device = 'cuda'
+                xyz_sphere = torch.from_numpy(xyz_sphere.astype(np.float32)).to(device)
+                faces_sphere = torch.from_numpy(faces_sphere.astype(int)).to(device)
+                count= self.negative_area_1(faces_sphere, xyz_sphere).numpy()
+                file_like_path = self.save_path / subject / 'surf'
+                if not file_like_path.exists():
+                    file_like_path.mkdir(parents=True, exist_ok=True)
+                nib.freesurfer.io.write_morph_data(os.path.join(file_like_path,f'{hemi}.neg'), count, fnum=0)
+                nib.freesurfer.io.write_annot(os.path.join(file_like_path,f'{hemi}.neg.annot'), count.astype('int64'),
+                                              ctab.astype('int64'), names)
+                print('count_num:',count_num)
+                count_num += 1
+
+    def remove_negative_area(self,faces, xyz, device='cuda'):
+        """
+        基于laplacian smoothing的原理
+        https://en.wikipedia.org/wiki/Laplacian_smoothing
+        """
+        from torch_scatter import scatter_mean
+        area = self.negative_area(faces, xyz)
+        index = area < 0
+        count = index.sum()  # 面积为负的面
+        print(f'negative area count : {count}')
+
+        remove_times = 0
+        dt_weight_init = 1  # 初始值
+
+        x = np.expand_dims(faces.cpu()[:, 0], 1)
+        y = np.expand_dims(faces.cpu()[:, 1], 1)
+        z = np.expand_dims(faces.cpu()[:, 2], 1)
+
+        a = np.concatenate([x, y], axis=1)
+        b = np.concatenate([y, x], axis=1)
+        c = np.concatenate([x, z], axis=1)
+        d = np.concatenate([z, x], axis=1)
+        e = np.concatenate([y, z], axis=1)
+        f = np.concatenate([z, y], axis=1)
+
+        edge_index = np.concatenate([a, b, c, d, e, f])
+        edge_index = torch.from_numpy(edge_index).to(device)
+        edge_index = edge_index.t().contiguous()
+
+        row, col = edge_index
+
+        while count > 0:
+            dt_weight = dt_weight_init - count % 10 * 0.01  # 按比例减小
+
+            xyz_dt = scatter_mean(xyz[col], row, dim=0) - xyz
+            neg_faces = faces[index]
+            index = neg_faces.flatten()
+            xyz[index] = xyz[index] + xyz_dt[index] * dt_weight
+            xyz = xyz / torch.norm(xyz, dim=1, keepdim=True) * 100
+
+            area = self.negative_area(faces, xyz)
+            index = area < 0
+            count = index.sum()  # 面积为负的面
+            print(f'negative area count : {count}')
+            remove_times += 1
+
+            if remove_times >= 1000:
+                break
+
+        return xyz, count, remove_times
+    def remove_negative_area_and_save_sphere(self):
+        """
+        Remove area of negative triangle and save as new sphere
+        """
+        subject_list = os.listdir(self.subject_path)
+        subject_list.sort()
+        i = 0
+        while i < len(subject_list):
+            if 'fsaverage' in subject_list[i]:
+                subject_list.remove(subject_list[i])
+                i -= 1
+            i += 1
+        count_num = 1
+        for hemi in ['lh', 'rh']:
+            for subject in subject_list:
+                if not (self.subject_path / subject).is_dir():
+                    continue
+                sphere_file = self.subject_path / subject / 'surf' / f'{hemi}.sphere.reg'
+                xyz_sphere, faces_sphere = nib.freesurfer.read_geometry(str(sphere_file))
+                device = 'cuda'
+                xyz_sphere = torch.from_numpy(xyz_sphere.astype(np.float32)).to(device)
+                faces_sphere = torch.from_numpy(faces_sphere.astype(int)).to(device)
+                area = self.negative_area(faces_sphere, xyz_sphere)
+                index = area < 0
+                count_orig = index.sum()  # 面积为负的面
+                print(f'negative area count : {count_orig}')
+                times = count_final = 0
+                if count_orig > 0:
+                    xyz_sphere, count_final, times = self.remove_negative_area(faces_sphere, xyz_sphere)
+
+                xyz_sphere = xyz_sphere.cpu().numpy()
+                faces_sphere = faces_sphere.cpu().numpy()
+                file_like = self.subject_path / subject / 'surf' / f'{hemi}.rna.sphere.reg'
+                nib.freesurfer.io.write_geometry(file_like, xyz_sphere, faces_sphere)
+                print('count_num:', count_num)
+                count_num += 1
+    def set_environ(self,dataset,method):
+        # FreeSurfer
+        os.environ['FREESURFER_HOME'] = '/usr/local/freesurfer'
+        if method == 'deepprep':
+            os.environ['SUBJECTS_DIR'] = f'/mnt/ngshare/DeepPrep/{dataset}/derivatives/{method}/Recon'
+        elif method == 'FreeSurfer':
+            os.environ['SUBJECTS_DIR'] = f'/mnt/ngshare/DeepPrep/{dataset}/derivatives/{method}'
+
+        os.environ['PATH'] = '/usr/local/freesurfer/bin:' + os.environ['PATH']
+    def surf2surf_use_annot(self, dataset, method, type_of_sphere='ori'):
+        """
+        type_of_sphere : 'ori' or 'rna'
+        """
+        self.set_environ(dataset, method)
+        subject_list = os.listdir(self.subject_path)
+        subject_list.sort()
+
+        i = 0
+        while i < len(subject_list):
+            if 'fsaverage' in subject_list[i]:
+                subject_list.remove(subject_list[i])
+                i -= 1
+            i += 1
+        for hemi in ['lh', 'rh']:
+            for subject in subject_list:
+                if not (self.subject_path / subject).is_dir():
+                    continue
+                annot1 = self.save_path / subject / 'surf' / f'{hemi}.neg.annot'
+                if type_of_sphere == 'ori':
+                    tval = self.save_path / subject / 'surf' / f'{hemi}.neg.40962.annot'
+                    cmd = f'mri_surf2surf --srcsubject {subject} --sval-annot {annot1} ' \
+                          f'--trgsubject fsaverage6 --tval {tval} --hemi {hemi} --surfreg sphere.reg'
+                elif type_of_sphere == 'rna':
+                    tval = self.save_path / subject / 'surf' / f'{hemi}.rna.neg.40962.annot'
+                    cmd = f'mri_surf2surf --srcsubject {subject} --sval-annot {annot1} ' \
+                      f'--trgsubject fsaverage6 --tval {tval} --hemi {hemi} --surfreg rna.sphere.reg'
+                os.system(cmd)
+
+    def statistic_native_area(self,dataset,metohd,type_of_sphere='ori'):
+        subject_list = os.listdir(self.subject_path)
+        subject_list.sort()
+
+        i = 0
+        while i < len(subject_list):
+            if 'fsaverage' in subject_list[i]:
+                subject_list.remove(subject_list[i])
+                i -= 1
+            i += 1
+        sum = np.zeros(40962)
+        for hemi in ['lh', 'rh']:
+            fs6_annot_path = Path(
+                f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon/fsaverage6/label/{hemi}.aparc.annot')
+            _, ctab, names = nib.freesurfer.io.read_annot(fs6_annot_path)
+            for subject in subject_list:
+                if not (self.subject_path / subject).is_dir():
+                    continue
+                if type_of_sphere == 'ori':
+                    label_path = self.save_path / subject / 'surf' / f'{hemi}.neg.40962.annot'
+                elif type_of_sphere == 'rna':
+                    label_path = self.subject_path / subject / 'surf' / f'{hemi}.rna.neg.40962.annot'
+                label, _, _ = nib.freesurfer.io.read_annot(label_path)
+                sum += label
+            path = f'/mnt/ngshare/DeepPrep/Validation/{dataset}/v1_feature/neg'
+            file_like_path = Path(os.path.join(path, f'statistic_native_area_{metohd}'))
+            if not file_like_path.exists():
+                file_like_path.mkdir(parents=True, exist_ok=True)
+            nib.freesurfer.io.write_morph_data(os.path.join(file_like_path,f'{hemi}.neg.rna.statistic.sulc'),
+                                               sum.astype('int64'))
 if __name__ == '__main__':
     set_environ()
     # Calculate Accuracy and stability
-
+    neg = NegTriangleCount('MSC','deepprep')
+    # neg.count_negative_area()
+    # neg.remove_negative_area_and_save_sphere()
+    # neg.surf2surf_use_annot('MSC','deepprep','rna')
+    # neg.statistic_native_area('MSC','deepprep')
+    exit()
     cls = AccAndStability('MSC', 'DeepPrep')
-    # cls.ants_reg('Rigid')
-    # cls.aseg_acc('FreeSurfer', 'DeepPrep')
-    # cls.aseg_stability('FreeSurfer', aseg=True)
-    # cls.aseg_stability('DeepPrep', aseg=True)
+    cls.ants_reg('Rigid')
+    cls.aseg_acc('FreeSurfer', 'DeepPrep')
+    cls.aseg_stability('FreeSurfer', aseg=True)
+    cls.aseg_stability('DeepPrep', aseg=True)
     cls.aparc_stability('/run/user/1000/gvfs/sftp:host=30.30.30.66,user=zhenyu/home/zhenyu/workdata/App/MSC_DeepPrep_processed',
                         92, method="DeepPrep")
     cls.aparc_stability(
