@@ -14,6 +14,7 @@ import shutil
 from glob import glob
 import torch
 
+
 def set_environ():
     # FreeSurfer
     value = os.environ.get('FREESURFER_HOME')
@@ -21,6 +22,7 @@ def set_environ():
         os.environ['FREESURFER_HOME'] = '/usr/local/freesurfer'
         os.environ['SUBJECTS_DIR'] = '/usr/local/freesurfer/subjects'
         os.environ['PATH'] = '/usr/local/freesurfer/bin:' + os.environ['PATH']
+
 
 def info_label_aseg():
     aseg_label = [0., 2., 3., 4., 5., 7., 8., 10., 11., 12., 13.,
@@ -98,6 +100,7 @@ def info_label_aparc(parc):
     else:
         raise RuntimeError("parc = 18 or 92")
 
+
 class AccAndStability:
     """
     Calculate dice acc and dice std (stability)
@@ -105,6 +108,7 @@ class AccAndStability:
     ants_reg: register to mni152_1mm space
     aseg_acc: use aseg results of method1 as gt to calculate the acc (dice) of method2
     """
+
     def __init__(self, dataset, method):
         self.dataset = dataset
         self.method = method
@@ -214,7 +218,8 @@ class AccAndStability:
                 ants.image_write(aseg_moved, str(aseg_movd_dir))
                 print(f'{file} done')
             else:
-                raise TypeError("type_of_transform should be either 'SyN' for non-linear registration, or 'Rigid' for linear registration")
+                raise TypeError(
+                    "type_of_transform should be either 'SyN' for non-linear registration, or 'Rigid' for linear registration")
 
     def aseg_acc(self, method1, method2):
         """
@@ -373,9 +378,11 @@ class AccAndStability:
                         aparc_j = dict[sub][j]
                         if parc != 92:
                             i_dir = \
-                            glob(os.path.join(input_dir, sub, aparc_i, f'parc/{aparc_i}/*/{hemi}_parc_result.annot'))[0]
+                                glob(os.path.join(input_dir, sub, aparc_i,
+                                                  f'parc/{aparc_i}/*/{hemi}_parc_result.annot'))[0]
                             j_dir = \
-                            glob(os.path.join(input_dir, sub, aparc_j, f'parc/{aparc_j}/*/{hemi}_parc_result.annot'))[0]
+                                glob(os.path.join(input_dir, sub, aparc_j,
+                                                  f'parc/{aparc_j}/*/{hemi}_parc_result.annot'))[0]
                         elif parc == 92:
                             i_dir = glob(os.path.join(input_dir, sub, aparc_i, f'parc92/{hemi}_parc92_result.annot'))[0]
                             j_dir = glob(os.path.join(input_dir, sub, aparc_j, f'parc92/{hemi}_parc92_result.annot'))[0]
@@ -413,6 +420,7 @@ class ScreenShot:
     """
     Take screenshots of input pipeline and dataset according to different methods and features (thickness, sulc, curv).
     """
+
     def __init__(self, pipeline, dataset, method1="DeepPrep", method2='FreeSurfer'):
         """
         Initialize the ScreenShot
@@ -442,6 +450,7 @@ class ScreenShot:
         cmd = f'freeview --viewsize 800 600 -viewport 3D  -layout 1 -hide-3d-slices -f {surf_file}:overlay={overlay_file}:overlay_threshold={min},{max}:overlay_color={overlay_color},inverse -cam dolly 1.4 azimuth 0 -ss {save_path}'
         print(cmd)
         os.system(cmd)
+
     def image_screenshot_azimuth_180(self, surf_file, overlay_file, save_path, min, max, overlay_color='colorwheel'):
         cmd = f'freeview --viewsize 800 600 -viewport 3D  -layout 1 -hide-3d-slices -f {surf_file}:overlay={overlay_file}:overlay_threshold={min},{max}:overlay_color={overlay_color},inverse -cam dolly 1.4 azimuth 180 -ss {save_path}'
         print(cmd)
@@ -451,10 +460,12 @@ class ScreenShot:
         cmd = f'freeview --viewsize 800 600 -viewport 3D  -layout 1 -hide-3d-slices -f {surf_file}:overlay={overlay_file}:overlay_threshold={min},{max}:overlay_color={overlay_color}, -cam dolly 1.4 azimuth 0 -ss {save_path}'
         print(cmd)
         os.system(cmd)
+
     def pvalue_image_screenshot_azimuth_180(self, surf_file, overlay_file, save_path, min, max, overlay_color='heat'):
         cmd = f'freeview --viewsize 800 600 -viewport 3D  -layout 1 -hide-3d-slices -f {surf_file}:overlay={overlay_file}:overlay_threshold={min},{max}:overlay_color={overlay_color}, -cam dolly 1.4 azimuth 180 -ss {save_path}'
         print(cmd)
         os.system(cmd)
+
     def feature_screenshot(self, feature='thickness', vmin='', vmax=''):
         """
         读取FreeSurfer格式的目录，并对aparc结构进行截图
@@ -764,6 +775,7 @@ class ScreenShot:
             if not out_dir.exists():
                 out_dir.mkdir(parents=True, exist_ok=True)
             img = concat_horizontal([img_h1, img_h2], str(save_file))
+
     def group_screenshot(self, feature='thickness', vmin1='', vmax1='', vmin2='', vmax2=''):
         """
 
@@ -816,6 +828,7 @@ class ScreenShot:
         if not out_dir.exists():
             out_dir.mkdir(parents=True, exist_ok=True)
         img = concat_horizontal([img_h1, img_h2], str(save_file))
+
     def stability_screenshot(self, feature='thickness', vmin='', vmax=''):
         """
         """
@@ -899,10 +912,12 @@ class ScreenShot:
 
         self.concat_pvalue_screenshot(out_dir, feature=feature)
 
+
 class NegTriangleCount:
     """
     Calculate area of negative triangle and sum/average statistically
     """
+
     def __init__(self, dataset, method):
         self.dataset = dataset
         self.method = method
@@ -912,7 +927,8 @@ class NegTriangleCount:
         elif method == 'FreeSurfer':
             self.subject_path = Path(f'/mnt/ngshare/DeepPrep/{self.dataset}/derivatives/{self.method}')
             self.save_path = Path(f'/mnt/ngshare/DeepPrep/Validation/{self.dataset}/v1_feature/neg/{self.method}')
-    def negative_area(self,faces, xyz):
+
+    def negative_area(self, faces, xyz):
         n = faces[:, 0]
         n0 = faces[:, 2]
         n1 = faces[:, 1]
@@ -928,7 +944,8 @@ class NegTriangleCount:
         area = torch.sqrt(d1 * d1 + d2 * d2 + d3 * d3)
         area[dot < 0] *= -1
         return area
-    def negative_area_1(self,faces, xyz):
+
+    def negative_area_1(self, faces, xyz):
         n = faces[:, 0]
         n0 = faces[:, 2]
         n1 = faces[:, 1]
@@ -948,6 +965,7 @@ class NegTriangleCount:
                 for j in range(len(faces[i])):
                     count[faces[i][j]] = 1
         return count
+
     def count_negative_area(self):
         """
         Count the negative triangle area and save it as neg and annot format
@@ -973,17 +991,17 @@ class NegTriangleCount:
                 device = 'cuda'
                 xyz_sphere = torch.from_numpy(xyz_sphere.astype(np.float32)).to(device)
                 faces_sphere = torch.from_numpy(faces_sphere.astype(int)).to(device)
-                count= self.negative_area_1(faces_sphere, xyz_sphere).numpy()
+                count = self.negative_area_1(faces_sphere, xyz_sphere).numpy()
                 file_like_path = self.save_path / subject / 'surf'
                 if not file_like_path.exists():
                     file_like_path.mkdir(parents=True, exist_ok=True)
-                nib.freesurfer.io.write_morph_data(os.path.join(file_like_path,f'{hemi}.neg'), count, fnum=0)
-                nib.freesurfer.io.write_annot(os.path.join(file_like_path,f'{hemi}.neg.annot'), count.astype('int64'),
+                nib.freesurfer.io.write_morph_data(os.path.join(file_like_path, f'{hemi}.neg'), count, fnum=0)
+                nib.freesurfer.io.write_annot(os.path.join(file_like_path, f'{hemi}.neg.annot'), count.astype('int64'),
                                               ctab.astype('int64'), names)
-                print('count_num:',count_num)
+                print('count_num:', count_num)
                 count_num += 1
 
-    def remove_negative_area(self,faces, xyz, device='cuda'):
+    def remove_negative_area(self, faces, xyz, device='cuda'):
         """
         基于laplacian smoothing的原理
         https://en.wikipedia.org/wiki/Laplacian_smoothing
@@ -1033,6 +1051,7 @@ class NegTriangleCount:
                 break
 
         return xyz, count, remove_times
+
     def remove_negative_area_and_save_sphere(self):
         """
         Remove area of negative triangle and save as new sphere
@@ -1069,7 +1088,8 @@ class NegTriangleCount:
                 nib.freesurfer.io.write_geometry(file_like, xyz_sphere, faces_sphere)
                 print('count_num:', count_num)
                 count_num += 1
-    def set_environ(self,dataset,method):
+
+    def set_environ(self, dataset, method):
         # FreeSurfer
         os.environ['FREESURFER_HOME'] = '/usr/local/freesurfer'
         if method == 'deepprep':
@@ -1078,6 +1098,7 @@ class NegTriangleCount:
             os.environ['SUBJECTS_DIR'] = f'/mnt/ngshare/DeepPrep/{dataset}/derivatives/{method}'
 
         os.environ['PATH'] = '/usr/local/freesurfer/bin:' + os.environ['PATH']
+
     def surf2surf_use_annot(self, dataset, method, type_of_sphere='ori'):
         """
         type_of_sphere : 'ori' or 'rna'
@@ -1104,10 +1125,10 @@ class NegTriangleCount:
                 elif type_of_sphere == 'rna':
                     tval = self.save_path / subject / 'surf' / f'{hemi}.rna.neg.40962.annot'
                     cmd = f'mri_surf2surf --srcsubject {subject} --sval-annot {annot1} ' \
-                      f'--trgsubject fsaverage6 --tval {tval} --hemi {hemi} --surfreg rna.sphere.reg'
+                          f'--trgsubject fsaverage6 --tval {tval} --hemi {hemi} --surfreg rna.sphere.reg'
                 os.system(cmd)
 
-    def statistic_native_area(self,dataset,metohd,type_of_sphere='ori'):
+    def statistic_native_area(self, dataset, metohd, type_of_sphere='ori'):
         subject_list = os.listdir(self.subject_path)
         subject_list.sort()
 
@@ -1135,12 +1156,14 @@ class NegTriangleCount:
             file_like_path = Path(os.path.join(path, f'statistic_native_area_{metohd}'))
             if not file_like_path.exists():
                 file_like_path.mkdir(parents=True, exist_ok=True)
-            nib.freesurfer.io.write_morph_data(os.path.join(file_like_path,f'{hemi}.neg.rna.statistic.sulc'),
+            nib.freesurfer.io.write_morph_data(os.path.join(file_like_path, f'{hemi}.neg.rna.statistic.sulc'),
                                                sum.astype('int64'))
+
+
 if __name__ == '__main__':
     set_environ()
     # Calculate Accuracy and stability
-    neg = NegTriangleCount('MSC','deepprep')
+    neg = NegTriangleCount('MSC', 'deepprep')
     # neg.count_negative_area()
     # neg.remove_negative_area_and_save_sphere()
     # neg.surf2surf_use_annot('MSC','deepprep','rna')
@@ -1151,13 +1174,13 @@ if __name__ == '__main__':
     cls.aseg_acc('FreeSurfer', 'DeepPrep')
     cls.aseg_stability('FreeSurfer', aseg=True)
     cls.aseg_stability('DeepPrep', aseg=True)
-    cls.aparc_stability('/run/user/1000/gvfs/sftp:host=30.30.30.66,user=zhenyu/home/zhenyu/workdata/App/MSC_DeepPrep_processed',
-                        92, method="DeepPrep")
+    cls.aparc_stability(
+        '/run/user/1000/gvfs/sftp:host=30.30.30.66,user=zhenyu/home/zhenyu/workdata/App/MSC_DeepPrep_processed',
+        92, method="DeepPrep")
     cls.aparc_stability(
         '/run/user/1000/gvfs/sftp:host=30.30.30.66,user=zhenyu/mnt/ngshare2/App/MSC_app',
         92, method="App")
     exit()
-
 
     method1 = 'DeepPrep'
     method2 = 'FreeSurfer'
@@ -1165,9 +1188,9 @@ if __name__ == '__main__':
     dataset = 'MSC'
     screenshot = ScreenShot(pipeline, dataset, method1, method2)
     for feature, (vmin, vmax), (vmin2, vmax2), (vmin3, vmax3) in zip(['thickness', 'curv', 'sulc'],
-                                     [('1', '3.5'), ('-0.5', '0.25'), ('-13', '13'),],
-                                     [('0', '0.35'), ('0', '0.05'), ('0', '1.3'),],
-                                     [('0', '0.35'), ('0', '0.05'), ('0', '1.3')],):
+                                                                     [('1', '3.5'), ('-0.5', '0.25'), ('-13', '13'), ],
+                                                                     [('0', '0.35'), ('0', '0.05'), ('0', '1.3'), ],
+                                                                     [('0', '0.35'), ('0', '0.05'), ('0', '1.3')], ):
         screenshot.feature_screenshot(feature)
         screenshot.feature_screenshot(feature)
         screenshot.ln_subject()
@@ -1179,7 +1202,6 @@ if __name__ == '__main__':
             screenshot.cal_group_fsaverage6(feature=feature, hemi=hemi)
             screenshot.cal_group_difference(feature=feature, hemi=hemi)
 
-        screenshot.group_screenshot(feature=feature,  vmin1=vmin, vmax1=vmax, vmin2=vmin2,vmax2=vmax2)
+        screenshot.group_screenshot(feature=feature, vmin1=vmin, vmax1=vmax, vmin2=vmin2, vmax2=vmax2)
         screenshot.stability_screenshot(feature=feature, vmin=vmin3, vmax=vmax3)
         screenshot.p_value_screenshot(feature=feature, vmin1='2.0', vmax1='5.0')
-
