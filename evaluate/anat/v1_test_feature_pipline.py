@@ -22,6 +22,7 @@ def set_environ():
         os.environ['SUBJECTS_DIR'] = '/usr/local/freesurfer/subjects'
         os.environ['PATH'] = '/usr/local/freesurfer/bin:' + os.environ['PATH']
 
+
 def info_label_aseg():
     aseg_label = [0., 2., 3., 4., 5., 7., 8., 10., 11., 12., 13.,
                   14., 15., 16., 17., 18., 24., 26., 28., 30., 31., 41.,
@@ -95,8 +96,38 @@ def info_label_aparc(parc):
             else:
                 aparc_label_dict[i] = f'Unknown'
         return aparc_label, aparc_label_dict
+    elif parc == 152:
+        index = np.squeeze(ants.image_read('aparc_template/lh.Clustering_76_fs6.mgh').numpy())
+        aparc_label = set(index)
+        aparc_label_dict = {}
+        for i in aparc_label:
+            if i != 0:
+                aparc_label_dict[i] = f'Network_{int(i)}'
+            else:
+                aparc_label_dict[i] = f'Unknown'
+        return aparc_label, aparc_label_dict
+    elif parc == 213:
+        index_l = np.squeeze(ants.image_read('aparc_template/lh.Clustering_108_fs6.mgh').numpy())
+        index_r = np.squeeze(ants.image_read('aparc_template/rh.Clustering_108_fs6.mgh').numpy())
+        aparc_label_l = set(index_l)
+        aparc_label_r = set(index_r)
+        aparc_label_dict_l = {}
+        aparc_label_dict_r = {}
+        for i in aparc_label_l:
+            if i != 0:
+                aparc_label_dict_l[i] = f'Network_{int(i)}'
+            else:
+                aparc_label_dict_l[i] = f'Unknown'
+        for i in aparc_label_r:
+            if i != 0:
+                aparc_label_dict_r[i] = f'Network_{int(i)}'
+            else:
+                aparc_label_dict_r[i] = f'Unknown'
+
+        return aparc_label_l, aparc_label_dict_l, aparc_label_r, aparc_label_dict_r
     else:
         raise RuntimeError("parc = 18 or 92")
+
 
 class AccAndStability:
     """
@@ -105,6 +136,7 @@ class AccAndStability:
     ants_reg: register to mni152_1mm space
     aseg_acc: use aseg results of method1 as gt to calculate the acc (dice) of method2
     """
+
     def __init__(self, dataset, method):
         self.dataset = dataset
         self.method = method
@@ -214,7 +246,8 @@ class AccAndStability:
                 ants.image_write(aseg_moved, str(aseg_movd_dir))
                 print(f'{file} done')
             else:
-                raise TypeError("type_of_transform should be either 'SyN' for non-linear registration, or 'Rigid' for linear registration")
+                raise TypeError(
+                    "type_of_transform should be either 'SyN' for non-linear registration, or 'Rigid' for linear registration")
 
     def aseg_acc(self, method1, method2):
         """
@@ -333,13 +366,15 @@ class AccAndStability:
 
     def aparc_stability(self, input_dir, parc, method='DeepPrep'):
         """
-        calculate 18 or 92 aparc stability (std of dice) for each sub
+        calculate 18, 92 , 152 or 213 aparc stability (std of dice) for each sub
 
         Arguments
         ---------
         method: aparc method
         aparc: 18 -- get 18 aparc labels
               92 -- get 92 aparc labels
+              152 -- get 152 aparc labels
+              213 -- get 213 aparc labels
 
         Returns
         -------
@@ -348,8 +383,10 @@ class AccAndStability:
         output_dir = Path(self.output_dir, f'aparc{parc}_{method}_csv')
         if not output_dir.exists():
             output_dir.mkdir(parents=True, exist_ok=True)
-
-        label, label_dict = info_label_aparc(parc)
+        if parc == 213:
+            label_lh, label_dict_lh, label_rh, label_dict_rh = info_label_aparc(parc)
+        else:
+            label, label_dict = info_label_aparc(parc)
         sub_id = [sub for sub in sorted(os.listdir(input_dir))]
         dict = {}
         for sub in sub_id:
@@ -357,7 +394,14 @@ class AccAndStability:
             dict[sub] = sorted(os.listdir(sub_dir))
 
         for hemi in ['lh', 'rh']:
-
+            if parc == 213 and hemi == 'lh':
+                label = label_lh
+                label_dict = label_dict_lh
+            elif parc == 213 and hemi == 'rh':
+                label = label_rh
+                label_dict = label_dict_rh
+            else:
+                pass
             df_dice_mean = pd.DataFrame(columns=label_dict.values(), index=sorted(dict.keys()))
             df_dice_std = pd.DataFrame(columns=label_dict.values(), index=sorted(dict.keys()))
 
@@ -371,14 +415,16 @@ class AccAndStability:
                     aparc_i = dict[sub][i]
                     for j in range(i + 1, len(dict[sub])):
                         aparc_j = dict[sub][j]
-                        if parc != 92:
+                        if parc == 18:
                             i_dir = \
                             glob(os.path.join(input_dir, sub, aparc_i, f'parc/{aparc_i}/*/{hemi}_parc_result.annot'))[0]
                             j_dir = \
                             glob(os.path.join(input_dir, sub, aparc_j, f'parc/{aparc_j}/*/{hemi}_parc_result.annot'))[0]
-                        elif parc == 92:
-                            i_dir = glob(os.path.join(input_dir, sub, aparc_i, f'parc92/{hemi}_parc92_result.annot'))[0]
-                            j_dir = glob(os.path.join(input_dir, sub, aparc_j, f'parc92/{hemi}_parc92_result.annot'))[0]
+                        elif parc != 18:
+                            i_dir = \
+                            glob(os.path.join(input_dir, sub, aparc_i, f'parc{parc}/{hemi}_parc{parc}_result.annot'))[0]
+                            j_dir = \
+                            glob(os.path.join(input_dir, sub, aparc_j, f'parc{parc}/{hemi}_parc{parc}_result.annot'))[0]
                         else:
                             pass
                         print(aparc_i, aparc_j)
@@ -413,6 +459,7 @@ class ScreenShot:
     """
     Take screenshots of input pipeline and dataset according to different methods and features (thickness, sulc, curv).
     """
+
     def __init__(self, pipeline, dataset, method1="DeepPrep", method2='FreeSurfer'):
         """
         Initialize the ScreenShot
@@ -442,6 +489,7 @@ class ScreenShot:
         cmd = f'freeview --viewsize 800 600 -viewport 3D  -layout 1 -hide-3d-slices -f {surf_file}:overlay={overlay_file}:overlay_threshold={min},{max}:overlay_color={overlay_color},inverse -cam dolly 1.4 azimuth 0 -ss {save_path}'
         print(cmd)
         os.system(cmd)
+
     def image_screenshot_azimuth_180(self, surf_file, overlay_file, save_path, min, max, overlay_color='colorwheel'):
         cmd = f'freeview --viewsize 800 600 -viewport 3D  -layout 1 -hide-3d-slices -f {surf_file}:overlay={overlay_file}:overlay_threshold={min},{max}:overlay_color={overlay_color},inverse -cam dolly 1.4 azimuth 180 -ss {save_path}'
         print(cmd)
@@ -451,10 +499,12 @@ class ScreenShot:
         cmd = f'freeview --viewsize 800 600 -viewport 3D  -layout 1 -hide-3d-slices -f {surf_file}:overlay={overlay_file}:overlay_threshold={min},{max}:overlay_color={overlay_color}, -cam dolly 1.4 azimuth 0 -ss {save_path}'
         print(cmd)
         os.system(cmd)
+
     def pvalue_image_screenshot_azimuth_180(self, surf_file, overlay_file, save_path, min, max, overlay_color='heat'):
         cmd = f'freeview --viewsize 800 600 -viewport 3D  -layout 1 -hide-3d-slices -f {surf_file}:overlay={overlay_file}:overlay_threshold={min},{max}:overlay_color={overlay_color}, -cam dolly 1.4 azimuth 180 -ss {save_path}'
         print(cmd)
         os.system(cmd)
+
     def feature_screenshot(self, feature='thickness', vmin='', vmax=''):
         """
         读取FreeSurfer格式的目录，并对aparc结构进行截图
@@ -764,6 +814,7 @@ class ScreenShot:
             if not out_dir.exists():
                 out_dir.mkdir(parents=True, exist_ok=True)
             img = concat_horizontal([img_h1, img_h2], str(save_file))
+
     def group_screenshot(self, feature='thickness', vmin1='', vmax1='', vmin2='', vmax2=''):
         """
 
@@ -816,6 +867,7 @@ class ScreenShot:
         if not out_dir.exists():
             out_dir.mkdir(parents=True, exist_ok=True)
         img = concat_horizontal([img_h1, img_h2], str(save_file))
+
     def stability_screenshot(self, feature='thickness', vmin='', vmax=''):
         """
         """
@@ -909,13 +961,13 @@ if __name__ == '__main__':
     # cls.aseg_acc('FreeSurfer', 'DeepPrep')
     # cls.aseg_stability('FreeSurfer', aseg=True)
     # cls.aseg_stability('DeepPrep', aseg=True)
-    cls.aparc_stability('/run/user/1000/gvfs/sftp:host=30.30.30.66,user=zhenyu/home/zhenyu/workdata/App/MSC_DeepPrep_processed',
-                        92, method="DeepPrep")
+    # cls.aparc_stability(
+    #     '/run/user/1000/gvfs/sftp:host=30.30.30.66,user=zhenyu/home/zhenyu/workdata/App/MSC_DeepPrep_processed',
+    #     92, method="DeepPrep")
     cls.aparc_stability(
-        '/run/user/1000/gvfs/sftp:host=30.30.30.66,user=zhenyu/mnt/ngshare2/App/MSC_app',
-        92, method="App")
+        '/mnt/ngshare2/App/MSC_app',
+        213, method="App")
     exit()
-
 
     method1 = 'DeepPrep'
     method2 = 'FreeSurfer'
@@ -923,9 +975,9 @@ if __name__ == '__main__':
     dataset = 'MSC'
     screenshot = ScreenShot(pipeline, dataset, method1, method2)
     for feature, (vmin, vmax), (vmin2, vmax2), (vmin3, vmax3) in zip(['thickness', 'curv', 'sulc'],
-                                     [('1', '3.5'), ('-0.5', '0.25'), ('-13', '13'),],
-                                     [('0', '0.35'), ('0', '0.05'), ('0', '1.3'),],
-                                     [('0', '0.35'), ('0', '0.05'), ('0', '1.3')],):
+                                                                     [('1', '3.5'), ('-0.5', '0.25'), ('-13', '13'), ],
+                                                                     [('0', '0.35'), ('0', '0.05'), ('0', '1.3'), ],
+                                                                     [('0', '0.35'), ('0', '0.05'), ('0', '1.3')], ):
         screenshot.feature_screenshot(feature)
         screenshot.feature_screenshot(feature)
         screenshot.ln_subject()
@@ -937,7 +989,6 @@ if __name__ == '__main__':
             screenshot.cal_group_fsaverage6(feature=feature, hemi=hemi)
             screenshot.cal_group_difference(feature=feature, hemi=hemi)
 
-        screenshot.group_screenshot(feature=feature,  vmin1=vmin, vmax1=vmax, vmin2=vmin2,vmax2=vmax2)
+        screenshot.group_screenshot(feature=feature, vmin1=vmin, vmax1=vmax, vmin2=vmin2, vmax2=vmax2)
         screenshot.stability_screenshot(feature=feature, vmin=vmin3, vmax=vmax3)
         screenshot.p_value_screenshot(feature=feature, vmin1='2.0', vmax1='5.0')
-
