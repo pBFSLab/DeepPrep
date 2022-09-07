@@ -74,15 +74,16 @@ class TalairachAndNu(BaseInterface):
     input_spec = TalairachAndNuInputSpec
     output_spec = TalairachAndNuOutputSpec
 
-    def __init__(self):
+    def __init__(self, freesurfer_home: Path):
         super(TalairachAndNu, self).__init__()
+        self.mni305 = freesurfer_home / "average" / "mni305.cor.mgz"
 
     def _run_interface(self, runtime):
         # talairach.xfm: compute talairach full head (25sec)
         cmd = f'cd {self.inputs.sub_mri_dir} && ' \
-              f'talairach_avi --i {self.inputs.orig_nu_file} --xfm {self.inputs.sub_mri_dir}/transforms/talairach.auto.xfm'
+              f'talairach_avi --i {self.inputs.orig_nu_file} --xfm {self.inputs.talairach_auto_xfm}'
         run_cmd_with_timing(cmd)
-        cmd = f'cp {self.inputs.sub_mri_dir}/transforms/talairach.auto.xfm {self.inputs.sub_mri_dir}/transforms/talairach.xfm'
+        cmd = f'cp {self.inputs.talairach_auto_xfm} {self.inputs.talairach_xfm}'
         run_cmd_with_timing(cmd)
 
         # talairach.lta:  convert to lta
@@ -120,11 +121,32 @@ if __name__ == '__main__':
 
     python = args.python
     fastsurfer_home = Path.cwd() / "FastSurfer"
+    subject_dir = ""
+    subject_id = ""
+    sub_mri_dir = subject_dir / subject_id / "mri"
+    orig_nu_file = sub_mri_dir / "orig_nu.mgz"
+    # talairach_auto_xfm
+    talairach_xfm = sub_mri_dir / "transform" / "talairach.xfm"
+    orig_file = sub_mri_dir / "orig.mgz"
+    freesurfer_home = ""
+    talairach_xfm_lta = sub_mri_dir / "transform" / "talairach.xfm.lta"
+    talairach_lta = sub_mri_dir / "transform" / "talairach.lta"
+
+
+
+
+
 
     N4_bias_correct_node = Node(N4BiasCorrect(fastsurfer_home), name="N4_bias_correct_node")
+    N4_bias_correct_node.inputs.fastsurfer_home = fastsurfer_home
+
+
+
+
     talairach_and_nu_node = Node(TalairachAndNu(), name="talairach_and_nu_node")
     talairach_and_nu_node.inputs.sub_mri_dir = ''
     talairach_and_nu_node.inputs.threads = 30
 
-    wf = Workflow(name="talairach_and_nu")
-    wf.connect([(N4_bias_correct_node, talairach_and_nu_node), [("nu_file", "orig_nu_file")]])
+    # wf = Workflow(name="talairach_and_nu")
+    # wf.connect([(N4_bias_correct_node, talairach_and_nu_node), [("nu_file", "orig_nu_file")]])
+
