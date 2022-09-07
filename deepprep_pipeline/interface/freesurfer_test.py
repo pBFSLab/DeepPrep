@@ -3,6 +3,7 @@ from freesurfer import Brainmask
 from nipype import Node
 from .cmd import set_envrion
 
+
 def Brainmask_test():
     set_envrion()
     subject_dir = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon')
@@ -18,6 +19,6 @@ def Brainmask_test():
     brainmask_node.inputs.norm_file = subject_dir / subject_id / 'mri' / 'norm.mgz'
     brainmask_node.run()
 
+
 if __name__ == '__main__':
     Brainmask_test()
-
