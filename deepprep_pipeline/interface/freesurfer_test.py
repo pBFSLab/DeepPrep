@@ -1,29 +1,9 @@
 import os
 from freesurfer import OrigAndRawavg
+from pathlib import Path
+from freesurfer import Brainmask
 from nipype import Node
-
-
-def set_envrion(threads: int = 1):
-    # FreeSurfer recon-all env
-    os.environ['FREESURFER_HOME'] = '/usr/local/freesurfer'
-    os.environ['FREESURFER'] = '/usr/local/freesurfer'
-    os.environ['SUBJECTS_DIR'] = '/usr/local/freesurfer/subjects'
-    os.environ['PATH'] = '/usr/local/freesurfer/bin:/usr/local/freesurfer/mni/bin:/usr/local/freesurfer/tktools:' + \
-                         '/usr/local/freesurfer/fsfast/bin:' + os.environ['PATH']
-    os.environ['MINC_BIN_DIR'] = '/usr/local/freesurfer/mni/bin'
-    os.environ['MINC_LIB_DIR'] = '/usr/local/freesurfer/mni/lib'
-    os.environ['PERL5LIB'] = '/usr/local/freesurfer/mni/share/perl5'
-    os.environ['MNI_PERL5LIB'] = '/usr/local/freesurfer/mni/share/perl5'
-    # FreeSurfer fsfast env
-    os.environ['FSF_OUTPUT_FORMAT'] = 'nii.gz'
-    os.environ['FSLOUTPUTTYPE'] = 'NIFTI_GZ'
-
-    # FSL
-    os.environ['PATH'] = '/usr/local/fsl/bin:' + os.environ['PATH']
-
-    # set threads
-    os.environ['OMP_NUM_THREADS'] = str(threads)
-    os.environ['ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS'] = str(threads)
+from cmd import set_envrion
 
 
 def OrigAndRawavg_test():
@@ -55,5 +35,22 @@ def OrigAndRawavg_test():
     origandrawavg_node.run()
 
 
+def Brainmask_test():
+    set_envrion()
+    subject_dir = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon')
+    subject_id = 'sub-MSC01'
+    brainmask_node = Node(Brainmask(), name='brainmask_node')
+    brainmask_node.inputs.subject_dir = subject_dir
+    brainmask_node.inputs.subject_id = subject_id
+    brainmask_node.inputs.need_t1 = True
+    brainmask_node.inputs.nu_file = subject_dir / subject_id / 'mri' / 'nu.mgz'
+    brainmask_node.inputs.mask_file = subject_dir / subject_id / 'mri' / 'mask.mgz'
+    brainmask_node.inputs.T1_file = subject_dir / subject_id / 'mri' / 'T1.mgz'
+    brainmask_node.inputs.brainmask_file = subject_dir / subject_id / 'mri' / 'brainmask.mgz'
+    brainmask_node.inputs.norm_file = subject_dir / subject_id / 'mri' / 'norm.mgz'
+    brainmask_node.run()
+
+
 if __name__ == '__main__':
     OrigAndRawavg_test()
+    Brainmask_test()

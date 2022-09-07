@@ -1,8 +1,7 @@
 from nipype.interfaces.base import BaseInterface, \
     BaseInterfaceInputSpec, traits, File, TraitedSpec, Directory, Str
 from nipype import Node, Workflow
-
-from cmd import run_cmd_with_timing
+from .cmd import run_cmd_with_timing
 import os
 import time
 from pathlib import Path
@@ -40,6 +39,56 @@ def parse_args():
     return argparse.Namespace(**args_dict)
 
 
+class BrainmaskInputSpec(BaseInterfaceInputSpec):
+    subject_dir = Directory(exists=True, desc="subject dir", mandatory=True)
+    subject_id = Str(desc="subject id", mandatory=True)
+    need_t1 = traits.BaseCBool(desc='bool', mandatory=True)
+    nu_file = File(exists=True, desc="nu file", mandatory=True)
+    mask_file = File(exists=True, desc="mask file", mandatory=True)
+
+    T1_file = File(exists=False, desc="T1 file", mandatory=True)
+    brainmask_file = File(exists=False, desc="brainmask file", mandatory=True)
+    norm_file = File(exists=False, desc="norm file", mandatory=True)
+
+
+class BrainmaskOutputSpec(TraitedSpec):
+    brainmask_file = File(exists=True, desc="brainmask file")
+    norm_file = File(exists=True, desc="norm file")
+    T1_file = File(exists=False, desc="T1 file")
+
+
+class Brainmask(BaseInterface):
+    input_spec = BrainmaskInputSpec
+    output_spec = BrainmaskOutputSpec
+
+    def _run_interface(self, runtime):
+        # create norm by masking nu 0.7s
+        need_t1 = self.inputs.need_t1
+        cmd = f'mri_mask {self.inputs.nu_file} {self.inputs.mask_file} {self.inputs.norm_file}'
+        run_cmd_with_timing(cmd)
+
+        if need_t1:  # T1.mgz 相比 orig.mgz 更平滑，对比度更高
+            # create T1.mgz from nu 96.9s
+            cmd = f'mri_normalize -g 1 -mprage {self.inputs.nu_file} {self.inputs.T1_file}'
+            run_cmd_with_timing(cmd)
+
+            # create brainmask by masking T1
+            cmd = f'mri_mask {self.inputs.T1_file} {self.inputs.mask_file} {self.inputs.brainmask_file}'
+            run_cmd_with_timing(cmd)
+        else:
+            cmd = f'ln -sf {self.inputs.norm_file} {self.inputs.brainmask_file}'
+            run_cmd_with_timing(cmd)
+
+        return runtime
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["brainmask_file"] = self.inputs.brainmask_file
+        outputs["norm_file"] = self.inputs.norm_file
+        outputs["T1_file"] = self.inputs.T1_file
+
+        return outputs
+
 
 class N4BiasCorrectOutputSpec(TraitedSpec):
     nu_file = File(exists=True, desc='orig_nu.mgz')
@@ -75,7 +124,6 @@ class TalairachAndNuInputSpec(BaseInterfaceInputSpec):
 class TalairachAndNuOutputSpec(TraitedSpec):
     talairach_file = File(exists=True, desc='talairach.lta')
     nu_file = File(exists=True, desc='nu.mgz')
-
 
 
 class TalairachAndNu(BaseInterface):
