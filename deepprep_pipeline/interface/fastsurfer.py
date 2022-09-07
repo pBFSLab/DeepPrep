@@ -6,15 +6,15 @@ from cmd import run_cmd_with_timing
 
 class SegmentInputSpec(BaseInterfaceInputSpec):
     python_interpret = File(exists=True, mandatory=True, desc='the python interpret to use')
-    in_file = File(exists=True, mandatory=True, desc='name of file to process. Default: orig.mgz')
+    in_file = File(exists=True, mandatory=True, desc='name of file to process. Default: mri/orig.mgz')
     out_file = File(mandatory=True,
-                    desc='name under which segmentation will be saved. Default: aparc.DKTatlas+aseg.deep.mgz. '
+                    desc='name under which segmentation will be saved. Default: mri/aparc.DKTatlas+aseg.deep.mgz. '
                          'If a separate subfolder is desired (e.g. FS conform, add it to the name: '
                          'mri/aparc.DKTatlas+aseg.deep.mgz)')  # Do not set exists=True !!
     conformed_file = File(desc='Name under which the conformed input image will be saved, in the same directory as '
                                'the segmentation (the input image is always conformed first, if it is not already '
                                'conformed). The original input image is saved in the output directory as '
-                               '$id/mri/orig/001.mgz. Default: orig.mgz.')
+                               '$id/mri/orig/001.mgz. Default: mri/conform.mgz.')
     eval_py = File(exists=True, mandatory=True, desc="FastSurfer segmentation script")
     network_sagittal_path = File(exists=True, mandatory=True, desc="path to pre-trained weights of sagittal network")
     network_coronal_path = File(exists=True, mandatory=True, desc="pre-trained weights of coronal network")
@@ -22,7 +22,7 @@ class SegmentInputSpec(BaseInterfaceInputSpec):
 
 
 class SegmentOutputSpec(TraitedSpec):
-    out_file = File(exists=True, desc='the output seg image: mri/aparc.DKTatlas+aseg.deep.mgz')
+    aseg_deep_file = File(exists=True, desc='the output seg image: mri/aparc.DKTatlas+aseg.deep.mgz')
 
 
 class Segment(BaseInterface):
@@ -52,7 +52,7 @@ class Segment(BaseInterface):
 
     def _list_outputs(self):
         outputs = self._outputs().get()
-        outputs['out_file'] = self.inputs.out_file
+        outputs['aseg_deep_file'] = self.inputs.out_file
         return outputs
 
 
