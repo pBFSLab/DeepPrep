@@ -1,5 +1,5 @@
 from nipype.interfaces.base import BaseInterface, \
-    BaseInterfaceInputSpec, traits, File, TraitedSpec
+    BaseInterfaceInputSpec, traits, File, TraitedSpec, Directory, Str
 from nipype import Node, Workflow
 
 from cmd import run_cmd_with_timing
@@ -7,6 +7,14 @@ import os
 import time
 from pathlib import Path
 import argparse
+
+
+def get_freesurfer_threads(threads: int):
+    if threads and threads > 1:
+        fsthreads = f'-threads {threads} -itkthreads {threads}'
+    else:
+        fsthreads = ''
+    return fsthreads
 
 
 def parse_args():
@@ -108,6 +116,81 @@ class TalairachAndNu(BaseInterface):
         outputs = self._outputs().get()
         outputs["talairach_file"] = Path(f"{self.inputs.sub_mri_dir}/transforms/talairach.lta")
         outputs['nu_file'] = Path(f"{self.inputs.sub_mri_dir}/nu.mgz")
+        return outputs
+
+
+class OrigAndRawavgInputSpec(BaseInterfaceInputSpec):
+    t1w_files = traits.List(desc='t1w path or t1w paths', mandatory=True)
+    subject_dir = Directory(exists=True, desc='subject dir path', mandatory=True)
+    subject_id = Str(desc='subject id', mandatory=True)
+    threads = traits.Int(desc='threads')
+
+
+class OrigAndRawavgOutputSpec(TraitedSpec):
+    orig_file = File(exists=True, desc='orig.mgz')
+    rawavg_file = File(exists=True, desc='rawavg.mgz')
+
+
+class OrigAndRawavg(BaseInterface):
+    input_spec = OrigAndRawavgInputSpec
+    output_spec = OrigAndRawavgOutputSpec
+
+    def __init__(self):
+        super(OrigAndRawavg, self).__init__()
+
+    def _run_interface(self, runtime):
+        threads = self.inputs.threads if self.inputs.threads else 0
+        fsthreads = get_freesurfer_threads(threads)
+
+        files = ' -i '.join(self.inputs.t1w_files)
+        cmd = f"recon-all -subject {self.inputs.subject_id} -i {files} -motioncor {fsthreads}"
+        run_cmd_with_timing(cmd)
+        return runtime
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["orig_file"] = Path(f"{self.inputs.subject_dir}/{self.inputs.subject_id}/mri/orig.mgz")
+        outputs['rawavg_file'] = Path(f"{self.inputs.subject_dir}/{self.inputs.subject_id}/mri/rawavg.mgz")
+        return outputs
+
+
+class FilledInputSpec(BaseInterfaceInputSpec):
+    aseg_auto_file = File(exists=True, desc='mri/aseg.auto.mgz', mandatory=True)
+    norm_file = File(exists=True, desc='mri/norm.mgz', mandatory=True)
+    brainmask_file = File(exists=True, desc='mri/brainmask.mgz', mandatory=True)
+    talairach_file = File(exists=True, desc='mri/transforms/talairach.lta')
+    subject_dir = Directory(exists=True, desc='subject dir path', mandatory=True)
+    subject_id = Str(desc='subject id', mandatory=True)
+    threads = traits.Int(desc='threads')
+
+
+class FilledOutputSpec(TraitedSpec):
+    aseg_presurf_file = File(exists=True, desc='mri/aseg.presurf.mgz')
+    brain_file = File(exists=True, desc='mri/brain.mgz')
+    brain_finalsurfs_file = File(exists=True, desc='mri/brain.finalsurfs.mgz')
+    wm_file = File(exists=True, desc='mri/wm.mgz')
+
+
+class Filled(BaseInterface):
+    input_spec = OrigAndRawavgInputSpec
+    output_spec = OrigAndRawavgOutputSpec
+
+    def __init__(self):
+        super(Filled, self).__init__()
+
+    def _run_interface(self, runtime):
+        threads = self.inputs.threads if self.inputs.threads else 0
+        fsthreads = get_freesurfer_threads(threads)
+
+        files = ' -i '.join(self.inputs.t1w_files)
+        cmd = f"recon-all -subject {self.inputs.subject_id} -i {files} -motioncor {fsthreads}"
+        run_cmd_with_timing(cmd)
+        return runtime
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["orig_file"] = Path(f"{self.inputs.subject_dir}/{self.inputs.subject_id}/mri/orig.mgz")
+        outputs['rawavg_file'] = Path(f"{self.inputs.subject_dir}/{self.inputs.subject_id}/mri/rawavg.mgz")
         return outputs
 
 
