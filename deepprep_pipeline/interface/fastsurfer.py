@@ -1,6 +1,5 @@
 from pathlib import Path
-from nipype.interfaces.base import BaseInterfaceInputSpec, BaseInterface, File, TraitedSpec, Directory
-
+from nipype.interfaces.base import BaseInterfaceInputSpec, BaseInterface, File, TraitedSpec, Directory, traits_extension
 from cmd import run_cmd_with_timing
 
 
@@ -34,7 +33,7 @@ class Segment(BaseInterface):
     gpu = 9756  # 最大gpu占用：MB
 
     def _run_interface(self, runtime):
-        if self.inputs.conformed_file is None:
+        if not traits_extension.isdefined(self.inputs.conformed_file):
             conformed_file = Path(self.inputs.out_file).parent / 'conformed.mgz'
         else:
             conformed_file = self.inputs.conformed_file
