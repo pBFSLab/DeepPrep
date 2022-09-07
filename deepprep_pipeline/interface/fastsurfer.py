@@ -54,3 +54,39 @@ class Segment(BaseInterface):
         outputs = self._outputs().get()
         outputs['out_file'] = self.inputs.out_file
         return outputs
+
+
+class NoccsegThresholdInputSpec(BaseInterfaceInputSpec):
+    python_interpret = File(exists=True, mandatory=True, desc='the python interpret to use')
+    mask_file = File(exists=True, mandatory=True, desc='mask.mgz')
+    in_file = File(exists=True, mandatory=True, desc='name of file to process. Default: aparc.DKTatlas+aseg.orig.mgz')
+    out_file = File(mandatory=True,
+                    desc='Default: aseg.auto_noCCseg.mgz'
+                         'reduce labels to aseg, then create mask (dilate 5, erode 4, largest component), also mask aseg to remove outliers'
+                         'output will be uchar (else mri_cc will fail below)')  # Do not set exists=True !!
+    reduce_to_aseg_py = File(exists=True, mandatory=True, desc="reduce to aseg")
+
+
+class NoccsegThresholdOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc="aseg.auto_noCCseg.mgz")
+
+
+class Noccseg(BaseInterface):
+    input_spec = NoccsegThresholdInputSpec
+    output_spec = NoccsegThresholdOutputSpec
+
+    time = 21 / 60  # 运行时间：分钟
+    cpu = 1  # 最大cpu占用：个
+    gpu = 0  # 最大gpu占用：MB
+
+    def _run_interface(self, runtime):
+        cmd = f'{self.inputs.python_interpret} {self.inputs.reduce_to_aseg_py} ' \
+              f'-i {self.inputs.in_file} ' \
+              f'-o {self.inputs.out_file} --outmask {self.inputs.mask_file} --fixwm'
+        run_cmd_with_timing(cmd)
+        return runtime
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs['out_file'] = self.inputs.out_file
+        return outputs
