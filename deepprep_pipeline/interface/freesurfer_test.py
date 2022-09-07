@@ -1,7 +1,38 @@
+import os
+from freesurfer import OrigAndRawavg
 from pathlib import Path
 from freesurfer import Brainmask
 from nipype import Node
-from .cmd import set_envrion
+from cmd import set_envrion
+
+
+def OrigAndRawavg_test():
+    set_envrion(1)
+    subject_dir = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon'
+    os.environ['SUBJECTS_DIR'] = subject_dir  # 设置FreeSurfer的subjects_dir
+
+    subject_id = 'OrigAndRawavg_test1'
+    t1w_files = [
+        f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/sub-MSC01/ses-struct01/anat/sub-MSC01_ses-struct01_run-01_T1w.nii.gz',
+                 ]
+    origandrawavg_node = Node(OrigAndRawavg(), f'origandrawavg_node')
+    origandrawavg_node.inputs.t1w_files = t1w_files
+    origandrawavg_node.inputs.subject_dir = subject_dir
+    origandrawavg_node.inputs.subject_id = subject_id
+    origandrawavg_node.inputs.threads = 1
+    origandrawavg_node.run()
+
+    subject_id = 'OrigAndRawavg_test2'
+    t1w_files = [
+        f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/sub-MSC01/ses-struct01/anat/sub-MSC01_ses-struct01_run-01_T1w.nii.gz',
+        f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/sub-MSC01/ses-struct01/anat/sub-MSC01_ses-struct01_run-01_T1w.nii.gz',
+    ]
+    origandrawavg_node = Node(OrigAndRawavg(), f'origandrawavg_node')
+    origandrawavg_node.inputs.t1w_files = t1w_files
+    origandrawavg_node.inputs.subject_dir = subject_dir
+    origandrawavg_node.inputs.subject_id = subject_id
+    origandrawavg_node.inputs.threads = 1
+    origandrawavg_node.run()
 
 
 def Brainmask_test():
@@ -21,4 +52,5 @@ def Brainmask_test():
 
 
 if __name__ == '__main__':
+    OrigAndRawavg_test()
     Brainmask_test()
