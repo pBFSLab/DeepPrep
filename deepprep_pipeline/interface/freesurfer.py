@@ -53,6 +53,10 @@ class Brainmask(BaseInterface):
     input_spec = BrainmaskInputSpec
     output_spec = BrainmaskOutputSpec
 
+    time = 74 / 60  # 运行时间：分钟
+    cpu = 1  # 最大cpu占用：个
+    gpu = 0  # 最大gpu占用：MB
+
     def _run_interface(self, runtime):
         # create norm by masking nu 0.7s
         need_t1 = self.inputs.need_t1
