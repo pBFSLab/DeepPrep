@@ -60,19 +60,19 @@ def FastCSR_test():
     fastcsr_node.inputs.python_interpret = '/home/anning/miniconda3/envs/3.8/bin/python3'
     fastcsr_node.inputs.fastcsr_py = fastcsr_py
 
-    subject_dir = '/mnt/ngshare/Data_Mirror/pipeline_test'
+    subjects_dir = '/mnt/ngshare/Data_Mirror/pipeline_test'
     subject_id = 'sub-MSC01'
 
-    os.environ['SUBJECTS_DIR'] = subject_dir
+    os.environ['SUBJECTS_DIR'] = subjects_dir
 
-    fastcsr_node.inputs.subject_dir = subject_dir
+    fastcsr_node.inputs.subjects_dir = subjects_dir
     fastcsr_node.inputs.subject_id = subject_id
-    fastcsr_node.inputs.orig_file = Path(subject_dir) / subject_id / 'mri/orig.mgz'
-    fastcsr_node.inputs.filled_file = Path(subject_dir) / subject_id / 'mri/filled.mgz'
-    fastcsr_node.inputs.aseg_presurf_file = Path(subject_dir) / subject_id / 'mri/aseg.presurf.mgz'
-    fastcsr_node.inputs.brainmask_file = Path(subject_dir) / subject_id / 'mri/brainmask.mgz'
-    fastcsr_node.inputs.wm_file = Path(subject_dir) / subject_id / 'mri/wm.mgz'
-    fastcsr_node.inputs.brain_finalsurfs_file = Path(subject_dir) / subject_id / 'mri/brain.finalsurfs.mgz'
+    fastcsr_node.inputs.orig_file = Path(subjects_dir) / subject_id / 'mri/orig.mgz'
+    fastcsr_node.inputs.filled_file = Path(subjects_dir) / subject_id / 'mri/filled.mgz'
+    fastcsr_node.inputs.aseg_presurf_file = Path(subjects_dir) / subject_id / 'mri/aseg.presurf.mgz'
+    fastcsr_node.inputs.brainmask_file = Path(subjects_dir) / subject_id / 'mri/brainmask.mgz'
+    fastcsr_node.inputs.wm_file = Path(subjects_dir) / subject_id / 'mri/wm.mgz'
+    fastcsr_node.inputs.brain_finalsurfs_file = Path(subjects_dir) / subject_id / 'mri/brain.finalsurfs.mgz'
 
     fastcsr_node.run()
 
