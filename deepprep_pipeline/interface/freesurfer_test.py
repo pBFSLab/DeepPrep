@@ -1,7 +1,7 @@
 import os
-from freesurfer import OrigAndRawavg, WhitePreaparc
+from freesurfer import OrigAndRawavg, WhitePreaparc, WhitePialThickness
 from pathlib import Path
-from freesurfer import Brainmask, UpdateAseg, Inflated_Sphere
+# from freesurfer import Brainmask, UpdateAseg, Inflated_Sphere
 from nipype import Node
 from run import set_envrion
 
@@ -91,12 +91,31 @@ def Inflated_Sphere_test():
 
     Inflated_Sphere_node.run()
 
+def white_pial_thickness_test():
+    fswhitepial = True
+    subject_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
+    subject = "sub-765"
+    hemi = "rh"
+    threads = 8
+
+    os.environ['SUBJECTS_DIR'] = str(subject_dir)
+
+    white_pial_thickness = Node(WhitePialThickness(output_dir=subject_dir, threads=threads), name="white_pial_thickness")
+    white_pial_thickness.inputs.fswhitepial = fswhitepial
+    white_pial_thickness.inputs.subject = subject
+    white_pial_thickness.inputs.hemi = hemi
+
+    white_pial_thickness.run()
+
 
 
 if __name__ == '__main__':
 
-    OrigAndRawavg_test()
-    Brainmask_test()
-    Inflated_Sphere_test()
-    white_preaparc_test()
+    # OrigAndRawavg_test()
+    # Brainmask_test()
+    # Inflated_Sphere_test()
+    # white_preaparc_test()
+
+    set_envrion()
+    white_pial_thickness_test()
 
