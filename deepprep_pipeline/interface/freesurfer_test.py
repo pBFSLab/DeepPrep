@@ -3,7 +3,7 @@ from freesurfer import OrigAndRawavg
 from pathlib import Path
 from freesurfer import Brainmask
 from nipype import Node
-from cmd import set_envrion
+from run import set_envrion
 
 
 def OrigAndRawavg_test():
