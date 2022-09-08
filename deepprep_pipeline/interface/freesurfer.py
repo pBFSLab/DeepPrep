@@ -16,7 +16,7 @@ def get_freesurfer_threads(threads: int):
 
 
 class BrainmaskInputSpec(BaseInterfaceInputSpec):
-    subject_dir = Directory(exists=True, desc="subject dir", mandatory=True)
+    subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
     need_t1 = traits.BaseCBool(desc='bool', mandatory=True)
     nu_file = File(exists=True, desc="nu file", mandatory=True)
@@ -72,7 +72,7 @@ class Brainmask(BaseInterface):
 
 class OrigAndRawavgInputSpec(BaseInterfaceInputSpec):
     t1w_files = traits.List(desc='t1w path or t1w paths', mandatory=True)
-    subject_dir = Directory(exists=True, desc='subject dir path', mandatory=True)
+    subjects_dir = Directory(exists=True, desc='subject dir path', mandatory=True)
     subject_id = Str(desc='subject id', mandatory=True)
     threads = traits.Int(desc='threads')
 
@@ -100,8 +100,8 @@ class OrigAndRawavg(BaseInterface):
 
     def _list_outputs(self):
         outputs = self._outputs().get()
-        outputs["orig_file"] = Path(f"{self.inputs.subject_dir}/{self.inputs.subject_id}/mri/orig.mgz")
-        outputs['rawavg_file'] = Path(f"{self.inputs.subject_dir}/{self.inputs.subject_id}/mri/rawavg.mgz")
+        outputs["orig_file"] = Path(f"{self.inputs.subjects_dir}/{self.inputs.subject_id}/mri/orig.mgz")
+        outputs['rawavg_file'] = Path(f"{self.inputs.subjects_dir}/{self.inputs.subject_id}/mri/rawavg.mgz")
         return outputs
 
 
@@ -110,7 +110,7 @@ class FilledInputSpec(BaseInterfaceInputSpec):
     norm_file = File(exists=True, desc='mri/norm.mgz', mandatory=True)
     brainmask_file = File(exists=True, desc='mri/brainmask.mgz', mandatory=True)
     talairach_file = File(exists=True, desc='mri/transforms/talairach.lta')
-    subject_dir = Directory(exists=True, desc='subject dir path', mandatory=True)
+    subjects_dir = Directory(exists=True, desc='subject dir path', mandatory=True)
     subject_id = Str(desc='subject id', mandatory=True)
     threads = traits.Int(desc='threads')
 
@@ -140,8 +140,8 @@ class Filled(BaseInterface):
 
     def _list_outputs(self):
         outputs = self._outputs().get()
-        outputs["orig_file"] = Path(f"{self.inputs.subject_dir}/{self.inputs.subject_id}/mri/orig.mgz")
-        outputs['rawavg_file'] = Path(f"{self.inputs.subject_dir}/{self.inputs.subject_id}/mri/rawavg.mgz")
+        outputs["orig_file"] = Path(f"{self.inputs.subjects_dir}/{self.inputs.subject_id}/mri/orig.mgz")
+        outputs['rawavg_file'] = Path(f"{self.inputs.subjects_dir}/{self.inputs.subject_id}/mri/rawavg.mgz")
         return outputs
 
 

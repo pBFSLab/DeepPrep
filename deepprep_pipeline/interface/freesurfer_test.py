@@ -1,15 +1,15 @@
 import os
 from freesurfer import OrigAndRawavg, WhitePreaparc
 from pathlib import Path
-from freesurfer import Brainmask, UpdateAseg, Inflated_Sphere
+from freesurfer import Brainmask, Inflated_Sphere
 from nipype import Node
 from run import set_envrion
 
 
 def OrigAndRawavg_test():
     set_envrion(1)
-    subject_dir = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon'
-    os.environ['SUBJECTS_DIR'] = subject_dir  # 设置FreeSurfer的subjects_dir
+    subjects_dir = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon'
+    os.environ['SUBJECTS_DIR'] = subjects_dir  # 设置FreeSurfer的subjects_dir
 
     subject_id = 'OrigAndRawavg_test1'
     t1w_files = [
@@ -17,7 +17,7 @@ def OrigAndRawavg_test():
     ]
     origandrawavg_node = Node(OrigAndRawavg(), f'origandrawavg_node')
     origandrawavg_node.inputs.t1w_files = t1w_files
-    origandrawavg_node.inputs.subject_dir = subject_dir
+    origandrawavg_node.inputs.subjects_dir = subjects_dir
     origandrawavg_node.inputs.subject_id = subject_id
     origandrawavg_node.inputs.threads = 1
     origandrawavg_node.run()
@@ -29,7 +29,7 @@ def OrigAndRawavg_test():
     ]
     origandrawavg_node = Node(OrigAndRawavg(), f'origandrawavg_node')
     origandrawavg_node.inputs.t1w_files = t1w_files
-    origandrawavg_node.inputs.subject_dir = subject_dir
+    origandrawavg_node.inputs.subjects_dir = subjects_dir
     origandrawavg_node.inputs.subject_id = subject_id
     origandrawavg_node.inputs.threads = 1
     origandrawavg_node.run()
@@ -37,31 +37,31 @@ def OrigAndRawavg_test():
 
 def Brainmask_test():
     set_envrion()
-    subject_dir = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon')
+    subjects_dir = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon')
     subject_id = 'sub-MSC01'
     brainmask_node = Node(Brainmask(), name='brainmask_node')
-    brainmask_node.inputs.subject_dir = subject_dir
+    brainmask_node.inputs.subjects_dir = subjects_dir
     brainmask_node.inputs.subject_id = subject_id
     brainmask_node.inputs.need_t1 = True
-    brainmask_node.inputs.nu_file = subject_dir / subject_id / 'mri' / 'nu.mgz'
-    brainmask_node.inputs.mask_file = subject_dir / subject_id / 'mri' / 'mask.mgz'
-    brainmask_node.inputs.T1_file = subject_dir / subject_id / 'mri' / 'T1.mgz'
-    brainmask_node.inputs.brainmask_file = subject_dir / subject_id / 'mri' / 'brainmask.mgz'
-    brainmask_node.inputs.norm_file = subject_dir / subject_id / 'mri' / 'norm.mgz'
+    brainmask_node.inputs.nu_file = subjects_dir / subject_id / 'mri' / 'nu.mgz'
+    brainmask_node.inputs.mask_file = subjects_dir / subject_id / 'mri' / 'mask.mgz'
+    brainmask_node.inputs.T1_file = subjects_dir / subject_id / 'mri' / 'T1.mgz'
+    brainmask_node.inputs.brainmask_file = subjects_dir / subject_id / 'mri' / 'brainmask.mgz'
+    brainmask_node.inputs.norm_file = subjects_dir / subject_id / 'mri' / 'norm.mgz'
     brainmask_node.run()
 
 
 def white_preaparc_test():
 
     fswhitepreaparc = False
-    subject_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
+    subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
     subject = "sub-001"
     hemi = "rh"
     threads = 8
 
-    os.environ['SUBJECTS_DIR'] = str(subject_dir)
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
-    white_preaparc = Node(WhitePreaparc(output_dir=subject_dir, threads=threads), name="white_preaparc")
+    white_preaparc = Node(WhitePreaparc(output_dir=subjects_dir, threads=threads), name="white_preaparc")
     white_preaparc.inputs.fswhitepreaparc = fswhitepreaparc
     white_preaparc.inputs.subject = subject
     white_preaparc.inputs.hemi = hemi
@@ -70,14 +70,14 @@ def white_preaparc_test():
 
 def Inflated_Sphere_test():
     set_envrion()
-    subject_dir = Path("/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon")
+    subjects_dir = Path("/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon")
     subject_id = "sub-001"
     hemi = "lh"
-    os.environ['SUBJECTS_DIR'] = str(subject_dir)
-    white_preaparc_dir = subject_dir / subject_id / "surf" / f"{hemi}.white.preaparc"
-    smoothwm_dir = subject_dir / subject_id / "surf" / f"{hemi}.smoothwm"
-    inflated_dir = subject_dir / subject_id / "surf" / f"{hemi}.inflated"
-    sulc_dir = subject_dir / subject_id / "surf" / f"{hemi}.sulc"
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+    white_preaparc_dir = subjects_dir / subject_id / "surf" / f"{hemi}.white.preaparc"
+    smoothwm_dir = subjects_dir / subject_id / "surf" / f"{hemi}.smoothwm"
+    inflated_dir = subjects_dir / subject_id / "surf" / f"{hemi}.inflated"
+    sulc_dir = subjects_dir / subject_id / "surf" / f"{hemi}.sulc"
 
     Inflated_Sphere_node = Node(Inflated_Sphere(), f'Inflated_Sphere_node')
     Inflated_Sphere_node.inputs.hemi = hemi
