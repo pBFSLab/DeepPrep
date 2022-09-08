@@ -1,7 +1,7 @@
 import os
 from freesurfer import OrigAndRawavg, WhitePreaparc
 from pathlib import Path
-from freesurfer import Brainmask
+from freesurfer import Brainmask, UpdateAseg, Inflated_Sphere
 from nipype import Node
 from run import set_envrion
 
@@ -50,6 +50,7 @@ def Brainmask_test():
     brainmask_node.inputs.norm_file = subject_dir / subject_id / 'mri' / 'norm.mgz'
     brainmask_node.run()
 
+
 def white_preaparc_test():
 
     fswhitepreaparc = False
@@ -67,14 +68,35 @@ def white_preaparc_test():
 
     white_preaparc.run()
 
+def Inflated_Sphere_test():
+    set_envrion()
+    subject_dir = Path("/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon")
+    subject_id = "sub-001"
+    hemi = "lh"
+    os.environ['SUBJECTS_DIR'] = str(subject_dir)
+    white_preaparc_dir = subject_dir / subject_id / "surf" / f"{hemi}.white.preaparc"
+    smoothwm_dir = subject_dir / subject_id / "surf" / f"{hemi}.smoothwm"
+    inflated_dir = subject_dir / subject_id / "surf" / f"{hemi}.inflated"
+    sulc_dir = subject_dir / subject_id / "surf" / f"{hemi}.sulc"
+
+    Inflated_Sphere_node = Node(Inflated_Sphere(), f'Inflated_Sphere_node')
+    Inflated_Sphere_node.inputs.hemi = hemi
+    threads = 30
+    Inflated_Sphere_node.inputs.fsthreads = f'-threads {threads} -itkthreads {threads}'
+    Inflated_Sphere_node.inputs.subject = subject_id
+    Inflated_Sphere_node.inputs.white_preaparc_file = white_preaparc_dir
+    Inflated_Sphere_node.inputs.smoothwm_file = smoothwm_dir
+    Inflated_Sphere_node.inputs.inflated_file = inflated_dir
+    Inflated_Sphere_node.inputs.sulc_file = sulc_dir
+
+    Inflated_Sphere_node.run()
 
 
 
 if __name__ == '__main__':
-    set_envrion()
 
-    # OrigAndRawavg_test()
-
-    # Brainmask_test()
-
+    OrigAndRawavg_test()
+    Brainmask_test()
+    Inflated_Sphere_test()
     white_preaparc_test()
+
