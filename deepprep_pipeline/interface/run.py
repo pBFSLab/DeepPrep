@@ -11,6 +11,8 @@ def run_cmd_with_timing(cmd):
     print('=' * 50)
     print(cmd)
     print('=' * 50, 'runtime:', ' ' * 3, time.time() - start)
+
+
 def set_envrion(threads: int = 1):
     # FreeSurfer recon-all env
     os.environ['FREESURFER_HOME'] = '/usr/local/freesurfer'
