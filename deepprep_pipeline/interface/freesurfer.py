@@ -1,6 +1,7 @@
 from nipype.interfaces.base import BaseInterface, \
-    BaseInterfaceInputSpec, traits, File, TraitedSpec, Directory, Str
-from run import run_cmd_with_timing
+    BaseInterfaceInputSpec, traits, File, TraitedSpec, Directory, Str, traits_extension
+from nipype import Node, Workflow
+from run import run_cmd_with_timing, parse_args
 import os
 from pathlib import Path
 import argparse
@@ -12,29 +13,6 @@ def get_freesurfer_threads(threads: int):
     else:
         fsthreads = ''
     return fsthreads
-
-
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--bd', required=True, help='directory of bids type')
-    parser.add_argument('--fsd', default=os.environ.get('FREESURFER_HOME'),
-                        help='Output directory $FREESURFER_HOME (pass via environment or here)')
-    parser.add_argument('--respective', default='off',
-                        help='if on, while processing T1w file respectively')
-    parser.add_argument('--rewrite', default='on',
-                        help='set off, while not preprocess if subject recon path exist')
-    parser.add_argument('--python', default='python3',
-                        help='which python version to use')
-
-    args = parser.parse_args()
-    args_dict = vars(args)
-
-    if args.fsd is None:
-        args_dict['fsd'] = '/usr/local/freesurfer'
-    args_dict['respective'] = True if args.respective == 'on' else False
-    args_dict['rewrite'] = True if args.rewrite == 'on' else False
-
-    return argparse.Namespace(**args_dict)
 
 
 class BrainmaskInputSpec(BaseInterfaceInputSpec):
@@ -167,50 +145,138 @@ class Filled(BaseInterface):
         return outputs
 
 
-class UpdateAsegInputSpec(BaseInterfaceInputSpec):
-    subject_dir = Directory(exists=True, desc="subject dir", mandatory=True)
-    subject_id = Str(desc="subject id", mandatory=True)
-    python_interpret = File(exists=True, desc="python interpret", mandatory=True)
-    paint_cc_file = File(exists=True, desc="FastSurfer/recon_surf/paint_cc_into_pred.py", mandatory=True)
-    aseg_noCCseg_file = File(exists=True, desc="mri/aseg.auto_noCCseg.mgz", mandatory=True)
-    seg_file = File(exists=True, desc="mri/aparc.DKTatlas+aseg.deep.mgz", mandatory=True)
+class WhitePreaparcInputSpec(BaseInterfaceInputSpec):
+    fswhitepreaparc = traits.Bool(desc="True: mris_make_surfaces; \
+    False: recon-all -autodetgwstats -white-preaparc -cortex-label", mandatory=True)
+    subject = traits.Str(desc="sub-xxx", mandatory=True)
+    hemi = traits.Str(desc="?h", mandatory=True)
 
-    aseg_auto_file = File(exists=False, desc="mri/aseg.auto.mgz", mandatory=True)
-    cc_up_file = File(exists=False, desc="mri/transforms/cc_up.lta", mandatory=True)
-    aparc_aseg_file = File(exists=False, desc="mri/aparc.DKTatlas+aseg.deep.withCC.mgz", mandatory=True)
+    # input files of <mris_make_surfaces>
+    aseg_presurf = File(exists=True, desc="mri/aseg.presurf.mgz")
+    brain_finalsurfs = File(exists=True, desc="mri/brain.finalsurfs.mgz")
+    wm_file = File(exists=True, desc="mri/wm.mgz")
+    filled_file = File(exists=True, desc="mri/filled.mgz")
+    hemi_orig = File(exists=True, desc="surf/?h.orig")
+
+    # input files of <recon-all -autodetgwstats>
+    hemi_orig_premesh = File(exists=True, desc="surf/?h.orig.premesh")
+
+    # input files of <recon-all -white-paraparc>
+    autodet_gw_stats_hemi_dat = File(exists=True, desc="surf/autodet.gw.stats.?h.dat")
+
+    # input files of <recon-all -cortex-label>
+    hemi_white_preaparc = File(exists=True, desc="surf/?h.white.preaparc")
 
 
-class UpdateAsegOutputSpec(TraitedSpec):
-    aseg_auto_file = File(exists=False, desc="mri/aseg.auto.mgz", mandatory=True)
-    cc_up_file = File(exists=False, desc="mri/transforms/cc_up.lta", mandatory=True)
-    aparc_aseg_file = File(exists=False, desc="mri/aparc.DKTatlas+aseg.deep.withCC.mgz", mandatory=True)
+class WhitePreaparcOutputSpec(TraitedSpec):
+    # output files of mris_make_surfaces
+    hemi_white_preaparc = File(exists=True, desc="surf/?h.white.preaparc")
+    hemi_curv = File(exists=True, desc="surf/?h.curv")
+    hemi_area = File(exists=True, desc="surf/?h.area")
+    hemi_cortex_label = File(exists=True, desc="label/?h.cortex.label")
 
 
-class UpdateAseg(BaseInterface):
-    input_spec = UpdateAsegInputSpec
-    output_spec = UpdateAsegOutputSpec
+class WhitePreaparc(BaseInterface):
+    input_spec = WhitePreaparcInputSpec
+    output_spec = WhitePreaparcOutputSpec
 
-    time = 21 / 60  # 运行时间：分钟
-    cpu = 1.6  # 最大cpu占用：个
-    gpu = 0  # 最大gpu占用：MB
+    def __init__(self, output_dir: Path, threads: int):
+        super(WhitePreaparc, self).__init__()
+        self.output_dir = output_dir
+        self.threads = threads
+        self.fsthreads = get_freesurfer_threads(threads)
+
 
     def _run_interface(self, runtime):
-        # create aseg.auto including cc segmentation and add cc into aparc.DKTatlas+aseg.deep;
-        # 46 sec: (not sure if this is needed), requires norm.mgz
-        cmd = f'mri_cc -aseg aseg.auto_noCCseg.mgz -o aseg.auto.mgz ' \
-              f'-lta {self.inputs.cc_up_file} {self.inputs.subject_id}'
-        run_cmd_with_timing(cmd)
+        if not traits_extension.isdefined(self.inputs.brain_finalsurfs):
+            self.inputs.brain_finalsurfs = self.output_dir / f"{self.inputs.subject}" / "mri/brain.finalsurfs.mgz"
+        if not traits_extension.isdefined(self.inputs.wm_file):
+            self.inputs.wm_file = self.output_dir / f"{self.inputs.subject}" / "mri/wm.mgz"
+        print("-------------")
+        print(f"self.inputs.brain_finalsurfs {self.inputs.brain_finalsurfs}")
+        print(f"self.inputs.wm_file {self.inputs.wm_file}")
+        print("--------------")
 
-        # 0.8s
-        cmd = f'{self.inputs.python_interpret} {self.inputs.paint_cc_file} ' \
-              f'-in_cc {self.inputs.aseg_auto_file} -in_pred {self.inputs.seg_file} ' \
-              f'-out {self.inputs.aparc_aseg_file}'
-        run_cmd_with_timing(cmd)
+        if self.inputs.fswhitepreaparc:
+            time = 130 / 60
+            cpu = 1.25
+            gpu = 0
+
+            if not traits_extension.isdefined(self.inputs.aseg_presurf):
+                self.inputs.aseg_presurf = self.output_dir / f"{self.inputs.subject}" / "mri/aseg.presurf.mgz"
+            if not traits_extension.isdefined(self.inputs.filled_file):
+                self.inputs.filled_file = self.output_dir / f"{self.inputs.subject}" / "mri/filled.mgz"
+            if not traits_extension.isdefined(self.inputs.hemi_orig):
+                self.inputs.hemi_orig = self.output_dir / f"{self.inputs.subject}" / "surf" / f"{self.inputs.hemi}.orig"
+            print("*"*10)
+            print(f"self.inputs.aseg_presurf {self.inputs.aseg_presurf}")
+            print(f"self.inputs.filled_file {self.inputs.filled_file}")
+            print(f"self.inputs.hemi_orig {self.inputs.hemi_orig}")
+            print("*"*10)
+
+            cmd = f'mris_make_surfaces -aseg aseg.presurf -white white.preaparc -whiteonly -noaparc -mgz ' \
+                  f'-T1 brain.finalsurfs {self.inputs.subject} {self.inputs.hemi} threads {self.threads}'
+            run_cmd_with_timing(cmd)
+        else:
+            # time = ? / 60
+            # cpu = ?
+            # gpu = 0
+
+            if not traits_extension.isdefined(self.inputs.hemi_orig_premesh):
+                self.inputs.hemi_orig_premesh = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.orig.premesh"
+
+            cmd = f'recon-all -subject {self.inputs.subject} -hemi {self.inputs.hemi} -autodetgwstats -white-preaparc -cortex-label ' \
+                  f'-no-isrunning {self.fsthreads}'
+            run_cmd_with_timing(cmd)
 
         return runtime
 
     def _list_outputs(self):
         outputs = self._outputs().get()
-        outputs["aseg_auto_file"] = self.inputs.aseg_auto_file
-        outputs["cc_up_file"] = self.inputs.cc_up_file
-        outputs["aparc_aseg_file"] = self.inputs.aparc_aseg_file
+        outputs["hemi_white_preaparc"] = self.inputs.hemi_white_preaparc
+        outputs["hemi_curv"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.curv"
+        outputs["hemi_area"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.area"
+        outputs["hemi_cortex_label"] = self.output_dir / f"{self.inputs.subject}" / f"label/{self.inputs.hemi}.cortex.label"
+        return outputs
+
+class Inflated_SphereThresholdInputSpec(BaseInterfaceInputSpec):
+    hemi=traits.String(mandatory=True, desc='hemi')
+    fsthreads=traits.String(mandatory=True, desc='fsthreads')
+    subject=traits.String(mandatory=True, desc='recon')
+    white_preaparc_file = File(exists=True, mandatory=True, desc='surf/?h.white.preaparc')
+    smoothwm_file = File(mandatory=True, desc='surf/?h.smoothwm')
+    inflated_file = File(mandatory=True, desc='surf/?h.inflated')  # Do not set exists=True !!
+    sulc_file = File(mandatory=True, desc="surf/?h.sulc")
+
+class Inflated_SphereThresholdOutputSpec(TraitedSpec):
+    smoothwm_file = File(exists=True, mandatory=True, desc='surf/?h.smoothwm')
+    inflated_file = File(exists=True, mandatory=True, desc='surf/?h.inflated')  # Do not set exists=True !!
+    sulc_file = File(exists=True, mandatory=True, desc="surf/?h.sulc")
+
+
+class Inflated_Sphere(BaseInterface):
+    input_spec = Inflated_SphereThresholdInputSpec
+    output_spec = Inflated_SphereThresholdOutputSpec
+
+    # time = 634 / 60  # 运行时间：分钟
+    # cpu = 20  # 最大cpu占用：个
+    # gpu = 0  # 最大gpu占用：MB
+
+    def _run_interface(self, runtime):
+        # create nicer inflated surface from topo fixed (not needed, just later for visualization)
+        cmd = f"recon-all -subject {self.inputs.subject} -hemi {self.inputs.hemi} -smooth2 -no-isrunning {self.inputs.fsthreads}"
+        run_cmd_with_timing(cmd)
+
+        cmd = f"recon-all -subject {self.inputs.subject} -hemi {self.inputs.hemi} -Inflated_Sphere -no-isrunning {self.inputs.fsthreads}"
+        run_cmd_with_timing(cmd)
+
+        cmd = f"recon-all -subject {self.inputs.subject} -hemi {self.inputs.hemi} -sphere -no-isrunning {self.inputs.fsthreads}"
+        run_cmd_with_timing(cmd)
+        return runtime
+
+        def _list_outputs(self):
+            outputs = self._outputs().get()
+            outputs['smoothwm_file'] = self.inputs.smoothwm_file
+            outputs['inflated_file'] = self.inputs.inflated_file
+            outputs['sulc_file'] = self.inputs.sulc_file
+            return outputs
