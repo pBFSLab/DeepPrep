@@ -186,7 +186,6 @@ class WhitePreaparc(BaseInterface):
         self.threads = threads
         self.fsthreads = get_freesurfer_threads(threads)
 
-
     def _run_interface(self, runtime):
         if not traits_extension.isdefined(self.inputs.brain_finalsurfs):
             self.inputs.brain_finalsurfs = self.output_dir / f"{self.inputs.subject}" / "mri/brain.finalsurfs.mgz"
@@ -208,11 +207,11 @@ class WhitePreaparc(BaseInterface):
                 self.inputs.filled_file = self.output_dir / f"{self.inputs.subject}" / "mri/filled.mgz"
             if not traits_extension.isdefined(self.inputs.hemi_orig):
                 self.inputs.hemi_orig = self.output_dir / f"{self.inputs.subject}" / "surf" / f"{self.inputs.hemi}.orig"
-            print("*"*10)
+            print("*" * 10)
             print(f"self.inputs.aseg_presurf {self.inputs.aseg_presurf}")
             print(f"self.inputs.filled_file {self.inputs.filled_file}")
             print(f"self.inputs.hemi_orig {self.inputs.hemi_orig}")
-            print("*"*10)
+            print("*" * 10)
 
             cmd = f'mris_make_surfaces -aseg aseg.presurf -white white.preaparc -whiteonly -noaparc -mgz ' \
                   f'-T1 brain.finalsurfs {self.inputs.subject} {self.inputs.hemi} threads {self.threads}'
@@ -236,47 +235,52 @@ class WhitePreaparc(BaseInterface):
         outputs["hemi_white_preaparc"] = self.inputs.hemi_white_preaparc
         outputs["hemi_curv"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.curv"
         outputs["hemi_area"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.area"
-        outputs["hemi_cortex_label"] = self.output_dir / f"{self.inputs.subject}" / f"label/{self.inputs.hemi}.cortex.label"
+        outputs[
+            "hemi_cortex_label"] = self.output_dir / f"{self.inputs.subject}" / f"label/{self.inputs.hemi}.cortex.label"
         return outputs
 
-class Inflated_SphereThresholdInputSpec(BaseInterfaceInputSpec):
-    hemi=traits.String(mandatory=True, desc='hemi')
-    fsthreads=traits.String(mandatory=True, desc='fsthreads')
-    subject=traits.String(mandatory=True, desc='recon')
+
+class InflatedSphereThresholdInputSpec(BaseInterfaceInputSpec):
+    hemi = traits.String(mandatory=True, desc='hemi')
+    subject = traits.String(mandatory=True, desc='recon')
     white_preaparc_file = File(exists=True, mandatory=True, desc='surf/?h.white.preaparc')
     smoothwm_file = File(mandatory=True, desc='surf/?h.smoothwm')
     inflated_file = File(mandatory=True, desc='surf/?h.inflated')  # Do not set exists=True !!
     sulc_file = File(mandatory=True, desc="surf/?h.sulc")
+    threads = traits.Int(desc='threads')
 
-class Inflated_SphereThresholdOutputSpec(TraitedSpec):
+
+class InflatedSphereThresholdOutputSpec(TraitedSpec):
     smoothwm_file = File(exists=True, mandatory=True, desc='surf/?h.smoothwm')
     inflated_file = File(exists=True, mandatory=True, desc='surf/?h.inflated')  # Do not set exists=True !!
     sulc_file = File(exists=True, mandatory=True, desc="surf/?h.sulc")
 
 
-class Inflated_Sphere(BaseInterface):
-    input_spec = Inflated_SphereThresholdInputSpec
-    output_spec = Inflated_SphereThresholdOutputSpec
+class InflatedSphere(BaseInterface):
+    input_spec = InflatedSphereThresholdInputSpec
+    output_spec = InflatedSphereThresholdOutputSpec
 
-    # time = 634 / 60  # 运行时间：分钟
-    # cpu = 20  # 最大cpu占用：个
-    # gpu = 0  # 最大gpu占用：MB
+    time = 351 / 60  # 运行时间：分钟
+    cpu = 5  # 最大cpu占用：个
+    gpu = 0  # 最大gpu占用：MB
 
     def _run_interface(self, runtime):
+        threads = self.inputs.threads if self.inputs.threads else 0
+        fsthreads = get_freesurfer_threads(threads)
         # create nicer inflated surface from topo fixed (not needed, just later for visualization)
-        cmd = f"recon-all -subject {self.inputs.subject} -hemi {self.inputs.hemi} -smooth2 -no-isrunning {self.inputs.fsthreads}"
+        cmd = f"recon-all -subject {self.inputs.subject} -hemi {self.inputs.hemi} -smooth2 -no-isrunning {fsthreads}"
         run_cmd_with_timing(cmd)
 
-        cmd = f"recon-all -subject {self.inputs.subject} -hemi {self.inputs.hemi} -Inflated_Sphere -no-isrunning {self.inputs.fsthreads}"
+        cmd = f"recon-all -subject {self.inputs.subject} -hemi {self.inputs.hemi} -inflate2 -no-isrunning {fsthreads}"
         run_cmd_with_timing(cmd)
 
-        cmd = f"recon-all -subject {self.inputs.subject} -hemi {self.inputs.hemi} -sphere -no-isrunning {self.inputs.fsthreads}"
+        cmd = f"recon-all -subject {self.inputs.subject} -hemi {self.inputs.hemi} -sphere -no-isrunning {fsthreads}"
         run_cmd_with_timing(cmd)
         return runtime
 
-        def _list_outputs(self):
-            outputs = self._outputs().get()
-            outputs['smoothwm_file'] = self.inputs.smoothwm_file
-            outputs['inflated_file'] = self.inputs.inflated_file
-            outputs['sulc_file'] = self.inputs.sulc_file
-            return outputs
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs['smoothwm_file'] = self.inputs.smoothwm_file
+        outputs['inflated_file'] = self.inputs.inflated_file
+        outputs['sulc_file'] = self.inputs.sulc_file
+        return outputs
