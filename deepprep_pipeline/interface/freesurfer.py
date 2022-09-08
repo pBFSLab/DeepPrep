@@ -1,9 +1,7 @@
 from nipype.interfaces.base import BaseInterface, \
     BaseInterfaceInputSpec, traits, File, TraitedSpec, Directory, Str
-from nipype import Node, Workflow
-from .cmd import run_cmd_with_timing
+from run import run_cmd_with_timing
 import os
-import time
 from pathlib import Path
 import argparse
 
