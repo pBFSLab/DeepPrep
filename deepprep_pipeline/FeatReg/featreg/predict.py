@@ -8,6 +8,7 @@ from utils.interp import interp_sulc_curv_barycentric
 
 from dataset import SphericalDataset, get_dataset_item
 from utils.rotate_matrix import apply_rigid_rotate_matrix, apply_norigid_rotate_matrix, save_rotate_matrix
+from utils.negative_area_triangle import single_remove_negative_area
 
 abspath_dir = os.path.dirname(os.path.abspath(__file__))
 root_dir = os.path.dirname(os.path.dirname(abspath_dir))
@@ -167,6 +168,9 @@ def norigid_predict(surf_dir, tmp_dir, fsaverage_dir, sub_id, hemispheres=None, 
             sphere_moved_native_file = os.path.join(surf_dir, f'{hemisphere}.sphere.reg')
             apply_norigid_rotate_matrix(sphere_rigid_native_file, rotate_matrix_norigid_file,
                                         sphere_moved_native_file, device=device)
+
+            # remove negative area triangle of sphere.reg
+            single_remove_negative_area(sphere_moved_native_file, sphere_moved_native_file)
 
 
 def predict(surf_dir, tmp_dir, fsaverage_dir, sub_id, hemispheres=None, device='cuda'):
