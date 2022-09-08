@@ -8,7 +8,7 @@ class FastCSRInputSpec(BaseInterfaceInputSpec):
     python_interpret = File(exists=True, mandatory=True, desc='the python interpret to use')
     fastcsr_py = File(exists=True, mandatory=True, desc="FastCSR script")
 
-    subject_dir = Directory(exists=True, desc='subject dir path', mandatory=True)
+    subjects_dir = Directory(exists=True, desc='subject dir path', mandatory=True)
     subject_id = Str(desc='subject id', mandatory=True)
     orig_file = File(exists=True, desc='mri/orig.mgz')
     filled_file = File(exists=True, desc='mri/filled.mgz')
@@ -34,23 +34,23 @@ class FastCSR(BaseInterface):
     gpu = 0  # 最大gpu占用：MB
 
     def _run_interface(self, runtime):
-        subject_dir = self.inputs.subject_dir
+        subjects_dir = self.inputs.subjects_dir
         subject_id = self.inputs.subject_id
-        cmd = f'{self.inputs.python_interpret} {self.inputs.fastcsr_py} --sd {subject_dir} --sid {subject_id} ' \
+        cmd = f'{self.inputs.python_interpret} {self.inputs.fastcsr_py} --sd {subjects_dir} --sid {subject_id} ' \
               f'--optimizing_surface off --parallel_scheduling on'
         run_cmd_with_timing(cmd)
         for hemi in ['lh', 'rh']:
-            orig = Path(subject_dir) / subject_id / 'surf' / f'{hemi}.orig'
-            orig_premesh = Path(subject_dir) / subject_id / 'surf' / f'{hemi}.orig.premesh'
+            orig = Path(subjects_dir) / subject_id / 'surf' / f'{hemi}.orig'
+            orig_premesh = Path(subjects_dir) / subject_id / 'surf' / f'{hemi}.orig.premesh'
             cmd = f'cp {orig} {orig_premesh}'
             run_cmd_with_timing(cmd)
         return runtime
 
     def _list_outputs(self):
         outputs = self._outputs().get()
-        subject_dir = Path(self.inputs.subject_dir) / self.inputs.subject_id
-        outputs['lh_orig_file'] = subject_dir / 'surf' / 'lh.orig'
-        outputs['rh_orig_file'] = subject_dir / 'surf' / 'rh.orig'
-        outputs['lh_orig_premesh_file'] = subject_dir / 'surf' / 'lh.orig.premesh'
-        outputs['rh_orig_premesh_file'] = subject_dir / 'surf' / 'rh.orig.premesh'
+        subjects_dir = Path(self.inputs.subjects_dir) / self.inputs.subject_id
+        outputs['lh_orig_file'] = subjects_dir / 'surf' / 'lh.orig'
+        outputs['rh_orig_file'] = subjects_dir / 'surf' / 'rh.orig'
+        outputs['lh_orig_premesh_file'] = subjects_dir / 'surf' / 'lh.orig.premesh'
+        outputs['rh_orig_premesh_file'] = subjects_dir / 'surf' / 'rh.orig.premesh'
         return outputs
