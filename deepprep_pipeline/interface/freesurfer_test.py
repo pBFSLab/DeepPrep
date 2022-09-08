@@ -1,7 +1,7 @@
 import os
-from freesurfer import OrigAndRawavg
+from freesurfer import OrigAndRawavg, WhitePreaparc
 from pathlib import Path
-from freesurfer import Brainmask, UpdateAseg
+from freesurfer import Brainmask, UpdateAseg, Inflated_Sphere
 from nipype import Node
 from run import set_envrion
 
@@ -51,26 +51,52 @@ def Brainmask_test():
     brainmask_node.run()
 
 
-def UpdateAseg_test():
+def white_preaparc_test():
+
+    fswhitepreaparc = False
+    subject_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
+    subject = "sub-001"
+    hemi = "rh"
+    threads = 8
+
+    os.environ['SUBJECTS_DIR'] = str(subject_dir)
+
+    white_preaparc = Node(WhitePreaparc(output_dir=subject_dir, threads=threads), name="white_preaparc")
+    white_preaparc.inputs.fswhitepreaparc = fswhitepreaparc
+    white_preaparc.inputs.subject = subject
+    white_preaparc.inputs.hemi = hemi
+
+    white_preaparc.run()
+
+def Inflated_Sphere_test():
     set_envrion()
-    subject_dir = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon')
-    subject_id = 'sub-MSC01'
-    subject_mri_dir = subject_dir / subject_id / 'mri'
-    os.environ['SUBJECTS_DIR'] = '/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon'
-    paint_cc_file = Path.cwd().parent / 'FastSurfer' / 'recon_surf' / 'paint_cc_into_pred.py'
-    updateaseg_node = Node(UpdateAseg(), name='updateaseg_node')
-    updateaseg_node.inputs.subject_dir = subject_dir
-    updateaseg_node.inputs.subject_id = subject_id
-    updateaseg_node.inputs.paint_cc_file = paint_cc_file
-    updateaseg_node.inputs.python_interpret = '/home/lincong/miniconda3/envs/pytorch3.8/bin/python'
-    updateaseg_node.inputs.seg_file = subject_mri_dir / 'aparc.DKTatlas+aseg.deep.mgz'
-    updateaseg_node.inputs.aseg_noCCseg_file = subject_mri_dir / 'aseg.auto_noCCseg.mgz'
-    updateaseg_node.inputs.aseg_auto_file = subject_mri_dir / 'aseg.auto.mgz'
-    updateaseg_node.inputs.cc_up_file = subject_mri_dir / 'transforms' / 'cc_up.lta'
-    updateaseg_node.inputs.aparc_aseg_file = subject_mri_dir / 'aparc.DKTatlas+aseg.deep.withCC.mgz'
-    updateaseg_node.run()
+    subject_dir = Path("/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon")
+    subject_id = "sub-001"
+    hemi = "lh"
+    os.environ['SUBJECTS_DIR'] = str(subject_dir)
+    white_preaparc_dir = subject_dir / subject_id / "surf" / f"{hemi}.white.preaparc"
+    smoothwm_dir = subject_dir / subject_id / "surf" / f"{hemi}.smoothwm"
+    inflated_dir = subject_dir / subject_id / "surf" / f"{hemi}.inflated"
+    sulc_dir = subject_dir / subject_id / "surf" / f"{hemi}.sulc"
+
+    Inflated_Sphere_node = Node(Inflated_Sphere(), f'Inflated_Sphere_node')
+    Inflated_Sphere_node.inputs.hemi = hemi
+    threads = 30
+    Inflated_Sphere_node.inputs.fsthreads = f'-threads {threads} -itkthreads {threads}'
+    Inflated_Sphere_node.inputs.subject = subject_id
+    Inflated_Sphere_node.inputs.white_preaparc_file = white_preaparc_dir
+    Inflated_Sphere_node.inputs.smoothwm_file = smoothwm_dir
+    Inflated_Sphere_node.inputs.inflated_file = inflated_dir
+    Inflated_Sphere_node.inputs.sulc_file = sulc_dir
+
+    Inflated_Sphere_node.run()
+
 
 
 if __name__ == '__main__':
+
     OrigAndRawavg_test()
     Brainmask_test()
+    Inflated_Sphere_test()
+    white_preaparc_test()
+
