@@ -1,9 +1,7 @@
 from nipype.interfaces.base import BaseInterface, \
     BaseInterfaceInputSpec, traits, File, TraitedSpec, Directory, Str
-from nipype import Node, Workflow
-from .cmd import run_cmd_with_timing
+from run import run_cmd_with_timing
 import os
-import time
 from pathlib import Path
 import argparse
 
@@ -167,4 +165,3 @@ class Filled(BaseInterface):
         outputs["orig_file"] = Path(f"{self.inputs.subject_dir}/{self.inputs.subject_id}/mri/orig.mgz")
         outputs['rawavg_file'] = Path(f"{self.inputs.subject_dir}/{self.inputs.subject_id}/mri/rawavg.mgz")
         return outputs
-

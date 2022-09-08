@@ -1,6 +1,7 @@
 from pathlib import Path
-from nipype.interfaces.base import BaseInterfaceInputSpec, BaseInterface, File, TraitedSpec, Directory, traits, traits_extension
-from cmd import run_cmd_with_timing
+from nipype.interfaces.base import BaseInterfaceInputSpec, BaseInterface, File, TraitedSpec, Directory, \
+    traits, traits_extension
+from run import run_cmd_with_timing
 
 
 class SegmentInputSpec(BaseInterfaceInputSpec):
@@ -71,7 +72,7 @@ class N4BiasCorrect(BaseInterface):
     input_spec = N4BiasCorrectInputSpec
     output_spec = N4BiasCorrectOutputSpec
 
-    time = 7 / 60 # per minute
+    time = 7 / 60  # per minute
     cpu = 10
     gpu = 0
 
@@ -122,6 +123,7 @@ class TalairachAndNu(BaseInterface):
     time = 18 / 60
     cpu = 1
     gpu = 0
+
     def __init__(self, freesurfer_home: Path):
         super(TalairachAndNu, self).__init__()
         self.mni305 = freesurfer_home / "average" / "mni305.cor.mgz"
@@ -174,7 +176,8 @@ class NoccsegThresholdInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc='name of file to process. Default: aparc.DKTatlas+aseg.orig.mgz')
     out_file = File(mandatory=True,
                     desc='Default: aseg.auto_noCCseg.mgz'
-                         'reduce labels to aseg, then create mask (dilate 5, erode 4, largest component), also mask aseg to remove outliers'
+                         'reduce labels to aseg, then create mask (dilate 5, erode 4, largest component), '
+                         'also mask aseg to remove outliers'
                          'output will be uchar (else mri_cc will fail below)')  # Do not set exists=True !!
     reduce_to_aseg_py = File(exists=True, mandatory=True, desc="reduce to aseg")
 
