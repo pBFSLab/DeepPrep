@@ -274,9 +274,45 @@ class Inflated_Sphere(BaseInterface):
         run_cmd_with_timing(cmd)
         return runtime
 
-        def _list_outputs(self):
-            outputs = self._outputs().get()
-            outputs['smoothwm_file'] = self.inputs.smoothwm_file
-            outputs['inflated_file'] = self.inputs.inflated_file
-            outputs['sulc_file'] = self.inputs.sulc_file
-            return outputs
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs['smoothwm_file'] = self.inputs.smoothwm_file
+        outputs['inflated_file'] = self.inputs.inflated_file
+        outputs['sulc_file'] = self.inputs.sulc_file
+        return outputs
+
+class CurvstatsInputSpec(BaseInterfaceInputSpec):
+    subject_dir = Directory(exists=True, desc="subject dir", mandatory=True)
+    subject_id = Str(desc="subject id", mandatory=True)
+    hemi = Str(desc="lh/rh", mandatory=True)
+    hemi_smoothwm_file = File(exists=True, desc="surf/{hemi}.smoothwm", mandatory=True)
+    hemi_curv_file = File(exists=True, desc="surf/{hemi}.curv", mandatory=True)
+    hemi_sulc_file = File(exists=True, desc="surf/{hemi}.sulc", mandatory=True)
+    threads = traits.Int(desc='threads')
+
+    hemi_curv_stats_file = File(exists=False, desc="stats/{hemi}.curv.stats", mandatory=True)
+
+
+class CurvstatsOutputSpec(TraitedSpec):
+    hemi_curv_stats_file = File(exists=False, desc="stats/{hemi}.curv.stats", mandatory=True)
+
+
+class Curvstats(BaseInterface):
+    input_spec = CurvstatsInputSpec
+    output_spec = CurvstatsOutputSpec
+
+    time = 3.1/ 60  # 运行时间：分钟 / 单脑测试时间
+    cpu = 2  # 最大cpu占用：个
+    gpu = 0  # 最大gpu占用：MB
+
+    def _run_interface(self, runtime):
+        threads = self.inputs.threads if self.inputs.threads else 0
+        fsthreads = get_freesurfer_threads(threads)
+
+        # in FS7 curvstats moves here
+        cmd = f"recon-all -subject {self.inputs.subject_id} -hemi {self.inputs.hemi} -curvstats -no-isrunning {fsthreads}"
+        run_cmd_with_timing(cmd)
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["hemi_curv_stats_file"] = self.inputs.hemi_curv_stats_file
