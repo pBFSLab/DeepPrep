@@ -165,3 +165,52 @@ class Filled(BaseInterface):
         outputs["orig_file"] = Path(f"{self.inputs.subject_dir}/{self.inputs.subject_id}/mri/orig.mgz")
         outputs['rawavg_file'] = Path(f"{self.inputs.subject_dir}/{self.inputs.subject_id}/mri/rawavg.mgz")
         return outputs
+
+
+class UpdateAsegInputSpec(BaseInterfaceInputSpec):
+    subject_dir = Directory(exists=True, desc="subject dir", mandatory=True)
+    subject_id = Str(desc="subject id", mandatory=True)
+    python_interpret = File(exists=True, desc="python interpret", mandatory=True)
+    paint_cc_file = File(exists=True, desc="paint_cc_into_pred file", mandatory=True)
+    # aseg_noCCseg_file = File(exists=True, desc="aseg.auto_noCCseg file", mandatory=True)
+    seg_file = File(exists=True, desc="seg file", mandatory=True)
+
+    aseg_auto_file = File(exists=False, desc="aseg.auto file", mandatory=True)
+    cc_up_file = File(exists=False, desc="cc up file", mandatory=True)
+    aparc_aseg_file = File(exists=False, desc="aparc.DKTatlas+aseg.deep.withCC file", mandatory=True)
+
+
+class UpdateAsegOutputSpec(TraitedSpec):
+    aseg_auto_file = File(exists=False, desc="aseg.auto file", mandatory=True)
+    cc_up_file = File(exists=False, desc="cc up file file", mandatory=True)
+    aparc_aseg_file = File(exists=False, desc="aparc.DKTatlas+aseg.deep.withCC file", mandatory=True)
+
+
+class UpdateAseg(BaseInterface):
+    input_spec = UpdateAsegInputSpec
+    output_spec = UpdateAsegOutputSpec
+
+    time = 21 / 60  # 运行时间：分钟
+    cpu = 1.6  # 最大cpu占用：个
+    gpu = 0  # 最大gpu占用：MB
+
+    def _run_interface(self, runtime):
+        # create aseg.auto including cc segmentation and add cc into aparc.DKTatlas+aseg.deep;
+        # 46 sec: (not sure if this is needed), requires norm.mgz
+        cmd = f'mri_cc -aseg aseg.auto_noCCseg.mgz -o aseg.auto.mgz ' \
+              f'-lta {self.inputs.cc_up_file} {self.inputs.subject_id}'
+        run_cmd_with_timing(cmd)
+
+        # 0.8s
+        cmd = f'{self.inputs.python_interpret} {self.inputs.paint_cc_file} ' \
+              f'-in_cc {self.inputs.aseg_auto_file} -in_pred {self.inputs.seg_file} ' \
+              f'-out {self.inputs.aparc_aseg_file}'
+        run_cmd_with_timing(cmd)
+
+        return runtime
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["aseg_auto_file"] = self.inputs.aseg_auto_file
+        outputs["cc_up_file"] = self.inputs.cc_up_file
+        outputs["aparc_aseg_file"] = self.inputs.aparc_aseg_file
