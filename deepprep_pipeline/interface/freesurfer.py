@@ -1,9 +1,8 @@
 from nipype.interfaces.base import BaseInterface, \
     BaseInterfaceInputSpec, traits, File, TraitedSpec, Directory, Str, traits_extension
 from nipype import Node, Workflow
-from cmd import run_cmd_with_timing
+from run import run_cmd_with_timing, parse_args
 import os
-import time
 from pathlib import Path
 import argparse
 
@@ -14,29 +13,6 @@ def get_freesurfer_threads(threads: int):
     else:
         fsthreads = ''
     return fsthreads
-
-
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--bd', required=True, help='directory of bids type')
-    parser.add_argument('--fsd', default=os.environ.get('FREESURFER_HOME'),
-                        help='Output directory $FREESURFER_HOME (pass via environment or here)')
-    parser.add_argument('--respective', default='off',
-                        help='if on, while processing T1w file respectively')
-    parser.add_argument('--rewrite', default='on',
-                        help='set off, while not preprocess if subject recon path exist')
-    parser.add_argument('--python', default='python3',
-                        help='which python version to use')
-
-    args = parser.parse_args()
-    args_dict = vars(args)
-
-    if args.fsd is None:
-        args_dict['fsd'] = '/usr/local/freesurfer'
-    args_dict['respective'] = True if args.respective == 'on' else False
-    args_dict['rewrite'] = True if args.rewrite == 'on' else False
-
-    return argparse.Namespace(**args_dict)
 
 
 class BrainmaskInputSpec(BaseInterfaceInputSpec):
@@ -80,7 +56,7 @@ class Brainmask(BaseInterface):
             cmd = f'mri_mask {self.inputs.T1_file} {self.inputs.mask_file} {self.inputs.brainmask_file}'
             run_cmd_with_timing(cmd)
         else:
-            cmd = f'ln -sf {self.inputs.norm_file} {self.inputs.brainmask_file}'
+            cmd = f'cp {self.inputs.norm_file} {self.inputs.brainmask_file}'
             run_cmd_with_timing(cmd)
 
         return runtime
@@ -206,7 +182,6 @@ class WhitePreaparc(BaseInterface):
     input_spec = WhitePreaparcInputSpec
     output_spec = WhitePreaparcOutputSpec
 
-
     def __init__(self, output_dir: Path):
         super(WhitePreaparc, self).__init__()
         self.output_dir = output_dir
@@ -223,7 +198,6 @@ class WhitePreaparc(BaseInterface):
         print(f"self.inputs.threads {self.inputs.threads}")
         print(f"self.inputs.fsthreads {self.inputs.fsthreads}")
         print("##########")
-
 
         if not traits_extension.isdefined(self.inputs.brain_finalsurfs):
             self.inputs.brain_finalsurfs = self.output_dir / f"{self.inputs.subject}" / "mri/brain.finalsurfs.mgz"
@@ -274,5 +248,4 @@ class WhitePreaparc(BaseInterface):
         outputs["hemi_curv"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.curv"
         outputs["hemi_area"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.area"
         outputs["hemi_cortex_label"] = self.output_dir / f"{self.inputs.subject}" / f"label/{self.inputs.hemi}.cortex.label"
-
         return outputs

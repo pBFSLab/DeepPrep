@@ -1,8 +1,9 @@
 import os
-from freesurfer import OrigAndRawavg, Brainmask, WhitePreaparc
+from freesurfer import OrigAndRawavg, WhitePreaparc
 from pathlib import Path
+from freesurfer import Brainmask, UpdateAseg
 from nipype import Node
-from cmd import set_envrion
+from run import set_envrion
 
 
 def OrigAndRawavg_test():
@@ -13,7 +14,7 @@ def OrigAndRawavg_test():
     subject_id = 'OrigAndRawavg_test1'
     t1w_files = [
         f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/sub-MSC01/ses-struct01/anat/sub-MSC01_ses-struct01_run-01_T1w.nii.gz',
-                 ]
+    ]
     origandrawavg_node = Node(OrigAndRawavg(), f'origandrawavg_node')
     origandrawavg_node.inputs.t1w_files = t1w_files
     origandrawavg_node.inputs.subject_dir = subject_dir
@@ -66,6 +67,7 @@ def white_preaparc_test():
     white_preaparc.inputs.threads = threads
 
     white_preaparc.run()
+
 
 
 
