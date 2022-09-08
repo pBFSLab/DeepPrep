@@ -315,16 +315,16 @@ def vxm_warp_bold_2mm(resid_t1, affine_file, warp_file, warped_file, verbose=Fal
     return warped_bold_img
 
 
-def warp_bold_2mm(subj_func_path, subj, workdir, norm_file, resid_file, reg_file, save_file, verbose=False):
-    resid_t1_file = subj_func_path / f'{subj}_native_t1_2mm.nii.gz'
+def warp_bold_2mm(subj_func_path, subj, workdir, norm_file, bold_file, reg_file, save_file, verbose=False):
+    bold_t1_file = subj_func_path / f'{subj}_native_t1_2mm.nii.gz'
     # native_bold_to_T1_2mm(residual_file, subj, subj_t1_file, reg_file, resid_t1_file)
-    resid_t1 = native_bold_to_T1_2mm_ants(resid_file, subj, norm_file, reg_file, resid_t1_file, workdir,
+    bold_t1 = native_bold_to_T1_2mm_ants(bold_file, subj, norm_file, reg_file, bold_t1_file, workdir,
                                           verbose=verbose)
     warp_file = subj_func_path / f'sub-{subj}_warp.nii.gz'
     affine_file = subj_func_path / f'sub-{subj}_affine.mat'
     warped_file = subj_func_path / f'sub-{subj}_MNI2mm.nii.gz'
 
-    warped_img = vxm_warp_bold_2mm(resid_t1, affine_file, warp_file, warped_file, verbose=verbose)
+    warped_img = vxm_warp_bold_2mm(bold_t1, affine_file, warp_file, warped_file, verbose=verbose)
 
     # bold_smooth_6(warped_file, smoothed_file)
     bold_smooth_6_ants(warped_img, save_file, verbose=True)
@@ -579,6 +579,9 @@ def preprocess(layout, bids_bolds, subj, deepprep_subj_path, preprocess_dir):
         src_resid_file = subj_bold_dir / run / f'sub-{subj}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss_resid.nii.gz'
         dst_resid_file = subj_func_path / f'{file_prefix}_resid.nii.gz'
         shutil.copy(src_resid_file, dst_resid_file)
+        src_mc_file = subj_bold_dir / run / f'sub-{subj}_bld_rest_reorient_skip_faln_mc.nii.gz'
+        dst_mc_file = subj_func_path / f'{file_prefix}_mc.nii.gz'
+        shutil.copy(src_mc_file, dst_mc_file)
         src_reg_file = subj_bold_dir / run / f'sub-{subj}_bld_rest_reorient_skip_faln_mc.register.dat'
         dst_reg_file = subj_func_path / f'{file_prefix}_bbregister.register.dat'
         shutil.copy(src_reg_file, dst_reg_file)
@@ -600,6 +603,7 @@ def parse_args():
                         help='Output directory $FREESURFER_HOME (pass via environment or here)')
     parser.add_argument("-t", "--task", action='store', nargs='+',
                         help='a space delimited list of tasks identifiers or a single task')
+    parser.add_argument("-p", "--preprocess",  required=True, help='choose the pre-processing method(rest or task)')
     parser.add_argument("-s", "--subject", action="store", nargs="+", type=_drop_sub,
                         help="a space delimited list of subject identifiers or a single "
                              "identifier (the sub- prefix can be removed)")
@@ -616,7 +620,12 @@ if __name__ == '__main__':
     args = parse_args()
 
     data_path = Path(args.bd)
-
+    preprocess_method = args.preprocess
+    if preprocess_method in ['rest', 'task']:
+        print(f'preprocess method : {preprocess_method}')
+    else:
+        print(f'preprocess method error!')
+        exit()
     devices = tf.config.list_physical_devices('GPU')
 
     layout = bids.BIDSLayout(str(data_path), derivatives=False)
@@ -694,7 +703,7 @@ if __name__ == '__main__':
             for bids_bold in bids_bolds:
                 entities = dict(bids_bold.entities)
                 subj = entities['subject']
-                file_prefix = Path(bids_bold.path).name.replace('.nii.gz', '_sdc')
+                file_prefix = Path(bids_bold.path).name.replace('.nii.gz', '')
                 if 'session' in entities:
                     ses = entities['session']
                     subj_func_path = deepprep_subj_path / f'ses-{ses}' / 'func'
@@ -702,8 +711,14 @@ if __name__ == '__main__':
                     subj_func_path = deepprep_subj_path / 'func'
 
                 # native bold to MNI152 2mm
-                resid_file = subj_func_path / f'{file_prefix}_resid.nii.gz'
-                reg_file = subj_func_path / f'{file_prefix}_bbregister.register.dat'
-                save_file = subj_func_path / f'{file_prefix}_resid_MIN2mm_sm6.nii.gz'
-                warp_bold_2mm(subj_func_path, subj, workdir, norm_file, resid_file, reg_file, save_file, verbose=False)
+                if preprocess_method == 'rest':
+                    resid_file = subj_func_path / f'{file_prefix}_resid.nii.gz'
+                    reg_file = subj_func_path / f'{file_prefix}_bbregister.register.dat'
+                    save_file = subj_func_path / f'{file_prefix}_resid_MIN2mm_sm6.nii.gz'
+                    warp_bold_2mm(subj_func_path, subj, workdir, norm_file, resid_file, reg_file, save_file, verbose=False)
+                else:
+                    mc_file = subj_func_path / f'{file_prefix}_mc.nii.gz'
+                    reg_file = subj_func_path / f'{file_prefix}_bbregister.register.dat'
+                    save_file = subj_func_path / f'{file_prefix}_mc_MIN2mm_sm6.nii.gz'
+                    warp_bold_2mm(subj_func_path, subj, workdir, norm_file, mc_file, reg_file, save_file, verbose=False)
             # shutil.rmtree(workdir)
