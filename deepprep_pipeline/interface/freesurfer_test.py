@@ -1,7 +1,7 @@
 import os
 from freesurfer import OrigAndRawavg, WhitePreaparc
 from pathlib import Path
-from freesurfer import Brainmask, UpdateAseg
+from freesurfer import Brainmask
 from nipype import Node
 from run import set_envrion
 
@@ -52,19 +52,18 @@ def Brainmask_test():
 
 def white_preaparc_test():
 
-    fswhitepreaparc = True
+    fswhitepreaparc = False
     subject_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
     subject = "sub-001"
-    hemi = "lh"
+    hemi = "rh"
     threads = 8
 
     os.environ['SUBJECTS_DIR'] = str(subject_dir)
 
-    white_preaparc = Node(WhitePreaparc(output_dir=subject_dir), name="white_preaparc")
+    white_preaparc = Node(WhitePreaparc(output_dir=subject_dir, threads=threads), name="white_preaparc")
     white_preaparc.inputs.fswhitepreaparc = fswhitepreaparc
     white_preaparc.inputs.subject = subject
     white_preaparc.inputs.hemi = hemi
-    white_preaparc.inputs.threads = threads
 
     white_preaparc.run()
 

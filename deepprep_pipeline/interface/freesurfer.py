@@ -150,8 +150,6 @@ class WhitePreaparcInputSpec(BaseInterfaceInputSpec):
     False: recon-all -autodetgwstats -white-preaparc -cortex-label", mandatory=True)
     subject = traits.Str(desc="sub-xxx", mandatory=True)
     hemi = traits.Str(desc="?h", mandatory=True)
-    threads = traits.Int(desc="threads")
-    fsthreads = traits.Str(desc="-threads <threads> -itkthreads <threads>")
 
     # input files of <mris_make_surfaces>
     aseg_presurf = File(exists=True, desc="mri/aseg.presurf.mgz")
@@ -182,23 +180,14 @@ class WhitePreaparc(BaseInterface):
     input_spec = WhitePreaparcInputSpec
     output_spec = WhitePreaparcOutputSpec
 
-    def __init__(self, output_dir: Path):
+    def __init__(self, output_dir: Path, threads: int):
         super(WhitePreaparc, self).__init__()
         self.output_dir = output_dir
+        self.threads = threads
+        self.fsthreads = get_freesurfer_threads(threads)
+
 
     def _run_interface(self, runtime):
-        if not traits_extension.isdefined(self.inputs.threads):
-            self.inputs.threads = 1
-        if not traits_extension.isdefined(self.inputs.fsthreads):
-            if self.inputs.threads > 1:
-                self.inputs.fsthreads = f"-threads {self.inputs.threads} -itkthreads {self.inputs.threads}"
-            else:
-                self.inputs.fsthreads = ""
-        print("##########")
-        print(f"self.inputs.threads {self.inputs.threads}")
-        print(f"self.inputs.fsthreads {self.inputs.fsthreads}")
-        print("##########")
-
         if not traits_extension.isdefined(self.inputs.brain_finalsurfs):
             self.inputs.brain_finalsurfs = self.output_dir / f"{self.inputs.subject}" / "mri/brain.finalsurfs.mgz"
         if not traits_extension.isdefined(self.inputs.wm_file):
@@ -226,7 +215,7 @@ class WhitePreaparc(BaseInterface):
             print("*"*10)
 
             cmd = f'mris_make_surfaces -aseg aseg.presurf -white white.preaparc -whiteonly -noaparc -mgz ' \
-                  f'-T1 brain.finalsurfs {self.inputs.subject} {self.inputs.hemi} threads {self.inputs.threads}'
+                  f'-T1 brain.finalsurfs {self.inputs.subject} {self.inputs.hemi} threads {self.threads}'
             run_cmd_with_timing(cmd)
         else:
             # time = ? / 60
@@ -237,7 +226,7 @@ class WhitePreaparc(BaseInterface):
                 self.inputs.hemi_orig_premesh = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.orig.premesh"
 
             cmd = f'recon-all -subject {self.inputs.subject} -hemi {self.inputs.hemi} -autodetgwstats -white-preaparc -cortex-label ' \
-                  f'-no-isrunning {self.inputs.fsthreads}'
+                  f'-no-isrunning {self.fsthreads}'
             run_cmd_with_timing(cmd)
 
         return runtime
