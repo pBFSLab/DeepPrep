@@ -168,23 +168,24 @@ class Filled(BaseInterface):
         outputs['rawavg_file'] = Path(f"{self.inputs.subject_dir}/{self.inputs.subject_id}/mri/rawavg.mgz")
         return outputs
 
+
 class UpdateAsegInputSpec(BaseInterfaceInputSpec):
     subject_dir = Directory(exists=True, desc="subject dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
     python_interpret = File(exists=True, desc="python interpret", mandatory=True)
-    paint_cc_file = File(exists=True, desc="paint_cc_into_pred file", mandatory=True)
-    # aseg_noCCseg_file = File(exists=True, desc="aseg.auto_noCCseg file", mandatory=True)
-    seg_file = File(exists=True, desc="seg file", mandatory=True)
+    paint_cc_file = File(exists=True, desc="FastSurfer/recon_surf/paint_cc_into_pred.py", mandatory=True)
+    aseg_noCCseg_file = File(exists=True, desc="mri/aseg.auto_noCCseg.mgz", mandatory=True)
+    seg_file = File(exists=True, desc="mri/aparc.DKTatlas+aseg.deep.mgz", mandatory=True)
 
-    aseg_auto_file = File(exists=False, desc="aseg.auto file", mandatory=True)
-    cc_up_file = File(exists=False, desc="cc up file", mandatory=True)
-    aparc_aseg_file = File(exists=False, desc="aparc.DKTatlas+aseg.deep.withCC file", mandatory=True)
+    aseg_auto_file = File(exists=False, desc="mri/aseg.auto.mgz", mandatory=True)
+    cc_up_file = File(exists=False, desc="mri/transforms/cc_up.lta", mandatory=True)
+    aparc_aseg_file = File(exists=False, desc="mri/aparc.DKTatlas+aseg.deep.withCC.mgz", mandatory=True)
 
 
 class UpdateAsegOutputSpec(TraitedSpec):
-    aseg_auto_file = File(exists=False, desc="aseg.auto file", mandatory=True)
-    cc_up_file = File(exists=False, desc="cc up file file", mandatory=True)
-    aparc_aseg_file = File(exists=False, desc="aparc.DKTatlas+aseg.deep.withCC file", mandatory=True)
+    aseg_auto_file = File(exists=False, desc="mri/aseg.auto.mgz", mandatory=True)
+    cc_up_file = File(exists=False, desc="mri/transforms/cc_up.lta", mandatory=True)
+    aparc_aseg_file = File(exists=False, desc="mri/aparc.DKTatlas+aseg.deep.withCC.mgz", mandatory=True)
 
 
 class UpdateAseg(BaseInterface):
