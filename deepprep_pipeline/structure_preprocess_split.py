@@ -43,7 +43,7 @@ def run_with_timing(cmd):
 
 @timing_func
 def fastsurfer_seg(t1_input: str, fs_home: Path, sub_mri_dir: Path):
-    orig_o = sub_mri_dir / 'orig.mgz'
+    orig_o = sub_mri_dir / 'orig.mgz'  # 如果存在，不会执行mri_convert -conform
     aseg_o = sub_mri_dir / 'aparc.DKTatlas+aseg.deep.mgz'
 
     fastsurfer_eval = fs_home / 'FastSurferCNN' / 'eval.py'
@@ -57,16 +57,17 @@ def fastsurfer_seg(t1_input: str, fs_home: Path, sub_mri_dir: Path):
           f'--network_sagittal_path {weight_dir}/Sagittal_Weights_FastSurferCNN/ckpts/Epoch_30_training_state.pkl ' \
           f'--network_axial_path {weight_dir}/Axial_Weights_FastSurferCNN/ckpts/Epoch_30_training_state.pkl ' \
           f'--network_coronal_path {weight_dir}/Coronal_Weights_FastSurferCNN/ckpts/Epoch_30_training_state.pkl ' \
-          '--batch_size 8 --simple_run --run_viewagg_on check'
+          '--batch_size 1 --simple_run --run_viewagg_on check'
     run_with_timing(cmd)
 
 
 @timing_func
-def creat_orig_and_rawavg(sub_mri_dir: Path):
+def creat_orig_and_rawavg(t1_input: str, sub_mri_dir: Path):
     # create orig.mgz and aparc.DKTatlas+aseg.orig.mgz (copy of segmentation)
-    t1 = sub_mri_dir / 'orig.mgz'
-    cmd = f'mri_convert {t1} {t1}'
-    run_with_timing(cmd)
+    orig = sub_mri_dir / 'orig.mgz'
+    if not orig.exists():
+        cmd = f'mri_convert {t1_input} {orig}'
+        run_with_timing(cmd)
 
     seg_deep = sub_mri_dir / 'aparc.DKTatlas+aseg.deep.mgz'
     seg_orig = sub_mri_dir / 'aparc.DKTatlas+aseg.orig.mgz'
@@ -76,7 +77,7 @@ def creat_orig_and_rawavg(sub_mri_dir: Path):
     # link to rawavg (needed by pctsurfcon)
     rawavg = sub_mri_dir / 'rawavg.mgz'
     if not os.path.exists(rawavg):
-        cmd = f'ln -sf {t1} {rawavg}'
+        cmd = f'cp {orig} {rawavg}'
         run_with_timing(cmd)
 
 
@@ -115,9 +116,9 @@ def creat_talairach_and_nu(fs_bin: Path, sub_mri_dir: Path, threads: int):
     run_with_timing(cmd)
 
     # Since we do not run mri_em_register we sym-link other talairach transform files here
-    cmd = f"ln -sf {sub_mri_dir}/transforms/talairach.xfm.lta {sub_mri_dir}/transforms/talairach_with_skull.lta"
+    cmd = f"cp {sub_mri_dir}/transforms/talairach.xfm.lta {sub_mri_dir}/transforms/talairach_with_skull.lta"
     run_with_timing(cmd)
-    cmd = f"ln -sf {sub_mri_dir}/transforms/talairach.xfm.lta {sub_mri_dir}/transforms/talairach.lta"
+    cmd = f"cp {sub_mri_dir}/transforms/talairach.xfm.lta {sub_mri_dir}/transforms/talairach.lta"
     run_with_timing(cmd)
 
     # Add xfm to nu
@@ -140,7 +141,7 @@ def creat_brainmask(sub_mri_dir: Path, need_t1=True):
         cmd = f'mri_mask {sub_mri_dir}/T1.mgz {sub_mri_dir}/mask.mgz {sub_mri_dir}/brainmask.mgz'
         run_with_timing(cmd)
     else:
-        cmd = f'ln -sf {sub_mri_dir}/norm.mgz {sub_mri_dir}/brainmask.mgz'
+        cmd = f'cp {sub_mri_dir}/norm.mgz {sub_mri_dir}/brainmask.mgz'
         run_with_timing(cmd)
 
 
@@ -288,7 +289,7 @@ def create_orig_fix(fs_bin: Path, fc_bin: Path, sub_mri_dir: Path, sub_surf_dir:
         run_with_timing(cmd)
         for hemi in ['lh', 'rh']:
             orig_premesh = sub_surf_dir / f'{hemi}.orig.premesh'
-            cmd = f'ln -sf {sub_surf_dir}/{hemi}.orig {orig_premesh}'
+            cmd = f'cp {sub_surf_dir}/{hemi}.orig {orig_premesh}'
             run_with_timing(cmd)
 
 
@@ -448,7 +449,7 @@ def create_white_pial_thickness(sub_mri_dir: Path, sub_surf_dir: Path,
         # Here insert DoT2Pial  later --> if T2pial is not run, need to softlink pial.T1 to pial!
 
         cddir = f'cd {sub_surf_dir} &&'
-        cmd = f"{cddir} ln -sf {hemi}.pial.T1 {hemi}.pial"
+        cmd = f"{cddir} cp {hemi}.pial.T1 {hemi}.pial"
         run_with_timing(cmd)
 
         cddir = f'cd {sub_mri_dir} &&'
@@ -541,9 +542,9 @@ def create_pctsurcon_hypo_segstats(sub_mri_dir: Path, sub_surf_dir: Path, sub_la
     if not fsstats:
         # pctsurfcon (has no way to specify which annot to use, so we need to link ours as aparc is not available)
         # cddir = f'cd {sub_label_dir} &&'
-        # cmd = f"{cddir} ln -sf lh.aparc.DKTatlas.mapped.annot lh.aparc.annot"
+        # cmd = f"{cddir} cp lh.aparc.DKTatlas.mapped.annot lh.aparc.annot"
         # run_with_timing(cmd)
-        # cmd = f"{cddir} ln -sf rh.aparc.DKTatlas.mapped.annot rh.aparc.annot"
+        # cmd = f"{cddir} cp rh.aparc.DKTatlas.mapped.annot rh.aparc.annot"
         # run_with_timing(cmd)
         # for hemi in ['lh', 'rh']:
         #     cmd = f"pctsurfcon --s {subject} --{hemi}-only"
@@ -614,21 +615,21 @@ def create_wmparc_from_mapped(sub_mri_dir: Path, sub_surf_dir: Path, sub_label_d
     if not fsaparc:
         # Symlink of aparc.DKTatlas+aseg.mapped.mgz
         cddir = f'cd {sub_mri_dir} &&'
-        cmd = f"{cddir} ln -sf aparc.DKTatlas+aseg.mapped.mgz aparc.DKTatlas+aseg.mgz"
+        cmd = f"{cddir} cp aparc.DKTatlas+aseg.mapped.mgz aparc.DKTatlas+aseg.mgz"
         run_with_timing(cmd)
-        cmd = f"{cddir} ln -sf aparc.DKTatlas+aseg.mapped.mgz aparc+aseg.mgz"
+        cmd = f"{cddir} cp aparc.DKTatlas+aseg.mapped.mgz aparc+aseg.mgz"
         run_with_timing(cmd)
 
         # Symlink of wmparc.mapped
         cddir = f'cd {sub_mri_dir} &&'
-        cmd = f"{cddir} ln -sf wmparc.DKTatlas.mapped.mgz wmparc.mgz"
+        cmd = f"{cddir} cp wmparc.DKTatlas.mapped.mgz wmparc.mgz"
         run_with_timing(cmd)
 
         # Symbolic link for mapped surface parcellations
         cddir = f'cd {sub_label_dir} &&'
-        cmd = f"{cddir} ln -sf lh.aparc.DKTatlas.mapped.annot lh.aparc.DKTatlas.annot"
+        cmd = f"{cddir} cp lh.aparc.DKTatlas.mapped.annot lh.aparc.DKTatlas.annot"
         run_with_timing(cmd)
-        cmd = f"{cddir} ln -sf rh.aparc.DKTatlas.mapped.annot rh.aparc.DKTatlas.annot"
+        cmd = f"{cddir} cp rh.aparc.DKTatlas.mapped.annot rh.aparc.DKTatlas.annot"
         run_with_timing(cmd)
 
 
@@ -747,35 +748,13 @@ def preprocess(subject_id, sub_t1: str, sub_recon_path: Path, rewrite=True):
     create_balabels(fsthreads, subject=subject_id)
 
 
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--bd', required=True, help='directory of bids type')
-    parser.add_argument('--fsd', default=os.environ.get('FREESURFER_HOME'),
-                        help='Output directory $FREESURFER_HOME (pass via environment or here)')
-    parser.add_argument('--respective', default='off',
-                        help='if on, while processing T1w file respectively')
-    parser.add_argument('--rewrite', default='on',
-                        help='set off, while not preprocess if subject recon path exist')
-    parser.add_argument('--python', default='python3',
-                        help='which python version to use')
-
-    args = parser.parse_args()
-    args_dict = vars(args)
-
-    if args.fsd is None:
-        args_dict['fsd'] = '/usr/local/freesurfer'
-    args_dict['respective'] = True if args.respective == 'on' else False
-    args_dict['rewrite'] = True if args.rewrite == 'on' else False
-
-    return argparse.Namespace(**args_dict)
-
-
 if __name__ == '__main__':
+    from deepprep import parse_args
     start_time = time.time()
 
     args = parse_args()
 
-    data_path = Path(args.bd)
+    data_path = Path(args.bids_dir)
 
     python = args.python
 
