@@ -1,7 +1,7 @@
 import os
 from freesurfer import OrigAndRawavg, WhitePreaparc
 from pathlib import Path
-from freesurfer import Brainmask, Inflated_Sphere, Curvstats
+from freesurfer import Brainmask, Inflated_Sphere, Curvstats, Cortribbon
 from nipype import Node
 from run import set_envrion
 
@@ -52,7 +52,6 @@ def Brainmask_test():
 
 
 def white_preaparc_test():
-
     fswhitepreaparc = False
     subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
     subject = "sub-001"
@@ -67,6 +66,7 @@ def white_preaparc_test():
     white_preaparc.inputs.hemi = hemi
 
     white_preaparc.run()
+
 
 def Inflated_Sphere_test():
     set_envrion()
@@ -91,6 +91,7 @@ def Inflated_Sphere_test():
 
     Inflated_Sphere_node.run()
 
+
 def Curvstats_test():
     set_envrion()
     subject_dir = Path(f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon')
@@ -113,10 +114,32 @@ def Curvstats_test():
 
         Curvstats_node.run()
 
-if __name__ == '__main__':
 
+def Cortribbon_test():
+    set_envrion()
+    subjects_dir = Path(f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon')
+    subject_id = 'sub-MSC01'
+    subject_mri_dir = subjects_dir / subject_id / 'mri'
+    subject_surf_dir = subjects_dir / subject_id / 'surf'
+    threads = 8
+    os.environ['SUBJECTS_DIR'] = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon'
+    for hemi in ['lh', 'rh']:
+        Cortribbon_node = Node(Cortribbon(), name='Cortribbon_node')
+        Cortribbon_node.inputs.subjects_dir = subjects_dir
+        Cortribbon_node.inputs.subject_id = subject_id
+        Cortribbon_node.inputs.hemi = hemi
+        Cortribbon_node.inputs.threads = threads
+        Cortribbon_node.inputs.aseg_presurf_file = subject_mri_dir / 'aseg.presurf.mgz'
+        Cortribbon_node.inputs.hemi_white = subject_surf_dir / f'{hemi}.white'
+        Cortribbon_node.inputs.hemi_pial = subject_surf_dir / f'{hemi}.pial'
+
+        Cortribbon_node.inputs.hemi_ribbon = subject_mri_dir / f'{hemi}.ribbon.mgz'
+        Cortribbon_node.inputs.ribbon = subject_mri_dir / 'ribbon.mgz'
+        Cortribbon_node.run()
+
+
+if __name__ == '__main__':
     OrigAndRawavg_test()
     Brainmask_test()
     Inflated_Sphere_test()
     white_preaparc_test()
-
