@@ -79,9 +79,9 @@ def Segment_test():
 def N4_bias_correct_test():
     args = parse_args()
 
-    subject_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
+    subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
     subject_id = "sub-001"
-    sub_mri_dir = subject_dir / subject_id / "mri"
+    sub_mri_dir = subjects_dir / subject_id / "mri"
 
     fastsurfer_home = Path("/home/youjia/workspace/DeepPrep/deepprep_pipeline") / "FastSurfer"
     orig_file = sub_mri_dir / "orig.mgz"
@@ -99,9 +99,9 @@ def N4_bias_correct_test():
 
 
 def talairach_and_nu_test():
-    subject_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
+    subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
     subject_id = "sub-001"
-    sub_mri_dir = subject_dir / subject_id / "mri"
+    sub_mri_dir = subjects_dir / subject_id / "mri"
     orig_nu_file = sub_mri_dir / "orig_nu.mgz"
     nu_file = sub_mri_dir / "nu.mgz"
     # talairach_auto_xfm
@@ -126,13 +126,13 @@ def talairach_and_nu_test():
 
 
 def UpdateAseg_test():
-    subject_dir = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon')
+    subjects_dir = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon')
     subject_id = 'sub-MSC01'
-    subject_mri_dir = subject_dir / subject_id / 'mri'
+    subject_mri_dir = subjects_dir / subject_id / 'mri'
     os.environ['SUBJECTS_DIR'] = '/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon'
     paint_cc_file = Path.cwd().parent / 'FastSurfer' / 'recon_surf' / 'paint_cc_into_pred.py'
     updateaseg_node = Node(UpdateAseg(), name='updateaseg_node')
-    updateaseg_node.inputs.subject_dir = subject_dir
+    updateaseg_node.inputs.subjects_dir = subjects_dir
     updateaseg_node.inputs.subject_id = subject_id
     updateaseg_node.inputs.paint_cc_file = paint_cc_file
     updateaseg_node.inputs.python_interpret = '/home/lincong/miniconda3/envs/pytorch3.8/bin/python'
@@ -145,15 +145,15 @@ def UpdateAseg_test():
 
 
 def SampleSegmentationToSurfave():
-    subject_dir = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon')
+    subjects_dir = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon')
     subject_id = 'sub-MSC01'
-    subject_mri_dir = subject_dir / subject_id / 'mri'
-    subject_surf_dir = subject_dir / subject_id / 'surf'
-    subject_label_dir = subject_dir / subject_id / 'label'
+    subject_mri_dir = subjects_dir / subject_id / 'mri'
+    subject_surf_dir = subjects_dir / subject_id / 'surf'
+    subject_label_dir = subjects_dir / subject_id / 'label'
     os.environ['SUBJECTS_DIR'] = '/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon'
     for hemi in ['lh', 'rh']:
         SampleSegmentationToSurfave_node = Node(SampleSegmentationToSurfave(), name='SampleSegmentationToSurfave_node')
-        SampleSegmentationToSurfave_node.inputs.subject_dir = subject_dir
+        SampleSegmentationToSurfave_node.inputs.subjects_dir = subjects_dir
         SampleSegmentationToSurfave_node.inputs.subject_id = subject_id
         SampleSegmentationToSurfave_node.inputs.python_interpret = '/home/lincong/miniconda3/envs/pytorch3.8/bin/python'
         SampleSegmentationToSurfave_node.inputs.freesufer_home = os.environ['FREESURFER_HOME']
