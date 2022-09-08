@@ -1,5 +1,5 @@
 import os
-from freesurfer import OrigAndRawavg
+from freesurfer import OrigAndRawavg, WhitePreaparc
 from pathlib import Path
 from freesurfer import Brainmask, UpdateAseg, Inflated_Sphere
 from nipype import Node
@@ -50,6 +50,25 @@ def Brainmask_test():
     brainmask_node.inputs.norm_file = subject_dir / subject_id / 'mri' / 'norm.mgz'
     brainmask_node.run()
 
+
+def white_preaparc_test():
+
+    fswhitepreaparc = True
+    subject_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
+    subject = "sub-001"
+    hemi = "lh"
+    threads = 8
+
+    os.environ['SUBJECTS_DIR'] = str(subject_dir)
+
+    white_preaparc = Node(WhitePreaparc(output_dir=subject_dir), name="white_preaparc")
+    white_preaparc.inputs.fswhitepreaparc = fswhitepreaparc
+    white_preaparc.inputs.subject = subject
+    white_preaparc.inputs.hemi = hemi
+    white_preaparc.inputs.threads = threads
+
+    white_preaparc.run()
+
 def Inflated_Sphere_test():
     set_envrion()
     subject_dir = Path("/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon")
@@ -73,7 +92,12 @@ def Inflated_Sphere_test():
 
     Inflated_Sphere_node.run()
 
+
+
 if __name__ == '__main__':
+
     OrigAndRawavg_test()
     Brainmask_test()
     Inflated_Sphere_test()
+    white_preaparc_test()
+
