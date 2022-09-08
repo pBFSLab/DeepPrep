@@ -1,7 +1,7 @@
 import os
 from freesurfer import OrigAndRawavg, WhitePreaparc
 from pathlib import Path
-from freesurfer import Brainmask, Inflated_Sphere
+from freesurfer import Brainmask, Inflated_Sphere, Curvstats
 from nipype import Node
 from run import set_envrion
 
@@ -91,7 +91,27 @@ def Inflated_Sphere_test():
 
     Inflated_Sphere_node.run()
 
+def Curvstats_test():
+    set_envrion()
+    subject_dir = Path(f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon')
+    subject_id = 'sub-MSC01'
+    subject_stats_dir = subject_dir / subject_id / 'stats'
+    subject_surf_dir = subject_dir / subject_id / 'surf'
+    threads = 8
+    os.environ['SUBJECTS_DIR'] = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon'
+    for hemi in ['lh', 'rh']:
+        Curvstats_node = Node(Curvstats(), name='Curvstats_node')
+        Curvstats_node.inputs.subject_dir = subject_dir
+        Curvstats_node.inputs.subject_id = subject_id
+        Curvstats_node.inputs.hemi = hemi
+        Curvstats_node.inputs.hemi_smoothwm_file = subject_surf_dir / f'{hemi}.smoothwm'
+        Curvstats_node.inputs.hemi_curv_file = subject_surf_dir / f'{hemi}.curv'
+        Curvstats_node.inputs.hemi_sulc_file = subject_surf_dir / f'{hemi}.sulc'
+        Curvstats_node.inputs.threads = threads
 
+        Curvstats_node.inputs.hemi_curv_stats_file = subject_stats_dir / f'{hemi}.curv.stats'
+
+        Curvstats_node.run()
 
 if __name__ == '__main__':
 
