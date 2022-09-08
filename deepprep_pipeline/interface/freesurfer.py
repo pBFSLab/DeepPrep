@@ -78,7 +78,7 @@ class Brainmask(BaseInterface):
             cmd = f'mri_mask {self.inputs.T1_file} {self.inputs.mask_file} {self.inputs.brainmask_file}'
             run_cmd_with_timing(cmd)
         else:
-            cmd = f'ln -sf {self.inputs.norm_file} {self.inputs.brainmask_file}'
+            cmd = f'cp {self.inputs.norm_file} {self.inputs.brainmask_file}'
             run_cmd_with_timing(cmd)
 
         return runtime
