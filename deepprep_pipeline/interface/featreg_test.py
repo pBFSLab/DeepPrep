@@ -62,18 +62,18 @@ def FeatReg_test():
         featreg_node.inputs.python_interpret = '/home/anning/miniconda3/envs/3.8/bin/python3'
         featreg_node.inputs.featreg_py = featreg_py
 
-        subject_dir = '/mnt/ngshare/Data_Mirror/pipeline_test'
+        subjects_dir = '/mnt/ngshare/Data_Mirror/pipeline_test'
         subject_id = 'sub-MSC01'
 
-        os.environ['SUBJECTS_DIR'] = subject_dir
+        os.environ['SUBJECTS_DIR'] = subjects_dir
 
-        featreg_node.inputs.subject_dir = subject_dir
+        featreg_node.inputs.subjects_dir = subjects_dir
         featreg_node.inputs.subject_id = subject_id
         featreg_node.inputs.freesurfer_home = '/usr/local/freesurfer'
         featreg_node.inputs.hemisphere = hemi
-        featreg_node.inputs.sulc_file = Path(subject_dir) / subject_id / f'surf/{hemi}.sulc'
-        featreg_node.inputs.curv_file = Path(subject_dir) / subject_id / f'surf/{hemi}.curv'
-        featreg_node.inputs.sphere_file = Path(subject_dir) / subject_id / f'surf/{hemi}.sphere'
+        featreg_node.inputs.sulc_file = Path(subjects_dir) / subject_id / f'surf/{hemi}.sulc'
+        featreg_node.inputs.curv_file = Path(subjects_dir) / subject_id / f'surf/{hemi}.curv'
+        featreg_node.inputs.sphere_file = Path(subjects_dir) / subject_id / f'surf/{hemi}.sphere'
 
         featreg_node.run()
 

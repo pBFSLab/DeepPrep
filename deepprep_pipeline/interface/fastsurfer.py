@@ -208,7 +208,7 @@ class Noccseg(BaseInterface):
 
 
 class UpdateAsegInputSpec(BaseInterfaceInputSpec):
-    subject_dir = Directory(exists=True, desc="subject dir", mandatory=True)
+    subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
     python_interpret = File(exists=True, desc="python interpret", mandatory=True)
     paint_cc_file = File(exists=True, desc="FastSurfer/recon_surf/paint_cc_into_pred.py", mandatory=True)
@@ -257,7 +257,7 @@ class UpdateAseg(BaseInterface):
 
 
 class SampleSegmentationToSurfaveInputSpec(BaseInterfaceInputSpec):
-    subject_dir = Directory(exists=True, desc="subject dir", mandatory=True)
+    subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
     python_interpret = File(exists=True, desc="python interpret", mandatory=True)
     freesufer_home = Directory(exists=True, desc="freesufer_home", mandatory=True)
