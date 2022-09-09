@@ -643,3 +643,47 @@ class Hyporelabel(BaseInterface):
     def _list_outputs(self):
         outputs = self._outputs().get()
         outputs["aseg_presurf_hypos_file"] = self.inputs.aseg_presurf_hypos_file
+
+
+class JacobianAvgcurvCortparcThresholdInputSpec(BaseInterfaceInputSpec):
+    hemi = traits.String(mandatory=True, desc='hemi')
+    subject = traits.String(mandatory=True, desc='recon')
+    white_preaparc_file = File(exists=True, mandatory=True, desc='surf/?h.white.preaparc')
+    sphere_reg_file = File(exists=True, mandatory=True, desc='surf/?h.sphere.reg')
+    jacobian_white_file = File(mandatory=True, desc='surf/?h.jacobian_white')
+    avg_curv_file = File(mandatory=True, desc='surf/?h.avg_curv')  # Do not set exists=True !!
+    aseg_presurf_file = File(exists=True, mandatory=True, desc="mri/aseg.presurf.mgz")
+    cortex_label_file = File(exists=True, mandatory=True, desc="label/?h.cortex.label")
+    aparc_annot_file = File(mandatory=True, desc="label/?h.aparc.annot")
+    threads = traits.Int(desc='threads')
+
+
+class JacobianAvgcurvCortparcThresholdOutputSpec(TraitedSpec):
+    jacobian_white_file = File(exists=True, mandatory=True, desc='surf/?h.jacobian_white')
+    avg_curv_file = File(exists=True, mandatory=True, desc='surf/?h.avg_curv')  # Do not set exists=True !!
+    aparc_annot_file = File(exists=True, mandatory=True, desc="surf/?h.aparc.annot")
+
+
+class JacobianAvgcurvCortparc(BaseInterface):
+    input_spec = JacobianAvgcurvCortparcThresholdInputSpec
+    output_spec = JacobianAvgcurvCortparcThresholdOutputSpec
+
+    # time = 28 / 60  # 运行时间：分钟
+    # cpu = 3  # 最大cpu占用：个
+    # gpu = 0  # 最大gpu占用：MB
+
+    def _run_interface(self, runtime):
+        threads = self.inputs.threads if self.inputs.threads else 0
+        fsthreads = get_freesurfer_threads(threads)
+        # create nicer inflated surface from topo fixed (not needed, just later for visualization)
+        cmd = f"recon-all -subject {self.inputs.subject} -hemi {self.inputs.hemi} -jacobian_white -avgcurv -cortparc " \
+              f"-no-isrunning {fsthreads}"
+        run_cmd_with_timing(cmd)
+        return runtime
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs['jacobian_white_file'] = self.inputs.jacobian_white_file
+        outputs['avg_curv_file'] = self.inputs.avg_curv_file
+        outputs['aparc_annot_file'] = self.inputs.aparc_annot_file
+        return outputs
