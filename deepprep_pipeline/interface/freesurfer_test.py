@@ -1,7 +1,7 @@
 import os
 from freesurfer import OrigAndRawavg, WhitePreaparc, WhitePialThickness
 from pathlib import Path
-from freesurfer import Brainmask, InflatedSphere, Curvstats, Cortribbon, Parcstats
+from freesurfer import Brainmask, InflatedSphere, Curvstats, Cortribbon, Parcstats, Pctsurfcon
 from nipype import Node
 from run import set_envrion
 
@@ -181,7 +181,29 @@ def Pctsurfcon_test():
         Parcstats_node.inputs.aparc_annot_ctab_file = subject_label_dir / 'aparc.annot.ctab'
         Parcstats_node.run()
 
-
+def Pctsurfcon_test():
+    set_envrion()
+    subjects_dir = Path(f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon')
+    subject_id = 'sub-MSC01'
+    subject_mri_dir = subjects_dir / subject_id / 'mri'
+    subject_surf_dir = subjects_dir / subject_id / 'surf'
+    subject_label_dir = subjects_dir / subject_id / 'label'
+    subject_stats_dir = subjects_dir / subject_id / 'stats'
+    threads = 8
+    os.environ['SUBJECTS_DIR'] = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon'
+    for hemi in ['lh', 'rh']:
+        Pctsurfcon_node = Node(Pctsurfcon(), name='Pctsurfcon_node')
+        Pctsurfcon_node.inputs.subjects_dir = subjects_dir
+        Pctsurfcon_node.inputs.subject_id = subject_id
+        Pctsurfcon_node.inputs.hemi = hemi
+        Pctsurfcon_node.inputs.threads = threads
+        Pctsurfcon_node.inputs.rawavg_file = subject_mri_dir / 'rawavg.mgz'
+        Pctsurfcon_node.inputs.orig_file = subject_mri_dir / 'orig.mgz'
+        Pctsurfcon_node.inputs.hemi_cortex_label_file = subject_label_dir / f'{hemi}.cortex.label'
+        Pctsurfcon_node.inputs.hemi_white_file = subject_surf_dir / f'{hemi}.white'
+        Pctsurfcon_node.inputs.hemi_wg_pct_mgh_file = subject_surf_dir / f'{hemi}.w-g.pct.mgh'
+        Pctsurfcon_node.inputs.hemi_wg_pct_stats_file = subject_stats_dir / f'{hemi}.w-g.pct.stats'
+        Pctsurfcon_node.run()
 if __name__ == '__main__':
     # OrigAndRawavg_test()
     # Brainmask_test()
