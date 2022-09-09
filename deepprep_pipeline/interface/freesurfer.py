@@ -563,3 +563,43 @@ class Parcstats(BaseInterface):
         outputs["hemi_aparc_stats_file"] = self.inputs.hemi_aparc_stats_file
         outputs["hemi_aparc_pial_stats_file"] = self.inputs.hemi_aparc_pial_stats_file
         outputs["aparc_annot_ctab_file"] = self.inputs.aparc_annot_ctab_file
+
+
+class PctsurfconInputSpec(BaseInterfaceInputSpec):
+    subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
+    subject_id = Str(desc="subject id", mandatory=True)
+    threads = traits.Int(desc='threads')
+    hemi = Str(desc="lh/rh", mandatory=True)
+    rawavg_file = File(exists=True, desc="mri/rawavg.mgz", mandatory=True)
+    orig_file = File(exists=True, desc="mri/orig.mgz", mandatory=True)
+    hemi_cortex_label_file = File(exists=True, desc="label/{hemi}.cortex.label", mandatory=True)
+    hemi_white_file = File(exists=True, desc="surf/{hemi}.white", mandatory=True)
+
+    hemi_wg_pct_mgh_file = File(exists=False, desc="surf/{hemi}.w-g.pct.mgh", mandatory=True)
+    hemi_wg_pct_stats_file = File(exists=False, desc="mri/{hemi}.w-g.pct.stats", mandatory=True)
+
+
+class PctsurfconOutputSpec(TraitedSpec):
+    hemi_wg_pct_mgh_file = File(exists=False, desc="surf/{hemi}.w-g.pct.mgh", mandatory=True)
+    hemi_wg_pct_stats_file = File(exists=False, desc="mri/{hemi}.w-g.pct.stats", mandatory=True)
+
+
+class Pctsurfcon(BaseInterface):
+    input_spec = PctsurfconInputSpec
+    output_spec = PctsurfconOutputSpec
+
+    time = 9 / 60  # 运行时间：分钟 / 单脑测试时间
+    cpu = 2  # 最大cpu占用：个
+    gpu = 0  # 最大gpu占用：MB
+
+    def _run_interface(self, runtime):
+        threads = self.inputs.threads if self.inputs.threads else 0
+        fsthreads = get_freesurfer_threads(threads)
+
+        cmd = f"recon-all -subject {self.inputs.subject_id} -pctsurfcon {fsthreads}"
+        run_cmd_with_timing(cmd)
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["hemi_wg_pct_mgh_file"] = self.inputs.hemi_wg_pct_mgh_file
+        outputs["hemi_wg_pct_stats_file"] = self.inputs.hemi_wg_pct_stats_file
