@@ -1,5 +1,5 @@
 from pathlib import Path
-from fastsurfer import Segment, N4BiasCorrect, TalairachAndNu, UpdateAseg
+from fastsurfer import Segment, Noccseg, N4BiasCorrect, TalairachAndNu, UpdateAseg
 from nipype import Node
 import os
 import argparse
@@ -75,6 +75,21 @@ def Segment_test():
     segment_node.inputs.conformed_file = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon/sub-MSC01_ses-struct01_run-01/mri/conformed.mgz'
     segment_node.run()
 
+
+def Noccseg_test():
+    pwd = Path.cwd()  # 当前目录,# get FastSurfer dir Absolute path
+    fastsurfer_home = pwd.parent / "FastSurfer"
+    fastsurfer_reduce_to_aseg = fastsurfer_home / 'recon_surf' / 'reduce_to_aseg.py'
+
+
+    noccseg_node = Node(Noccseg(), f'noccseg_node')
+    noccseg_node.inputs.python_interpret = '/home/pbfs18/anaconda3/envs/3.8/bin/python3'
+    noccseg_node.inputs.in_file = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon/sub-MSC01_ses-struct01_run-1/mri/aparc.DKTatlas+aseg.deep.mgz'
+    noccseg_node.inputs.out_file = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon/sub-MSC01_ses-struct01_run-1/mri/aseg.auto_noCCseg.mgz'
+    noccseg_node.inputs.reduce_to_aseg_py = fastsurfer_reduce_to_aseg
+    noccseg_node.inputs.mask_file = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon/sub-MSC01_ses-struct01_run-1/mri/mask.mgz'
+
+    noccseg_node.run()
 
 def N4_bias_correct_test():
     args = parse_args()
