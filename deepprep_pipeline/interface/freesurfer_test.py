@@ -1,5 +1,5 @@
 import os
-from freesurfer import OrigAndRawavg, WhitePreaparc, WhitePialThickness
+from freesurfer import OrigAndRawavg, WhitePreaparc, WhitePialThickness1, WhitePialThickness2
 from pathlib import Path
 from freesurfer import Brainmask, InflatedSphere, Curvstats, Cortribbon, Parcstats, Pctsurfcon, Hyporelabel, JacobianAvgcurvCortparc
 from nipype import Node
@@ -113,8 +113,7 @@ def Curvstats_test():
         Curvstats_node.run()
 
 
-def white_pial_thickness_test():
-    fswhitepial = True
+def white_pial_thickness1_test():
     subject_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
     subject = "sub-765"
     hemi = "lh"
@@ -122,14 +121,46 @@ def white_pial_thickness_test():
 
     os.environ['SUBJECTS_DIR'] = str(subject_dir)
 
-    white_pial_thickness = Node(WhitePialThickness(output_dir=subject_dir, threads=threads),
-                                name="white_pial_thickness")
-    white_pial_thickness.inputs.fswhitepial = fswhitepial
+    white_pial_thickness = Node(WhitePialThickness1(output_dir=subject_dir, threads=threads),
+                                name="white_pial_thickness1")
     white_pial_thickness.inputs.subject = subject
     white_pial_thickness.inputs.hemi = hemi
 
     white_pial_thickness.run()
 
+def white_pial_thickness2_test():
+    subject_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
+    subject = "sub-765"
+    hemi = "lh"
+    threads = 8
+
+    os.environ['SUBJECTS_DIR'] = str(subject_dir)
+
+    autodet_gw_stats_hemi_dat = subject_dir / subject / f"surf/autodet.gw.stats.{hemi}.dat"
+    aseg_presurf = subject_dir / subject / "mri/aseg.presurf.mgz"
+    wm_file = subject_dir / subject / "mri/wm.mgz"
+    brain_finalsurfs = subject_dir / subject / "mri/brain.finalsurfs.mgz"
+    hemi_white_preaparc = subject_dir / subject / f"surf/{hemi}.white.preaparc"
+    hemi_white = subject_dir / subject / f"surf/{hemi}.white"
+    hemi_cortex_label = subject_dir / subject / f"label/{hemi}.cortex.label"
+    hemi_aparc_DKTatlas_mapped_annot = subject_dir / subject / f"label/{hemi}.aparc.DKTatlas.mapped.annot"
+    hemi_pial_t1 = subject_dir / subject / f"surf/{hemi}.pial.T1"
+
+    white_pial_thickness = Node(WhitePialThickness1(output_dir=subject_dir, threads=threads),
+                                name="white_pial_thickness2")
+    white_pial_thickness.inputs.subject = subject
+    white_pial_thickness.inputs.hemi = hemi
+    white_pial_thickness.inputs.autodet_gw_stats_hemi_dat = autodet_gw_stats_hemi_dat
+    white_pial_thickness.inputs.aseg_presurf = aseg_presurf
+    white_pial_thickness.inputs.wm_file = wm_file
+    white_pial_thickness.inputs.brain_finalsurfs = brain_finalsurfs
+    white_pial_thickness.inputs.hemi_white_preaparc = hemi_white_preaparc
+    white_pial_thickness.inputs.hemi_white = hemi_white
+    white_pial_thickness.inputs.hemi_cortex_label = hemi_cortex_label
+    white_pial_thickness.inputs.hemi_aparc_DKTatlas_mapped_annot = hemi_aparc_DKTatlas_mapped_annot
+    white_pial_thickness.inputs.hemi_pial_t1 = hemi_pial_t1
+
+    white_pial_thickness.run()
 
 def Cortribbon_test():
     set_envrion()
