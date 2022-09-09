@@ -603,3 +603,38 @@ class Pctsurfcon(BaseInterface):
         outputs = self._outputs().get()
         outputs["hemi_wg_pct_mgh_file"] = self.inputs.hemi_wg_pct_mgh_file
         outputs["hemi_wg_pct_stats_file"] = self.inputs.hemi_wg_pct_stats_file
+
+
+class HyporelabelInputSpec(BaseInterfaceInputSpec):
+    subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
+    subject_id = Str(desc="subject id", mandatory=True)
+    threads = traits.Int(desc='threads')
+    hemi = Str(desc="lh/rh", mandatory=True)
+    aseg_presurf_file = File(exists=True, desc="mri/aseg.presurf.mgz", mandatory=True)
+    hemi_white_file = File(exists=True, desc="surf/{hemi}.white", mandatory=True)
+
+    aseg_presurf_hypos_file = File(exists=False, desc="mri/aseg.presurf.hypos.mgz", mandatory=True)
+
+
+class HyporelabelOutputSpec(TraitedSpec):
+    aseg_presurf_hypos_file = File(exists=False, desc="mri/aseg.presurf.hypos.mgz", mandatory=True)
+
+
+class Hyporelabel(BaseInterface):
+    input_spec = HyporelabelInputSpec
+    output_spec = HyporelabelOutputSpec
+
+    time = 12 / 60  # 运行时间：分钟 / 单脑测试时间
+    cpu = 2.3  # 最大cpu占用：个
+    gpu = 0  # 最大gpu占用：MB
+
+    def _run_interface(self, runtime):
+        threads = self.inputs.threads if self.inputs.threads else 0
+        fsthreads = get_freesurfer_threads(threads)
+
+        cmd = f"recon-all -subject {self.inputs.subject_id} -hyporelabel {fsthreads}"
+        run_cmd_with_timing(cmd)
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["aseg_presurf_hypos_file"] = self.inputs.aseg_presurf_hypos_file
