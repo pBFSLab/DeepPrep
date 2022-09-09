@@ -1,7 +1,7 @@
 import os
 from freesurfer import OrigAndRawavg, WhitePreaparc, WhitePialThickness
 from pathlib import Path
-from freesurfer import Brainmask, InflatedSphere, Curvstats, Cortribbon, Parcstats, Pctsurfcon
+from freesurfer import Brainmask, InflatedSphere, Curvstats, Cortribbon, Parcstats, Pctsurfcon, Hyporelabel
 from nipype import Node
 from run import set_envrion
 
@@ -204,6 +204,25 @@ def Pctsurfcon_test():
         Pctsurfcon_node.inputs.hemi_wg_pct_mgh_file = subject_surf_dir / f'{hemi}.w-g.pct.mgh'
         Pctsurfcon_node.inputs.hemi_wg_pct_stats_file = subject_stats_dir / f'{hemi}.w-g.pct.stats'
         Pctsurfcon_node.run()
+
+def Hyporelabel_test():
+    set_envrion()
+    subjects_dir = Path(f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon')
+    subject_id = 'sub-MSC01'
+    subject_mri_dir = subjects_dir / subject_id / 'mri'
+    subject_surf_dir = subjects_dir / subject_id / 'surf'
+    threads = 8
+    os.environ['SUBJECTS_DIR'] = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon'
+    for hemi in ['lh', 'rh']:
+        Hyporelabel_node = Node(Hyporelabel(), name='Hyporelabel_node')
+        Hyporelabel_node.inputs.subjects_dir = subjects_dir
+        Hyporelabel_node.inputs.subject_id = subject_id
+        Hyporelabel_node.inputs.hemi = hemi
+        Hyporelabel_node.inputs.threads = threads
+        Hyporelabel_node.inputs.aseg_presurf_file = subject_mri_dir / 'aseg.presurf.mgz'
+        Hyporelabel_node.inputs.hemi_white_file = subject_surf_dir / f'{hemi}.white'
+        Hyporelabel_node.inputs.aseg_presurf_hypos_file = subject_mri_dir / 'aseg.presurf.hypos.mgz'
+        Hyporelabel_node.run()
 if __name__ == '__main__':
     # OrigAndRawavg_test()
     # Brainmask_test()
