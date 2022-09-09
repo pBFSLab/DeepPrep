@@ -275,10 +275,8 @@ class SampleSegmentationToSurfaveInputSpec(BaseInterfaceInputSpec):
 
 
 class SampleSegmentationToSurfaveOutputSpec(TraitedSpec):
-    hemi_aparc_DKTatlas_mapped_prefix_file = File(exists=True, desc="label/?h.aparc.DKTatlas.mapped.prefix.annot",
-                                                  mandatory=True)
-    hemi_aparc_DKTatlas_mapped_file = File(exists=True, desc="label/?h.aparc.DKTatlas.mapped.annot",
-                                           mandatory=True)
+    hemi_aparc_DKTatlas_mapped_prefix_file = File(exists=True, desc="label/?h.aparc.DKTatlas.mapped.prefix.annot")
+    hemi_aparc_DKTatlas_mapped_file = File(exists=True, desc="label/?h.aparc.DKTatlas.mapped.annot")
 
 
 class SampleSegmentationToSurfave(BaseInterface):
