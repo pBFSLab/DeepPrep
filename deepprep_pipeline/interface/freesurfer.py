@@ -533,11 +533,13 @@ class ParcstatsInputSpec(BaseInterfaceInputSpec):
     hemi_thickness_file = File(exists=True, desc="surf/{hemi}.thickness", mandatory=True)
 
     hemi_aparc_stats_file = File(exists=False, desc="stats/{hemi}.aparc.stats", mandatory=True)
+    hemi_aparc_pial_stats_file = File(exists=False, desc="stats/{hemi}.aparc.pial.stats", mandatory=True)
     aparc_annot_ctab_file = File(exists=False, desc="label/aparc.annot.ctab", mandatory=True)
 
 
 class ParcstatsOutputSpec(TraitedSpec):
     hemi_aparc_stats_file = File(exists=False, desc="stats/{hemi}.aparc.stats", mandatory=True)
+    hemi_aparc_pial_stats_file = File(exists=False, desc="stats/{hemi}.aparc.pial.stats", mandatory=True)
     aparc_annot_ctab_file = File(exists=False, desc="label/aparc.annot.ctab", mandatory=True)
 
 
@@ -545,8 +547,8 @@ class Parcstats(BaseInterface):
     input_spec = ParcstatsInputSpec
     output_spec = ParcstatsOutputSpec
 
-    time = 203 / 60  # 运行时间：分钟 / 单脑测试时间
-    cpu = 3.5  # 最大cpu占用：个
+    time = 91 / 60  # 运行时间：分钟 / 单脑测试时间
+    cpu = 3  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
 
     def _run_interface(self, runtime):
@@ -559,4 +561,5 @@ class Parcstats(BaseInterface):
     def _list_outputs(self):
         outputs = self._outputs().get()
         outputs["hemi_aparc_stats_file"] = self.inputs.hemi_aparc_stats_file
+        outputs["hemi_aparc_pial_stats_file"] = self.inputs.hemi_aparc_pial_stats_file
         outputs["aparc_annot_ctab_file"] = self.inputs.aparc_annot_ctab_file
