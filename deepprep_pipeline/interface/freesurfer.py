@@ -333,7 +333,6 @@ class WhitePialThickness(BaseInterface):
         self.output_dir = output_dir
         self.threads = threads
         self.fsthreads = get_freesurfer_threads(threads)
-        # self.sub_mri_dir = self.output_dir / self.inputs.subject / "mri"
 
     def _run_interface(self, runtime):
         # The two methods below are exacly same.

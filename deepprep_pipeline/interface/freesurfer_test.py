@@ -114,7 +114,7 @@ def Curvstats_test():
 
 
 def white_pial_thickness_test():
-    fswhitepial = False
+    fswhitepial = True
     subject_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
     subject = "sub-765"
     hemi = "lh"
