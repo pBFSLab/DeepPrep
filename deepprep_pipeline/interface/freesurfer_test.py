@@ -1,7 +1,7 @@
 import os
 from freesurfer import OrigAndRawavg, WhitePreaparc, WhitePialThickness
 from pathlib import Path
-from freesurfer import Brainmask, InflatedSphere, Curvstats, Cortribbon
+from freesurfer import Brainmask, InflatedSphere, Curvstats, Cortribbon, Parcstats, Pctsurfcon, Hyporelabel
 from nipype import Node
 from run import set_envrion
 
@@ -69,7 +69,6 @@ def white_preaparc_test():
 
 
 def InflatedSphere_test():
-
     subjects_dir = Path("/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon")
     subject_id = "sub-001"
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
@@ -89,6 +88,7 @@ def InflatedSphere_test():
         Inflated_Sphere_node.inputs.sulc_file = sulc_dir
 
         Inflated_Sphere_node.run()
+
 
 def Curvstats_test():
     set_envrion()
@@ -112,6 +112,7 @@ def Curvstats_test():
 
         Curvstats_node.run()
 
+
 def white_pial_thickness_test():
     fswhitepial = False
     subject_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
@@ -121,7 +122,8 @@ def white_pial_thickness_test():
 
     os.environ['SUBJECTS_DIR'] = str(subject_dir)
 
-    white_pial_thickness = Node(WhitePialThickness(output_dir=subject_dir, threads=threads), name="white_pial_thickness")
+    white_pial_thickness = Node(WhitePialThickness(output_dir=subject_dir, threads=threads),
+                                name="white_pial_thickness")
     white_pial_thickness.inputs.fswhitepial = fswhitepial
     white_pial_thickness.inputs.subject = subject
     white_pial_thickness.inputs.hemi = hemi
@@ -152,8 +154,76 @@ def Cortribbon_test():
         Cortribbon_node.run()
 
 
-if __name__ == '__main__':
+def Pctsurfcon_test():
+    set_envrion()
+    subjects_dir = Path(f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon')
+    subject_id = 'sub-MSC01'
+    subject_mri_dir = subjects_dir / subject_id / 'mri'
+    subject_surf_dir = subjects_dir / subject_id / 'surf'
+    subject_label_dir = subjects_dir / subject_id / 'label'
+    subject_stats_dir = subjects_dir / subject_id / 'stats'
+    threads = 8
+    os.environ['SUBJECTS_DIR'] = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon'
+    for hemi in ['lh', 'rh']:
+        Parcstats_node = Node(Parcstats(), name='Parcstats_node')
+        Parcstats_node.inputs.subjects_dir = subjects_dir
+        Parcstats_node.inputs.subject_id = subject_id
+        Parcstats_node.inputs.hemi = hemi
+        Parcstats_node.inputs.threads = threads
+        Parcstats_node.inputs.hemi_aparc_annot_file = subject_label_dir / f'{hemi}.aparc.annot'
+        Parcstats_node.inputs.wm_file = subject_mri_dir / 'wm.mgz'
+        Parcstats_node.inputs.ribbon_file = subject_mri_dir / 'ribbon.mgz'
+        Parcstats_node.inputs.hemi_white_file = subject_surf_dir / f'{hemi}.white'
+        Parcstats_node.inputs.hemi_pial_file = subject_surf_dir / f'{hemi}.pial'
+        Parcstats_node.inputs.hemi_thickness_file = subject_surf_dir / f'{hemi}.thickness'
+        Parcstats_node.inputs.hemi_aparc_stats_file = subject_stats_dir / f'{hemi}.aparc.stats'
+        Parcstats_node.inputs.hemi_aparc_pial_stats_file = subject_stats_dir / f'{hemi}.aparc.pial.stats'
+        Parcstats_node.inputs.aparc_annot_ctab_file = subject_label_dir / 'aparc.annot.ctab'
+        Parcstats_node.run()
 
+def Pctsurfcon_test():
+    set_envrion()
+    subjects_dir = Path(f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon')
+    subject_id = 'sub-MSC01'
+    subject_mri_dir = subjects_dir / subject_id / 'mri'
+    subject_surf_dir = subjects_dir / subject_id / 'surf'
+    subject_label_dir = subjects_dir / subject_id / 'label'
+    subject_stats_dir = subjects_dir / subject_id / 'stats'
+    threads = 8
+    os.environ['SUBJECTS_DIR'] = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon'
+    for hemi in ['lh', 'rh']:
+        Pctsurfcon_node = Node(Pctsurfcon(), name='Pctsurfcon_node')
+        Pctsurfcon_node.inputs.subjects_dir = subjects_dir
+        Pctsurfcon_node.inputs.subject_id = subject_id
+        Pctsurfcon_node.inputs.hemi = hemi
+        Pctsurfcon_node.inputs.threads = threads
+        Pctsurfcon_node.inputs.rawavg_file = subject_mri_dir / 'rawavg.mgz'
+        Pctsurfcon_node.inputs.orig_file = subject_mri_dir / 'orig.mgz'
+        Pctsurfcon_node.inputs.hemi_cortex_label_file = subject_label_dir / f'{hemi}.cortex.label'
+        Pctsurfcon_node.inputs.hemi_white_file = subject_surf_dir / f'{hemi}.white'
+        Pctsurfcon_node.inputs.hemi_wg_pct_mgh_file = subject_surf_dir / f'{hemi}.w-g.pct.mgh'
+        Pctsurfcon_node.inputs.hemi_wg_pct_stats_file = subject_stats_dir / f'{hemi}.w-g.pct.stats'
+        Pctsurfcon_node.run()
+
+def Hyporelabel_test():
+    set_envrion()
+    subjects_dir = Path(f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon')
+    subject_id = 'sub-MSC01'
+    subject_mri_dir = subjects_dir / subject_id / 'mri'
+    subject_surf_dir = subjects_dir / subject_id / 'surf'
+    threads = 8
+    os.environ['SUBJECTS_DIR'] = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon'
+    for hemi in ['lh', 'rh']:
+        Hyporelabel_node = Node(Hyporelabel(), name='Hyporelabel_node')
+        Hyporelabel_node.inputs.subjects_dir = subjects_dir
+        Hyporelabel_node.inputs.subject_id = subject_id
+        Hyporelabel_node.inputs.hemi = hemi
+        Hyporelabel_node.inputs.threads = threads
+        Hyporelabel_node.inputs.aseg_presurf_file = subject_mri_dir / 'aseg.presurf.mgz'
+        Hyporelabel_node.inputs.hemi_white_file = subject_surf_dir / f'{hemi}.white'
+        Hyporelabel_node.inputs.aseg_presurf_hypos_file = subject_mri_dir / 'aseg.presurf.hypos.mgz'
+        Hyporelabel_node.run()
+if __name__ == '__main__':
     # OrigAndRawavg_test()
     # Brainmask_test()
     # Inflated_Sphere_test()
@@ -161,4 +231,3 @@ if __name__ == '__main__':
 
     set_envrion()
     white_pial_thickness_test()
-

@@ -286,7 +286,6 @@ class InflatedSphere(BaseInterface):
             return outputs
 
 
-
 class WhitePialThicknessInputSpec(BaseInterfaceInputSpec):
     fswhitepial = traits.Bool(desc="True: recon-all -white & -pial; False: mris_place_surface", mandatory=True)
     subject = traits.Str(desc="sub-xxx", mandatory=True)
@@ -323,7 +322,6 @@ class WhitePialThicknessOutputSpec(TraitedSpec):
     hemi_curv_pial = File(exists=True, desc="surf/?h.curv.pial")
     hemi_area_pial = File(exists=True, desc="surf/?h.area.pial")
     hemi_thickness = File(exists=True, desc="surf/?h.thickness")
-
 
 
 class WhitePialThickness(BaseInterface):
@@ -526,3 +524,122 @@ class Cortribbon(BaseInterface):
         outputs["hemi_ribbon"] = self.inputs.hemi_ribbon
         outputs["ribbon"] = self.inputs.ribbon
 
+
+class ParcstatsInputSpec(BaseInterfaceInputSpec):
+    subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
+    subject_id = Str(desc="subject id", mandatory=True)
+    threads = traits.Int(desc='threads')
+    hemi = Str(desc="lh/rh", mandatory=True)
+    hemi_aparc_annot_file = File(exists=True, desc="label/{hemi}.aparc.annot", mandatory=True)
+    wm_file = File(exists=True, desc="mri/wm.mgz", mandatory=True)
+    ribbon_file = File(exists=True, desc="mri/ribbon.mgz", mandatory=True)
+    hemi_white_file = File(exists=True, desc="surf/{hemi}.white", mandatory=True)
+    hemi_pial_file = File(exists=True, desc="surf/{hemi}.pial", mandatory=True)
+    hemi_thickness_file = File(exists=True, desc="surf/{hemi}.thickness", mandatory=True)
+
+    hemi_aparc_stats_file = File(exists=False, desc="stats/{hemi}.aparc.stats", mandatory=True)
+    hemi_aparc_pial_stats_file = File(exists=False, desc="stats/{hemi}.aparc.pial.stats", mandatory=True)
+    aparc_annot_ctab_file = File(exists=False, desc="label/aparc.annot.ctab", mandatory=True)
+
+
+class ParcstatsOutputSpec(TraitedSpec):
+    hemi_aparc_stats_file = File(exists=False, desc="stats/{hemi}.aparc.stats", mandatory=True)
+    hemi_aparc_pial_stats_file = File(exists=False, desc="stats/{hemi}.aparc.pial.stats", mandatory=True)
+    aparc_annot_ctab_file = File(exists=False, desc="label/aparc.annot.ctab", mandatory=True)
+
+
+class Parcstats(BaseInterface):
+    input_spec = ParcstatsInputSpec
+    output_spec = ParcstatsOutputSpec
+
+    time = 91 / 60  # 运行时间：分钟 / 单脑测试时间
+    cpu = 3  # 最大cpu占用：个
+    gpu = 0  # 最大gpu占用：MB
+
+    def _run_interface(self, runtime):
+        threads = self.inputs.threads if self.inputs.threads else 0
+        fsthreads = get_freesurfer_threads(threads)
+
+        cmd = f"recon-all -subject {self.inputs.subject_id} -parcstats {fsthreads}"
+        run_cmd_with_timing(cmd)
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["hemi_aparc_stats_file"] = self.inputs.hemi_aparc_stats_file
+        outputs["hemi_aparc_pial_stats_file"] = self.inputs.hemi_aparc_pial_stats_file
+        outputs["aparc_annot_ctab_file"] = self.inputs.aparc_annot_ctab_file
+
+
+class PctsurfconInputSpec(BaseInterfaceInputSpec):
+    subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
+    subject_id = Str(desc="subject id", mandatory=True)
+    threads = traits.Int(desc='threads')
+    hemi = Str(desc="lh/rh", mandatory=True)
+    rawavg_file = File(exists=True, desc="mri/rawavg.mgz", mandatory=True)
+    orig_file = File(exists=True, desc="mri/orig.mgz", mandatory=True)
+    hemi_cortex_label_file = File(exists=True, desc="label/{hemi}.cortex.label", mandatory=True)
+    hemi_white_file = File(exists=True, desc="surf/{hemi}.white", mandatory=True)
+
+    hemi_wg_pct_mgh_file = File(exists=False, desc="surf/{hemi}.w-g.pct.mgh", mandatory=True)
+    hemi_wg_pct_stats_file = File(exists=False, desc="mri/{hemi}.w-g.pct.stats", mandatory=True)
+
+
+class PctsurfconOutputSpec(TraitedSpec):
+    hemi_wg_pct_mgh_file = File(exists=False, desc="surf/{hemi}.w-g.pct.mgh", mandatory=True)
+    hemi_wg_pct_stats_file = File(exists=False, desc="mri/{hemi}.w-g.pct.stats", mandatory=True)
+
+
+class Pctsurfcon(BaseInterface):
+    input_spec = PctsurfconInputSpec
+    output_spec = PctsurfconOutputSpec
+
+    time = 9 / 60  # 运行时间：分钟 / 单脑测试时间
+    cpu = 2  # 最大cpu占用：个
+    gpu = 0  # 最大gpu占用：MB
+
+    def _run_interface(self, runtime):
+        threads = self.inputs.threads if self.inputs.threads else 0
+        fsthreads = get_freesurfer_threads(threads)
+
+        cmd = f"recon-all -subject {self.inputs.subject_id} -pctsurfcon {fsthreads}"
+        run_cmd_with_timing(cmd)
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["hemi_wg_pct_mgh_file"] = self.inputs.hemi_wg_pct_mgh_file
+        outputs["hemi_wg_pct_stats_file"] = self.inputs.hemi_wg_pct_stats_file
+
+
+class HyporelabelInputSpec(BaseInterfaceInputSpec):
+    subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
+    subject_id = Str(desc="subject id", mandatory=True)
+    threads = traits.Int(desc='threads')
+    hemi = Str(desc="lh/rh", mandatory=True)
+    aseg_presurf_file = File(exists=True, desc="mri/aseg.presurf.mgz", mandatory=True)
+    hemi_white_file = File(exists=True, desc="surf/{hemi}.white", mandatory=True)
+
+    aseg_presurf_hypos_file = File(exists=False, desc="mri/aseg.presurf.hypos.mgz", mandatory=True)
+
+
+class HyporelabelOutputSpec(TraitedSpec):
+    aseg_presurf_hypos_file = File(exists=False, desc="mri/aseg.presurf.hypos.mgz", mandatory=True)
+
+
+class Hyporelabel(BaseInterface):
+    input_spec = HyporelabelInputSpec
+    output_spec = HyporelabelOutputSpec
+
+    time = 12 / 60  # 运行时间：分钟 / 单脑测试时间
+    cpu = 2.3  # 最大cpu占用：个
+    gpu = 0  # 最大gpu占用：MB
+
+    def _run_interface(self, runtime):
+        threads = self.inputs.threads if self.inputs.threads else 0
+        fsthreads = get_freesurfer_threads(threads)
+
+        cmd = f"recon-all -subject {self.inputs.subject_id} -hyporelabel {fsthreads}"
+        run_cmd_with_timing(cmd)
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["aseg_presurf_hypos_file"] = self.inputs.aseg_presurf_hypos_file
