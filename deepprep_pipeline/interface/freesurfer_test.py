@@ -113,10 +113,10 @@ def Curvstats_test():
         Curvstats_node.run()
 
 def white_pial_thickness_test():
-    fswhitepial = True
+    fswhitepial = False
     subject_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
     subject = "sub-765"
-    hemi = "rh"
+    hemi = "lh"
     threads = 8
 
     os.environ['SUBJECTS_DIR'] = str(subject_dir)
