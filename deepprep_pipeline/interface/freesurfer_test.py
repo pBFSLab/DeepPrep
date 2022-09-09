@@ -1,7 +1,7 @@
 import os
 from freesurfer import OrigAndRawavg, WhitePreaparc, WhitePialThickness
 from pathlib import Path
-from freesurfer import Brainmask, InflatedSphere, Curvstats, Cortribbon, Parcstats, Pctsurfcon, Hyporelabel
+from freesurfer import Brainmask, InflatedSphere, Curvstats, Cortribbon, Parcstats, Pctsurfcon, Hyporelabel, JacobianAvgcurvCortparc
 from nipype import Node
 from run import set_envrion
 
@@ -223,6 +223,34 @@ def Hyporelabel_test():
         Hyporelabel_node.inputs.hemi_white_file = subject_surf_dir / f'{hemi}.white'
         Hyporelabel_node.inputs.aseg_presurf_hypos_file = subject_mri_dir / 'aseg.presurf.hypos.mgz'
         Hyporelabel_node.run()
+
+
+def JacobianAvgcurvCortparc_test():
+    subjects_dir = Path("/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon")
+    subject_id = "sub-001"
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+    for hemi in ['lh', 'rh']:
+        os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+        white_preaparc_dir = subjects_dir / subject_id / "surf" / f"{hemi}.white.preaparc"
+        sphere_reg_dir = subjects_dir / subject_id / "surf" / f"{hemi}.sphere.reg"
+        jacobian_white_dir = subjects_dir / subject_id / "surf" / f"{hemi}.jacobian_white"
+        avg_curv_dir = subjects_dir / subject_id / "surf" / f"{hemi}.avg_curv"
+        aseg_presurf_dir = subjects_dir / subject_id / "mri" / "aseg.presurf.mgz"
+        cortex_label_dir = subjects_dir / subject_id / "label" / f"{hemi}.cortex.label"
+        aparc_annot_dir = subjects_dir / subject_id / "label" / f"{hemi}.aparc.annot"
+        JacobianAvgcurvCortparc_node = Node(JacobianAvgcurvCortparc(), f'JacobianAvgcurvCortparc_node')
+        JacobianAvgcurvCortparc_node.inputs.hemi = hemi
+        JacobianAvgcurvCortparc_node.inputs.threads = 8
+        JacobianAvgcurvCortparc_node.inputs.subject = subject_id
+        JacobianAvgcurvCortparc_node.inputs.white_preaparc_file = white_preaparc_dir
+        JacobianAvgcurvCortparc_node.inputs.sphere_reg_file = sphere_reg_dir
+        JacobianAvgcurvCortparc_node.inputs.jacobian_white_file = jacobian_white_dir
+        JacobianAvgcurvCortparc_node.inputs.avg_curv_file = avg_curv_dir
+        JacobianAvgcurvCortparc_node.inputs.aseg_presurf_file = aseg_presurf_dir
+        JacobianAvgcurvCortparc_node.inputs.cortex_label_file = cortex_label_dir
+        JacobianAvgcurvCortparc_node.inputs.aparc_annot_file = aparc_annot_dir
+
+        JacobianAvgcurvCortparc_node.run()
 if __name__ == '__main__':
     # OrigAndRawavg_test()
     # Brainmask_test()
@@ -231,3 +259,4 @@ if __name__ == '__main__':
 
     set_envrion()
     white_pial_thickness_test()
+    # JacobianAvgcurvCortparc_test()
