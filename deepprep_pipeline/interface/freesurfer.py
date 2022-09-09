@@ -448,16 +448,16 @@ class CurvstatsInputSpec(BaseInterfaceInputSpec):
     subject_dir = Directory(exists=True, desc="subject dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
     hemi = Str(desc="lh/rh", mandatory=True)
-    hemi_smoothwm_file = File(exists=True, desc="surf/{hemi}.smoothwm", mandatory=True)
-    hemi_curv_file = File(exists=True, desc="surf/{hemi}.curv", mandatory=True)
-    hemi_sulc_file = File(exists=True, desc="surf/{hemi}.sulc", mandatory=True)
+    hemi_smoothwm_file = File(exists=True, desc="surf/?h.smoothwm", mandatory=True)
+    hemi_curv_file = File(exists=True, desc="surf/?h.curv", mandatory=True)
+    hemi_sulc_file = File(exists=True, desc="surf/?h.sulc", mandatory=True)
     threads = traits.Int(desc='threads')
 
-    hemi_curv_stats_file = File(exists=False, desc="stats/{hemi}.curv.stats", mandatory=True)
+    hemi_curv_stats_file = File(exists=False, desc="stats/?h.curv.stats", mandatory=True)
 
 
 class CurvstatsOutputSpec(TraitedSpec):
-    hemi_curv_stats_file = File(exists=False, desc="stats/{hemi}.curv.stats", mandatory=True)
+    hemi_curv_stats_file = File(exists=True, desc="stats/?h.curv.stats")
 
 
 class Curvstats(BaseInterface):
@@ -487,16 +487,16 @@ class CortribbonInputSpec(BaseInterfaceInputSpec):
     threads = traits.Int(desc='threads')
     aseg_presurf_file = File(exists=True, desc="mri/aseg.presurf.mgz", mandatory=True)
     hemi = Str(desc="lh/rh", mandatory=True)
-    hemi_white = File(exists=True, desc="surf/{hemi}.white", mandatory=True)
-    hemi_pial = File(exists=True, desc="surf/{hemi}.pial", mandatory=True)
+    hemi_white = File(exists=True, desc="surf/?h.white", mandatory=True)
+    hemi_pial = File(exists=True, desc="surf/?h.pial", mandatory=True)
 
-    hemi_ribbon = File(exists=False, desc="mri/{hemi}.ribbon.mgz", mandatory=True)
+    hemi_ribbon = File(exists=False, desc="mri/?h.ribbon.mgz", mandatory=True)
     ribbon = File(exists=False, desc="mri/ribbon.mgz", mandatory=True)
 
 
 class CortribbonOutputSpec(TraitedSpec):
-    hemi_ribbon = File(exists=False, desc="mri/{hemi}.ribbon.mgz", mandatory=True)
-    ribbon = File(exists=False, desc="mri/ribbon.mgz", mandatory=True)
+    hemi_ribbon = File(exists=True, desc="mri/?h.ribbon.mgz")
+    ribbon = File(exists=True, desc="mri/ribbon.mgz")
 
 
 class Cortribbon(BaseInterface):
@@ -529,22 +529,22 @@ class ParcstatsInputSpec(BaseInterfaceInputSpec):
     subject_id = Str(desc="subject id", mandatory=True)
     threads = traits.Int(desc='threads')
     hemi = Str(desc="lh/rh", mandatory=True)
-    hemi_aparc_annot_file = File(exists=True, desc="label/{hemi}.aparc.annot", mandatory=True)
+    hemi_aparc_annot_file = File(exists=True, desc="label/?h.aparc.annot", mandatory=True)
     wm_file = File(exists=True, desc="mri/wm.mgz", mandatory=True)
     ribbon_file = File(exists=True, desc="mri/ribbon.mgz", mandatory=True)
-    hemi_white_file = File(exists=True, desc="surf/{hemi}.white", mandatory=True)
-    hemi_pial_file = File(exists=True, desc="surf/{hemi}.pial", mandatory=True)
-    hemi_thickness_file = File(exists=True, desc="surf/{hemi}.thickness", mandatory=True)
+    hemi_white_file = File(exists=True, desc="surf/?h.white", mandatory=True)
+    hemi_pial_file = File(exists=True, desc="surf/?h.pial", mandatory=True)
+    hemi_thickness_file = File(exists=True, desc="surf/?h.thickness", mandatory=True)
 
-    hemi_aparc_stats_file = File(exists=False, desc="stats/{hemi}.aparc.stats", mandatory=True)
-    hemi_aparc_pial_stats_file = File(exists=False, desc="stats/{hemi}.aparc.pial.stats", mandatory=True)
+    hemi_aparc_stats_file = File(exists=False, desc="stats/?h.aparc.stats", mandatory=True)
+    hemi_aparc_pial_stats_file = File(exists=False, desc="stats/?h.aparc.pial.stats", mandatory=True)
     aparc_annot_ctab_file = File(exists=False, desc="label/aparc.annot.ctab", mandatory=True)
 
 
 class ParcstatsOutputSpec(TraitedSpec):
-    hemi_aparc_stats_file = File(exists=False, desc="stats/{hemi}.aparc.stats", mandatory=True)
-    hemi_aparc_pial_stats_file = File(exists=False, desc="stats/{hemi}.aparc.pial.stats", mandatory=True)
-    aparc_annot_ctab_file = File(exists=False, desc="label/aparc.annot.ctab", mandatory=True)
+    hemi_aparc_stats_file = File(exists=True, desc="stats/?h.aparc.stats")
+    hemi_aparc_pial_stats_file = File(exists=True, desc="stats/?h.aparc.pial.stats")
+    aparc_annot_ctab_file = File(exists=True, desc="label/aparc.annot.ctab")
 
 
 class Parcstats(BaseInterface):
@@ -576,16 +576,16 @@ class PctsurfconInputSpec(BaseInterfaceInputSpec):
     hemi = Str(desc="lh/rh", mandatory=True)
     rawavg_file = File(exists=True, desc="mri/rawavg.mgz", mandatory=True)
     orig_file = File(exists=True, desc="mri/orig.mgz", mandatory=True)
-    hemi_cortex_label_file = File(exists=True, desc="label/{hemi}.cortex.label", mandatory=True)
-    hemi_white_file = File(exists=True, desc="surf/{hemi}.white", mandatory=True)
+    hemi_cortex_label_file = File(exists=True, desc="label/?h.cortex.label", mandatory=True)
+    hemi_white_file = File(exists=True, desc="surf/?h.white", mandatory=True)
 
-    hemi_wg_pct_mgh_file = File(exists=False, desc="surf/{hemi}.w-g.pct.mgh", mandatory=True)
-    hemi_wg_pct_stats_file = File(exists=False, desc="mri/{hemi}.w-g.pct.stats", mandatory=True)
+    hemi_wg_pct_mgh_file = File(exists=False, desc="surf/?h.w-g.pct.mgh", mandatory=True)
+    hemi_wg_pct_stats_file = File(exists=False, desc="mri/?h.w-g.pct.stats", mandatory=True)
 
 
 class PctsurfconOutputSpec(TraitedSpec):
-    hemi_wg_pct_mgh_file = File(exists=False, desc="surf/{hemi}.w-g.pct.mgh", mandatory=True)
-    hemi_wg_pct_stats_file = File(exists=False, desc="mri/{hemi}.w-g.pct.stats", mandatory=True)
+    hemi_wg_pct_mgh_file = File(exists=True, desc="surf/?h.w-g.pct.mgh")
+    hemi_wg_pct_stats_file = File(exists=True, desc="mri/?h.w-g.pct.stats")
 
 
 class Pctsurfcon(BaseInterface):
@@ -615,13 +615,13 @@ class HyporelabelInputSpec(BaseInterfaceInputSpec):
     threads = traits.Int(desc='threads')
     hemi = Str(desc="lh/rh", mandatory=True)
     aseg_presurf_file = File(exists=True, desc="mri/aseg.presurf.mgz", mandatory=True)
-    hemi_white_file = File(exists=True, desc="surf/{hemi}.white", mandatory=True)
+    hemi_white_file = File(exists=True, desc="surf/?h.white", mandatory=True)
 
     aseg_presurf_hypos_file = File(exists=False, desc="mri/aseg.presurf.hypos.mgz", mandatory=True)
 
 
 class HyporelabelOutputSpec(TraitedSpec):
-    aseg_presurf_hypos_file = File(exists=False, desc="mri/aseg.presurf.hypos.mgz", mandatory=True)
+    aseg_presurf_hypos_file = File(exists=True, desc="mri/aseg.presurf.hypos.mgz")
 
 
 class Hyporelabel(BaseInterface):
