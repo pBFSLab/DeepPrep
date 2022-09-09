@@ -338,13 +338,17 @@ class WhitePialThickness(BaseInterface):
         # self.sub_mri_dir = self.output_dir / self.inputs.subject / "mri"
 
     def _run_interface(self, runtime):
+        # The two methods below are exacly same.
         if self.inputs.fswhitepial:
             # must run surfreg first
             # 20-25 min for traditional surface segmentation (each hemi)
             # this creates aparc and creates pial using aparc, also computes jacobian
+            # FreeSurfer 7.2
             time = (135 + 120) / 60
-            # cpu =
-            # gpu =
+            cpu = 6
+            gpu = 0
+            # FreeSurfer 6.0
+            # time = (474 + 462) / 60
 
             cmd = f"recon-all -subject {self.inputs.subject} -hemi {self.inputs.hemi} -white " \
                   f"-no-isrunning {self.fsthreads}"
@@ -354,6 +358,10 @@ class WhitePialThickness(BaseInterface):
             run_cmd_with_timing(cmd)
         else:
             # 4 min compute white :
+            time = 330 / 60
+            cpu = 1
+            gpu = 0
+
             if not traits_extension.isdefined(self.inputs.autodet_gw_stats_hemi_dat):
                 self.inputs.autodet_gw_stats_hemi_dat = self.output_dir / f"{self.inputs.subject}" / f"surf/autodet.gw.stats.{self.inputs.hemi}.dat"
             if not traits_extension.isdefined(self.inputs.aseg_presurf):
@@ -389,9 +397,6 @@ class WhitePialThickness(BaseInterface):
             if not traits_extension.isdefined(self.inputs.hemi_thickness):
                 self.inputs.hemi_thickness = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.thickness"
 
-            # time =
-            # cpu =
-            # gpu =
             cddir = f'cd {self.output_dir / self.inputs.subject / "mri"} &&'
             cmd = f"{cddir} mris_place_surface --adgws-in {self.inputs.autodet_gw_stats_hemi_dat} " \
                   f"--seg {self.inputs.aseg_presurf} --wm {self.inputs.wm_file} --invol {self.inputs.brain_finalsurfs} --{self.inputs.hemi} " \
