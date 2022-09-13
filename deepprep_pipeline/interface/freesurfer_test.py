@@ -308,6 +308,33 @@ def Segstats_test():
 
         Segstats_node.inputs.aseg_stats_file = subject_stats_dir / 'aseg.stats'
         Segstats_node.run()
+def Aseg7():
+    set_envrion()
+    subjects_dir = Path(f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon')
+    subject_id = 'sub-MSC01'
+    subject_mri_dir = subjects_dir / subject_id / 'mri'
+    subject_surf_dir = subjects_dir / subject_id / 'surf'
+    subject_label_dir =  subjects_dir / subject_id / 'label'
+    threads = 8
+    os.environ['SUBJECTS_DIR'] = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon'
+    Aseg7_node = Node(Aseg7(), name='Aseg7_node')
+    Aseg7_node.inputs.subjects_dir = subjects_dir
+    Aseg7_node.inputs.subject_id = subject_id
+    Aseg7_node.inputs.threads = threads
+    Aseg7_node.inputs.subject_mri_dir = subject_mri_dir
+    Aseg7_node.inputs.aseg_presurf_hypos_file = subject_mri_dir / 'aseg.presurf.hypos.mgz'
+    Aseg7_node.inputs.ribbon_file = subject_mri_dir / 'ribbon.mgz'
+    Aseg7_node.inputs.lh_cortex_label_file = subject_label_dir / 'lh.cortex.label'
+    Aseg7_node.inputs.lh_white_file = subject_surf_dir / 'lh.white'
+    Aseg7_node.inputs.lh_pial_file = subject_surf_dir / 'lh.pial'
+    Aseg7_node.inputs.lh_aparc_annot_file = subject_label_dir / 'lh.aparc.annot'
+    Aseg7_node.inputs.rh_cortex_label_file = subject_label_dir / 'rh.cortex.label'
+    Aseg7_node.inputs.rh_white_file = subject_surf_dir / 'rh.white'
+    Aseg7_node.inputs.rh_pial_file = subject_surf_dir / 'rh.pial'
+    Aseg7_node.inputs.rh_aparc_annot_file = subject_label_dir / 'rh.aparc.annot'
+
+    Aseg7_node.inputs.aparc_aseg_file = subject_mri_dir / 'aparc+aseg.mgz'
+    Aseg7_node.run()
 if __name__ == '__main__':
     # OrigAndRawavg_test()
     # Brainmask_test()
