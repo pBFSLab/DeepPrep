@@ -724,3 +724,52 @@ class Segstats(BaseInterface):
 
         cmd = f"recon-all -subject {self.inputs.subject_id} -segstats  {fsthreads}"
         run_cmd_with_timing(cmd)
+
+
+class Aseg7InputSpec(BaseInterfaceInputSpec):
+    subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
+    subject_id = Str(desc="subject id", mandatory=True)
+    subject_mri_dir = Directory(exists=True, desc="subject mri dir", mandatory=True)
+    threads = traits.Int(desc='threads')
+
+    aseg_presurf_hypos_file = File(exists=True, desc="mri/aseg.presurf.hypos.mgz", mandatory=True)
+    ribbon_file = File(exists=True, desc="mri/ribbon.mgz", mandatory=True)
+    lh_cortex_label_file = File(exists=True, desc="label/lh.cortex.label", mandatory=True)
+    lh_white_file = File(exists=True, desc="surf/lh.white", mandatory=True)
+    lh_pial_file = File(exists=True, desc="surf/lh.pial", mandatory=True)
+    rh_cortex_label_file = File(exists=True, desc="label/rh.cortex.label", mandatory=True)
+    rh_white_file = File(exists=True, desc="surf/rh.white", mandatory=True)
+    rh_pial_file = File(exists=True, desc="surf/rh.pial", mandatory=True)
+    lh_aparc_annot_file = File(exists=True, desc="surf/lh.aparc.annot", mandatory=True)
+    rh_aparc_annot_file = File(exists=True, desc="surf/rh.aparc.annot", mandatory=True)
+
+    aparc_aseg_file = File(exists=False, desc="mri/aparc+aseg.mgz", mandatory=True)
+
+
+class Aseg7OutputSpec(TraitedSpec):
+    aparc_aseg_file = File(exists=True, desc="mri/aparc+aseg.mgz")
+
+
+class Aseg7(BaseInterface):
+    input_spec = Aseg7InputSpec
+    output_spec = Aseg7OutputSpec
+
+    time = 0 / 60  # 运行时间：分钟 / 单脑测试时间
+    cpu = 0  # 最大cpu占用：个
+    gpu = 0  # 最大gpu占用：MB
+
+    def _run_interface(self, runtime):
+        threads = self.inputs.threads if self.inputs.threads else 0
+        fsthreads = get_freesurfer_threads(threads)
+        cmd = f'cd {self.inputs.subject_mri_dir} && mri_surf2volseg --o aparc+aseg.mgz --label-cortex --i aseg.mgz ' \
+              f'--threads {threads} ' \
+              f'--lh-annot {self.inputs.lh_aparc_annot_file} 1000 ' \
+              f'--lh-cortex-mask {self.inputs.lh_cortex_label_file} --lh-white {self.inputs.lh_white_file} ' \
+              f'--lh-pial {self.inputs.lh_pial_file} --rh-annot {self.inputs.rh_aparc_annot_file} ' \
+              f'--rh-cortex-mask {self.inputs.rh_cortex_label_file} --rh-white {self.inputs.rh_white_file} ' \
+              f'--rh-pial {self.inputs.rh_pial_file} '
+        run_cmd_with_timing(cmd)
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["aparc_aseg_file"] = self.inputs.aparc_aseg_file
