@@ -192,6 +192,6 @@ if __name__ == '__main__':
 
     # Segment_test()
 
-    # N4_bias_correct_test()
+    N4_bias_correct_test()
 
-    talairach_and_nu_test()
+    # talairach_and_nu_test()
