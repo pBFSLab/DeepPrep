@@ -1,7 +1,7 @@
 import os
 from freesurfer import OrigAndRawavg, WhitePreaparc, WhitePialThickness1, WhitePialThickness2
 from pathlib import Path
-from freesurfer import Brainmask, InflatedSphere, Curvstats, Cortribbon, Parcstats, Pctsurfcon, Hyporelabel, JacobianAvgcurvCortparc
+from freesurfer import Brainmask, InflatedSphere, Curvstats, Cortribbon, Parcstats, Pctsurfcon, Hyporelabel, JacobianAvgcurvCortparc, Segstats
 from nipype import Node
 from run import set_envrion
 
@@ -282,6 +282,32 @@ def JacobianAvgcurvCortparc_test():
         JacobianAvgcurvCortparc_node.inputs.aparc_annot_file = aparc_annot_dir
 
         JacobianAvgcurvCortparc_node.run()
+def Segstats_test():
+    set_envrion()
+    subjects_dir = Path(f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon')
+    subject_id = 'sub-MSC01'
+    subject_mri_dir = subjects_dir / subject_id / 'mri'
+    subject_surf_dir = subjects_dir / subject_id / 'surf'
+    subject_stats_dir = subjects_dir / subject_id / 'stats'
+    threads = 8
+    os.environ['SUBJECTS_DIR'] = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon'
+    for hemi in ['lh', 'rh']:
+        Segstats_node = Node(Segstats(), name='Segstats_node')
+        Segstats_node.inputs.subjects_dir = subjects_dir
+        Segstats_node.inputs.subject_id = subject_id
+        Segstats_node.inputs.threads = threads
+        Segstats_node.inputs.hemi = hemi
+        Segstats_node.inputs.brainmask_file = subject_mri_dir / 'brainmask.mgz'
+        Segstats_node.inputs.norm_file = subject_mri_dir / 'norm.mgz'
+        Segstats_node.inputs.aseg_file = subject_mri_dir / 'aseg.mgz'
+        Segstats_node.inputs.aseg_presurf_file = subject_mri_dir / 'aseg.presurf.mgz'
+        Segstats_node.inputs.ribbon_file = subject_mri_dir / 'ribbon.mgz'
+        Segstats_node.inputs.hemi_orig_nofix_file = subject_surf_dir / f'{hemi}.orig.premesh'
+        Segstats_node.inputs.hemi_white_file = subject_surf_dir / f'{hemi}.white'
+        Segstats_node.inputs.hemi_pial_file = subject_surf_dir / f'{hemi}.pial'
+
+        Segstats_node.inputs.aseg_stats_file = subject_stats_dir / 'aseg.stats'
+        Segstats_node.run()
 if __name__ == '__main__':
     # OrigAndRawavg_test()
     # Brainmask_test()
@@ -289,5 +315,5 @@ if __name__ == '__main__':
     # white_preaparc_test()
 
     set_envrion()
-    white_pial_thickness_test()
+
     # JacobianAvgcurvCortparc_test()
