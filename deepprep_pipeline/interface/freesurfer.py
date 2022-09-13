@@ -444,6 +444,7 @@ class WhitePialThickness2(BaseInterface):
 
         return outputs
 
+
 class CurvstatsInputSpec(BaseInterfaceInputSpec):
     subject_dir = Directory(exists=True, desc="subject dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
@@ -686,3 +687,40 @@ class JacobianAvgcurvCortparc(BaseInterface):
         outputs['avg_curv_file'] = self.inputs.avg_curv_file
         outputs['aparc_annot_file'] = self.inputs.aparc_annot_file
         return outputs
+
+
+class SegstatsInputSpec(BaseInterfaceInputSpec):
+    subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
+    subject_id = Str(desc="subject id", mandatory=True)
+    threads = traits.Int(desc='threads')
+    hemi = Str(desc="lh/rh", mandatory=True)
+    brainmask_file = File(exists=True, desc="mri/brainmask.mgz", mandatory=True)
+    norm_file = File(exists=True, desc="mri/norm.mgz", mandatory=True)
+    aseg_file = File(exists=True, desc="mri/aseg.mgz", mandatory=True)
+    aseg_presurf_file = File(exists=True, desc="mri/aseg.presurf.mgz", mandatory=True)
+    ribbon_file = File(exists=True, desc="mri/ribbon.mgz", mandatory=True)
+    hemi_orig_nofix_file = File(exists=True, desc="surf/?h.orig.nofix", mandatory=True)
+    hemi_white_file = File(exists=True, desc="surf/?h.white", mandatory=True)
+    hemi_pial_file = File(exists=True, desc="surf/?h.pial", mandatory=True)
+
+    aseg_stats_file = File(exists=False, desc="stats/aseg.stats", mandatory=True)
+
+
+class SegstatsOutputSpec(TraitedSpec):
+    aseg_stats_file = File(exists=True, desc="stats/aseg.stats")
+
+
+class Segstats(BaseInterface):
+    input_spec = SegstatsInputSpec
+    output_spec = SegstatsOutputSpec
+
+    time = 34 / 60  # 运行时间：分钟 / 单脑测试时间
+    cpu = 8  # 最大cpu占用：个
+    gpu = 0  # 最大gpu占用：MB
+
+    def _run_interface(self, runtime):
+        threads = self.inputs.threads if self.inputs.threads else 0
+        fsthreads = get_freesurfer_threads(threads)
+
+        cmd = f"recon-all -subject {self.inputs.subject_id} -segstats  {fsthreads}"
+        run_cmd_with_timing(cmd)
