@@ -65,7 +65,7 @@ class N4BiasCorrectInputSpec(BaseInterfaceInputSpec):
 
 
 class N4BiasCorrectOutputSpec(TraitedSpec):
-    nu_file = File(exists=True, desc="mri/orig_nu.mgz")
+    orig_nu_file = File(exists=True, desc="mri/orig_nu.mgz")
 
 
 class N4BiasCorrect(BaseInterface):
@@ -94,7 +94,8 @@ class N4BiasCorrect(BaseInterface):
 
     def _list_outputs(self):
         outputs = self._outputs().get()
-        outputs['nu_file'] = self.inputs.orig_nu_file
+        outputs['orig_nu_file'] = self.inputs.orig_nu_file
+        return outputs
 
 
 class TalairachAndNuInputSpec(BaseInterfaceInputSpec):
