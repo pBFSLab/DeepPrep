@@ -1,7 +1,8 @@
 import os
 from freesurfer import OrigAndRawavg, WhitePreaparc, WhitePialThickness1, WhitePialThickness2, Aseg7, Aseg7ToAseg
 from pathlib import Path
-from freesurfer import Brainmask, InflatedSphere, Curvstats, Cortribbon, Parcstats, Pctsurfcon, Hyporelabel, JacobianAvgcurvCortparc, Segstats
+from freesurfer import Brainmask, InflatedSphere, Curvstats, Cortribbon, Parcstats, Pctsurfcon, Hyporelabel, \
+    JacobianAvgcurvCortparc, Segstats
 
 from nipype import Node
 from run import set_envrion
@@ -346,6 +347,31 @@ def Aseg7_test():
     Aseg7_node.run()
 
 
+def Aseg7ToAseg_test():
+    set_envrion()
+    subjects_dir = Path(f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon')
+    subject_id = 'sub-MSC01'
+    subject_mri_dir = subjects_dir / subject_id / 'mri'
+    subject_surf_dir = subjects_dir / subject_id / 'surf'
+    subject_label_dir = subjects_dir / subject_id / 'label'
+    threads = 8
+    os.environ['SUBJECTS_DIR'] = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon'
+    Aseg7ToAseg_node = Node(Aseg7ToAseg(), name='Aseg7_node')
+    Aseg7ToAseg_node.inputs.subjects_dir = subjects_dir
+    Aseg7ToAseg_node.inputs.subject_id = subject_id
+    Aseg7ToAseg_node.inputs.threads = threads
+    Aseg7ToAseg_node.inputs.subject_mri_dir = subject_mri_dir
+    Aseg7ToAseg_node.inputs.aseg_presurf_hypos_file = subject_mri_dir / 'aseg.presurf.hypos.mgz'
+    Aseg7ToAseg_node.inputs.ribbon_file = subject_mri_dir / 'ribbon.mgz'
+    Aseg7ToAseg_node.inputs.lh_cortex_label_file = subject_label_dir / 'lh.cortex.label'
+    Aseg7ToAseg_node.inputs.lh_white_file = subject_surf_dir / 'lh.white'
+    Aseg7ToAseg_node.inputs.lh_pial_file = subject_surf_dir / 'lh.pial'
+    Aseg7ToAseg_node.inputs.rh_cortex_label_file = subject_label_dir / 'rh.cortex.label'
+    Aseg7ToAseg_node.inputs.rh_white_file = subject_surf_dir / 'rh.white'
+    Aseg7ToAseg_node.inputs.rh_pial_file = subject_surf_dir / 'rh.pial'
+
+    Aseg7ToAseg_node.inputs.aseg_file = subject_mri_dir / 'aseg.mgz'
+    Aseg7ToAseg_node.run()
 
 
 if __name__ == '__main__':
