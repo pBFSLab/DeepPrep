@@ -1,8 +1,8 @@
 import os
 from freesurfer import OrigAndRawavg, WhitePreaparc, WhitePialThickness1, WhitePialThickness2, Aseg7, Aseg7ToAseg
 from pathlib import Path
-from freesurfer import Brainmask, InflatedSphere, Curvstats, Cortribbon, Parcstats, Pctsurfcon, Hyporelabel, \
-    JacobianAvgcurvCortparc, Segstats
+from freesurfer import Brainmask, InflatedSphere, Curvstats, Cortribbon, Parcstats, Pctsurfcon, Hyporelabel, JacobianAvgcurvCortparc, Segstats
+
 from nipype import Node
 from run import set_envrion
 
@@ -319,13 +319,13 @@ def Segstats_test():
 
 def Aseg7_test():
     set_envrion()
-    subjects_dir = Path(f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon')
-    subject_id = 'sub-MSC01'
+    subjects_dir = Path(f'/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon')
+    subject_id = 'sub-765'
     subject_mri_dir = subjects_dir / subject_id / 'mri'
     subject_surf_dir = subjects_dir / subject_id / 'surf'
     subject_label_dir = subjects_dir / subject_id / 'label'
     threads = 8
-    os.environ['SUBJECTS_DIR'] = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon'
+    os.environ['SUBJECTS_DIR'] = '/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon'
     Aseg7_node = Node(Aseg7(), name='Aseg7_node')
     Aseg7_node.inputs.subjects_dir = subjects_dir
     Aseg7_node.inputs.subject_id = subject_id
@@ -357,3 +357,4 @@ if __name__ == '__main__':
     set_envrion()
 
     # JacobianAvgcurvCortparc_test()
+    Aseg7_test()
