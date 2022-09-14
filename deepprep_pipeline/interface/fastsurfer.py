@@ -48,11 +48,13 @@ class Segment(BaseInterface):
               f'--network_axial_path {self.inputs.network_axial_path} ' \
               '--batch_size 1 --simple_run --run_viewagg_on check'
         run_cmd_with_timing(cmd)
+
         return runtime
 
     def _list_outputs(self):
         outputs = self._outputs().get()
         outputs['aseg_deep_file'] = self.inputs.out_file
+
         return outputs
 
 
@@ -162,6 +164,7 @@ class TalairachAndNu(BaseInterface):
         outputs = self._outputs().get()
         outputs["talairach_lta"] = self.inputs.talairach_lta
         outputs['nu_file'] = self.inputs.nu_file
+
         return outputs
 
 
@@ -196,6 +199,7 @@ class Noccseg(BaseInterface):
               f'-i {self.inputs.in_file} ' \
               f'-o {self.inputs.aseg_noccseg_file} --outmask {self.inputs.mask_file} --fixwm'
         run_cmd_with_timing(cmd)
+
         return runtime
 
     def _list_outputs(self):
@@ -219,9 +223,9 @@ class UpdateAsegInputSpec(BaseInterfaceInputSpec):
 
 
 class UpdateAsegOutputSpec(TraitedSpec):
-    aseg_auto_file = File(exists=False, desc="mri/aseg.auto.mgz", mandatory=True)
-    cc_up_file = File(exists=False, desc="mri/transforms/cc_up.lta", mandatory=True)
-    aparc_aseg_file = File(exists=False, desc="mri/aparc.DKTatlas+aseg.deep.withCC.mgz", mandatory=True)
+    aseg_auto_file = File(exists=True, desc="mri/aseg.auto.mgz")
+    cc_up_file = File(exists=True, desc="mri/transforms/cc_up.lta")
+    aparc_aseg_file = File(exists=True, desc="mri/aparc.DKTatlas+aseg.deep.withCC.mgz")
 
 
 class UpdateAseg(BaseInterface):
@@ -253,30 +257,28 @@ class UpdateAseg(BaseInterface):
         outputs["cc_up_file"] = self.inputs.cc_up_file
         outputs["aparc_aseg_file"] = self.inputs.aparc_aseg_file
 
-
+        return outputs
 class SampleSegmentationToSurfaveInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
     python_interpret = File(exists=True, desc="python interpret", mandatory=True)
     freesufer_home = Directory(exists=True, desc="freesufer_home", mandatory=True)
     hemi = Str(desc="lh/rh", mandatory=True)
-    hemi_DKTatlaslookup_file = File(exists=True, desc="FastSurfer/recon_surf/{hemi}.DKTatlaslookup.txt", mandatory=True)
+    hemi_DKTatlaslookup_file = File(exists=True, desc="FastSurfer/recon_surf/?h.DKTatlaslookup.txt", mandatory=True)
     aparc_aseg_file = File(exists=True, desc="mri/aparc.DKTatlas+aseg.deep.withCC.mgz", mandatory=True)
     smooth_aparc_file = File(exists=True, desc="Fastsurfer/recon_surf/smooth_aparc.py", mandatory=True)
-    hemi_white_preaparc_file = File(exists=True, desc="surf/{hemi}.white.preaparc", mandatory=True)
-    hemi_cortex_label_file = File(exists=True, desc="label/{hemi}.cortex.label", mandatory=True)
+    hemi_white_preaparc_file = File(exists=True, desc="surf/?h.white.preaparc", mandatory=True)
+    hemi_cortex_label_file = File(exists=True, desc="label/?h.cortex.label", mandatory=True)
 
-    hemi_aparc_DKTatlas_mapped_prefix_file = File(exists=False, desc="label/{hemi}.aparc.DKTatlas.mapped.prefix.annot",
+    hemi_aparc_DKTatlas_mapped_prefix_file = File(exists=False, desc="label/?h.aparc.DKTatlas.mapped.prefix.annot",
                                                   mandatory=True)
-    hemi_aparc_DKTatlas_mapped_file = File(exists=False, desc="label/{hemi}.aparc.DKTatlas.mapped.annot",
+    hemi_aparc_DKTatlas_mapped_file = File(exists=False, desc="label/?h.aparc.DKTatlas.mapped.annot",
                                            mandatory=True)
 
 
 class SampleSegmentationToSurfaveOutputSpec(TraitedSpec):
-    hemi_aparc_DKTatlas_mapped_prefix_file = File(exists=False, desc="label/{hemi}.aparc.DKTatlas.mapped.prefix.annot",
-                                                  mandatory=True)
-    hemi_aparc_DKTatlas_mapped_file = File(exists=False, desc="label/{hemi}.aparc.DKTatlas.mapped.annot",
-                                           mandatory=True)
+    hemi_aparc_DKTatlas_mapped_prefix_file = File(exists=True, desc="label/?h.aparc.DKTatlas.mapped.prefix.annot")
+    hemi_aparc_DKTatlas_mapped_file = File(exists=True, desc="label/?h.aparc.DKTatlas.mapped.annot")
 
 
 class SampleSegmentationToSurfave(BaseInterface):
@@ -307,7 +309,10 @@ class SampleSegmentationToSurfave(BaseInterface):
               f"--outaparc {self.inputs.hemi_aparc_DKTatlas_mapped_file}"
         run_cmd_with_timing(cmd)
 
+        return runtime
     def _list_outputs(self):
         outputs = self._outputs().get()
         outputs["hemi_aparc_DKTatlas_mapped_prefix_file"] = self.inputs.hemi_aparc_DKTatlas_mapped_prefix_file
         outputs["hemi_aparc_DKTatlas_mapped_file"] = self.inputs.hemi_aparc_DKTatlas_mapped_file
+
+        return outputs
