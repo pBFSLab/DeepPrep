@@ -850,3 +850,53 @@ class Aseg7ToAseg(BaseInterface):
         outputs["aseg_file"] = self.inputs.aseg_file
 
         return outputs
+
+
+class BalabelsInputSpec(BaseInterfaceInputSpec):
+    subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
+    hemi_sphere_file = File(exists=True, desc="surf/?h.sphere.reg", mandatory=True)
+    subject_id = Str(desc="subject id", mandatory=True)
+    threads = traits.Int(desc='threads')
+    hemi = Str(desc="lh/rh", mandatory=True)
+
+    hemi_BA45_exvivo_file = File(exists=False, desc="label/?h.BA45_exvivo.label", mandatory=True)
+    hemi_BA_exvivo_annot_file = File(exists=False, desc="label/?h.BA_exvivo.annot", mandatory=True)
+    hemi_perirhinal_exvivo_file = File(exists=False, desc="label/?h.perirhinal_exvivo.label", mandatory=True)
+    hemi_entorhinal_exvivo_file = File(exists=False, desc="label/?h.entorhinal_exvivo.label", mandatory=True)
+    BA_exvivo_thresh_file = File(exists=False, desc="label/BA_exvivo.thresh.ctab", mandatory=True)
+
+
+class BalabelsOutputSpec(TraitedSpec):
+    hemi_BA45_exvivo_file = File(exists=True, desc="label/?h.BA45_exvivo.label")
+    hemi_BA_exvivo_annot_file = File(exists=True, desc="label/?h.BA_exvivo.annot")
+    hemi_perirhinal_exvivo_file = File(exists=True, desc="label/?h.perirhinal_exvivo.label")
+    hemi_entorhinal_exvivo_file = File(exists=True, desc="label/?h.entorhinal_exvivo.label")
+    BA_exvivo_thresh_file = File(exists=True, desc="label/BA_exvivo.thresh.ctab")
+
+
+class Balabels(BaseInterface):
+    input_spec = BalabelsInputSpec
+    output_spec = BalabelsOutputSpec
+
+    time = 414 / 60  # 运行时间：分钟 / 单脑测试时间
+    cpu = 3  # 最大cpu占用：个
+    gpu = 0  # 最大gpu占用：MB
+
+    def _run_interface(self, runtime):
+        threads = self.inputs.threads if self.inputs.threads else 0
+        fsthreads = get_freesurfer_threads(threads)
+
+        cmd = f"recon-all -subject {self.inputs.subject_id} -balabels {fsthreads}"
+        run_cmd_with_timing(cmd)
+
+        return runtime
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["hemi_BA45_exvivo_file"] = self.inputs.hemi_BA45_exvivo_file
+        outputs["hemi_BA_exvivo_annot_file"] = self.inputs.hemi_BA_exvivo_annot_file
+        outputs["hemi_BA45_exvivo_file"] = self.inputs.hemi_BA45_exvivo_file
+        outputs["hemi_perirhinal_exvivo_file"] = self.inputs.hemi_perirhinal_exvivo_file
+        outputs["BA_exvivo_thresh_file"] = self.inputs.BA_exvivo_thresh_file
+
+        return outputs
