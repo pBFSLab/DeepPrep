@@ -477,9 +477,13 @@ class Curvstats(BaseInterface):
         cmd = f"recon-all -subject {self.inputs.subject_id} -hemi {self.inputs.hemi} -curvstats -no-isrunning {fsthreads}"
         run_cmd_with_timing(cmd)
 
+        return runtime
+
     def _list_outputs(self):
         outputs = self._outputs().get()
         outputs["hemi_curv_stats_file"] = self.inputs.hemi_curv_stats_file
+
+        return outputs
 
 
 class CortribbonInputSpec(BaseInterfaceInputSpec):
@@ -519,10 +523,14 @@ class Cortribbon(BaseInterface):
         cmd = f"recon-all -subject {self.inputs.subject_id} -cortribbon {fsthreads}"
         run_cmd_with_timing(cmd)
 
+        return runtime
+
     def _list_outputs(self):
         outputs = self._outputs().get()
         outputs["hemi_ribbon"] = self.inputs.hemi_ribbon
         outputs["ribbon"] = self.inputs.ribbon
+
+        return outputs
 
 
 class ParcstatsInputSpec(BaseInterfaceInputSpec):
@@ -563,11 +571,15 @@ class Parcstats(BaseInterface):
         cmd = f"recon-all -subject {self.inputs.subject_id} -parcstats {fsthreads}"
         run_cmd_with_timing(cmd)
 
+        return runtime
+
     def _list_outputs(self):
         outputs = self._outputs().get()
         outputs["hemi_aparc_stats_file"] = self.inputs.hemi_aparc_stats_file
         outputs["hemi_aparc_pial_stats_file"] = self.inputs.hemi_aparc_pial_stats_file
         outputs["aparc_annot_ctab_file"] = self.inputs.aparc_annot_ctab_file
+
+        return outputs
 
 
 class PctsurfconInputSpec(BaseInterfaceInputSpec):
@@ -604,10 +616,14 @@ class Pctsurfcon(BaseInterface):
         cmd = f"recon-all -subject {self.inputs.subject_id} -pctsurfcon {fsthreads}"
         run_cmd_with_timing(cmd)
 
+        return runtime
+
     def _list_outputs(self):
         outputs = self._outputs().get()
         outputs["hemi_wg_pct_mgh_file"] = self.inputs.hemi_wg_pct_mgh_file
         outputs["hemi_wg_pct_stats_file"] = self.inputs.hemi_wg_pct_stats_file
+
+        return outputs
 
 
 class HyporelabelInputSpec(BaseInterfaceInputSpec):
@@ -640,9 +656,13 @@ class Hyporelabel(BaseInterface):
         cmd = f"recon-all -subject {self.inputs.subject_id} -hyporelabel {fsthreads}"
         run_cmd_with_timing(cmd)
 
+        return runtime
+
     def _list_outputs(self):
         outputs = self._outputs().get()
         outputs["aseg_presurf_hypos_file"] = self.inputs.aseg_presurf_hypos_file
+
+        return outputs
 
 
 class JacobianAvgcurvCortparcThresholdInputSpec(BaseInterfaceInputSpec):
@@ -725,6 +745,14 @@ class Segstats(BaseInterface):
         cmd = f"recon-all -subject {self.inputs.subject_id} -segstats  {fsthreads}"
         run_cmd_with_timing(cmd)
 
+        return runtime
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs['aseg_stats_file'] = self.inputs.aseg_stats_file
+
+        return outputs
+
 
 class Aseg7InputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
@@ -769,6 +797,8 @@ class Aseg7(BaseInterface):
               f'--rh-cortex-mask {self.inputs.rh_cortex_label_file} --rh-white {self.inputs.rh_white_file} ' \
               f'--rh-pial {self.inputs.rh_pial_file} '
         run_cmd_with_timing(cmd)
+        return runtime
+
         return runtime
 
     def _list_outputs(self):
