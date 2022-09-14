@@ -760,7 +760,7 @@ class Aseg7InputSpec(BaseInterfaceInputSpec):
     subject_mri_dir = Directory(exists=True, desc="subject mri dir", mandatory=True)
     threads = traits.Int(desc='threads')
 
-    aseg_presurf_hypos_file = File(exists=True, desc="mri/aseg.presurf.hypos.mgz", mandatory=True)
+    aseg_presurf_hypos_file = File(exists=False, desc="mri/aseg.presurf.hypos.mgz", mandatory=True)
     ribbon_file = File(exists=True, desc="mri/ribbon.mgz", mandatory=True)
     lh_cortex_label_file = File(exists=True, desc="label/lh.cortex.label", mandatory=True)
     lh_white_file = File(exists=True, desc="surf/lh.white", mandatory=True)
@@ -797,13 +797,13 @@ class Aseg7(BaseInterface):
               f'--rh-cortex-mask {self.inputs.rh_cortex_label_file} --rh-white {self.inputs.rh_white_file} ' \
               f'--rh-pial {self.inputs.rh_pial_file} '
         run_cmd_with_timing(cmd)
+        return runtime
 
         return runtime
 
     def _list_outputs(self):
         outputs = self._outputs().get()
         outputs["aparc_aseg_file"] = self.inputs.aparc_aseg_file
-
         return outputs
 
 
