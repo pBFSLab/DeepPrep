@@ -48,11 +48,13 @@ class Segment(BaseInterface):
               f'--network_axial_path {self.inputs.network_axial_path} ' \
               '--batch_size 1 --simple_run --run_viewagg_on check'
         run_cmd_with_timing(cmd)
+
         return runtime
 
     def _list_outputs(self):
         outputs = self._outputs().get()
         outputs['aseg_deep_file'] = self.inputs.out_file
+
         return outputs
 
 
@@ -95,6 +97,7 @@ class N4BiasCorrect(BaseInterface):
     def _list_outputs(self):
         outputs = self._outputs().get()
         outputs['orig_nu_file'] = self.inputs.orig_nu_file
+
         return outputs
 
 
@@ -168,6 +171,7 @@ class TalairachAndNu(BaseInterface):
         outputs = self._outputs().get()
         outputs["talairach_lta"] = self.inputs.talairach_lta
         outputs['nu_file'] = self.inputs.nu_file
+
         return outputs
 
 
@@ -200,11 +204,13 @@ class Noccseg(BaseInterface):
               f'-i {self.inputs.in_file} ' \
               f'-o {self.inputs.out_file} --outmask {self.inputs.mask_file} --fixwm'
         run_cmd_with_timing(cmd)
+
         return runtime
 
     def _list_outputs(self):
         outputs = self._outputs().get()
         outputs['out_file'] = self.inputs.out_file
+
         return outputs
 
 
@@ -256,7 +262,7 @@ class UpdateAseg(BaseInterface):
         outputs["cc_up_file"] = self.inputs.cc_up_file
         outputs["aparc_aseg_file"] = self.inputs.aparc_aseg_file
 
-
+        return outputs
 class SampleSegmentationToSurfaveInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
@@ -308,7 +314,10 @@ class SampleSegmentationToSurfave(BaseInterface):
               f"--outaparc {self.inputs.hemi_aparc_DKTatlas_mapped_file}"
         run_cmd_with_timing(cmd)
 
+        return runtime
     def _list_outputs(self):
         outputs = self._outputs().get()
         outputs["hemi_aparc_DKTatlas_mapped_prefix_file"] = self.inputs.hemi_aparc_DKTatlas_mapped_prefix_file
         outputs["hemi_aparc_DKTatlas_mapped_file"] = self.inputs.hemi_aparc_DKTatlas_mapped_file
+
+        return outputs
