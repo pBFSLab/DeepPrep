@@ -805,3 +805,48 @@ class Aseg7(BaseInterface):
         outputs["aparc_aseg_file"] = self.inputs.aparc_aseg_file
 
         return outputs
+
+
+class Aseg7ToAsegInputSpec(BaseInterfaceInputSpec):
+    subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
+    subject_id = Str(desc="subject id", mandatory=True)
+    threads = traits.Int(desc='threads')
+
+    aseg_presurf_hypos_file = File(exists=True, desc="mri/aseg.presurf.hypos.mgz", mandatory=True)
+    ribbon_file = File(exists=True, desc="mri/ribbon.mgz", mandatory=True)
+    lh_cortex_label_file = File(exists=True, desc="label/lh.cortex.label", mandatory=True)
+    lh_white_file = File(exists=True, desc="surf/lh.white", mandatory=True)
+    lh_pial_file = File(exists=True, desc="surf/lh.pial", mandatory=True)
+    rh_cortex_label_file = File(exists=True, desc="label/rh.cortex.label", mandatory=True)
+    rh_white_file = File(exists=True, desc="surf/rh.white", mandatory=True)
+    rh_pial_file = File(exists=True, desc="surf/rh.pial", mandatory=True)
+
+    aseg_file = File(exists=False, desc="mri/aseg.mgz", mandatory=True)
+
+
+class Aseg7ToAsegOutputSpec(TraitedSpec):
+    aseg_file = File(exists=True, desc="mri/aseg.mgz")
+
+
+class Aseg7ToAseg(BaseInterface):
+    input_spec = Aseg7ToAsegInputSpec
+    output_spec = Aseg7ToAsegOutputSpec
+
+    time = 0 / 60  # 运行时间：分钟 / 单脑测试时间
+    cpu = 0  # 最大cpu占用：个
+    gpu = 0  # 最大gpu占用：MB
+
+    def _run_interface(self, runtime):
+        threads = self.inputs.threads if self.inputs.threads else 0
+        fsthreads = get_freesurfer_threads(threads)
+
+        cmd = f"recon-all -subject {self.inputs.subject_id} -hyporelabel -apas2aseg {fsthreads}"
+        run_cmd_with_timing(cmd)
+
+        return runtime
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["aseg_file"] = self.inputs.aseg_file
+
+        return outputs
