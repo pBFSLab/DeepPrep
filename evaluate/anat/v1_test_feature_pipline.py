@@ -13,6 +13,7 @@ from statsmodels.stats.weightstats import ztest
 import shutil
 from glob import glob
 import torch
+from pytorch3d.ops.knn import knn_points
 
 
 def set_environ():
@@ -76,8 +77,8 @@ def info_label_aseg():
     return aseg_label, aseg_label_dict
 
 
-def info_label_aparc(parc):
-    if parc == 18:
+def info_label_aparc(parc=18, type="func"):
+    if parc == 18 and type=="func":
         index = np.squeeze(ants.image_read('aparc_template/lh.Clustering_18_fs6_new.mgh').numpy())
         aparc_label = set(index)
         aparc_label_dict = {}
@@ -87,7 +88,7 @@ def info_label_aparc(parc):
             else:
                 aparc_label_dict[i] = f'Unknown'
         return aparc_label, aparc_label_dict
-    elif parc == 92:
+    elif parc == 92 and type=="func":
         index = np.squeeze(ants.image_read('aparc_template/lh.Clustering_46_fs6.mgh').numpy())
         aparc_label = set(index)
         aparc_label_dict = {}
@@ -97,7 +98,7 @@ def info_label_aparc(parc):
             else:
                 aparc_label_dict[i] = f'Unknown'
         return aparc_label, aparc_label_dict
-    elif parc == 152:
+    elif parc == 152 and type=="func":
         index = np.squeeze(ants.image_read('aparc_template/lh.Clustering_76_fs6.mgh').numpy())
         aparc_label = set(index)
         aparc_label_dict = {}
@@ -107,7 +108,7 @@ def info_label_aparc(parc):
             else:
                 aparc_label_dict[i] = f'Unknown'
         return aparc_label, aparc_label_dict
-    elif parc == 213:
+    elif parc == 213 and type=="func":
         index_l = np.squeeze(ants.image_read('aparc_template/lh.Clustering_108_fs6.mgh').numpy())
         index_r = np.squeeze(ants.image_read('aparc_template/rh.Clustering_108_fs6.mgh').numpy())
         aparc_label_l = set(index_l)
@@ -126,8 +127,14 @@ def info_label_aparc(parc):
                 aparc_label_dict_r[i] = f'Unknown'
 
         return aparc_label_l, aparc_label_dict_l, aparc_label_r, aparc_label_dict_r
-    else:
-        raise RuntimeError("parc = 18 or 92")
+    elif type=="anat":
+        index = nib.freesurfer.io.read_annot('aparc_template/lh.aparc.annot')
+        aparc_label = np.unique(index[0])
+        aparc_label_dict = {}
+        for k, v in zip(aparc_label, index[2]):
+            aparc_label_dict[k] = str(v).lstrip('b').strip("''")
+        return aparc_label, aparc_label_dict
+
 
 
 class AccAndStability:
@@ -176,6 +183,48 @@ class AccAndStability:
         mask_pred = (arr == aseg_i).astype(int)
         return self.compute_aseg_dice(mask_gt, mask_pred)
         del mask_gt, mask_pred
+
+    def resample_sphere_surface_nearest(self, orig_xyz, target_xyz, orig_annot, gn=False):
+        assert orig_xyz.shape[0] == orig_annot.shape[0]
+
+        p1 = target_xyz.unsqueeze(0)
+        p2 = orig_xyz.unsqueeze(0)
+        result = knn_points(p1, p2, K=1)
+
+        idx_num = result[1].squeeze()
+        if gn:  # 是否需要计算梯度
+            dist = result[0].squeeze()
+            target_annot = orig_annot[idx_num]
+            return target_annot, dist
+        else:
+            target_annot = orig_annot[idx_num]
+            return target_annot
+
+    def interp_annot_knn(self, sphere_orig_file, sphere_target_file, orig_annot_file,
+                         interp_result_file, sphere_interp_file=None, device='cuda'):
+        xyz_orig, faces_orig = nib.freesurfer.read_geometry(sphere_orig_file)
+        xyz_orig = xyz_orig.astype(np.float32)
+
+        xyz_target, faces_target = nib.freesurfer.read_geometry(sphere_target_file)
+        xyz_target = xyz_target.astype(np.float32)
+
+        data_orig = nib.freesurfer.read_annot(orig_annot_file)
+
+        # data_orig[0][data_orig[0] == 35] = 0  # 剔除无效分区
+        data_orig_t = torch.from_numpy(data_orig[0].astype(np.int32)).to(device)
+
+        xyz_orig_t = torch.from_numpy(xyz_orig).to(device)
+        xyz_target_t = torch.from_numpy(xyz_target).to(device)
+
+        data_target = self.resample_sphere_surface_nearest(xyz_orig_t, xyz_target_t, data_orig_t)
+        data_target = data_target.detach().cpu().numpy()
+        nib.freesurfer.write_annot(interp_result_file, data_target, data_orig[1], data_orig[2], fill_ctab=True)
+        print(f'save_interp_annot_file_path: >>> {interp_result_file}')
+
+        if sphere_interp_file is not None and not os.path.exists(sphere_interp_file):
+            shutil.copyfile(sphere_target_file, sphere_interp_file)
+            print(f'copy sphere_target_file to sphere_interp_file: >>> {sphere_interp_file}')
+
 
     def ants_reg(self, type_of_transform='SyN'):
         """
@@ -385,9 +434,9 @@ class AccAndStability:
         if not output_dir.exists():
             output_dir.mkdir(parents=True, exist_ok=True)
         if parc == 213:
-            label_lh, label_dict_lh, label_rh, label_dict_rh = info_label_aparc(parc)
-        else:
-            label, label_dict = info_label_aparc(parc)
+            label_lh, label_dict_lh, label_rh, label_dict_rh = info_label_aparc(parc, type="func")
+        elif parc in [18, 92, 152]:
+            label, label_dict = info_label_aparc(parc, type="func")
         sub_id = [sub for sub in sorted(os.listdir(input_dir))]
         dict = {}
         for sub in sub_id:
@@ -418,11 +467,9 @@ class AccAndStability:
                         aparc_j = dict[sub][j]
                         if parc == 18:
                             i_dir = \
-                                glob(os.path.join(input_dir, sub, aparc_i,
-                                                  f'parc/{aparc_i}/*/{hemi}_parc_result.annot'))[0]
+                                glob(os.path.join(input_dir, sub, aparc_i, f'parc/{aparc_i}/*/{hemi}_parc_result.annot'))[0]
                             j_dir = \
-                                glob(os.path.join(input_dir, sub, aparc_j,
-                                                  f'parc/{aparc_j}/*/{hemi}_parc_result.annot'))[0]
+                                glob(os.path.join(input_dir, sub, aparc_j, f'parc/{aparc_j}/*/{hemi}_parc_result.annot'))[0]
                         elif parc == 92:
                             i_dir = glob(os.path.join(input_dir, sub, aparc_i, f'parc92/{hemi}_parc92_result.annot'))[0]
                             j_dir = glob(os.path.join(input_dir, sub, aparc_j, f'parc92/{hemi}_parc92_result.annot'))[0]
@@ -455,7 +502,81 @@ class AccAndStability:
             df_dice = pd.concat([df_dice_mean, df_dice_std], axis=0)
             df_dice.to_csv(stability_output_dir)
 
+    def aparc_anat_stability(self, input_dir, method='DeepPrep'):
 
+        output_dir = Path(self.output_dir, f'aparc_anat_{method}_csv')
+        sphere_target_file = Path('/usr/local/freesurfer/subjects/fsaverage6/surf/lh.sphere')
+
+        if not output_dir.exists():
+            output_dir.mkdir(parents=True, exist_ok=True)
+        label, label_dict = info_label_aparc(type="anat")
+
+        for hemi in ['lh', 'rh']:
+            method_dict = {}
+            for sub in os.listdir(input_dir):
+                if sub.startswith("fsaverage"):
+                    continue
+                sub_id = sub.split('_')[0]
+                if sub_id not in method_dict:
+                    method_dict[sub_id] = [sub]
+                else:
+                    method_dict[sub_id].append(sub)
+
+            df_dice_mean = pd.DataFrame(columns=label_dict.values(), index=sorted(method_dict.keys()))
+            df_dice_std = pd.DataFrame(columns=label_dict.values(), index=sorted(method_dict.keys()))
+
+            for sub in sorted(method_dict.keys()):
+                print(sub)
+                dice_dict = {}
+                df_sub_dice = None
+                i = 0
+                while i < len(method_dict[sub]):
+                    aparc_i = method_dict[sub][i]
+                    if aparc_i != sub:
+                        for j in range(i + 1, len(method_dict[sub])):
+                            aparc_j = method_dict[sub][j]
+                            if aparc_j != sub:
+                                sphere_orig_file = Path(input_dir, aparc_i, 'surf', f'{hemi}.sphere')
+                                gt_orig_annot_file = Path(input_dir, aparc_i, 'label', f'{hemi}.aparc.annot')
+                                save_interp_annot_file_path = Path(input_dir, aparc_i, 'label', f'{hemi}.fs6.aparc.annot')
+                                if not save_interp_annot_file_path.exists():
+                                    self.interp_annot_knn(sphere_orig_file, sphere_target_file, gt_orig_annot_file,
+                                                 save_interp_annot_file_path, device='cuda')
+                                sphere_orig_file = Path(input_dir, aparc_j, 'surf', f'{hemi}.sphere')
+                                gt_orig_annot_file = Path(input_dir, aparc_j, 'label', f'{hemi}.aparc.annot')
+                                save_interp_annot_file_path = Path(input_dir, aparc_j, 'label',
+                                                                   f'{hemi}.fs6.aparc.annot')
+                                if not save_interp_annot_file_path.exists():
+                                    self.interp_annot_knn(sphere_orig_file, sphere_target_file, gt_orig_annot_file,
+                                                        save_interp_annot_file_path, device='cuda')
+
+                                i_dir = Path(input_dir, aparc_i, 'label', f'{hemi}.fs6.aparc.annot')
+                                j_dir = Path(input_dir, aparc_j, 'label', f'{hemi}.fs6.aparc.annot')
+
+                                print(aparc_i, aparc_j)
+                                dice_dict['sub'] = aparc_i + ' & ' + aparc_j
+                                i_aparc = nib.freesurfer.read_annot(i_dir)[0]
+                                j_aparc = nib.freesurfer.read_annot(j_dir)[0]
+                                # continue
+
+                                for l in label:
+                                    dice = self.evaluate_aseg(i_aparc, j_aparc, l)
+                                    dice_dict[label_dict[l]] = [dice]
+
+                                df = pd.DataFrame.from_dict(dice_dict)
+
+                                if df_sub_dice is None:
+                                    df_sub_dice = df
+                                else:
+                                    df_sub_dice = pd.concat((df_sub_dice, df), axis=0)
+
+                    i += 1
+                df_sub_dice.to_csv(Path(output_dir, f'{hemi}_aparc_anat_{method}_{sub}.csv'), index=False)
+                df_dice_mean.loc[sub] = df_sub_dice.mean(axis=0)
+                df_dice_std.loc[sub] = df_sub_dice.std(axis=0)
+
+            df_dice = pd.concat([df_dice_mean, df_dice_std], axis=0)
+            df_dice.to_csv(Path(output_dir, f'{hemi}_aparc_anat_{method}.csv'))
 class ScreenShot:
     """
     Take screenshots of input pipeline and dataset according to different methods and features (thickness, sulc, curv).
@@ -1208,18 +1329,22 @@ if __name__ == '__main__':
     # neg.remove_negative_area_and_save_sphere()
     # neg.surf2surf_use_annot('MSC','deepprep','rna')
     # neg.statistic_native_area('MSC','deepprep')
-    exit()
+    # exit()
     cls = AccAndStability('MSC', 'DeepPrep')
-    cls.ants_reg('Rigid')
-    cls.aseg_acc('FreeSurfer', 'DeepPrep')
-    cls.aseg_stability('FreeSurfer', aseg=True)
-    cls.aseg_stability('DeepPrep', aseg=True)
-    cls.aparc_stability(
-        '/run/user/1000/gvfs/sftp:host=30.30.30.66,user=zhenyu/home/zhenyu/workdata/App/MSC_DeepPrep_processed',
-        92, method="DeepPrep")
-    cls.aparc_stability(
-        '/mnt/ngshare2/App/MSC_app',
-        213, method="App")
+    # cls.ants_reg('Rigid')
+    # cls.aseg_acc('FreeSurfer', 'DeepPrep')
+    # cls.aseg_stability('FreeSurfer', aseg=True)
+    # cls.aseg_stability('DeepPrep', aseg=True)
+    # cls.aparc_stability(
+    #     '/run/user/1000/gvfs/sftp:host=30.30.30.66,user=zhenyu/home/zhenyu/workdata/App/MSC_DeepPrep_processed',
+    #     92, method="DeepPrep")
+    # cls.aparc_stability(
+    #     '/mnt/ngshare2/App/MSC_app',
+    #     213, method="App")
+    # input_dir = '/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon'
+    # cls.aparc_anat_stability(input_dir, method='DeepPrep')
+    input_dir = '/mnt/ngshare/DeepPrep/MSC/derivatives/FreeSurfer'
+    cls.aparc_anat_stability(input_dir, method='FreeSurfer')
     exit()
 
     method1 = 'DeepPrep'
