@@ -286,32 +286,12 @@ class InflatedSphere(BaseInterface):
             return outputs
 
 
-class WhitePialThicknessInputSpec(BaseInterfaceInputSpec):
-    fswhitepial = traits.Bool(desc="True: recon-all -white & -pial; False: mris_place_surface", mandatory=True)
+class WhitePialThickness1InputSpec(BaseInterfaceInputSpec):
     subject = traits.Str(desc="sub-xxx", mandatory=True)
     hemi = traits.Str(desc="?h", mandatory=True)
 
-    autodet_gw_stats_hemi_dat = File(exists=True, desc="surf/autodet.gw.stats.?h.dat")
-    aseg_presurf = File(exists=True, desc="mri/aseg.presurf.mgz")
-    wm_file = File(exists=True, desc="mri/wm.mgz")
-    brain_finalsurfs = File(exists=True, desc="mri/brain.finalsurfs.mgz")
-    hemi_white_preaparc = File(exists=True, desc="surf/?h.white.preaparc")
-    hemi_white = File(exists=True, desc="surf/?h.white")
-    hemi_cortex_label = File(exists=True, desc="label/?h.cortex.label")
-    hemi_aparc_DKTatlas_mapped_annot = File(exists=True, desc="label/?h.aparc.DKTatlas.mapped.annot")
 
-    hemi_pial_t1 = File(exists=True, desc="surf/?h.pial.T1")
-    hemi_cortexhipamyg_label = File(exists=True, desc="label/?h.cortex+hipamyg.label")
-    hemi_pial = File(exists=True, desc="surf/?h.pial")
-
-    hemi_curv = File(exists=True, desc="surf/?h.curv")
-    hemi_area = File(exists=True, desc="surf/?h.area")
-    hemi_curv_pial = File(exists=True, desc="surf/?h.curv.pial")
-    hemi_area_pial = File(exists=True, desc="surf/?h.area.pial")
-    hemi_thickness = File(exists=True, desc="surf/?h.thickness")
-
-
-class WhitePialThicknessOutputSpec(TraitedSpec):
+class WhitePialThickness1OutputSpec(TraitedSpec):
     hemi_white = File(exists=True, desc="surf/?h.white")
     hemi_pial_t1 = File(exists=True, desc="surf/?h.pial.T1")
 
@@ -324,123 +304,143 @@ class WhitePialThicknessOutputSpec(TraitedSpec):
     hemi_thickness = File(exists=True, desc="surf/?h.thickness")
 
 
-class WhitePialThickness(BaseInterface):
-    input_spec = WhitePialThicknessInputSpec
-    output_spec = WhitePialThicknessOutputSpec
+class WhitePialThickness1(BaseInterface):
+    # The two methods (WhitePialThickness1 and WhitePialThickness2) are exacly same.
+    input_spec = WhitePialThickness1InputSpec
+    output_spec = WhitePialThickness1OutputSpec
 
     def __init__(self, output_dir: Path, threads: int):
-        super(WhitePialThickness, self).__init__()
+        super(WhitePialThickness1, self).__init__()
         self.output_dir = output_dir
         self.threads = threads
         self.fsthreads = get_freesurfer_threads(threads)
-        # self.sub_mri_dir = self.output_dir / self.inputs.subject / "mri"
 
     def _run_interface(self, runtime):
-        # The two methods below are exacly same.
-        if self.inputs.fswhitepial:
-            # must run surfreg first
-            # 20-25 min for traditional surface segmentation (each hemi)
-            # this creates aparc and creates pial using aparc, also computes jacobian
-            # FreeSurfer 7.2
-            time = (135 + 120) / 60
-            cpu = 6
-            gpu = 0
-            # FreeSurfer 6.0
-            # time = (474 + 462) / 60
+        # must run surfreg first
+        # 20-25 min for traditional surface segmentation (each hemi)
+        # this creates aparc and creates pial using aparc, also computes jacobian
+        # FreeSurfer 7.2
+        time = (135 + 120) / 60
+        cpu = 6
+        gpu = 0
+        # FreeSurfer 6.0
+        # time = (474 + 462) / 60
 
-            cmd = f"recon-all -subject {self.inputs.subject} -hemi {self.inputs.hemi} -white " \
-                  f"-no-isrunning {self.fsthreads}"
-            run_cmd_with_timing(cmd)
-            cmd = f"recon-all -subject {self.inputs.subject} -hemi {self.inputs.hemi} -pial " \
-                  f"-no-isrunning {self.fsthreads}"
-            run_cmd_with_timing(cmd)
-        else:
-            # 4 min compute white :
-            time = 330 / 60
-            cpu = 1
-            gpu = 0
-
-            if not traits_extension.isdefined(self.inputs.autodet_gw_stats_hemi_dat):
-                self.inputs.autodet_gw_stats_hemi_dat = self.output_dir / f"{self.inputs.subject}" / f"surf/autodet.gw.stats.{self.inputs.hemi}.dat"
-            if not traits_extension.isdefined(self.inputs.aseg_presurf):
-                self.inputs.aseg_presurf = self.output_dir / f"{self.inputs.subject}" / "mri/aseg.presurf.mgz"
-            if not traits_extension.isdefined(self.inputs.wm_file):
-                self.inputs.wm_file = self.output_dir / f"{self.inputs.subject}" / "mri/wm.mgz"
-            if not traits_extension.isdefined(self.inputs.brain_finalsurfs):
-                self.inputs.brain_finalsurfs = self.output_dir / f"{self.inputs.subject}" / "mri/brain.finalsurfs.mgz"
-            if not traits_extension.isdefined(self.inputs.hemi_white_preaparc):
-                self.inputs.hemi_white_preaparc = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.white.preaparc"
-            if not traits_extension.isdefined(self.inputs.hemi_white):
-                self.inputs.hemi_white = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.white"
-            if not traits_extension.isdefined(self.inputs.hemi_cortex_label):
-                self.inputs.hemi_cortex_label = self.output_dir / f"{self.inputs.subject}" / f"label/{self.inputs.hemi}.cortex.label"
-            if not traits_extension.isdefined(self.inputs.hemi_aparc_DKTatlas_mapped_annot):
-                self.inputs.hemi_aparc_DKTatlas_mapped_annot = self.output_dir / f"{self.inputs.subject}" / f"label/{self.inputs.hemi}.aparc.DKTatlas.mapped.annot"
-
-            if not traits_extension.isdefined(self.inputs.hemi_pial_t1):
-                self.inputs.hemi_pial_t1 = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.pial.T1"
-            if not traits_extension.isdefined(self.inputs.hemi_cortexhipamyg_label):
-                self.inputs.hemi_cortexhipamyg_label = self.output_dir / f"{self.inputs.subject}" / f"label/{self.inputs.hemi}.cortex+hipamyg.label"
-            if not traits_extension.isdefined(self.inputs.hemi_pial):
-                self.inputs.hemi_pial = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.pial"
-
-            if not traits_extension.isdefined(self.inputs.hemi_curv):
-                self.inputs.hemi_curv = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.curv"
-            if not traits_extension.isdefined(self.inputs.hemi_area):
-                self.inputs.hemi_area = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.area"
-            if not traits_extension.isdefined(self.inputs.hemi_curv_pial):
-                self.inputs.hemi_curv_pial = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.curv.pial"
-            if not traits_extension.isdefined(self.inputs.hemi_area_pial):
-                self.inputs.hemi_area_pial = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.area.pial"
-            if not traits_extension.isdefined(self.inputs.hemi_thickness):
-                self.inputs.hemi_thickness = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.thickness"
-
-            cddir = f'cd {self.output_dir / self.inputs.subject / "mri"} &&'
-            cmd = f"{cddir} mris_place_surface --adgws-in {self.inputs.autodet_gw_stats_hemi_dat} " \
-                  f"--seg {self.inputs.aseg_presurf} --wm {self.inputs.wm_file} --invol {self.inputs.brain_finalsurfs} --{self.inputs.hemi} " \
-                  f"--i {self.inputs.hemi_white_preaparc} --o {self.inputs.hemi_white} --white --nsmooth 0 " \
-                  f"--rip-label {self.inputs.hemi_cortex_label} --rip-bg --rip-surf {self.inputs.hemi_white_preaparc} " \
-                  f"--aparc {self.inputs.hemi_aparc_DKTatlas_mapped_annot}"
-            run_cmd_with_timing(cmd)
-            # 4 min compute pial :
-            cmd = f"{cddir} mris_place_surface --adgws-in {self.inputs.autodet_gw_stats_hemi_dat} --seg {self.inputs.aseg_presurf} " \
-                  f"--wm {self.inputs.wm_file} --invol {self.inputs.brain_finalsurfs} --{self.inputs.hemi} --i {self.inputs.hemi_white} " \
-                  f"--o {self.inputs.hemi_pial_t1} --pial --nsmooth 0 --rip-label {self.inputs.hemi_cortexhipamyg_label} " \
-                  f"--pin-medial-wall {self.inputs.hemi_cortex_label} --aparc {self.inputs.hemi_aparc_DKTatlas_mapped_annot} " \
-                  f"--repulse-surf {self.inputs.hemi_white} --white-surf {self.inputs.hemi_white}"
-            run_cmd_with_timing(cmd)
-
-            # Here insert DoT2Pial  later --> if T2pial is not run, need to softlink pial.T1 to pial!
-
-            cmd = f"cp {self.inputs.hemi_pial_t1} {self.inputs.hemi_pial}"
-            run_cmd_with_timing(cmd)
-
-            # these are run automatically in fs7* recon-all and
-            # cannot be called directly without -pial flag (or other t2 flags)
-            cmd = f"{cddir} mris_place_surface --curv-map {self.inputs.hemi_white} 2 10 {self.inputs.hemi_curv}"
-            run_cmd_with_timing(cmd)
-            cmd = f"{cddir} mris_place_surface --area-map {self.inputs.hemi_white} {self.inputs.hemi_area}"
-            run_cmd_with_timing(cmd)
-            cmd = f"{cddir} mris_place_surface --curv-map {self.inputs.hemi_pial} 2 10 {self.inputs.hemi_curv_pial}"
-            run_cmd_with_timing(cmd)
-            cmd = f"{cddir} mris_place_surface --area-map {self.inputs.hemi_pial} {self.inputs.hemi_area_pial}"
-            run_cmd_with_timing(cmd)
-            cmd = f"{cddir} mris_place_surface --thickness {self.inputs.hemi_white} {self.inputs.hemi_pial} " \
-                  f"20 5 {self.inputs.hemi_thickness}"
-            run_cmd_with_timing(cmd)
+        cmd = f"recon-all -subject {self.inputs.subject} -hemi {self.inputs.hemi} -white " \
+              f"-no-isrunning {self.fsthreads}"
+        run_cmd_with_timing(cmd)
+        cmd = f"recon-all -subject {self.inputs.subject} -hemi {self.inputs.hemi} -pial " \
+              f"-no-isrunning {self.fsthreads}"
+        run_cmd_with_timing(cmd)
 
         return runtime
 
     def _list_outputs(self):
         outputs = self._outputs().get()
-        outputs["hemi_white"] = self.inputs.hemi_white
-        outputs["hemi_pial_t1"] = self.inputs.hemi_pial_t1
-        outputs["hemi_pial"] = self.inputs.hemi_pial
-        outputs["hemi_curv"] = self.inputs.hemi_curv
-        outputs["hemi_area"] = self.inputs.hemi_area
-        outputs["hemi_curv_pial"] = self.inputs.hemi_curv_pial
-        outputs["hemi_area_pial"] = self.inputs.hemi_area_pial
-        outputs["hemi_thickness"] = self.inputs.hemi_thickness
+        outputs["hemi_white"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.white"
+        outputs["hemi_pial_t1"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.pial.T1"
+        outputs["hemi_pial"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.pial"
+        outputs["hemi_curv"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.curv"
+        outputs["hemi_area"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.area"
+        outputs["hemi_curv_pial"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.curv.pial"
+        outputs["hemi_area_pial"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.area.pial"
+        outputs["hemi_thickness"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.thickness"
+
+        return outputs
+
+
+class WhitePialThickness2InputSpec(BaseInterfaceInputSpec):
+    subject = traits.Str(desc="sub-xxx", mandatory=True)
+    hemi = traits.Str(desc="?h", mandatory=True)
+
+    autodet_gw_stats_hemi_dat = File(exists=True, desc="surf/autodet.gw.stats.?h.dat", mandatory=True)
+    aseg_presurf = File(exists=True, desc="mri/aseg.presurf.mgz", mandatory=True)
+    wm_file = File(exists=True, desc="mri/wm.mgz", mandatory=True)
+    brain_finalsurfs = File(exists=True, desc="mri/brain.finalsurfs.mgz", mandatory=True)
+    hemi_white_preaparc = File(exists=True, desc="surf/?h.white.preaparc", mandatory=True)
+    hemi_white = File(exists=True, desc="surf/?h.white", mandatory=True)
+    hemi_cortex_label = File(exists=True, desc="label/?h.cortex.label", mandatory=True)
+    hemi_aparc_DKTatlas_mapped_annot = File(exists=True, desc="label/?h.aparc.DKTatlas.mapped.annot", mandatory=True)
+
+    hemi_pial_t1 = File(exists=True, desc="surf/?h.pial.T1", mandatory=True)
+
+
+class WhitePialThickness2OutputSpec(TraitedSpec):
+    hemi_white = File(exists=True, desc="surf/?h.white")
+    hemi_pial_t1 = File(exists=True, desc="surf/?h.pial.T1")
+
+    hemi_pial = File(exists=True, desc="surf/?h.pial")
+
+    hemi_curv = File(exists=True, desc="surf/?h.curv")
+    hemi_area = File(exists=True, desc="surf/?h.area")
+    hemi_curv_pial = File(exists=True, desc="surf/?h.curv.pial")
+    hemi_area_pial = File(exists=True, desc="surf/?h.area.pial")
+    hemi_thickness = File(exists=True, desc="surf/?h.thickness")
+
+
+class WhitePialThickness2(BaseInterface):
+    # The two methods (WhitePialThickness1 and WhitePialThickness2) are exacly same.
+    input_spec = WhitePialThickness1InputSpec
+    output_spec = WhitePialThickness1OutputSpec
+
+    def __init__(self, output_dir: Path, threads: int):
+        super(WhitePialThickness2, self).__init__()
+        self.output_dir = output_dir
+        self.threads = threads
+        self.fsthreads = get_freesurfer_threads(threads)
+
+    def _run_interface(self, runtime):
+        # The two methods below are exacly same.
+        # 4 min compute white :
+        time = 330 / 60
+        cpu = 1
+        gpu = 0
+
+        cmd = f"mris_place_surface --adgws-in {self.inputs.autodet_gw_stats_hemi_dat} " \
+              f"--seg {self.inputs.aseg_presurf} --wm {self.inputs.wm_file} --invol {self.inputs.brain_finalsurfs} --{self.inputs.hemi} " \
+              f"--i {self.inputs.hemi_white_preaparc} --o {self.inputs.hemi_white} --white --nsmooth 0 " \
+              f"--rip-label {self.inputs.hemi_cortex_label} --rip-bg --rip-surf {self.inputs.hemi_white_preaparc} " \
+              f"--aparc {self.inputs.hemi_aparc_DKTatlas_mapped_annot}"
+        run_cmd_with_timing(cmd)
+        # 4 min compute pial :
+        cmd = f"mris_place_surface --adgws-in {self.inputs.autodet_gw_stats_hemi_dat} --seg {self.inputs.aseg_presurf} " \
+              f"--wm {self.inputs.wm_file} --invol {self.inputs.brain_finalsurfs} --{self.inputs.hemi} --i {self.inputs.hemi_white} " \
+              f"--o {self.inputs.hemi_pial_t1} --pial --nsmooth 0 --rip-label {self.inputs.hemi_cortexhipamyg_label} " \
+              f"--pin-medial-wall {self.inputs.hemi_cortex_label} --aparc {self.inputs.hemi_aparc_DKTatlas_mapped_annot} " \
+              f"--repulse-surf {self.inputs.hemi_white} --white-surf {self.inputs.hemi_white}"
+        run_cmd_with_timing(cmd)
+
+        # Here insert DoT2Pial  later --> if T2pial is not run, need to softlink pial.T1 to pial!
+
+        cmd = f"cp {self.inputs.hemi_pial_t1} {self.inputs.hemi_pial}"
+        run_cmd_with_timing(cmd)
+
+        # these are run automatically in fs7* recon-all and
+        # cannot be called directly without -pial flag (or other t2 flags)
+        cmd = f"mris_place_surface --curv-map {self.inputs.hemi_white} 2 10 {self.inputs.hemi_curv}"
+        run_cmd_with_timing(cmd)
+        cmd = f"mris_place_surface --area-map {self.inputs.hemi_white} {self.inputs.hemi_area}"
+        run_cmd_with_timing(cmd)
+        cmd = f"mris_place_surface --curv-map {self.inputs.hemi_pial} 2 10 {self.inputs.hemi_curv_pial}"
+        run_cmd_with_timing(cmd)
+        cmd = f"mris_place_surface --area-map {self.inputs.hemi_pial} {self.inputs.hemi_area_pial}"
+        run_cmd_with_timing(cmd)
+        cmd = f" mris_place_surface --thickness {self.inputs.hemi_white} {self.inputs.hemi_pial} " \
+              f"20 5 {self.inputs.hemi_thickness}"
+        run_cmd_with_timing(cmd)
+
+        return runtime
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["hemi_white"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.white"
+        outputs["hemi_pial_t1"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.pial.T1"
+        outputs["hemi_pial"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.pial"
+        outputs["hemi_curv"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.curv"
+        outputs["hemi_area"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.area"
+        outputs["hemi_curv_pial"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.curv.pial"
+        outputs["hemi_area_pial"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.area.pial"
+        outputs["hemi_thickness"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.thickness"
 
         return outputs
 
@@ -449,16 +449,16 @@ class CurvstatsInputSpec(BaseInterfaceInputSpec):
     subject_dir = Directory(exists=True, desc="subject dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
     hemi = Str(desc="lh/rh", mandatory=True)
-    hemi_smoothwm_file = File(exists=True, desc="surf/{hemi}.smoothwm", mandatory=True)
-    hemi_curv_file = File(exists=True, desc="surf/{hemi}.curv", mandatory=True)
-    hemi_sulc_file = File(exists=True, desc="surf/{hemi}.sulc", mandatory=True)
+    hemi_smoothwm_file = File(exists=True, desc="surf/?h.smoothwm", mandatory=True)
+    hemi_curv_file = File(exists=True, desc="surf/?h.curv", mandatory=True)
+    hemi_sulc_file = File(exists=True, desc="surf/?h.sulc", mandatory=True)
     threads = traits.Int(desc='threads')
 
-    hemi_curv_stats_file = File(exists=False, desc="stats/{hemi}.curv.stats", mandatory=True)
+    hemi_curv_stats_file = File(exists=False, desc="stats/?h.curv.stats", mandatory=True)
 
 
 class CurvstatsOutputSpec(TraitedSpec):
-    hemi_curv_stats_file = File(exists=False, desc="stats/{hemi}.curv.stats", mandatory=True)
+    hemi_curv_stats_file = File(exists=True, desc="stats/?h.curv.stats")
 
 
 class Curvstats(BaseInterface):
@@ -477,9 +477,13 @@ class Curvstats(BaseInterface):
         cmd = f"recon-all -subject {self.inputs.subject_id} -hemi {self.inputs.hemi} -curvstats -no-isrunning {fsthreads}"
         run_cmd_with_timing(cmd)
 
+        return runtime
+
     def _list_outputs(self):
         outputs = self._outputs().get()
         outputs["hemi_curv_stats_file"] = self.inputs.hemi_curv_stats_file
+
+        return outputs
 
 
 class CortribbonInputSpec(BaseInterfaceInputSpec):
@@ -488,16 +492,16 @@ class CortribbonInputSpec(BaseInterfaceInputSpec):
     threads = traits.Int(desc='threads')
     aseg_presurf_file = File(exists=True, desc="mri/aseg.presurf.mgz", mandatory=True)
     hemi = Str(desc="lh/rh", mandatory=True)
-    hemi_white = File(exists=True, desc="surf/{hemi}.white", mandatory=True)
-    hemi_pial = File(exists=True, desc="surf/{hemi}.pial", mandatory=True)
+    hemi_white = File(exists=True, desc="surf/?h.white", mandatory=True)
+    hemi_pial = File(exists=True, desc="surf/?h.pial", mandatory=True)
 
-    hemi_ribbon = File(exists=False, desc="mri/{hemi}.ribbon.mgz", mandatory=True)
+    hemi_ribbon = File(exists=False, desc="mri/?h.ribbon.mgz", mandatory=True)
     ribbon = File(exists=False, desc="mri/ribbon.mgz", mandatory=True)
 
 
 class CortribbonOutputSpec(TraitedSpec):
-    hemi_ribbon = File(exists=False, desc="mri/{hemi}.ribbon.mgz", mandatory=True)
-    ribbon = File(exists=False, desc="mri/ribbon.mgz", mandatory=True)
+    hemi_ribbon = File(exists=True, desc="mri/?h.ribbon.mgz")
+    ribbon = File(exists=True, desc="mri/ribbon.mgz")
 
 
 class Cortribbon(BaseInterface):
@@ -519,10 +523,14 @@ class Cortribbon(BaseInterface):
         cmd = f"recon-all -subject {self.inputs.subject_id} -cortribbon {fsthreads}"
         run_cmd_with_timing(cmd)
 
+        return runtime
+
     def _list_outputs(self):
         outputs = self._outputs().get()
         outputs["hemi_ribbon"] = self.inputs.hemi_ribbon
         outputs["ribbon"] = self.inputs.ribbon
+
+        return outputs
 
 
 class ParcstatsInputSpec(BaseInterfaceInputSpec):
@@ -530,22 +538,22 @@ class ParcstatsInputSpec(BaseInterfaceInputSpec):
     subject_id = Str(desc="subject id", mandatory=True)
     threads = traits.Int(desc='threads')
     hemi = Str(desc="lh/rh", mandatory=True)
-    hemi_aparc_annot_file = File(exists=True, desc="label/{hemi}.aparc.annot", mandatory=True)
+    hemi_aparc_annot_file = File(exists=True, desc="label/?h.aparc.annot", mandatory=True)
     wm_file = File(exists=True, desc="mri/wm.mgz", mandatory=True)
     ribbon_file = File(exists=True, desc="mri/ribbon.mgz", mandatory=True)
-    hemi_white_file = File(exists=True, desc="surf/{hemi}.white", mandatory=True)
-    hemi_pial_file = File(exists=True, desc="surf/{hemi}.pial", mandatory=True)
-    hemi_thickness_file = File(exists=True, desc="surf/{hemi}.thickness", mandatory=True)
+    hemi_white_file = File(exists=True, desc="surf/?h.white", mandatory=True)
+    hemi_pial_file = File(exists=True, desc="surf/?h.pial", mandatory=True)
+    hemi_thickness_file = File(exists=True, desc="surf/?h.thickness", mandatory=True)
 
-    hemi_aparc_stats_file = File(exists=False, desc="stats/{hemi}.aparc.stats", mandatory=True)
-    hemi_aparc_pial_stats_file = File(exists=False, desc="stats/{hemi}.aparc.pial.stats", mandatory=True)
+    hemi_aparc_stats_file = File(exists=False, desc="stats/?h.aparc.stats", mandatory=True)
+    hemi_aparc_pial_stats_file = File(exists=False, desc="stats/?h.aparc.pial.stats", mandatory=True)
     aparc_annot_ctab_file = File(exists=False, desc="label/aparc.annot.ctab", mandatory=True)
 
 
 class ParcstatsOutputSpec(TraitedSpec):
-    hemi_aparc_stats_file = File(exists=False, desc="stats/{hemi}.aparc.stats", mandatory=True)
-    hemi_aparc_pial_stats_file = File(exists=False, desc="stats/{hemi}.aparc.pial.stats", mandatory=True)
-    aparc_annot_ctab_file = File(exists=False, desc="label/aparc.annot.ctab", mandatory=True)
+    hemi_aparc_stats_file = File(exists=True, desc="stats/?h.aparc.stats")
+    hemi_aparc_pial_stats_file = File(exists=True, desc="stats/?h.aparc.pial.stats")
+    aparc_annot_ctab_file = File(exists=True, desc="label/aparc.annot.ctab")
 
 
 class Parcstats(BaseInterface):
@@ -563,11 +571,15 @@ class Parcstats(BaseInterface):
         cmd = f"recon-all -subject {self.inputs.subject_id} -parcstats {fsthreads}"
         run_cmd_with_timing(cmd)
 
+        return runtime
+
     def _list_outputs(self):
         outputs = self._outputs().get()
         outputs["hemi_aparc_stats_file"] = self.inputs.hemi_aparc_stats_file
         outputs["hemi_aparc_pial_stats_file"] = self.inputs.hemi_aparc_pial_stats_file
         outputs["aparc_annot_ctab_file"] = self.inputs.aparc_annot_ctab_file
+
+        return outputs
 
 
 class PctsurfconInputSpec(BaseInterfaceInputSpec):
@@ -577,16 +589,16 @@ class PctsurfconInputSpec(BaseInterfaceInputSpec):
     hemi = Str(desc="lh/rh", mandatory=True)
     rawavg_file = File(exists=True, desc="mri/rawavg.mgz", mandatory=True)
     orig_file = File(exists=True, desc="mri/orig.mgz", mandatory=True)
-    hemi_cortex_label_file = File(exists=True, desc="label/{hemi}.cortex.label", mandatory=True)
-    hemi_white_file = File(exists=True, desc="surf/{hemi}.white", mandatory=True)
+    hemi_cortex_label_file = File(exists=True, desc="label/?h.cortex.label", mandatory=True)
+    hemi_white_file = File(exists=True, desc="surf/?h.white", mandatory=True)
 
-    hemi_wg_pct_mgh_file = File(exists=False, desc="surf/{hemi}.w-g.pct.mgh", mandatory=True)
-    hemi_wg_pct_stats_file = File(exists=False, desc="mri/{hemi}.w-g.pct.stats", mandatory=True)
+    hemi_wg_pct_mgh_file = File(exists=False, desc="surf/?h.w-g.pct.mgh", mandatory=True)
+    hemi_wg_pct_stats_file = File(exists=False, desc="mri/?h.w-g.pct.stats", mandatory=True)
 
 
 class PctsurfconOutputSpec(TraitedSpec):
-    hemi_wg_pct_mgh_file = File(exists=False, desc="surf/{hemi}.w-g.pct.mgh", mandatory=True)
-    hemi_wg_pct_stats_file = File(exists=False, desc="mri/{hemi}.w-g.pct.stats", mandatory=True)
+    hemi_wg_pct_mgh_file = File(exists=True, desc="surf/?h.w-g.pct.mgh")
+    hemi_wg_pct_stats_file = File(exists=True, desc="mri/?h.w-g.pct.stats")
 
 
 class Pctsurfcon(BaseInterface):
@@ -604,10 +616,14 @@ class Pctsurfcon(BaseInterface):
         cmd = f"recon-all -subject {self.inputs.subject_id} -pctsurfcon {fsthreads}"
         run_cmd_with_timing(cmd)
 
+        return runtime
+
     def _list_outputs(self):
         outputs = self._outputs().get()
         outputs["hemi_wg_pct_mgh_file"] = self.inputs.hemi_wg_pct_mgh_file
         outputs["hemi_wg_pct_stats_file"] = self.inputs.hemi_wg_pct_stats_file
+
+        return outputs
 
 
 class HyporelabelInputSpec(BaseInterfaceInputSpec):
@@ -616,13 +632,13 @@ class HyporelabelInputSpec(BaseInterfaceInputSpec):
     threads = traits.Int(desc='threads')
     hemi = Str(desc="lh/rh", mandatory=True)
     aseg_presurf_file = File(exists=True, desc="mri/aseg.presurf.mgz", mandatory=True)
-    hemi_white_file = File(exists=True, desc="surf/{hemi}.white", mandatory=True)
+    hemi_white_file = File(exists=True, desc="surf/?h.white", mandatory=True)
 
     aseg_presurf_hypos_file = File(exists=False, desc="mri/aseg.presurf.hypos.mgz", mandatory=True)
 
 
 class HyporelabelOutputSpec(TraitedSpec):
-    aseg_presurf_hypos_file = File(exists=False, desc="mri/aseg.presurf.hypos.mgz", mandatory=True)
+    aseg_presurf_hypos_file = File(exists=True, desc="mri/aseg.presurf.hypos.mgz")
 
 
 class Hyporelabel(BaseInterface):
@@ -640,9 +656,13 @@ class Hyporelabel(BaseInterface):
         cmd = f"recon-all -subject {self.inputs.subject_id} -hyporelabel {fsthreads}"
         run_cmd_with_timing(cmd)
 
+        return runtime
+
     def _list_outputs(self):
         outputs = self._outputs().get()
         outputs["aseg_presurf_hypos_file"] = self.inputs.aseg_presurf_hypos_file
+
+        return outputs
 
 
 class JacobianAvgcurvCortparcThresholdInputSpec(BaseInterfaceInputSpec):
@@ -686,4 +706,102 @@ class JacobianAvgcurvCortparc(BaseInterface):
         outputs['jacobian_white_file'] = self.inputs.jacobian_white_file
         outputs['avg_curv_file'] = self.inputs.avg_curv_file
         outputs['aparc_annot_file'] = self.inputs.aparc_annot_file
+        return outputs
+
+
+class SegstatsInputSpec(BaseInterfaceInputSpec):
+    subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
+    subject_id = Str(desc="subject id", mandatory=True)
+    threads = traits.Int(desc='threads')
+    hemi = Str(desc="lh/rh", mandatory=True)
+    brainmask_file = File(exists=True, desc="mri/brainmask.mgz", mandatory=True)
+    norm_file = File(exists=True, desc="mri/norm.mgz", mandatory=True)
+    aseg_file = File(exists=True, desc="mri/aseg.mgz", mandatory=True)
+    aseg_presurf_file = File(exists=True, desc="mri/aseg.presurf.mgz", mandatory=True)
+    ribbon_file = File(exists=True, desc="mri/ribbon.mgz", mandatory=True)
+    hemi_orig_nofix_file = File(exists=True, desc="surf/?h.orig.nofix", mandatory=True)
+    hemi_white_file = File(exists=True, desc="surf/?h.white", mandatory=True)
+    hemi_pial_file = File(exists=True, desc="surf/?h.pial", mandatory=True)
+
+    aseg_stats_file = File(exists=False, desc="stats/aseg.stats", mandatory=True)
+
+
+class SegstatsOutputSpec(TraitedSpec):
+    aseg_stats_file = File(exists=True, desc="stats/aseg.stats")
+
+
+class Segstats(BaseInterface):
+    input_spec = SegstatsInputSpec
+    output_spec = SegstatsOutputSpec
+
+    time = 34 / 60  # 运行时间：分钟 / 单脑测试时间
+    cpu = 8  # 最大cpu占用：个
+    gpu = 0  # 最大gpu占用：MB
+
+    def _run_interface(self, runtime):
+        threads = self.inputs.threads if self.inputs.threads else 0
+        fsthreads = get_freesurfer_threads(threads)
+
+        cmd = f"recon-all -subject {self.inputs.subject_id} -segstats  {fsthreads}"
+        run_cmd_with_timing(cmd)
+
+        return runtime
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs['aseg_stats_file'] = self.inputs.aseg_stats_file
+
+        return outputs
+
+
+class Aseg7InputSpec(BaseInterfaceInputSpec):
+    subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
+    subject_id = Str(desc="subject id", mandatory=True)
+    subject_mri_dir = Directory(exists=True, desc="subject mri dir", mandatory=True)
+    threads = traits.Int(desc='threads')
+
+    aseg_presurf_hypos_file = File(exists=True, desc="mri/aseg.presurf.hypos.mgz", mandatory=True)
+    ribbon_file = File(exists=True, desc="mri/ribbon.mgz", mandatory=True)
+    lh_cortex_label_file = File(exists=True, desc="label/lh.cortex.label", mandatory=True)
+    lh_white_file = File(exists=True, desc="surf/lh.white", mandatory=True)
+    lh_pial_file = File(exists=True, desc="surf/lh.pial", mandatory=True)
+    rh_cortex_label_file = File(exists=True, desc="label/rh.cortex.label", mandatory=True)
+    rh_white_file = File(exists=True, desc="surf/rh.white", mandatory=True)
+    rh_pial_file = File(exists=True, desc="surf/rh.pial", mandatory=True)
+    lh_aparc_annot_file = File(exists=True, desc="surf/lh.aparc.annot", mandatory=True)
+    rh_aparc_annot_file = File(exists=True, desc="surf/rh.aparc.annot", mandatory=True)
+
+    aparc_aseg_file = File(exists=False, desc="mri/aparc+aseg.mgz", mandatory=True)
+
+
+class Aseg7OutputSpec(TraitedSpec):
+    aparc_aseg_file = File(exists=True, desc="mri/aparc+aseg.mgz")
+
+
+class Aseg7(BaseInterface):
+    input_spec = Aseg7InputSpec
+    output_spec = Aseg7OutputSpec
+
+    time = 0 / 60  # 运行时间：分钟 / 单脑测试时间
+    cpu = 0  # 最大cpu占用：个
+    gpu = 0  # 最大gpu占用：MB
+
+    def _run_interface(self, runtime):
+        threads = self.inputs.threads if self.inputs.threads else 0
+        fsthreads = get_freesurfer_threads(threads)
+        cmd = f'cd {self.inputs.subject_mri_dir} && mri_surf2volseg --o aparc+aseg.mgz --label-cortex --i aseg.mgz ' \
+              f'--threads {threads} ' \
+              f'--lh-annot {self.inputs.lh_aparc_annot_file} 1000 ' \
+              f'--lh-cortex-mask {self.inputs.lh_cortex_label_file} --lh-white {self.inputs.lh_white_file} ' \
+              f'--lh-pial {self.inputs.lh_pial_file} --rh-annot {self.inputs.rh_aparc_annot_file} ' \
+              f'--rh-cortex-mask {self.inputs.rh_cortex_label_file} --rh-white {self.inputs.rh_white_file} ' \
+              f'--rh-pial {self.inputs.rh_pial_file} '
+        run_cmd_with_timing(cmd)
+
+        return runtime
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["aparc_aseg_file"] = self.inputs.aparc_aseg_file
+
         return outputs
