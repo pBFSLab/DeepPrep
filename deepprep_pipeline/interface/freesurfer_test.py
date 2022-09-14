@@ -1,7 +1,8 @@
 import os
-from freesurfer import OrigAndRawavg, WhitePreaparc, WhitePialThickness1, WhitePialThickness2
+from freesurfer import OrigAndRawavg, WhitePreaparc, WhitePialThickness1, WhitePialThickness2, Aseg7, Aseg7ToAseg
 from pathlib import Path
-from freesurfer import Brainmask, InflatedSphere, Curvstats, Cortribbon, Parcstats, Pctsurfcon, Hyporelabel, JacobianAvgcurvCortparc, Segstats
+from freesurfer import Brainmask, InflatedSphere, Curvstats, Cortribbon, Parcstats, Pctsurfcon, Hyporelabel, \
+    JacobianAvgcurvCortparc, Segstats
 from nipype import Node
 from run import set_envrion
 
@@ -128,6 +129,7 @@ def white_pial_thickness1_test():
 
     white_pial_thickness.run()
 
+
 def white_pial_thickness2_test():
     subject_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
     subject = "sub-765"
@@ -161,6 +163,7 @@ def white_pial_thickness2_test():
     white_pial_thickness.inputs.hemi_pial_t1 = hemi_pial_t1
 
     white_pial_thickness.run()
+
 
 def Cortribbon_test():
     set_envrion()
@@ -212,6 +215,7 @@ def Pctsurfcon_test():
         Parcstats_node.inputs.aparc_annot_ctab_file = subject_label_dir / 'aparc.annot.ctab'
         Parcstats_node.run()
 
+
 def Pctsurfcon_test():
     set_envrion()
     subjects_dir = Path(f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon')
@@ -235,6 +239,7 @@ def Pctsurfcon_test():
         Pctsurfcon_node.inputs.hemi_wg_pct_mgh_file = subject_surf_dir / f'{hemi}.w-g.pct.mgh'
         Pctsurfcon_node.inputs.hemi_wg_pct_stats_file = subject_stats_dir / f'{hemi}.w-g.pct.stats'
         Pctsurfcon_node.run()
+
 
 def Hyporelabel_test():
     set_envrion()
@@ -282,6 +287,8 @@ def JacobianAvgcurvCortparc_test():
         JacobianAvgcurvCortparc_node.inputs.aparc_annot_file = aparc_annot_dir
 
         JacobianAvgcurvCortparc_node.run()
+
+
 def Segstats_test():
     set_envrion()
     subjects_dir = Path(f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon')
@@ -308,13 +315,15 @@ def Segstats_test():
 
         Segstats_node.inputs.aseg_stats_file = subject_stats_dir / 'aseg.stats'
         Segstats_node.run()
-def Aseg7():
+
+
+def Aseg7_test():
     set_envrion()
     subjects_dir = Path(f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon')
     subject_id = 'sub-MSC01'
     subject_mri_dir = subjects_dir / subject_id / 'mri'
     subject_surf_dir = subjects_dir / subject_id / 'surf'
-    subject_label_dir =  subjects_dir / subject_id / 'label'
+    subject_label_dir = subjects_dir / subject_id / 'label'
     threads = 8
     os.environ['SUBJECTS_DIR'] = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon'
     Aseg7_node = Node(Aseg7(), name='Aseg7_node')
@@ -335,6 +344,10 @@ def Aseg7():
 
     Aseg7_node.inputs.aparc_aseg_file = subject_mri_dir / 'aparc+aseg.mgz'
     Aseg7_node.run()
+
+
+
+
 if __name__ == '__main__':
     # OrigAndRawavg_test()
     # Brainmask_test()
