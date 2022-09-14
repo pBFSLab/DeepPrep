@@ -1,7 +1,7 @@
 import os
-from freesurfer import OrigAndRawavg, WhitePreaparc, WhitePialThickness
+from freesurfer import OrigAndRawavg, WhitePreaparc, WhitePialThickness1, WhitePialThickness2
 from pathlib import Path
-from freesurfer import Brainmask, InflatedSphere, Curvstats, Cortribbon, Parcstats, Pctsurfcon, Hyporelabel, JacobianAvgcurvCortparc
+from freesurfer import Brainmask, InflatedSphere, Curvstats, Cortribbon, Parcstats, Pctsurfcon, Hyporelabel, JacobianAvgcurvCortparc, Segstats
 from nipype import Node
 from run import set_envrion
 
@@ -113,8 +113,7 @@ def Curvstats_test():
         Curvstats_node.run()
 
 
-def white_pial_thickness_test():
-    fswhitepial = False
+def white_pial_thickness1_test():
     subject_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
     subject = "sub-765"
     hemi = "lh"
@@ -122,14 +121,46 @@ def white_pial_thickness_test():
 
     os.environ['SUBJECTS_DIR'] = str(subject_dir)
 
-    white_pial_thickness = Node(WhitePialThickness(output_dir=subject_dir, threads=threads),
-                                name="white_pial_thickness")
-    white_pial_thickness.inputs.fswhitepial = fswhitepial
+    white_pial_thickness = Node(WhitePialThickness1(output_dir=subject_dir, threads=threads),
+                                name="white_pial_thickness1")
     white_pial_thickness.inputs.subject = subject
     white_pial_thickness.inputs.hemi = hemi
 
     white_pial_thickness.run()
 
+def white_pial_thickness2_test():
+    subject_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
+    subject = "sub-765"
+    hemi = "lh"
+    threads = 8
+
+    os.environ['SUBJECTS_DIR'] = str(subject_dir)
+
+    autodet_gw_stats_hemi_dat = subject_dir / subject / f"surf/autodet.gw.stats.{hemi}.dat"
+    aseg_presurf = subject_dir / subject / "mri/aseg.presurf.mgz"
+    wm_file = subject_dir / subject / "mri/wm.mgz"
+    brain_finalsurfs = subject_dir / subject / "mri/brain.finalsurfs.mgz"
+    hemi_white_preaparc = subject_dir / subject / f"surf/{hemi}.white.preaparc"
+    hemi_white = subject_dir / subject / f"surf/{hemi}.white"
+    hemi_cortex_label = subject_dir / subject / f"label/{hemi}.cortex.label"
+    hemi_aparc_DKTatlas_mapped_annot = subject_dir / subject / f"label/{hemi}.aparc.DKTatlas.mapped.annot"
+    hemi_pial_t1 = subject_dir / subject / f"surf/{hemi}.pial.T1"
+
+    white_pial_thickness = Node(WhitePialThickness1(output_dir=subject_dir, threads=threads),
+                                name="white_pial_thickness2")
+    white_pial_thickness.inputs.subject = subject
+    white_pial_thickness.inputs.hemi = hemi
+    white_pial_thickness.inputs.autodet_gw_stats_hemi_dat = autodet_gw_stats_hemi_dat
+    white_pial_thickness.inputs.aseg_presurf = aseg_presurf
+    white_pial_thickness.inputs.wm_file = wm_file
+    white_pial_thickness.inputs.brain_finalsurfs = brain_finalsurfs
+    white_pial_thickness.inputs.hemi_white_preaparc = hemi_white_preaparc
+    white_pial_thickness.inputs.hemi_white = hemi_white
+    white_pial_thickness.inputs.hemi_cortex_label = hemi_cortex_label
+    white_pial_thickness.inputs.hemi_aparc_DKTatlas_mapped_annot = hemi_aparc_DKTatlas_mapped_annot
+    white_pial_thickness.inputs.hemi_pial_t1 = hemi_pial_t1
+
+    white_pial_thickness.run()
 
 def Cortribbon_test():
     set_envrion()
@@ -251,6 +282,59 @@ def JacobianAvgcurvCortparc_test():
         JacobianAvgcurvCortparc_node.inputs.aparc_annot_file = aparc_annot_dir
 
         JacobianAvgcurvCortparc_node.run()
+def Segstats_test():
+    set_envrion()
+    subjects_dir = Path(f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon')
+    subject_id = 'sub-MSC01'
+    subject_mri_dir = subjects_dir / subject_id / 'mri'
+    subject_surf_dir = subjects_dir / subject_id / 'surf'
+    subject_stats_dir = subjects_dir / subject_id / 'stats'
+    threads = 8
+    os.environ['SUBJECTS_DIR'] = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon'
+    for hemi in ['lh', 'rh']:
+        Segstats_node = Node(Segstats(), name='Segstats_node')
+        Segstats_node.inputs.subjects_dir = subjects_dir
+        Segstats_node.inputs.subject_id = subject_id
+        Segstats_node.inputs.threads = threads
+        Segstats_node.inputs.hemi = hemi
+        Segstats_node.inputs.brainmask_file = subject_mri_dir / 'brainmask.mgz'
+        Segstats_node.inputs.norm_file = subject_mri_dir / 'norm.mgz'
+        Segstats_node.inputs.aseg_file = subject_mri_dir / 'aseg.mgz'
+        Segstats_node.inputs.aseg_presurf_file = subject_mri_dir / 'aseg.presurf.mgz'
+        Segstats_node.inputs.ribbon_file = subject_mri_dir / 'ribbon.mgz'
+        Segstats_node.inputs.hemi_orig_nofix_file = subject_surf_dir / f'{hemi}.orig.premesh'
+        Segstats_node.inputs.hemi_white_file = subject_surf_dir / f'{hemi}.white'
+        Segstats_node.inputs.hemi_pial_file = subject_surf_dir / f'{hemi}.pial'
+
+        Segstats_node.inputs.aseg_stats_file = subject_stats_dir / 'aseg.stats'
+        Segstats_node.run()
+def Aseg7():
+    set_envrion()
+    subjects_dir = Path(f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon')
+    subject_id = 'sub-MSC01'
+    subject_mri_dir = subjects_dir / subject_id / 'mri'
+    subject_surf_dir = subjects_dir / subject_id / 'surf'
+    subject_label_dir =  subjects_dir / subject_id / 'label'
+    threads = 8
+    os.environ['SUBJECTS_DIR'] = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon'
+    Aseg7_node = Node(Aseg7(), name='Aseg7_node')
+    Aseg7_node.inputs.subjects_dir = subjects_dir
+    Aseg7_node.inputs.subject_id = subject_id
+    Aseg7_node.inputs.threads = threads
+    Aseg7_node.inputs.subject_mri_dir = subject_mri_dir
+    Aseg7_node.inputs.aseg_presurf_hypos_file = subject_mri_dir / 'aseg.presurf.hypos.mgz'
+    Aseg7_node.inputs.ribbon_file = subject_mri_dir / 'ribbon.mgz'
+    Aseg7_node.inputs.lh_cortex_label_file = subject_label_dir / 'lh.cortex.label'
+    Aseg7_node.inputs.lh_white_file = subject_surf_dir / 'lh.white'
+    Aseg7_node.inputs.lh_pial_file = subject_surf_dir / 'lh.pial'
+    Aseg7_node.inputs.lh_aparc_annot_file = subject_label_dir / 'lh.aparc.annot'
+    Aseg7_node.inputs.rh_cortex_label_file = subject_label_dir / 'rh.cortex.label'
+    Aseg7_node.inputs.rh_white_file = subject_surf_dir / 'rh.white'
+    Aseg7_node.inputs.rh_pial_file = subject_surf_dir / 'rh.pial'
+    Aseg7_node.inputs.rh_aparc_annot_file = subject_label_dir / 'rh.aparc.annot'
+
+    Aseg7_node.inputs.aparc_aseg_file = subject_mri_dir / 'aparc+aseg.mgz'
+    Aseg7_node.run()
 if __name__ == '__main__':
     # OrigAndRawavg_test()
     # Brainmask_test()
@@ -258,5 +342,5 @@ if __name__ == '__main__':
     # white_preaparc_test()
 
     set_envrion()
-    white_pial_thickness_test()
+
     # JacobianAvgcurvCortparc_test()
