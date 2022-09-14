@@ -524,12 +524,15 @@ class Cortribbon(BaseInterface):
         run_cmd_with_timing(cmd)
 
         return runtime
+
     def _list_outputs(self):
         outputs = self._outputs().get()
         outputs["hemi_ribbon"] = self.inputs.hemi_ribbon
         outputs["ribbon"] = self.inputs.ribbon
 
         return outputs
+
+
 class ParcstatsInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
@@ -569,6 +572,7 @@ class Parcstats(BaseInterface):
         run_cmd_with_timing(cmd)
 
         return runtime
+
     def _list_outputs(self):
         outputs = self._outputs().get()
         outputs["hemi_aparc_stats_file"] = self.inputs.hemi_aparc_stats_file
@@ -576,6 +580,8 @@ class Parcstats(BaseInterface):
         outputs["aparc_annot_ctab_file"] = self.inputs.aparc_annot_ctab_file
 
         return outputs
+
+
 class PctsurfconInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
@@ -611,12 +617,15 @@ class Pctsurfcon(BaseInterface):
         run_cmd_with_timing(cmd)
 
         return runtime
+
     def _list_outputs(self):
         outputs = self._outputs().get()
         outputs["hemi_wg_pct_mgh_file"] = self.inputs.hemi_wg_pct_mgh_file
         outputs["hemi_wg_pct_stats_file"] = self.inputs.hemi_wg_pct_stats_file
 
         return outputs
+
+
 class HyporelabelInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
@@ -648,11 +657,14 @@ class Hyporelabel(BaseInterface):
         run_cmd_with_timing(cmd)
 
         return runtime
+
     def _list_outputs(self):
         outputs = self._outputs().get()
         outputs["aseg_presurf_hypos_file"] = self.inputs.aseg_presurf_hypos_file
 
         return outputs
+
+
 class JacobianAvgcurvCortparcThresholdInputSpec(BaseInterfaceInputSpec):
     hemi = traits.String(mandatory=True, desc='hemi')
     subject = traits.String(mandatory=True, desc='recon')
@@ -734,11 +746,14 @@ class Segstats(BaseInterface):
         run_cmd_with_timing(cmd)
 
         return runtime
+
     def _list_outputs(self):
         outputs = self._outputs().get()
         outputs['aseg_stats_file'] = self.inputs.aseg_stats_file
 
         return outputs
+
+
 class Aseg7InputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
@@ -784,6 +799,7 @@ class Aseg7(BaseInterface):
         run_cmd_with_timing(cmd)
 
         return runtime
+
     def _list_outputs(self):
         outputs = self._outputs().get()
         outputs["aparc_aseg_file"] = self.inputs.aparc_aseg_file
