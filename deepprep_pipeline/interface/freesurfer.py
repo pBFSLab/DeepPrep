@@ -19,18 +19,18 @@ class BrainmaskInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
     need_t1 = traits.BaseCBool(desc='bool', mandatory=True)
-    nu_file = File(exists=True, desc="nu file", mandatory=True)
-    mask_file = File(exists=True, desc="mask file", mandatory=True)
+    nu_file = File(exists=True, desc="mri/nu.mgz", mandatory=True)
+    mask_file = File(exists=True, desc="mri/mask.mgz", mandatory=True)
 
-    T1_file = File(exists=False, desc="T1 file", mandatory=True)
-    brainmask_file = File(exists=False, desc="brainmask file", mandatory=True)
-    norm_file = File(exists=False, desc="norm file", mandatory=True)
+    T1_file = File(exists=False, desc="mri/T1.mgz", mandatory=True)
+    brainmask_file = File(exists=False, desc="mri/brainmask.mgz", mandatory=True)
+    norm_file = File(exists=False, desc="mri/norm.mgz", mandatory=True)
 
 
 class BrainmaskOutputSpec(TraitedSpec):
-    brainmask_file = File(exists=True, desc="brainmask file")
-    norm_file = File(exists=True, desc="norm file")
-    T1_file = File(exists=False, desc="T1 file")
+    brainmask_file = File(exists=True, desc="mri/brainmask.mgz")
+    norm_file = File(exists=True, desc="mri/norm.mgz")
+    T1_file = File(exists=False, desc="mri/T1.mgz")
 
 
 class Brainmask(BaseInterface):
@@ -106,13 +106,14 @@ class OrigAndRawavg(BaseInterface):
 
 
 class FilledInputSpec(BaseInterfaceInputSpec):
-    aseg_auto_file = File(exists=True, desc='mri/aseg.auto.mgz', mandatory=True)
-    norm_file = File(exists=True, desc='mri/norm.mgz', mandatory=True)
-    brainmask_file = File(exists=True, desc='mri/brainmask.mgz', mandatory=True)
-    talairach_file = File(exists=True, desc='mri/transforms/talairach.lta')
     subjects_dir = Directory(exists=True, desc='subject dir path', mandatory=True)
     subject_id = Str(desc='subject id', mandatory=True)
     threads = traits.Int(desc='threads')
+
+    aseg_auto_file = File(exists=True, desc='mri/aseg.auto.mgz', mandatory=True)
+    norm_file = File(exists=True, desc='mri/norm.mgz', mandatory=True)
+    brainmask_file = File(exists=True, desc='mri/brainmask.mgz', mandatory=True)
+    talairach_file = File(exists=True, desc='mri/transforms/talairach.lta', mandatory=True)
 
 
 class FilledOutputSpec(TraitedSpec):
@@ -120,11 +121,12 @@ class FilledOutputSpec(TraitedSpec):
     brain_file = File(exists=True, desc='mri/brain.mgz')
     brain_finalsurfs_file = File(exists=True, desc='mri/brain.finalsurfs.mgz')
     wm_file = File(exists=True, desc='mri/wm.mgz')
+    wm_filled = File(exists=True, desc='mri/filled.mgz')
 
 
 class Filled(BaseInterface):
-    input_spec = OrigAndRawavgInputSpec
-    output_spec = OrigAndRawavgOutputSpec
+    input_spec = FilledInputSpec
+    output_spec = FilledOutputSpec
 
     def __init__(self):
         super(Filled, self).__init__()
@@ -133,15 +135,25 @@ class Filled(BaseInterface):
         threads = self.inputs.threads if self.inputs.threads else 0
         fsthreads = get_freesurfer_threads(threads)
 
-        files = ' -i '.join(self.inputs.t1w_files)
-        cmd = f"recon-all -subject {self.inputs.subject_id} -i {files} -motioncor {fsthreads}"
+        cmd = f'recon-all -subject {self.inputs.subject_id} -asegmerge {fsthreads}'
+        run_cmd_with_timing(cmd)
+        cmd = f'recon-all -subject {self.inputs.subject_id} -normalization2 {fsthreads}'
+        run_cmd_with_timing(cmd)
+        cmd = f'recon-all -subject {self.inputs.subject_id} -maskbfs {fsthreads}'
+        run_cmd_with_timing(cmd)
+        cmd = f'recon-all -subject {self.inputs.subject_id} -segmentation {fsthreads}'
+        run_cmd_with_timing(cmd)
+        cmd = f'recon-all -subject {self.inputs.subject_id} -fill {fsthreads}'
         run_cmd_with_timing(cmd)
         return runtime
 
     def _list_outputs(self):
         outputs = self._outputs().get()
-        outputs["orig_file"] = Path(f"{self.inputs.subjects_dir}/{self.inputs.subject_id}/mri/orig.mgz")
-        outputs['rawavg_file'] = Path(f"{self.inputs.subjects_dir}/{self.inputs.subject_id}/mri/rawavg.mgz")
+        outputs["aseg_presurf_file"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, 'mri/aseg.presurf.mgz')
+        outputs["brain_file"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, 'mri/brain.mgz')
+        outputs["brain_finalsurfs_file"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, 'mri/brain.finalsurfs.mgz')
+        outputs["wm_file"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, 'mri/wm.mgz')
+        outputs["wm_filled"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, 'mri/filled.mgz')
         return outputs
 
 
@@ -761,7 +773,7 @@ class Aseg7InputSpec(BaseInterfaceInputSpec):
     threads = traits.Int(desc='threads')
 
     aseg_presurf_hypos_file = File(exists=False, desc="mri/aseg.presurf.hypos.mgz", mandatory=True)
-    ribbon_file = File(exists=True, desc="mri/ribbon.mgz", mandatory=True)
+    # ribbon_file = File(exists=True, desc="mri/ribbon.mgz", mandatory=True)
     lh_cortex_label_file = File(exists=True, desc="label/lh.cortex.label", mandatory=True)
     lh_white_file = File(exists=True, desc="surf/lh.white", mandatory=True)
     lh_pial_file = File(exists=True, desc="surf/lh.pial", mandatory=True)
@@ -789,7 +801,7 @@ class Aseg7(BaseInterface):
     def _run_interface(self, runtime):
         threads = self.inputs.threads if self.inputs.threads else 0
         fsthreads = get_freesurfer_threads(threads)
-        cmd = f'cd {self.inputs.subject_mri_dir} && mri_surf2volseg --o aparc+aseg.mgz --label-cortex --i aseg.mgz ' \
+        cmd = f'mri_surf2volseg --o aparc+aseg.mgz --label-cortex --i aseg.mgz ' \
               f'--threads {threads} ' \
               f'--lh-annot {self.inputs.lh_aparc_annot_file} 1000 ' \
               f'--lh-cortex-mask {self.inputs.lh_cortex_label_file} --lh-white {self.inputs.lh_white_file} ' \
@@ -797,8 +809,6 @@ class Aseg7(BaseInterface):
               f'--rh-cortex-mask {self.inputs.rh_cortex_label_file} --rh-white {self.inputs.rh_white_file} ' \
               f'--rh-pial {self.inputs.rh_pial_file} '
         run_cmd_with_timing(cmd)
-        return runtime
-
         return runtime
 
     def _list_outputs(self):
@@ -812,8 +822,8 @@ class Aseg7ToAsegInputSpec(BaseInterfaceInputSpec):
     subject_id = Str(desc="subject id", mandatory=True)
     threads = traits.Int(desc='threads')
 
-    aseg_presurf_hypos_file = File(exists=True, desc="mri/aseg.presurf.hypos.mgz", mandatory=True)
-    ribbon_file = File(exists=True, desc="mri/ribbon.mgz", mandatory=True)
+    # aseg_presurf_hypos_file = File(exists=True, desc="mri/aseg.presurf.hypos.mgz", mandatory=True)
+    # ribbon_file = File(exists=True, desc="mri/ribbon.mgz", mandatory=True)
     lh_cortex_label_file = File(exists=True, desc="label/lh.cortex.label", mandatory=True)
     lh_white_file = File(exists=True, desc="surf/lh.white", mandatory=True)
     lh_pial_file = File(exists=True, desc="surf/lh.pial", mandatory=True)
