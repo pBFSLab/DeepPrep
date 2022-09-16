@@ -174,7 +174,7 @@ class NoccsegThresholdInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc='name of file to process. Default: aparc.DKTatlas+aseg.orig.mgz')
 
     mask_file = File(mandatory=True, desc='mri/mask.mgz')
-    aseg_noccseg_file = File(mandatory=True,
+    aseg_noCCseg_file = File(mandatory=True,
                              desc='Default: mri/aseg.auto_noCCseg.mgz'
                                   'reduce labels to aseg, then create mask (dilate 5, erode 4, largest component), '
                                   'also mask aseg to remove outliers'
@@ -183,7 +183,7 @@ class NoccsegThresholdInputSpec(BaseInterfaceInputSpec):
 
 class NoccsegThresholdOutputSpec(TraitedSpec):
     mask_file = File(exists=True, desc="mask.mgz")
-    aseg_noccseg_file = File(exists=True, desc="aseg.auto_noCCseg.mgz")
+    aseg_noCCseg_file = File(exists=True, desc="aseg.auto_noCCseg.mgz")
 
 
 class Noccseg(BaseInterface):
@@ -197,7 +197,7 @@ class Noccseg(BaseInterface):
     def _run_interface(self, runtime):
         cmd = f'{self.inputs.python_interpret} {self.inputs.reduce_to_aseg_py} ' \
               f'-i {self.inputs.in_file} ' \
-              f'-o {self.inputs.aseg_noccseg_file} --outmask {self.inputs.mask_file} --fixwm'
+              f'-o {self.inputs.aseg_noCCseg_file} --outmask {self.inputs.mask_file} --fixwm'
         run_cmd_with_timing(cmd)
 
         return runtime
@@ -205,7 +205,7 @@ class Noccseg(BaseInterface):
     def _list_outputs(self):
         outputs = self._outputs().get()
         outputs['mask_file'] = self.inputs.mask_file
-        outputs['aseg_noccseg_file'] = self.inputs.aseg_noccseg_file
+        outputs['aseg_noCCseg_file'] = self.inputs.aseg_noCCseg_file
         return outputs
 
 
@@ -258,22 +258,23 @@ class UpdateAseg(BaseInterface):
         outputs["aparc_aseg_file"] = self.inputs.aparc_aseg_file
 
         return outputs
+
+
 class SampleSegmentationToSurfaveInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
     python_interpret = File(exists=True, desc="python interpret", mandatory=True)
-    freesufer_home = Directory(exists=True, desc="freesufer_home", mandatory=True)
+    freesurfer_home = Directory(exists=True, desc="freesurfer_home", mandatory=True)
     hemi = Str(desc="lh/rh", mandatory=True)
+
     hemi_DKTatlaslookup_file = File(exists=True, desc="FastSurfer/recon_surf/?h.DKTatlaslookup.txt", mandatory=True)
     aparc_aseg_file = File(exists=True, desc="mri/aparc.DKTatlas+aseg.deep.withCC.mgz", mandatory=True)
     smooth_aparc_file = File(exists=True, desc="Fastsurfer/recon_surf/smooth_aparc.py", mandatory=True)
     hemi_white_preaparc_file = File(exists=True, desc="surf/?h.white.preaparc", mandatory=True)
     hemi_cortex_label_file = File(exists=True, desc="label/?h.cortex.label", mandatory=True)
 
-    hemi_aparc_DKTatlas_mapped_prefix_file = File(exists=False, desc="label/?h.aparc.DKTatlas.mapped.prefix.annot",
-                                                  mandatory=True)
-    hemi_aparc_DKTatlas_mapped_file = File(exists=False, desc="label/?h.aparc.DKTatlas.mapped.annot",
-                                           mandatory=True)
+    hemi_aparc_DKTatlas_mapped_prefix_file = File(desc="label/?h.aparc.DKTatlas.mapped.prefix.annot", mandatory=True)
+    hemi_aparc_DKTatlas_mapped_file = File(desc="label/?h.aparc.DKTatlas.mapped.annot", mandatory=True)
 
 
 class SampleSegmentationToSurfaveOutputSpec(TraitedSpec):
@@ -296,7 +297,7 @@ class SampleSegmentationToSurfave(BaseInterface):
         # this is dangerous, as some cortices could be < 0.6 mm, but then there is no volume label probably anyway.
         # Also note that currently we cannot mask non-cortex regions here, should be done in mris_anatomical stats later
         # the smoothing helps
-        cmd = f"mris_sample_parc -ct {self.inputs.freesufer_home}/average/colortable_desikan_killiany.txt " \
+        cmd = f"mris_sample_parc -ct {self.inputs.freesurfer_home}/average/colortable_desikan_killiany.txt " \
               f"-file {self.inputs.hemi_DKTatlaslookup_file} -projmm 0.6 -f 5  " \
               f"-surf white.preaparc {self.inputs.subject_id} {self.inputs.hemi} " \
               f"aparc.DKTatlas+aseg.orig.mgz aparc.DKTatlas.mapped.prefix.annot"
@@ -312,7 +313,7 @@ class SampleSegmentationToSurfave(BaseInterface):
         return runtime
     def _list_outputs(self):
         outputs = self._outputs().get()
-        outputs["hemi_aparc_DKTatlas_mapped_prefix_file"] = self.inputs.hemi_aparc_DKTatlas_mapped_prefix_file
-        outputs["hemi_aparc_DKTatlas_mapped_file"] = self.inputs.hemi_aparc_DKTatlas_mapped_file
+        outputs["hemi_aparc_DKTatlas_mapped_prefix_file"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f"label/{self.inputs.hemi}.aparc.DKTatlas.mapped.prefix.annot")
+        outputs["hemi_aparc_DKTatlas_mapped_file"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f"label/{self.inputs.hemi}.aparc.DKTatlas.mapped.annot")
 
         return outputs
