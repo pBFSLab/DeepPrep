@@ -882,8 +882,8 @@ class Aseg7(BaseInterface):
     input_spec = Aseg7InputSpec
     output_spec = Aseg7OutputSpec
 
-    time = 0 / 60  # 运行时间：分钟 / 单脑测试时间
-    cpu = 0  # 最大cpu占用：个
+    time = 45 / 60  # 运行时间：分钟 / 单脑测试时间
+    cpu = 5.6  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
 
     def _run_interface(self, runtime):
@@ -893,7 +893,7 @@ class Aseg7(BaseInterface):
               f'--threads {threads} ' \
               f'--lh-annot {self.inputs.lh_aparc_annot_file} 1000 ' \
               f'--lh-cortex-mask {self.inputs.lh_cortex_label_file} --lh-white {self.inputs.lh_white_file} ' \
-              f'--lh-pial {self.inputs.lh_pial_file} --rh-annot {self.inputs.rh_aparc_annot_file} ' \
+              f'--lh-pial {self.inputs.lh_pial_file} --rh-annot {self.inputs.rh_aparc_annot_file} 2000 ' \
               f'--rh-cortex-mask {self.inputs.rh_cortex_label_file} --rh-white {self.inputs.rh_white_file} ' \
               f'--rh-pial {self.inputs.rh_pial_file} '
         run_cmd_with_timing(cmd)
@@ -930,8 +930,8 @@ class Aseg7ToAseg(BaseInterface):
     input_spec = Aseg7ToAsegInputSpec
     output_spec = Aseg7ToAsegOutputSpec
 
-    time = 0 / 60  # 运行时间：分钟 / 单脑测试时间
-    cpu = 0  # 最大cpu占用：个
+    time = 16 / 60  # 运行时间：分钟 / 单脑测试时间
+    cpu = 1.6  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
 
     def _run_interface(self, runtime):
