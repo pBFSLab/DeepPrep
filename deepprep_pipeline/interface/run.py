@@ -3,6 +3,13 @@ import time
 import argparse
 
 
+def get_freesurfer_threads(threads: int):
+    if threads and threads > 1:
+        fsthreads = f'-threads {threads} -itkthreads {threads}'
+    else:
+        fsthreads = ''
+    return fsthreads
+
 def run_cmd_with_timing(cmd):
     print('*' * 50)
     print(cmd)
