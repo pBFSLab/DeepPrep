@@ -1,5 +1,5 @@
 import os
-from freesurfer import OrigAndRawavg, WhitePreaparc, WhitePialThickness1, WhitePialThickness2, Aseg7, Aseg7ToAseg
+from freesurfer import OrigAndRawavg, WhitePreaparc1, WhitePialThickness1, WhitePialThickness2, Aseg7, Aseg7ToAseg
 from pathlib import Path
 from freesurfer import Brainmask, Filled, InflatedSphere, Curvstats, Cortribbon, Parcstats, Pctsurfcon, Hyporelabel, \
     JacobianAvgcurvCortparc, Segstats, Balabels
@@ -84,7 +84,7 @@ def white_preaparc_test():
 
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
-    white_preaparc = Node(WhitePreaparc(output_dir=subjects_dir, threads=threads), name="white_preaparc")
+    white_preaparc = Node(WhitePreaparc1(output_dir=subjects_dir, threads=threads), name="white_preaparc")
     white_preaparc.inputs.fswhitepreaparc = fswhitepreaparc
     white_preaparc.inputs.subject = subject
     white_preaparc.inputs.hemi = hemi
@@ -211,16 +211,18 @@ def Cortribbon_test():
         Cortribbon_node.run()
 
 
-def Pctsurfcon_test():
+def Parcstats_test():
     set_envrion()
     subjects_dir = Path(f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon')
+    subjects_dir = Path(f'/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon')
     subject_id = 'sub-MSC01'
+    subject_id = 'sub-170'
     subject_mri_dir = subjects_dir / subject_id / 'mri'
     subject_surf_dir = subjects_dir / subject_id / 'surf'
     subject_label_dir = subjects_dir / subject_id / 'label'
     subject_stats_dir = subjects_dir / subject_id / 'stats'
     threads = 8
-    os.environ['SUBJECTS_DIR'] = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon'
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
     for hemi in ['lh', 'rh']:
         Parcstats_node = Node(Parcstats(), name='Parcstats_node')
         Parcstats_node.inputs.subjects_dir = subjects_dir
@@ -285,8 +287,8 @@ def Hyporelabel_test():
 
 
 def JacobianAvgcurvCortparc_test():
-    subjects_dir = Path("/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon")
-    subject_id = "sub-001"
+    subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
+    subject_id = "sub-765"
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
     for hemi in ['lh', 'rh']:
         os.environ['SUBJECTS_DIR'] = str(subjects_dir)
@@ -299,15 +301,18 @@ def JacobianAvgcurvCortparc_test():
         aparc_annot_dir = subjects_dir / subject_id / "label" / f"{hemi}.aparc.annot"
         JacobianAvgcurvCortparc_node = Node(JacobianAvgcurvCortparc(), f'JacobianAvgcurvCortparc_node')
         JacobianAvgcurvCortparc_node.inputs.hemi = hemi
-        JacobianAvgcurvCortparc_node.inputs.threads = 8
-        JacobianAvgcurvCortparc_node.inputs.subject = subject_id
+        JacobianAvgcurvCortparc_node.inputs.subjects_dir = subjects_dir
+        JacobianAvgcurvCortparc_node.inputs.subject_id = subject_id
         JacobianAvgcurvCortparc_node.inputs.white_preaparc_file = white_preaparc_dir
         JacobianAvgcurvCortparc_node.inputs.sphere_reg_file = sphere_reg_dir
         JacobianAvgcurvCortparc_node.inputs.jacobian_white_file = jacobian_white_dir
         JacobianAvgcurvCortparc_node.inputs.avg_curv_file = avg_curv_dir
         JacobianAvgcurvCortparc_node.inputs.aseg_presurf_file = aseg_presurf_dir
         JacobianAvgcurvCortparc_node.inputs.cortex_label_file = cortex_label_dir
+
         JacobianAvgcurvCortparc_node.inputs.aparc_annot_file = aparc_annot_dir
+        JacobianAvgcurvCortparc_node.inputs.threads = 8
+
 
         JacobianAvgcurvCortparc_node.run()
 
@@ -424,11 +429,14 @@ if __name__ == '__main__':
 
     # OrigAndRawavg_test()
     # Brainmask_test()
-    filled_test()
+    # filled_test()
     # Inflated_Sphere_test()
     # white_preaparc_test()
 
 
     # JacobianAvgcurvCortparc_test()
+
+    Parcstats_test()
+
     # Aseg7_test()
     # Aseg7ToAseg_test()
