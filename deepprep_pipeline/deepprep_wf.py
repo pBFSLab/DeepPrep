@@ -2,7 +2,7 @@ from pathlib import Path
 from nipype import Node, Workflow
 from interface.freesurfer import OrigAndRawavg, Brainmask, Filled, WhitePreaparc1, \
     InflatedSphere, JacobianAvgcurvCortparc, WhitePialThickness1, Curvstats, Cortribbon, \
-    Parcstats, Pctsurfcon, Hyporelabel
+    Parcstats, Pctsurfcon, Hyporelabel, Aseg7ToAseg, Aseg7, Balabels
 from interface.fastsurfer import Segment, Noccseg, N4BiasCorrect, TalairachAndNu, UpdateAseg, \
     SampleSegmentationToSurfave
 from interface.fastcsr import FastCSR
@@ -80,7 +80,6 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
     brainmask_node.inputs.subjects_dir = subjects_dir
     brainmask_node.inputs.subject_id = subject_id
     brainmask_node.inputs.need_t1 = True
-    # brainmask_node.inputs.nu_file = subjects_dir / subject_id / 'mri' / 'nu.mgz'
     brainmask_node.inputs.mask_file = subjects_dir / subject_id / 'mri' / 'mask.mgz'
 
     brainmask_node.inputs.T1_file = subjects_dir / subject_id / 'mri' / 'T1.mgz'
@@ -93,8 +92,6 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
     updateaseg_node.inputs.subject_id = subject_id
     updateaseg_node.inputs.paint_cc_file = Path("/home/youjia/workspace/DeepPrep/deepprep_pipeline/FastSurfer/recon_surf/paint_cc_into_pred.py")
     updateaseg_node.inputs.python_interpret = python_interpret
-    # updateaseg_node.inputs.seg_file = subjects_dir / subject_id / 'mri' / 'aparc.DKTatlas+aseg.deep.mgz'
-    # updateaseg_node.inputs.aseg_noCCseg_file = subjects_dir / subject_id / 'mri' / 'aseg.auto_noCCseg.mgz'
 
     updateaseg_node.inputs.aseg_auto_file = subjects_dir / subject_id / 'mri' / 'aseg.auto.mgz'
     updateaseg_node.inputs.cc_up_file = subjects_dir / subject_id / 'mri' / 'transforms' / 'cc_up.lta'
@@ -178,16 +175,8 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
     white_pial_thickness1_node.inputs.hemi = hemi
     white_pial_thickness1_node.inputs.threads = 8
 
-    ################################## 测试用
-    white_pial_thickness1_node.inputs.hemi_white_preaparc = subjects_dir / subject_id / "surf" / f"{hemi}.white.preaparc"
-    white_pial_thickness1_node.inputs.aseg_presurf = subjects_dir / subject_id / "mri" / "aseg.presurf.mgz"
-    white_pial_thickness1_node.inputs.brain_finalsurfs = subjects_dir / subject_id / "mri" / "brain.finalsurfs.mgz"
-    white_pial_thickness1_node.inputs.wm_file = subjects_dir / subject_id / "mri" / "wm.mgz"
-    white_pial_thickness1_node.inputs.hemi_aparc_annot = subjects_dir / subject_id / "label" / f"{hemi}.aparc.annot"
-    white_pial_thickness1_node.inputs.hemi_cortex_hipamyg_label = subjects_dir / subject_id / "label" / f"{hemi}.cortex+hipamyg.label"
-    white_pial_thickness1_node.inputs.hemi_cortex_label = subjects_dir / subject_id / "label" / f"{hemi}.cortex.label"
+    white_pial_thickness1_node.inputs.hemi_cortex_hipamyg_label = subjects_dir / subject_id / "label" / f"{hemi}.cortex+hipamyg.label" ### 测试用
 
-    white_pial_thickness1_node.inputs.hemi_aparc_DKTatlas_mapped_annot = subjects_dir / subject_id / "label" / f"{hemi}.aparc.DKTatlas.mapped.annot"
     white_pial_thickness1_node.inputs.hemi_white = subjects_dir / subject_id / "surf" / f"{hemi}.white"
 
 
@@ -249,63 +238,120 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
     Hyporelabel_node.inputs.aseg_presurf_hypos_file = subjects_dir / subject_id / 'mri' / 'aseg.presurf.hypos.mgz' ### 测试用
 
 
+    # Aseg7ToAseg
+    Aseg7ToAseg_node = Node(Aseg7ToAseg(), name='Aseg7_node')
+    Aseg7ToAseg_node.inputs.subjects_dir = subjects_dir
+    Aseg7ToAseg_node.inputs.subject_id = subject_id
+    Aseg7ToAseg_node.inputs.threads = 8
+
+    ##### 测试用 lh + rh
+    Aseg7ToAseg_node.inputs.lh_cortex_label_file = subjects_dir / subject_id / 'label' / 'lh.cortex.label'
+    Aseg7ToAseg_node.inputs.lh_white_file = subjects_dir / subject_id / 'surf' / 'lh.white'
+    Aseg7ToAseg_node.inputs.lh_pial_file = subjects_dir / subject_id / 'surf' / 'lh.pial'
+    Aseg7ToAseg_node.inputs.rh_cortex_label_file = subjects_dir / subject_id / 'label' / 'rh.cortex.label'
+    Aseg7ToAseg_node.inputs.rh_white_file = subjects_dir / subject_id / 'surf' / 'rh.white'
+    Aseg7ToAseg_node.inputs.rh_pial_file = subjects_dir / subject_id / 'surf' / 'rh.pial'
+
+    Aseg7ToAseg_node.inputs.aseg_file = subjects_dir / subject_id / 'mri' / 'aseg.mgz'
+
+    # Aseg7
+    Aseg7_node = Node(Aseg7(), name='Aseg7_node')
+    Aseg7_node.inputs.subjects_dir = subjects_dir
+    Aseg7_node.inputs.subject_id = subject_id
+    Aseg7_node.inputs.threads = 8
+
+    Aseg7_node.inputs.subject_mri_dir = subjects_dir / subject_id / 'mri'
+    Aseg7_node.inputs.aseg_presurf_hypos_file = subjects_dir / subject_id / 'mri' / 'aseg.presurf.hypos.mgz'
+    Aseg7_node.inputs.lh_cortex_label_file = subjects_dir / subject_id / 'label' / 'lh.cortex.label'
+    Aseg7_node.inputs.lh_white_file = subjects_dir / subject_id / 'surf' / 'lh.white'
+    Aseg7_node.inputs.lh_pial_file = subjects_dir / subject_id / 'surf' / 'lh.pial'
+    Aseg7_node.inputs.lh_aparc_annot_file = subjects_dir / subject_id / 'label' / 'lh.aparc.annot'
+    Aseg7_node.inputs.rh_cortex_label_file = subjects_dir / subject_id / 'label' / 'rh.cortex.label'
+    Aseg7_node.inputs.rh_white_file = subjects_dir / subject_id / 'surf' / 'rh.white'
+    Aseg7_node.inputs.rh_pial_file = subjects_dir / subject_id / 'surf' / 'rh.pial'
+    Aseg7_node.inputs.rh_aparc_annot_file = subjects_dir / subject_id / 'label' / 'rh.aparc.annot'
+
+    Aseg7_node.inputs.aparc_aseg_file = subjects_dir / subject_id / 'mri' / 'aparc+aseg.mgz'
+
+    # Balabels
+    Balabels_node = Node(Balabels(), name='Balabels_node')
+    Balabels_node.inputs.subjects_dir = subjects_dir
+    Balabels_node.inputs.subject_id = subject_id
+    Balabels_node.inputs.hemi = hemi
+    Balabels_node.inputs.threads = 8
+    Balabels_node.inputs.hemi_sphere_file = subjects_dir / subject_id / 'surf' / f'{hemi}.sphere.reg'
+
+    Balabels_node.inputs.hemi_BA45_exvivo_file = subjects_dir / subject_id / 'label' / f'{hemi}.BA45_exvivo.label'
+    Balabels_node.inputs.hemi_BA_exvivo_annot_file = subjects_dir / subject_id / 'label' / f'{hemi}.BA_exvivo.annot'
+    Balabels_node.inputs.BA_exvivo_thresh_file = subjects_dir / subject_id / 'label' / 'BA_exvivo.thresh.ctab'
+    Balabels_node.inputs.hemi_perirhinal_exvivo_file = subjects_dir / subject_id / 'label' / f'{hemi}.perirhinal_exvivo.label'
+    Balabels_node.inputs.hemi_entorhinal_exvivo_file = subjects_dir / subject_id / 'label' / f'{hemi}.entorhinal_exvivo.label'
+
     # create workflow
     single_structure_wf.connect([
-                                 # (orig_and_rawavg_node, segment_node, [("orig_file", "in_file"),
-                                 #                                       ]),
-                                 # (segment_node, auto_noccseg_node, [("aseg_deep_file", "in_file"),
-                                 #                                    ]),
-                                 # (orig_and_rawavg_node, N4_bias_correct_node, [("orig_file", "orig_file"),
-                                 #                                               ]),
-                                 # (auto_noccseg_node, N4_bias_correct_node, [("mask_file", "mask_file"),
-                                 #                                            ]),
-                                 # (orig_and_rawavg_node, talairach_and_nu_node, [("orig_file", "orig_file"),
-                                 #                                                ]),
-                                 # (N4_bias_correct_node, talairach_and_nu_node, [("orig_nu_file", "orig_nu_file"),
-                                 #                                                ]),
-                                 # (talairach_and_nu_node, brainmask_node, [("nu_file", "nu_file"),
-                                 #                                        ]),
-                                 # (segment_node, updateaseg_node, [("aseg_deep_file", "seg_file"),
-                                 #                                  ]),
-                                 # (auto_noccseg_node, updateaseg_node, [("aseg_noCCseg_file", "aseg_noCCseg_file"),
-                                 #                                          ]),
-                                 # (updateaseg_node, filled_node, [("aseg_auto_file", "aseg_auto_file"),
-                                 #                                    ]),
-                                 # (brainmask_node, filled_node, [("brainmask_file", "brainmask_file"), ("norm_file", "norm_file"),
-                                 #                                 ]),
-                                 # (talairach_and_nu_node, filled_node, [("talairach_lta", "talairach_lta"),
-                                 #                                        ]),
-                                 # (orig_and_rawavg_node, fastcsr_node, [("orig_file", "orig_file"),
-                                 #                                       ]),
-                                 # (brainmask_node, fastcsr_node, [("brainmask_file", "brainmask_file"),
-                                 #                                ]),
-                                 # (filled_node, fastcsr_node, [("aseg_presurf_file", "aseg_presurf_file"), ("wm_filled", "filled_file"),
-                                 #                              ("brain_finalsurfs_file", "brain_finalsurfs_file"), ("wm_file", "wm_file"),
-                                 #                                 ]),
-                                 # (filled_node, white_preaparc1_node, [("aseg_presurf_file", "aseg_presurf"), ("brain_finalsurfs_file", "brain_finalsurfs"),
-                                 #                                      ("wm_file", "wm_file"), ("wm_filled", "filled_file"),
-                                 #                                        ]),
-                                 # (fastcsr_node, white_preaparc1_node, [("lh_orig_file", "hemi_orig"),
-                                 #                                        ]),
-                                 # (updateaseg_node, SampleSegmentationToSurfave_node, [("aparc_aseg_file", "aparc_aseg_file"),
-                                 #                                                        ]),
-                                 # (white_preaparc1_node, SampleSegmentationToSurfave_node, [("hemi_white_preaparc", "hemi_white_preaparc_file"),
-                                 #                                                            ("hemi_cortex_label", "hemi_cortex_label_file"),
-                                 #                                                            ]),
-                                 # (white_preaparc1_node, inflated_sphere_node, [("hemi_white_preaparc", "white_preaparc_file"),
-                                 #                                                ]),
-                                 # (white_preaparc1_node, featreg_node, [("hemi_curv", "curv_file"),
-                                 #                                       ]),
-                                 # (inflated_sphere_node, featreg_node, [("sulc_file", "sulc_file"), ("hemi_sphere", "sphere_file"),
-                                 #                                      ]),
-                                 # (white_preaparc1_node, JacobianAvgcurvCortparc_node, [("hemi_white_preaparc", "white_preaparc_file"),
-                                 #                                                       ("hemi_cortex_label", "cortex_label_file"),
-                                 #                                                        ]),
-                                 # (filled_node, JacobianAvgcurvCortparc_node, [("aseg_presurf_file", "aseg_presurf_file"),
-                                 #                                                ]),
-                                 # (featreg_node, JacobianAvgcurvCortparc_node, [("sphere_reg_file", "sphere_reg_file"),
-                                 #                                                ]),
-
+                                 (orig_and_rawavg_node, segment_node, [("orig_file", "in_file"),
+                                                                       ]),
+                                 (segment_node, auto_noccseg_node, [("aseg_deep_file", "in_file"),
+                                                                    ]),
+                                 (orig_and_rawavg_node, N4_bias_correct_node, [("orig_file", "orig_file"),
+                                                                               ]),
+                                 (auto_noccseg_node, N4_bias_correct_node, [("mask_file", "mask_file"),
+                                                                            ]),
+                                 (orig_and_rawavg_node, talairach_and_nu_node, [("orig_file", "orig_file"),
+                                                                                ]),
+                                 (N4_bias_correct_node, talairach_and_nu_node, [("orig_nu_file", "orig_nu_file"),
+                                                                                ]),
+                                 (talairach_and_nu_node, brainmask_node, [("nu_file", "nu_file"),
+                                                                        ]),
+                                 (segment_node, updateaseg_node, [("aseg_deep_file", "seg_file"),
+                                                                  ]),
+                                 (auto_noccseg_node, updateaseg_node, [("aseg_noCCseg_file", "aseg_noCCseg_file"),
+                                                                          ]),
+                                 (updateaseg_node, filled_node, [("aseg_auto_file", "aseg_auto_file"),
+                                                                    ]),
+                                 (brainmask_node, filled_node, [("brainmask_file", "brainmask_file"), ("norm_file", "norm_file"),
+                                                                 ]),
+                                 (talairach_and_nu_node, filled_node, [("talairach_lta", "talairach_lta"),
+                                                                        ]),
+                                 (orig_and_rawavg_node, fastcsr_node, [("orig_file", "orig_file"),
+                                                                       ]),
+                                 (brainmask_node, fastcsr_node, [("brainmask_file", "brainmask_file"),
+                                                                ]),
+                                 (filled_node, fastcsr_node, [("aseg_presurf_file", "aseg_presurf_file"), ("wm_filled", "filled_file"),
+                                                              ("brain_finalsurfs_file", "brain_finalsurfs_file"), ("wm_file", "wm_file"),
+                                                                 ]),
+                                 (filled_node, white_preaparc1_node, [("aseg_presurf_file", "aseg_presurf"), ("brain_finalsurfs_file", "brain_finalsurfs"),
+                                                                      ("wm_file", "wm_file"), ("wm_filled", "filled_file"),
+                                                                        ]),
+                                 (fastcsr_node, white_preaparc1_node, [("lh_orig_file", "hemi_orig"),
+                                                                        ]),
+                                 (updateaseg_node, SampleSegmentationToSurfave_node, [("aparc_aseg_file", "aparc_aseg_file"),
+                                                                                        ]),
+                                 (white_preaparc1_node, SampleSegmentationToSurfave_node, [("hemi_white_preaparc", "hemi_white_preaparc_file"),
+                                                                                            ("hemi_cortex_label", "hemi_cortex_label_file"),
+                                                                                            ]),
+                                 (white_preaparc1_node, inflated_sphere_node, [("hemi_white_preaparc", "white_preaparc_file"),
+                                                                                ]),
+                                 (white_preaparc1_node, featreg_node, [("hemi_curv", "curv_file"),
+                                                                       ]),
+                                 (inflated_sphere_node, featreg_node, [("sulc_file", "sulc_file"), ("hemi_sphere", "sphere_file"),
+                                                                      ]),
+                                 (white_preaparc1_node, JacobianAvgcurvCortparc_node, [("hemi_white_preaparc", "white_preaparc_file"),
+                                                                                       ("hemi_cortex_label", "cortex_label_file"),
+                                                                                        ]),
+                                 (filled_node, JacobianAvgcurvCortparc_node, [("aseg_presurf_file", "aseg_presurf_file"),
+                                                                                ]),
+                                 (featreg_node, JacobianAvgcurvCortparc_node, [("sphere_reg_file", "sphere_reg_file"),
+                                                                                ]),
+                                 (filled_node, white_pial_thickness1_node, [("aseg_presurf_file", "aseg_presurf"), ("brain_finalsurfs_file", "brain_finalsurfs"),
+                                                                               ]),
+                                 (white_preaparc1_node, white_pial_thickness1_node, [("hemi_white_preaparc", "hemi_white_preaparc"),
+                                                                                     ("hemi_cortex_label", "hemi_cortex_label"),
+                                                                                    ]),
+                                 (SampleSegmentationToSurfave_node, white_pial_thickness1_node, [("hemi_aparc_DKTatlas_mapped_file", "hemi_aparc_DKTatlas_mapped_annot"),
+                                                                                                ]),
+                                 (JacobianAvgcurvCortparc_node, white_pial_thickness1_node, [("aparc_annot_file", "hemi_aparc_annot"),
+                                                                                            ]),
                                  (white_pial_thickness1_node, Cortribbon_node, [("hemi_white", "hemi_white"), ("hemi_pial", "hemi_pial"),
                                                                                  ]),
                                  (Cortribbon_node, Parcstats_node, [("ribbon", "ribbon_file"),
@@ -325,7 +371,7 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
 
 def pipeline():
     t1w_files = [
-        f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/sub-MSC01/ses-struct01/anat/sub-MSC01_ses-struct01_run-01_T1w.nii.gz',
+        f'/mnt/ngshare/ProjData/SurfRecon/V001/sub-001/ses-01/anat/sub-001_ses-01_T1w.nii.gz',
     ]
     pwd = Path.cwd()
     python_interpret = Path('/home/youjia/anaconda3/envs/3.8/bin/python3')
@@ -335,7 +381,7 @@ def pipeline():
     featreg_home = pwd.parent / "deepprep_pipeline/FeatReg"
 
     subjects_dir = Path('/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon')
-    subject_id = 'sub-170'
+    subject_id = 'sub-001'
 
     hemi = 'lh'
 
