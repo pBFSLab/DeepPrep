@@ -75,43 +75,45 @@ def filled_test():
 
 
 
-def white_preaparc_test():
+def white_preaparc1_test():
     fswhitepreaparc = False
     subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
-    subject = "sub-001"
-    hemi = "rh"
+    subject_id = "sub-002"
     threads = 8
 
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
-    white_preaparc = Node(WhitePreaparc1(output_dir=subjects_dir, threads=threads), name="white_preaparc")
-    white_preaparc.inputs.fswhitepreaparc = fswhitepreaparc
-    white_preaparc.inputs.subject = subject
-    white_preaparc.inputs.hemi = hemi
+    white_preaparc1 = Node(WhitePreaparc1(), name="white_preaparc1_node")
+    white_preaparc1.inputs.subjects_dir = subjects_dir
+    white_preaparc1.inputs.subject_id = subject_id
+    white_preaparc1.inputs.threads = threads
 
-    white_preaparc.run()
+    white_preaparc1.inputs.aseg_presurf = subjects_dir / subject_id / 'mri' / 'aseg.presurf.mgz'
+    white_preaparc1.inputs.brain_finalsurfs = subjects_dir / subject_id / 'mri' / 'brain.finalsurfs.mgz'
+    white_preaparc1.inputs.wm_file = subjects_dir / subject_id / 'mri' / 'wm.mgz'
+    white_preaparc1.inputs.filled_file = subjects_dir / subject_id / 'mri' / 'filled.mgz'
+    white_preaparc1.inputs.lh_orig = subjects_dir / subject_id / 'surf' / 'lh.orig'
+    white_preaparc1.inputs.rh_orig = subjects_dir / subject_id / 'surf' / 'rh.orig'
+
+    white_preaparc1.run()
 
 
 def InflatedSphere_test():
-    subjects_dir = Path("/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon")
-    subject_id = "sub-001"
+    subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
+    subject_id = "sub-002"
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
-    for hemi in ['lh', 'rh']:
-        os.environ['SUBJECTS_DIR'] = str(subjects_dir)
-        white_preaparc_dir = subjects_dir / subject_id / "surf" / f"{hemi}.white.preaparc"
-        smoothwm_dir = subjects_dir / subject_id / "surf" / f"{hemi}.smoothwm"
-        inflated_dir = subjects_dir / subject_id / "surf" / f"{hemi}.inflated"
-        sulc_dir = subjects_dir / subject_id / "surf" / f"{hemi}.sulc"
-        Inflated_Sphere_node = Node(InflatedSphere(), f'Inflated_Sphere_node')
-        Inflated_Sphere_node.inputs.hemi = hemi
-        Inflated_Sphere_node.inputs.threads = 8
-        Inflated_Sphere_node.inputs.subject = subject_id
-        Inflated_Sphere_node.inputs.white_preaparc_file = white_preaparc_dir
-        Inflated_Sphere_node.inputs.smoothwm_file = smoothwm_dir
-        Inflated_Sphere_node.inputs.inflated_file = inflated_dir
-        Inflated_Sphere_node.inputs.sulc_file = sulc_dir
 
-        Inflated_Sphere_node.run()
+    lh_white_preaparc_file = subjects_dir / subject_id / "surf" / "lh.white.preaparc"
+    rh_white_preaparc_file = subjects_dir / subject_id / "surf" / "rh.white.preaparc"
+
+    Inflated_Sphere_node = Node(InflatedSphere(), f'Inflated_Sphere_node')
+    Inflated_Sphere_node.inputs.threads = 8
+    Inflated_Sphere_node.inputs.subjects_dir = subjects_dir
+    Inflated_Sphere_node.inputs.subject_id = subject_id
+    Inflated_Sphere_node.inputs.lh_white_preaparc_file = lh_white_preaparc_file
+    Inflated_Sphere_node.inputs.rh_white_preaparc_file = rh_white_preaparc_file
+
+    Inflated_Sphere_node.run()
 
 
 def Curvstats_test():
@@ -138,19 +140,35 @@ def Curvstats_test():
 
 
 def white_pial_thickness1_test():
-    subject_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
-    subject = "sub-765"
-    hemi = "lh"
+    subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
+    subject_id = "sub-002"
     threads = 8
 
-    os.environ['SUBJECTS_DIR'] = str(subject_dir)
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
-    white_pial_thickness = Node(WhitePialThickness1(output_dir=subject_dir, threads=threads),
-                                name="white_pial_thickness1")
-    white_pial_thickness.inputs.subject = subject
-    white_pial_thickness.inputs.hemi = hemi
+    white_pial_thickness1 = Node(WhitePialThickness1(), name="white_pial_thickness1")
+    white_pial_thickness1.inputs.subjects_dir = subjects_dir
+    white_pial_thickness1.inputs.subject_id = subject_id
+    white_pial_thickness1.inputs.threads = threads
 
-    white_pial_thickness.run()
+    white_pial_thickness1.inputs.lh_white_preaparc = subjects_dir / subject_id / "surf" / "lh.white.preaparc"
+    white_pial_thickness1.inputs.rh_white_preaparc = subjects_dir / subject_id / "surf" / "rh.white.preaparc"
+    white_pial_thickness1.inputs.aseg_presurf = subjects_dir / subject_id / "mri" / "aseg.presurf.mgz"
+    white_pial_thickness1.inputs.brain_finalsurfs = subjects_dir / subject_id / "mri" / "brain.finalsurfs.mgz"
+    white_pial_thickness1.inputs.wm_file = subjects_dir / subject_id / "mri" / "wm.mgz"
+    white_pial_thickness1.inputs.lh_aparc_annot = subjects_dir / subject_id / "label" / "lh.aparc.annot"
+    white_pial_thickness1.inputs.rh_aparc_annot = subjects_dir / subject_id / "label" / "rh.aparc.annot"
+    white_pial_thickness1.inputs.lh_cortex_hipamyg_label = subjects_dir / subject_id / "label" / "lh.cortex+hipamyg.label"
+    white_pial_thickness1.inputs.rh_cortex_hipamyg_label = subjects_dir / subject_id / "label" / "rh.cortex+hipamyg.label"
+    white_pial_thickness1.inputs.lh_cortex_label = subjects_dir / subject_id / "label" / "lh.cortex.label"
+    white_pial_thickness1.inputs.rh_cortex_label = subjects_dir / subject_id / "label" / "rh.cortex.label"
+
+    white_pial_thickness1.inputs.lh_aparc_DKTatlas_mapped_annot = subjects_dir / subject_id / "label" / "lh.aparc.DKTatlas.mapped.annot"
+    white_pial_thickness1.inputs.rh_aparc_DKTatlas_mapped_annot = subjects_dir / subject_id / "label" / "rh.aparc.DKTatlas.mapped.annot"
+    white_pial_thickness1.inputs.lh_white = subjects_dir / subject_id / "surf" / "lh.white"
+    white_pial_thickness1.inputs.rh_white = subjects_dir / subject_id / "surf" / "rh.white"
+
+    white_pial_thickness1.run()
 
 
 def white_pial_thickness2_test():
@@ -288,33 +306,44 @@ def Hyporelabel_test():
 
 def JacobianAvgcurvCortparc_test():
     subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
-    subject_id = "sub-765"
+    subject_id = "sub-002"
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
-    for hemi in ['lh', 'rh']:
-        os.environ['SUBJECTS_DIR'] = str(subjects_dir)
-        white_preaparc_dir = subjects_dir / subject_id / "surf" / f"{hemi}.white.preaparc"
-        sphere_reg_dir = subjects_dir / subject_id / "surf" / f"{hemi}.sphere.reg"
-        jacobian_white_dir = subjects_dir / subject_id / "surf" / f"{hemi}.jacobian_white"
-        avg_curv_dir = subjects_dir / subject_id / "surf" / f"{hemi}.avg_curv"
-        aseg_presurf_dir = subjects_dir / subject_id / "mri" / "aseg.presurf.mgz"
-        cortex_label_dir = subjects_dir / subject_id / "label" / f"{hemi}.cortex.label"
-        aparc_annot_dir = subjects_dir / subject_id / "label" / f"{hemi}.aparc.annot"
-        JacobianAvgcurvCortparc_node = Node(JacobianAvgcurvCortparc(), f'JacobianAvgcurvCortparc_node')
-        JacobianAvgcurvCortparc_node.inputs.hemi = hemi
-        JacobianAvgcurvCortparc_node.inputs.subjects_dir = subjects_dir
-        JacobianAvgcurvCortparc_node.inputs.subject_id = subject_id
-        JacobianAvgcurvCortparc_node.inputs.white_preaparc_file = white_preaparc_dir
-        JacobianAvgcurvCortparc_node.inputs.sphere_reg_file = sphere_reg_dir
-        JacobianAvgcurvCortparc_node.inputs.jacobian_white_file = jacobian_white_dir
-        JacobianAvgcurvCortparc_node.inputs.avg_curv_file = avg_curv_dir
-        JacobianAvgcurvCortparc_node.inputs.aseg_presurf_file = aseg_presurf_dir
-        JacobianAvgcurvCortparc_node.inputs.cortex_label_file = cortex_label_dir
 
-        JacobianAvgcurvCortparc_node.inputs.aparc_annot_file = aparc_annot_dir
-        JacobianAvgcurvCortparc_node.inputs.threads = 8
+    lh_white_preaparc = subjects_dir / subject_id / "surf" / f"lh.white.preaparc"
+    rh_white_preaparc = subjects_dir / subject_id / "surf" / f"rh.white.preaparc"
+    lh_sphere_reg = subjects_dir / subject_id / "surf" / f"lh.sphere.reg"
+    rh_sphere_reg = subjects_dir / subject_id / "surf" / f"rh.sphere.reg"
+    lh_jacobian_white = subjects_dir / subject_id / "surf" / f"lh.jacobian_white"
+    rh_jacobian_white = subjects_dir / subject_id / "surf" / f"rh.jacobian_white"
+    lh_avg_curv = subjects_dir / subject_id / "surf" / f"lh.avg_curv"
+    rh_avg_curv = subjects_dir / subject_id / "surf" / f"rh.avg_curv"
+    aseg_presurf_dir = subjects_dir / subject_id / "mri" / "aseg.presurf.mgz"
+    lh_cortex_label = subjects_dir / subject_id / "label" / f"lh.cortex.label"
+    rh_cortex_label = subjects_dir / subject_id / "label" / f"rh.cortex.label"
+    lh_aparc_annot = subjects_dir / subject_id / "label" / f"lh.aparc.annot"
+    rh_aparc_annot = subjects_dir / subject_id / "label" / f"rh.aparc.annot"
+
+    JacobianAvgcurvCortparc_node = Node(JacobianAvgcurvCortparc(), f'JacobianAvgcurvCortparc_node')
+    JacobianAvgcurvCortparc_node.inputs.subjects_dir = subjects_dir
+    JacobianAvgcurvCortparc_node.inputs.subject_id = subject_id
+    JacobianAvgcurvCortparc_node.inputs.lh_white_preaparc = lh_white_preaparc
+    JacobianAvgcurvCortparc_node.inputs.rh_white_preaparc = rh_white_preaparc
+    JacobianAvgcurvCortparc_node.inputs.lh_sphere_reg = lh_sphere_reg
+    JacobianAvgcurvCortparc_node.inputs.rh_sphere_reg = rh_sphere_reg
+    JacobianAvgcurvCortparc_node.inputs.lh_jacobian_white = lh_jacobian_white
+    JacobianAvgcurvCortparc_node.inputs.rh_jacobian_white = rh_jacobian_white
+    JacobianAvgcurvCortparc_node.inputs.lh_avg_curv = lh_avg_curv
+    JacobianAvgcurvCortparc_node.inputs.rh_avg_curv = rh_avg_curv
+    JacobianAvgcurvCortparc_node.inputs.aseg_presurf_file = aseg_presurf_dir
+    JacobianAvgcurvCortparc_node.inputs.lh_cortex_label = lh_cortex_label
+    JacobianAvgcurvCortparc_node.inputs.rh_cortex_label = rh_cortex_label
+
+    JacobianAvgcurvCortparc_node.inputs.lh_aparc_annot = lh_aparc_annot
+    JacobianAvgcurvCortparc_node.inputs.rh_aparc_annot = rh_aparc_annot
+    JacobianAvgcurvCortparc_node.inputs.threads = 8
 
 
-        JacobianAvgcurvCortparc_node.run()
+    JacobianAvgcurvCortparc_node.run()
 
 
 def Segstats_test():
@@ -430,13 +459,14 @@ if __name__ == '__main__':
     # OrigAndRawavg_test()
     # Brainmask_test()
     # filled_test()
-    # Inflated_Sphere_test()
-    # white_preaparc_test()
+    # InflatedSphere_test()
+    # white_preaparc1_test()
 
 
     # JacobianAvgcurvCortparc_test()
+    white_pial_thickness1_test()
 
-    Parcstats_test()
+    # Parcstats_test()
 
     # Aseg7_test()
     # Aseg7ToAseg_test()
