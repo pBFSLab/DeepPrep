@@ -1,5 +1,5 @@
 from pathlib import Path
-from fastsurfer import Segment, Noccseg, N4BiasCorrect, TalairachAndNu, UpdateAseg
+from fastsurfer import Segment, Noccseg, N4BiasCorrect, TalairachAndNu, UpdateAseg, SampleSegmentationToSurfave
 from nipype import Node
 import os
 import argparse
@@ -143,32 +143,40 @@ def UpdateAseg_test():
     updateaseg_node.run()
 
 
-def SampleSegmentationToSurfave():
-    subjects_dir = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon')
-    subject_id = 'sub-MSC01'
+def SampleSegmentationToSurfave_test():
+    subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
+    subject_id = "sub-002"
     subject_mri_dir = subjects_dir / subject_id / 'mri'
     subject_surf_dir = subjects_dir / subject_id / 'surf'
     subject_label_dir = subjects_dir / subject_id / 'label'
-    os.environ['SUBJECTS_DIR'] = '/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon'
-    for hemi in ['lh', 'rh']:
-        SampleSegmentationToSurfave_node = Node(SampleSegmentationToSurfave(), name='SampleSegmentationToSurfave_node')
-        SampleSegmentationToSurfave_node.inputs.subjects_dir = subjects_dir
-        SampleSegmentationToSurfave_node.inputs.subject_id = subject_id
-        SampleSegmentationToSurfave_node.inputs.python_interpret = '/home/lincong/miniconda3/envs/pytorch3.8/bin/python'
-        SampleSegmentationToSurfave_node.inputs.freesufer_home = os.environ['FREESURFER_HOME']
-        SampleSegmentationToSurfave_node.inputs.aparc_aseg_file = subject_mri_dir / 'aparc.DKTatlas+aseg.deep.withCC.mgz'
-        smooth_aparc_file = Path.cwd().parent / 'FastSurfer' / 'recon_surf' / 'smooth_aparc.py'
-        SampleSegmentationToSurfave_node.inputs.smooth_aparc_file = smooth_aparc_file
-        SampleSegmentationToSurfave_node.inputs.hemi = hemi
-        hemi_DKTatlaslookup_file = Path.cwd().parent / 'FastSurfer' / 'recon_surf' / f'{hemi}.DKTatlaslookup.txt'
-        SampleSegmentationToSurfave_node.inputs.hemi_DKTatlaslookup_file = hemi_DKTatlaslookup_file
-        SampleSegmentationToSurfave_node.inputs.hemi_white_preaparc_file = subject_surf_dir / f'{hemi}.white.preaparc'
-        hemi_DKTatlas_mapped_prefix = subject_label_dir / f'{hemi}.aparc.DKTatlas.mapped.prefix.annot'
-        SampleSegmentationToSurfave_node.inputs.hemi_aparc_DKTatlas_mapped_prefix_file = hemi_DKTatlas_mapped_prefix
-        SampleSegmentationToSurfave_node.inputs.hemi_cortex_label_file = subject_label_dir / f'{hemi}.cortex.label'
-        hemi_DKTatlas_mapped = subject_label_dir / f'{hemi}.aparc.DKTatlas.mapped.annot'
-        SampleSegmentationToSurfave_node.inputs.hemi_aparc_DKTatlas_mapped_file = hemi_DKTatlas_mapped
-        SampleSegmentationToSurfave_node.run()
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+
+    SampleSegmentationToSurfave_node = Node(SampleSegmentationToSurfave(), name='SampleSegmentationToSurfave_node')
+    SampleSegmentationToSurfave_node.inputs.subjects_dir = subjects_dir
+    SampleSegmentationToSurfave_node.inputs.subject_id = subject_id
+    SampleSegmentationToSurfave_node.inputs.python_interpret = Path('/home/youjia/anaconda3/envs/3.8/bin/python3')
+    SampleSegmentationToSurfave_node.inputs.freesurfer_home = Path('/usr/local/freesurfer')
+    SampleSegmentationToSurfave_node.inputs.aparc_aseg_file = subject_mri_dir / 'aparc.DKTatlas+aseg.deep.withCC.mgz'
+    smooth_aparc_file = Path.cwd().parent / 'FastSurfer' / 'recon_surf' / 'smooth_aparc.py'
+    SampleSegmentationToSurfave_node.inputs.smooth_aparc_file = smooth_aparc_file
+
+    lh_DKTatlaslookup_file = Path.cwd().parent / 'FastSurfer' / 'recon_surf' / f'lh.DKTatlaslookup.txt'
+    rh_DKTatlaslookup_file = Path.cwd().parent / 'FastSurfer' / 'recon_surf' / f'rh.DKTatlaslookup.txt'
+    SampleSegmentationToSurfave_node.inputs.lh_DKTatlaslookup_file = lh_DKTatlaslookup_file
+    SampleSegmentationToSurfave_node.inputs.rh_DKTatlaslookup_file = rh_DKTatlaslookup_file
+    SampleSegmentationToSurfave_node.inputs.lh_white_preaparc_file = subject_surf_dir / f'lh.white.preaparc'
+    SampleSegmentationToSurfave_node.inputs.rh_white_preaparc_file = subject_surf_dir / f'rh.white.preaparc'
+    lh_aparc_DKTatlas_mapped_prefix_file = subject_label_dir / f'lh.aparc.DKTatlas.mapped.prefix.annot'
+    rh_aparc_DKTatlas_mapped_prefix_file = subject_label_dir / f'rh.aparc.DKTatlas.mapped.prefix.annot'
+    SampleSegmentationToSurfave_node.inputs.lh_aparc_DKTatlas_mapped_prefix_file = lh_aparc_DKTatlas_mapped_prefix_file
+    SampleSegmentationToSurfave_node.inputs.rh_aparc_DKTatlas_mapped_prefix_file = rh_aparc_DKTatlas_mapped_prefix_file
+    SampleSegmentationToSurfave_node.inputs.lh_cortex_label_file = subject_label_dir / f'lh.cortex.label'
+    SampleSegmentationToSurfave_node.inputs.rh_cortex_label_file = subject_label_dir / f'rh.cortex.label'
+    lh_aparc_DKTatlas_mapped_file = subject_label_dir / f'lh.aparc.DKTatlas.mapped.annot'
+    rh_aparc_DKTatlas_mapped_file = subject_label_dir / f'rh.aparc.DKTatlas.mapped.annot'
+    SampleSegmentationToSurfave_node.inputs.lh_aparc_DKTatlas_mapped_file = lh_aparc_DKTatlas_mapped_file
+    SampleSegmentationToSurfave_node.inputs.rh_aparc_DKTatlas_mapped_file = rh_aparc_DKTatlas_mapped_file
+    SampleSegmentationToSurfave_node.run()
 
 
 if __name__ == '__main__':
@@ -176,6 +184,8 @@ if __name__ == '__main__':
 
     # Segment_test()
 
-    N4_bias_correct_test()
+    # N4_bias_correct_test()
 
     # talairach_and_nu_test()
+
+    SampleSegmentationToSurfave_test()
