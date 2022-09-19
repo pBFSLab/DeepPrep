@@ -1,7 +1,8 @@
 from pathlib import Path
 from nipype.interfaces.base import BaseInterfaceInputSpec, BaseInterface, File, TraitedSpec, Directory, \
     traits, traits_extension, Str
-from run import run_cmd_with_timing
+from run import run_cmd_with_timing, multipool
+from multiprocessing import Pool
 
 
 class SegmentInputSpec(BaseInterfaceInputSpec):
@@ -125,8 +126,6 @@ class TalairachAndNu(BaseInterface):
 
     def _run_interface(self, runtime):
         sub_mri_dir = Path(self.inputs.subjects_dir) / self.inputs.subject_id
-        print("#############################")
-        print(sub_mri_dir)
 
         if self.inputs.threads is None:
             self.inputs.threads = 1
@@ -265,30 +264,64 @@ class SampleSegmentationToSurfaveInputSpec(BaseInterfaceInputSpec):
     subject_id = Str(desc="subject id", mandatory=True)
     python_interpret = File(exists=True, desc="python interpret", mandatory=True)
     freesurfer_home = Directory(exists=True, desc="freesurfer_home", mandatory=True)
-    hemi = Str(desc="lh/rh", mandatory=True)
 
-    hemi_DKTatlaslookup_file = File(exists=True, desc="FastSurfer/recon_surf/?h.DKTatlaslookup.txt", mandatory=True)
+    lh_DKTatlaslookup_file = File(exists=True, desc="FastSurfer/recon_surf/lh.DKTatlaslookup.txt", mandatory=True)
+    rh_DKTatlaslookup_file = File(exists=True, desc="FastSurfer/recon_surf/rh.DKTatlaslookup.txt", mandatory=True)
     aparc_aseg_file = File(exists=True, desc="mri/aparc.DKTatlas+aseg.deep.withCC.mgz", mandatory=True)
     smooth_aparc_file = File(exists=True, desc="Fastsurfer/recon_surf/smooth_aparc.py", mandatory=True)
-    hemi_white_preaparc_file = File(exists=True, desc="surf/?h.white.preaparc", mandatory=True)
-    hemi_cortex_label_file = File(exists=True, desc="label/?h.cortex.label", mandatory=True)
+    lh_white_preaparc_file = File(exists=True, desc="surf/lh.white.preaparc", mandatory=True)
+    rh_white_preaparc_file = File(exists=True, desc="surf/rh.white.preaparc", mandatory=True)
+    lh_cortex_label_file = File(exists=True, desc="label/lh.cortex.label", mandatory=True)
+    rh_cortex_label_file = File(exists=True, desc="label/rh.cortex.label", mandatory=True)
 
-    hemi_aparc_DKTatlas_mapped_prefix_file = File(desc="label/?h.aparc.DKTatlas.mapped.prefix.annot", mandatory=True)
-    hemi_aparc_DKTatlas_mapped_file = File(desc="label/?h.aparc.DKTatlas.mapped.annot", mandatory=True)
+    lh_aparc_DKTatlas_mapped_prefix_file = File(desc="label/lh.aparc.DKTatlas.mapped.prefix.annot", mandatory=True)
+    rh_aparc_DKTatlas_mapped_prefix_file = File(desc="label/rh.aparc.DKTatlas.mapped.prefix.annot", mandatory=True)
+    lh_aparc_DKTatlas_mapped_file = File(desc="label/lh.aparc.DKTatlas.mapped.annot", mandatory=True)
+    rh_aparc_DKTatlas_mapped_file = File(desc="label/rh.aparc.DKTatlas.mapped.annot", mandatory=True)
 
 
 class SampleSegmentationToSurfaveOutputSpec(TraitedSpec):
-    hemi_aparc_DKTatlas_mapped_prefix_file = File(exists=True, desc="label/?h.aparc.DKTatlas.mapped.prefix.annot")
-    hemi_aparc_DKTatlas_mapped_file = File(exists=True, desc="label/?h.aparc.DKTatlas.mapped.annot")
+    lh_aparc_DKTatlas_mapped_prefix_file = File(exists=True, desc="label/lh.aparc.DKTatlas.mapped.prefix.annot")
+    rh_aparc_DKTatlas_mapped_prefix_file = File(exists=True, desc="label/rh.aparc.DKTatlas.mapped.prefix.annot")
+    lh_aparc_DKTatlas_mapped_file = File(exists=True, desc="label/lh.aparc.DKTatlas.mapped.annot")
+    rh_aparc_DKTatlas_mapped_file = File(exists=True, desc="label/rh.aparc.DKTatlas.mapped.annot")
 
 
 class SampleSegmentationToSurfave(BaseInterface):
     input_spec = SampleSegmentationToSurfaveInputSpec
     output_spec = SampleSegmentationToSurfaveOutputSpec
 
-    time = 11 / 60  # 运行时间：分钟 / 单脑测试时间
-    cpu = 3.5  # 最大cpu占用：个
+    # Pool
+    time = 15 / 60  # 运行时间：分钟 / 单脑测试时间
+    cpu = 1  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
+
+    def cmd(self, hemi):
+        if hemi == 'lh':
+            hemi_DKTatlaslookup_file = self.inputs.lh_DKTatlaslookup_file
+            hemi_white_preaparc_file = self.inputs.lh_white_preaparc_file
+            hemi_aparc_DKTatlas_mapped_prefix_file = self.inputs.lh_aparc_DKTatlas_mapped_prefix_file
+            hemi_cortex_label_file = self.inputs.lh_cortex_label_file
+            hemi_aparc_DKTatlas_mapped_file = self.inputs.lh_aparc_DKTatlas_mapped_file
+        else:
+            hemi_DKTatlaslookup_file = self.inputs.rh_DKTatlaslookup_file
+            hemi_white_preaparc_file = self.inputs.rh_white_preaparc_file
+            hemi_aparc_DKTatlas_mapped_prefix_file = self.inputs.rh_aparc_DKTatlas_mapped_prefix_file
+            hemi_cortex_label_file = self.inputs.rh_cortex_label_file
+            hemi_aparc_DKTatlas_mapped_file = self.inputs.rh_aparc_DKTatlas_mapped_file
+
+
+        cmd = f"mris_sample_parc -ct {self.inputs.freesurfer_home}/average/colortable_desikan_killiany.txt " \
+              f"-file {hemi_DKTatlaslookup_file} -projmm 0.6 -f 5  " \
+              f"-surf white.preaparc {self.inputs.subject_id} {hemi} " \
+              f"aparc.DKTatlas+aseg.orig.mgz aparc.DKTatlas.mapped.prefix.annot"
+        run_cmd_with_timing(cmd)
+        cmd = f"{self.inputs.python_interpret} {self.inputs.smooth_aparc_file} " \
+              f"--insurf {hemi_white_preaparc_file} " \
+              f"--inaparc {hemi_aparc_DKTatlas_mapped_prefix_file} " \
+              f"--incort {hemi_cortex_label_file} " \
+              f"--outaparc {hemi_aparc_DKTatlas_mapped_file}"
+        run_cmd_with_timing(cmd)
 
     def _run_interface(self, runtime):
         # sample input segmentation (aparc.DKTatlas+aseg orig) onto wm surface:
@@ -297,23 +330,14 @@ class SampleSegmentationToSurfave(BaseInterface):
         # this is dangerous, as some cortices could be < 0.6 mm, but then there is no volume label probably anyway.
         # Also note that currently we cannot mask non-cortex regions here, should be done in mris_anatomical stats later
         # the smoothing helps
-        cmd = f"mris_sample_parc -ct {self.inputs.freesurfer_home}/average/colortable_desikan_killiany.txt " \
-              f"-file {self.inputs.hemi_DKTatlaslookup_file} -projmm 0.6 -f 5  " \
-              f"-surf white.preaparc {self.inputs.subject_id} {self.inputs.hemi} " \
-              f"aparc.DKTatlas+aseg.orig.mgz aparc.DKTatlas.mapped.prefix.annot"
-        run_cmd_with_timing(cmd)
-
-        cmd = f"{self.inputs.python_interpret} {self.inputs.smooth_aparc_file} " \
-              f"--insurf {self.inputs.hemi_white_preaparc_file} " \
-              f"--inaparc {self.inputs.hemi_aparc_DKTatlas_mapped_prefix_file} " \
-              f"--incort {self.inputs.hemi_cortex_label_file} " \
-              f"--outaparc {self.inputs.hemi_aparc_DKTatlas_mapped_file}"
-        run_cmd_with_timing(cmd)
+        multipool(self.cmd, Multi_Num=2)
 
         return runtime
     def _list_outputs(self):
         outputs = self._outputs().get()
-        outputs["hemi_aparc_DKTatlas_mapped_prefix_file"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f"label/{self.inputs.hemi}.aparc.DKTatlas.mapped.prefix.annot")
-        outputs["hemi_aparc_DKTatlas_mapped_file"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f"label/{self.inputs.hemi}.aparc.DKTatlas.mapped.annot")
+        outputs["lh_aparc_DKTatlas_mapped_prefix_file"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f"label/lh.aparc.DKTatlas.mapped.prefix.annot")
+        outputs["rh_aparc_DKTatlas_mapped_prefix_file"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f"label/rh.aparc.DKTatlas.mapped.prefix.annot")
+        outputs["lh_aparc_DKTatlas_mapped_file"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f"label/lh.aparc.DKTatlas.mapped.annot")
+        outputs["rh_aparc_DKTatlas_mapped_file"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f"label/rh.aparc.DKTatlas.mapped.annot")
 
         return outputs
