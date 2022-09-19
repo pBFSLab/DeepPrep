@@ -2,7 +2,7 @@ import os
 from freesurfer import OrigAndRawavg, WhitePreaparc1, WhitePialThickness1, WhitePialThickness2, Aseg7, Aseg7ToAseg
 from pathlib import Path
 from freesurfer import Brainmask, Filled, InflatedSphere, Curvstats, Cortribbon, Parcstats, Pctsurfcon, Hyporelabel, \
-    JacobianAvgcurvCortparc, Segstats, Balabels
+    JacobianAvgcurvCortparc, Segstats, BalabelsMult
 
 from nipype import Node
 from run import set_envrion
@@ -400,28 +400,32 @@ def Aseg7ToAseg_test():
     Aseg7ToAseg_node.run()
 
 
-def Balabels_test():
+def BalabelsMult_test():
     set_envrion()
     subjects_dir = Path(f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon')
     subject_id = 'sub-MSC01'
     subject_surf_dir = subjects_dir / subject_id / 'surf'
     subject_label_dir = subjects_dir / subject_id / 'label'
-    threads = 8
-    os.environ['SUBJECTS_DIR'] = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon'
-    for hemi in ['lh', 'rh']:
-        Balabels_node = Node(Balabels(), name='Balabels_node')
-        Balabels_node.inputs.subjects_dir = subjects_dir
-        Balabels_node.inputs.subject_id = subject_id
-        Balabels_node.inputs.hemi = hemi
-        Balabels_node.inputs.threads = threads
-        Balabels_node.inputs.hemi_sphere_file = subject_surf_dir / f'{hemi}.sphere.reg'
+    subject_stats_dir = subjects_dir / subject_id / 'stats'
+    threads = 10
+    os.environ['SUBJECTS_DIR'] = '/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon'
 
-        Balabels_node.inputs.hemi_BA45_exvivo_file = subject_label_dir / f'{hemi}.BA45_exvivo.label'
-        Balabels_node.inputs.hemi_BA_exvivo_annot_file = subject_label_dir / f'{hemi}.BA_exvivo.annot'
-        Balabels_node.inputs.BA_exvivo_thresh_file = subject_label_dir / 'BA_exvivo.thresh.ctab'
-        Balabels_node.inputs.hemi_perirhinal_exvivo_file = subject_label_dir / f'{hemi}.perirhinal_exvivo.label'
-        Balabels_node.inputs.hemi_entorhinal_exvivo_file = subject_label_dir / f'{hemi}.entorhinal_exvivo.label'
-        Balabels_node.run()
+    for hemi in ['lh', 'rh']:
+        BalabelsMult_node = Node(BalabelsMult(), name='BalabelsMult_node')
+        BalabelsMult_node.inputs.subjects_dir = subjects_dir
+        BalabelsMult_node.inputs.subject_id = subject_id
+        BalabelsMult_node.inputs.hemi = hemi
+        BalabelsMult_node.inputs.threads = threads
+        BalabelsMult_node.inputs.sub_label_dir = subject_label_dir
+        BalabelsMult_node.inputs.sub_stats_dir = subject_stats_dir
+        BalabelsMult_node.inputs.freesurfer_dir = os.environ['FREESURFER']
+        BalabelsMult_node.inputs.hemi_sphere_file = subject_surf_dir / f'{hemi}.sphere.reg'
+        BalabelsMult_node.inputs.fsaverage_label_dir = subjects_dir / 'fsaverage' / 'label'
+        BalabelsMult_node.inputs.hemi_BA45_exvivo_file = subject_label_dir / f'{hemi}.BA45_exvivo.label'
+        BalabelsMult_node.inputs.BA_exvivo_thresh_file = subject_label_dir / 'BA_exvivo.thresh.ctab'
+        BalabelsMult_node.inputs.hemi_perirhinal_exvivo_file = subject_label_dir / f'{hemi}.perirhinal_exvivo.label'
+        BalabelsMult_node.inputs.hemi_entorhinal_exvivo_file = subject_label_dir / f'{hemi}.entorhinal_exvivo.label'
+        BalabelsMult_node.run()
 
 
 if __name__ == '__main__':
