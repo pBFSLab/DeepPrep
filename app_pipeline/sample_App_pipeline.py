@@ -19,6 +19,7 @@ import math
 from scipy import stats, interpolate, signal
 import re
 import pandas as pd
+from multiprocessing import Pool
 
 def set_envrion():
     # FreeSurfer recon-all env
@@ -60,7 +61,7 @@ def discover_upload_step(data_path, subj):
     with zipfile.ZipFile(upload_file) as zf:
         zf.extractall(tmp_dir)
 
-    move_EVS(data_path / subj, tmp_dir)
+    # move_EVS(data_path / subj, tmp_dir)
 
     # recon
     recon_dir = data_path / subj / 'recon' / subj
@@ -246,7 +247,7 @@ def preprocess_common(data_path, subj):
         sh.mri_binarize(*shargs, _out=sys.stdout)
 
 
-def smooth_downsampling(preprocess_dir, bold_path, bldrun, subject):
+def smooth_downsampling(preprocess_dir, bold_path, bldrun, subject, data_path):
     os.environ['SUBJECTS_DIR'] = str(data_path / subj / 'recon')
     fsaverage6_dir = data_path / subj / 'recon' / 'fsaverage6'
     if not fsaverage6_dir.exists():
@@ -285,6 +286,7 @@ def smooth_downsampling(preprocess_dir, bold_path, bldrun, subject):
 
 @timing_func
 def preprocess_rest(data_path, subj):
+    print(subj)
     preprocess_dir = (data_path / subj / 'preprocess')
     runs = os.listdir(preprocess_dir / subj / 'bold')
     runs = [run for run in runs if os.path.isdir(preprocess_dir / subj / 'bold' / run)]
@@ -309,12 +311,12 @@ def preprocess_rest(data_path, subj):
         regression(bpss_path, all_regressors_path)
 
         # smooth_downsampling
-        smooth_downsampling(preprocess_dir, bold_dir, run, subj)
+        smooth_downsampling(preprocess_dir, bold_dir, run, subj, data_path)
 
 
 def preprocess(data_path, subj):
-    preprocess_common(data_path, subj)
-    # preprocess_rest(data_path, subj)
+    # preprocess_common(data_path, subj)
+    preprocess_rest(data_path, subj)
 
 
 @timing_func
@@ -2094,8 +2096,8 @@ def rename_file_to_standard(src_path, subject, rel_path, nii_name, gz_name, midd
 if __name__ == '__main__':
     set_envrion()
     # data_path = Path('data').absolute()
-    data_path = path_D('/home/zhenyu/workdata/deepprep_task')
-    subj = 'BSC06_SunZhenyu'
+    # data_path = path_D('/home/zhenyu/workdata/App/MSC_app/sub-MSC01')
+    # subj = 'MSC01_func01'
 
 
     NUM_NOISE_DICTIONARY_ = 500
@@ -2106,10 +2108,41 @@ if __name__ == '__main__':
     NUM_REPEAT_DENOISE_ = 3
 
 
-    # recon_step()
-    discover_upload_step(data_path, subj)    # bids
-    preprocess(data_path, subj)
+    sub_list_file = '/mnt/ngshare/DeepPrep/MSC/derivatives/list.txt'
+    sess_list_file = '/mnt/ngshare/DeepPrep/MSC/derivatives/sess_list.txt'
 
+    sub_list = []
+    with open(sub_list_file) as f:
+        for line in f:
+            sub_list.append(line.strip())
+    sess_list = []
+    with open(sess_list_file) as f:
+        for line in f:
+            sess_list.append(line.strip())
+
+    args_list = []
+    data_dir = path_D('/mnt/ngshare2/App/MSC_app')
+    for sub in sub_list:
+        sub_path = data_dir / sub
+        for ses in sess_list:
+            new_sub = sub.split('-')[1] + '_' + ses.split('-')[1]
+            subj = new_sub
+            preprocess(sub_path, subj)
+    #         args_list.append([sub_path, subj])
+
+
+    # pool = Pool(10)
+    # pool.starmap(discover_upload_step, args_list)
+    # pool.starmap(preprocess, args_list)
+    # pool.close()
+    # pool.join()
+
+
+
+    # discover_upload_step(data_path, subj)
+    # data_path = path_D('/mnt/ngshare2/App/MSC_app/sub-MSC01')
+    # subj = 'MSC01_func01'
+    # preprocess(data_path, subj)
     # res_proj(data_path, subj)
-    snm_task(path_A(data_path), subj)
+    # snm_task(path_A(data_path), subj)
 
