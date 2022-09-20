@@ -56,26 +56,27 @@ def FeatReg_test():
     featreg_home = pwd.parent / "FeatReg"
     featreg_py = featreg_home / "featreg" / 'predict.py'  # inference script
 
-    for hemi in ['lh', 'rh']:
 
-        featreg_node = Node(FeatReg(), f'featreg_node')
-        featreg_node.inputs.python_interpret = '/home/anning/miniconda3/envs/3.8/bin/python3'
-        featreg_node.inputs.featreg_py = featreg_py
+    featreg_node = Node(FeatReg(), f'featreg_node')
+    featreg_node.inputs.python_interpret = Path('/home/youjia/anaconda3/envs/3.8/bin/python3')
+    featreg_node.inputs.featreg_py = featreg_py
 
-        subject_dir = '/mnt/ngshare/Data_Mirror/pipeline_test'
-        subject_id = 'sub-MSC01'
+    subjects_dir = '/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon'
+    subject_id = 'sub-002'
 
-        os.environ['SUBJECTS_DIR'] = subject_dir
+    os.environ['SUBJECTS_DIR'] = subjects_dir
 
-        featreg_node.inputs.subject_dir = subject_dir
-        featreg_node.inputs.subject_id = subject_id
-        featreg_node.inputs.freesurfer_home = '/usr/local/freesurfer'
-        featreg_node.inputs.hemisphere = hemi
-        featreg_node.inputs.sulc_file = Path(subject_dir) / subject_id / f'surf/{hemi}.sulc'
-        featreg_node.inputs.curv_file = Path(subject_dir) / subject_id / f'surf/{hemi}.curv'
-        featreg_node.inputs.sphere_file = Path(subject_dir) / subject_id / f'surf/{hemi}.sphere'
+    featreg_node.inputs.subjects_dir = subjects_dir
+    featreg_node.inputs.subject_id = subject_id
+    featreg_node.inputs.freesurfer_home = '/usr/local/freesurfer'
+    featreg_node.inputs.lh_sulc = Path(subjects_dir) / subject_id / f'surf/lh.sulc'
+    featreg_node.inputs.rh_sulc = Path(subjects_dir) / subject_id / f'surf/rh.sulc'
+    featreg_node.inputs.lh_curv = Path(subjects_dir) / subject_id / f'surf/lh.curv'
+    featreg_node.inputs.rh_curv = Path(subjects_dir) / subject_id / f'surf/rh.curv'
+    featreg_node.inputs.lh_sphere = Path(subjects_dir) / subject_id / f'surf/lh.sphere'
+    featreg_node.inputs.rh_sphere = Path(subjects_dir) / subject_id / f'surf/rh.sphere'
 
-        featreg_node.run()
+    featreg_node.run()
 
 
 if __name__ == '__main__':

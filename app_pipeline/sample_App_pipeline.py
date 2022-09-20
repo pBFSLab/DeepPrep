@@ -273,13 +273,17 @@ def smooth_downsampling(preprocess_dir, bold_path, bldrun, subject, data_path):
     bldrun_path = bold_path / bldrun
     reg_name = '%s_bld_rest_reorient_skip_faln_mc.register.dat' % (subject)
     reg_path = bldrun_path / reg_name
+    reg_run_path = bldrun_path / reg_name.replace('bld', f'bld{bldrun}')
+    reg_path.replace(reg_run_path)
 
     resid_name = '%s_bld_rest_reorient_skip_faln' % (subject)
     resid_name += '_mc_g1000000000_bpss_resid.nii.gz'
     resid_path = bldrun_path / resid_name
+    resid_run_path = bldrun_path / resid_name.replace('bld', f'bld{bldrun}')
+    resid_path.replace(resid_run_path)
 
     for hemi in ['lh', 'rh']:
-        fs6_path = sp.indi_to_fs6(surf_path, subject, resid_path, reg_path, hemi)
+        fs6_path = sp.indi_to_fs6(surf_path, subject, resid_run_path, reg_run_path, hemi)
         sm6_path = sp.smooth_fs6(fs6_path, hemi)
         sp.downsample_fs6_to_fs4(sm6_path, hemi)
 
@@ -336,8 +340,8 @@ def res_proj(data_path, subj):
 
     vp.T1_to_templates(data_path, subj, vol_path)
     for run in runs:
-        src_resid_file = preprocess_dir / subj / 'bold' / run / f'{subj}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss_resid.nii.gz'
-        reg_file = preprocess_dir / subj / 'bold' / run / f'{subj}_bld_rest_reorient_skip_faln_mc.register.dat'
+        src_resid_file = preprocess_dir / subj / 'bold' / run / f'{subj}_bld{run}_rest_reorient_skip_faln_mc_g1000000000_bpss_resid.nii.gz'
+        reg_file = preprocess_dir / subj / 'bold' / run / f'{subj}_bld{run}_rest_reorient_skip_faln_mc.register.dat'
         resid_path = preprocess_dir / subj / 'residuals'
         if not resid_path.exists():
             resid_path.mkdir(exist_ok=True)

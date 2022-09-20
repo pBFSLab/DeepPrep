@@ -1,31 +1,8 @@
 from pathlib import Path
-from fastsurfer import Segment, N4BiasCorrect, TalairachAndNu, UpdateAseg
+from fastsurfer import Segment, Noccseg, N4BiasCorrect, TalairachAndNu, UpdateAseg, SampleSegmentationToSurfave
 from nipype import Node
 import os
 import argparse
-
-
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--bd', required=True, help='directory of bids type')
-    parser.add_argument('--fsd', default=os.environ.get('FREESURFER_HOME'),
-                        help='Output directory $FREESURFER_HOME (pass via environment or here)')
-    parser.add_argument('--respective', default='off',
-                        help='if on, while processing T1w file respectively')
-    parser.add_argument('--rewrite', default='on',
-                        help='set off, while not preprocess if subject recon path exist')
-    parser.add_argument('--python', default='python3',
-                        help='which python version to use')
-
-    args = parser.parse_args()
-    args_dict = vars(args)
-
-    if args.fsd is None:
-        args_dict['fsd'] = '/usr/local/freesurfer'
-    args_dict['respective'] = True if args.respective == 'on' else False
-    args_dict['rewrite'] = True if args.rewrite == 'on' else False
-
-    return argparse.Namespace(**args_dict)
 
 
 def set_envrion(threads: int = 1):
@@ -76,49 +53,71 @@ def Segment_test():
     segment_node.run()
 
 
+def Noccseg_test():
+    pwd = Path.cwd()  # 当前目录,# get FastSurfer dir Absolute path
+    fastsurfer_home = pwd.parent / "FastSurfer"
+    reduce_to_aseg_py = fastsurfer_home / 'recon_surf' / 'reduce_to_aseg.py'
+
+    noccseg_node = Node(Noccseg(), f'noccseg_node')
+    noccseg_node.inputs.python_interpret = '/home/pbfs18/anaconda3/envs/3.8/bin/python3'
+    noccseg_node.inputs.reduce_to_aseg_py = reduce_to_aseg_py
+    noccseg_node.inputs.in_file = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon/sub-MSC01_ses-struct01_run-1/mri/aparc.DKTatlas+aseg.deep.mgz'
+
+    noccseg_node.inputs.mask_file = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon/sub-MSC01_ses-struct01_run-1/mri/mask.mgz'
+    noccseg_node.inputs.aseg_noccseg_file = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon/sub-MSC01_ses-struct01_run-1/mri/aseg.auto_noCCseg.mgz'
+
+    noccseg_node.run()
+
+
 def N4_bias_correct_test():
-    args = parse_args()
 
-    subject_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
-    subject_id = "sub-001"
-    sub_mri_dir = subject_dir / subject_id / "mri"
+    subjects_dir = Path("/mnt/ngshare/Data_Mirror/pipeline_test")
+    subject_id = "sub-MSC01"
+    sub_mri_dir = subjects_dir / subject_id / "mri"
 
-    fastsurfer_home = Path("/home/youjia/workspace/DeepPrep/deepprep_pipeline") / "FastSurfer"
+    fastsurfer_home = Path("/home/anning/workspace/DeepPrep/deepprep_pipeline") / "FastSurfer"
+    correct_py = fastsurfer_home / "recon_surf" / "N4_bias_correct.py"
+
     orig_file = sub_mri_dir / "orig.mgz"
-    orig_nu_file = sub_mri_dir / "orig_nu.mgz"
     mask_file = sub_mri_dir / "mask.mgz"
 
-    N4_bias_correct_node = Node(N4BiasCorrect(fastsurfer_home), name="N4_bias_correct_node")
-    N4_bias_correct_node.inputs.python = args.python
-    N4_bias_correct_node.inputs.orig_file = orig_file
-    N4_bias_correct_node.inputs.orig_nu_file = orig_nu_file
-    N4_bias_correct_node.inputs.mask_file = mask_file
-    N4_bias_correct_node.inputs.threads = 30
+    orig_nu_file = sub_mri_dir / "orig_nu.mgz"
 
-    N4_bias_correct_node.run()
+    N4_bias_correct_node = Node(N4BiasCorrect(), name="N4_bias_correct_node")
+    N4_bias_correct_node.inputs.python_interpret = '/home/anning/miniconda3/envs/3.8/bin/python3'
+    N4_bias_correct_node.inputs.correct_py = correct_py
+    N4_bias_correct_node.inputs.orig_file = orig_file
+    N4_bias_correct_node.inputs.mask_file = mask_file
+
+    N4_bias_correct_node.inputs.orig_nu_file = orig_nu_file
+    N4_bias_correct_node.inputs.threads = 8
+
+    res = N4_bias_correct_node.run()
+    res = res
 
 
 def talairach_and_nu_test():
-    subject_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
-    subject_id = "sub-001"
-    sub_mri_dir = subject_dir / subject_id / "mri"
-    orig_nu_file = sub_mri_dir / "orig_nu.mgz"
-    nu_file = sub_mri_dir / "nu.mgz"
-    # talairach_auto_xfm
-    talairach_xfm = sub_mri_dir / "transforms" / "talairach.xfm"
-    orig_file = sub_mri_dir / "orig.mgz"
-    freesurfer_home = Path(os.environ['FREESURFER_HOME'])
-    # freesurfer_home = Path("/usr/local/freesurfer")
-    talairach_xfm_lta = sub_mri_dir / "transforms" / "talairach.xfm.lta"
-    talairach_lta = sub_mri_dir / "transforms" / "talairach.lta"
+    subjects_dir = Path("/mnt/ngshare/Data_Mirror/pipeline_test")
+    subject_id = "sub-MSC01"
+    sub_mri_dir = subjects_dir / subject_id / "mri"
 
-    talairach_and_nu_node = Node(TalairachAndNu(freesurfer_home), name="talairach_and_nu_node")
-    talairach_and_nu_node.inputs.sub_mri_dir = sub_mri_dir
-    talairach_and_nu_node.inputs.threads = 30
+    orig_nu_file = sub_mri_dir / "orig_nu.mgz"
+    orig_file = sub_mri_dir / "orig.mgz"
+
+    talairach_lta = sub_mri_dir / "transforms" / "talairach.xfm.lta"
+    nu_file = sub_mri_dir / "nu.mgz"
+
+    freesurfer_home = Path(os.environ['FREESURFER_HOME'])
+    mni305 = freesurfer_home / "average" / "mni305.cor.mgz"
+
+    talairach_and_nu_node = Node(TalairachAndNu(), name="talairach_and_nu_node")
+    talairach_and_nu_node.inputs.subjects_dir = subjects_dir
+    talairach_and_nu_node.inputs.subject_id = subject_id
+    talairach_and_nu_node.inputs.threads = 8
+    talairach_and_nu_node.inputs.mni305 = mni305
     talairach_and_nu_node.inputs.orig_nu_file = orig_nu_file
     talairach_and_nu_node.inputs.orig_file = orig_file
-    talairach_and_nu_node.inputs.talairach_xfm_lta = talairach_xfm_lta
-    talairach_and_nu_node.inputs.talairach_xfm = str(talairach_xfm)
+
     talairach_and_nu_node.inputs.talairach_lta = talairach_lta
     talairach_and_nu_node.inputs.nu_file = nu_file
 
@@ -126,13 +125,13 @@ def talairach_and_nu_test():
 
 
 def UpdateAseg_test():
-    subject_dir = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon')
+    subjects_dir = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon')
     subject_id = 'sub-MSC01'
-    subject_mri_dir = subject_dir / subject_id / 'mri'
+    subject_mri_dir = subjects_dir / subject_id / 'mri'
     os.environ['SUBJECTS_DIR'] = '/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon'
     paint_cc_file = Path.cwd().parent / 'FastSurfer' / 'recon_surf' / 'paint_cc_into_pred.py'
     updateaseg_node = Node(UpdateAseg(), name='updateaseg_node')
-    updateaseg_node.inputs.subject_dir = subject_dir
+    updateaseg_node.inputs.subjects_dir = subjects_dir
     updateaseg_node.inputs.subject_id = subject_id
     updateaseg_node.inputs.paint_cc_file = paint_cc_file
     updateaseg_node.inputs.python_interpret = '/home/lincong/miniconda3/envs/pytorch3.8/bin/python'
@@ -144,32 +143,40 @@ def UpdateAseg_test():
     updateaseg_node.run()
 
 
-def SampleSegmentationToSurfave():
-    subject_dir = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon')
-    subject_id = 'sub-MSC01'
-    subject_mri_dir = subject_dir / subject_id / 'mri'
-    subject_surf_dir = subject_dir / subject_id / 'surf'
-    subject_label_dir = subject_dir / subject_id / 'label'
-    os.environ['SUBJECTS_DIR'] = '/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon'
-    for hemi in ['lh', 'rh']:
-        SampleSegmentationToSurfave_node = Node(SampleSegmentationToSurfave(), name='SampleSegmentationToSurfave_node')
-        SampleSegmentationToSurfave_node.inputs.subject_dir = subject_dir
-        SampleSegmentationToSurfave_node.inputs.subject_id = subject_id
-        SampleSegmentationToSurfave_node.inputs.python_interpret = '/home/lincong/miniconda3/envs/pytorch3.8/bin/python'
-        SampleSegmentationToSurfave_node.inputs.freesufer_home = os.environ['FREESURFER_HOME']
-        SampleSegmentationToSurfave_node.inputs.aparc_aseg_file = subject_mri_dir / 'aparc.DKTatlas+aseg.deep.withCC.mgz'
-        smooth_aparc_file = Path.cwd().parent / 'FastSurfer' / 'recon_surf' / 'smooth_aparc.py'
-        SampleSegmentationToSurfave_node.inputs.smooth_aparc_file = smooth_aparc_file
-        SampleSegmentationToSurfave_node.inputs.hemi = hemi
-        hemi_DKTatlaslookup_file = Path.cwd().parent / 'FastSurfer' / 'recon_surf' / f'{hemi}.DKTatlaslookup.txt'
-        SampleSegmentationToSurfave_node.inputs.hemi_DKTatlaslookup_file = hemi_DKTatlaslookup_file
-        SampleSegmentationToSurfave_node.inputs.hemi_white_preaparc_file = subject_surf_dir / f'{hemi}.white.preaparc'
-        hemi_DKTatlas_mapped_prefix = subject_label_dir / f'{hemi}.aparc.DKTatlas.mapped.prefix.annot'
-        SampleSegmentationToSurfave_node.inputs.hemi_aparc_DKTatlas_mapped_prefix_file = hemi_DKTatlas_mapped_prefix
-        SampleSegmentationToSurfave_node.inputs.hemi_cortex_label_file = subject_label_dir / f'{hemi}.cortex.label'
-        hemi_DKTatlas_mapped = subject_label_dir / f'{hemi}.aparc.DKTatlas.mapped.annot'
-        SampleSegmentationToSurfave_node.inputs.hemi_aparc_DKTatlas_mapped_file = hemi_DKTatlas_mapped
-        SampleSegmentationToSurfave_node.run()
+def SampleSegmentationToSurfave_test():
+    subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
+    subject_id = "sub-002"
+    subject_mri_dir = subjects_dir / subject_id / 'mri'
+    subject_surf_dir = subjects_dir / subject_id / 'surf'
+    subject_label_dir = subjects_dir / subject_id / 'label'
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+
+    SampleSegmentationToSurfave_node = Node(SampleSegmentationToSurfave(), name='SampleSegmentationToSurfave_node')
+    SampleSegmentationToSurfave_node.inputs.subjects_dir = subjects_dir
+    SampleSegmentationToSurfave_node.inputs.subject_id = subject_id
+    SampleSegmentationToSurfave_node.inputs.python_interpret = Path('/home/youjia/anaconda3/envs/3.8/bin/python3')
+    SampleSegmentationToSurfave_node.inputs.freesurfer_home = Path('/usr/local/freesurfer')
+    SampleSegmentationToSurfave_node.inputs.aparc_aseg_file = subject_mri_dir / 'aparc.DKTatlas+aseg.deep.withCC.mgz'
+    smooth_aparc_file = Path.cwd().parent / 'FastSurfer' / 'recon_surf' / 'smooth_aparc.py'
+    SampleSegmentationToSurfave_node.inputs.smooth_aparc_file = smooth_aparc_file
+
+    lh_DKTatlaslookup_file = Path.cwd().parent / 'FastSurfer' / 'recon_surf' / f'lh.DKTatlaslookup.txt'
+    rh_DKTatlaslookup_file = Path.cwd().parent / 'FastSurfer' / 'recon_surf' / f'rh.DKTatlaslookup.txt'
+    SampleSegmentationToSurfave_node.inputs.lh_DKTatlaslookup_file = lh_DKTatlaslookup_file
+    SampleSegmentationToSurfave_node.inputs.rh_DKTatlaslookup_file = rh_DKTatlaslookup_file
+    SampleSegmentationToSurfave_node.inputs.lh_white_preaparc_file = subject_surf_dir / f'lh.white.preaparc'
+    SampleSegmentationToSurfave_node.inputs.rh_white_preaparc_file = subject_surf_dir / f'rh.white.preaparc'
+    lh_aparc_DKTatlas_mapped_prefix_file = subject_label_dir / f'lh.aparc.DKTatlas.mapped.prefix.annot'
+    rh_aparc_DKTatlas_mapped_prefix_file = subject_label_dir / f'rh.aparc.DKTatlas.mapped.prefix.annot'
+    SampleSegmentationToSurfave_node.inputs.lh_aparc_DKTatlas_mapped_prefix_file = lh_aparc_DKTatlas_mapped_prefix_file
+    SampleSegmentationToSurfave_node.inputs.rh_aparc_DKTatlas_mapped_prefix_file = rh_aparc_DKTatlas_mapped_prefix_file
+    SampleSegmentationToSurfave_node.inputs.lh_cortex_label_file = subject_label_dir / f'lh.cortex.label'
+    SampleSegmentationToSurfave_node.inputs.rh_cortex_label_file = subject_label_dir / f'rh.cortex.label'
+    lh_aparc_DKTatlas_mapped_file = subject_label_dir / f'lh.aparc.DKTatlas.mapped.annot'
+    rh_aparc_DKTatlas_mapped_file = subject_label_dir / f'rh.aparc.DKTatlas.mapped.annot'
+    SampleSegmentationToSurfave_node.inputs.lh_aparc_DKTatlas_mapped_file = lh_aparc_DKTatlas_mapped_file
+    SampleSegmentationToSurfave_node.inputs.rh_aparc_DKTatlas_mapped_file = rh_aparc_DKTatlas_mapped_file
+    SampleSegmentationToSurfave_node.run()
 
 
 if __name__ == '__main__':
@@ -179,4 +186,6 @@ if __name__ == '__main__':
 
     # N4_bias_correct_test()
 
-    talairach_and_nu_test()
+    # talairach_and_nu_test()
+
+    SampleSegmentationToSurfave_test()
