@@ -674,7 +674,7 @@ class Cortribbon(BaseInterface):
     input_spec = CortribbonInputSpec
     output_spec = CortribbonOutputSpec
 
-    time = 203 / 60  # 运行时间：分钟 / 单脑测试时间
+    time = 203 / 60  # 运行时间：分钟 /
     cpu = 3.5  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
 
@@ -736,7 +736,7 @@ class Parcstats(BaseInterface):
     input_spec = ParcstatsInputSpec
     output_spec = ParcstatsOutputSpec
 
-    time = 91 / 60  # 运行时间：分钟 / 单脑测试时间
+    time = 91 / 60  # 运行时间：分钟 /
     cpu = 3  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
 
@@ -788,7 +788,7 @@ class Pctsurfcon(BaseInterface):
     input_spec = PctsurfconInputSpec
     output_spec = PctsurfconOutputSpec
 
-    time = 9 / 60  # 运行时间：分钟 / 单脑测试时间
+    time = 9 / 60  # 运行时间：分钟 /
     cpu = 2  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
 
