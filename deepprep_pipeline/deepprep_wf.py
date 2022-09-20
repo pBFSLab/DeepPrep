@@ -237,11 +237,11 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
     Hyporelabel_node.inputs.threads = 8
 
     # Hyporelabel_node.inputs.aseg_presurf_file = subjects_dir / subject_id / 'mri' / 'aseg.presurf.mgz' ### 测试用
-    Hyporelabel_node.inputs.aseg_presurf_hypos_file = subjects_dir / subject_id / 'mri' / 'aseg.presurf.hypos.mgz' ### 测试用
+    Hyporelabel_node.inputs.aseg_presurf_hypos = subjects_dir / subject_id / 'mri' / 'aseg.presurf.hypos.mgz' ### 测试用
 
 
     # Aseg7ToAseg
-    Aseg7ToAseg_node = Node(Aseg7ToAseg(), name='Aseg7_node')
+    Aseg7ToAseg_node = Node(Aseg7ToAseg(), name='Aseg7ToAseg_node')
     Aseg7ToAseg_node.inputs.subjects_dir = subjects_dir
     Aseg7ToAseg_node.inputs.subject_id = subject_id
     Aseg7ToAseg_node.inputs.threads = 8
@@ -263,7 +263,7 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
     Aseg7_node.inputs.threads = 8
 
     Aseg7_node.inputs.subject_mri_dir = subjects_dir / subject_id / 'mri'
-    Aseg7_node.inputs.aseg_presurf_hypos_file = subjects_dir / subject_id / 'mri' / 'aseg.presurf.hypos.mgz'
+    Aseg7_node.inputs.aseg_presurf_hypos = subjects_dir / subject_id / 'mri' / 'aseg.presurf.hypos.mgz'
 
     # Aseg7_node.inputs.lh_cortex_label_file = subjects_dir / subject_id / 'label' / 'lh.cortex.label'
     # Aseg7_node.inputs.lh_white_file = subjects_dir / subject_id / 'surf' / 'lh.white'
@@ -274,7 +274,7 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
     # Aseg7_node.inputs.rh_pial_file = subjects_dir / subject_id / 'surf' / 'rh.pial'
     # Aseg7_node.inputs.rh_aparc_annot_file = subjects_dir / subject_id / 'label' / 'rh.aparc.annot'
 
-    Aseg7_node.inputs.aparc_aseg_file = subjects_dir / subject_id / 'mri' / 'aparc+aseg.mgz'
+    Aseg7_node.inputs.aparc_aseg = subjects_dir / subject_id / 'mri' / 'aparc+aseg.mgz'
 
     # Balabels
     Balabels_node = Node(BalabelsMult(), name='BalabelsMult_node')
@@ -284,15 +284,15 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
     # Balabels_node.inputs.lh_sphere = subjects_dir / subject_id / 'surf' / f'lh.sphere.reg'
     # Balabels_node.inputs.rh_sphere = subjects_dir / subject_id / 'surf' / f'rh.sphere.reg'
 
-    Balabels_node.inputs.lh_BA45_exvivo_file = subjects_dir / subject_id / 'label' / f'lh.BA45_exvivo.label'
-    Balabels_node.inputs.rh_BA45_exvivo_file = subjects_dir / subject_id / 'label' / f'rh.BA45_exvivo.label'
-    Balabels_node.inputs.lh_BA_exvivo_annot_file = subjects_dir / subject_id / 'label' / f'lh.BA_exvivo.annot'
-    Balabels_node.inputs.rh_BA_exvivo_annot_file = subjects_dir / subject_id / 'label' / f'rh.BA_exvivo.annot'
-    Balabels_node.inputs.BA_exvivo_thresh_file = subjects_dir / subject_id / 'label' / 'BA_exvivo.thresh.ctab'
-    Balabels_node.inputs.lh_perirhinal_exvivo_file = subjects_dir / subject_id / 'label' / f'lh.perirhinal_exvivo.label'
-    Balabels_node.inputs.rh_perirhinal_exvivo_file = subjects_dir / subject_id / 'label' / f'rh.perirhinal_exvivo.label'
-    Balabels_node.inputs.lh_entorhinal_exvivo_file = subjects_dir / subject_id / 'label' / f'lh.entorhinal_exvivo.label'
-    Balabels_node.inputs.rh_entorhinal_exvivo_file = subjects_dir / subject_id / 'label' / f'rh.entorhinal_exvivo.label'
+    Balabels_node.inputs.lh_BA45_exvivo = subjects_dir / subject_id / 'label' / f'lh.BA45_exvivo.label'
+    Balabels_node.inputs.rh_BA45_exvivo = subjects_dir / subject_id / 'label' / f'rh.BA45_exvivo.label'
+    # Balabels_node.inputs.lh_BA_exvivo_annot = subjects_dir / subject_id / 'label' / f'lh.BA_exvivo.annot'
+    # Balabels_node.inputs.rh_BA_exvivo_annot = subjects_dir / subject_id / 'label' / f'rh.BA_exvivo.annot'
+    Balabels_node.inputs.BA_exvivo_thresh = subjects_dir / subject_id / 'label' / 'BA_exvivo.thresh.ctab'
+    Balabels_node.inputs.lh_perirhinal_exvivo = subjects_dir / subject_id / 'label' / f'lh.perirhinal_exvivo.label'
+    Balabels_node.inputs.rh_perirhinal_exvivo = subjects_dir / subject_id / 'label' / f'rh.perirhinal_exvivo.label'
+    Balabels_node.inputs.lh_entorhinal_exvivo = subjects_dir / subject_id / 'label' / f'lh.entorhinal_exvivo.label'
+    Balabels_node.inputs.rh_entorhinal_exvivo = subjects_dir / subject_id / 'label' / f'rh.entorhinal_exvivo.label'
 
     # create workflow
     single_structure_wf.connect([
@@ -362,9 +362,10 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
                                  (JacobianAvgcurvCortparc_node, white_pial_thickness1_node, [("lh_aparc_annot", "lh_aparc_annot"), ("rh_aparc_annot", "rh_aparc_annot"),
                                                                                             ]),
                                  (inflated_sphere_node, Curvstats_node, [("lh_smoothwm", "lh_smoothwm"), ("rh_smoothwm", "rh_smoothwm"),
-                                                                         ("lh_surf", "lh_surf"), ("rh_surf", "rh_surf"),
-                                                                         ("lh_curv", "lh_curv"), ("rh_curv", "rh_curv"),
+                                                                         ("lh_sulc", "lh_sulc"), ("rh_sulc", "rh_sulc"),
                                                                           ]),
+                                 (white_pial_thickness1_node, Curvstats_node, [("lh_curv", "lh_curv"), ("rh_curv", "rh_curv"),
+                                                                              ]),
                                  (filled_node, Cortribbon_node, [("aseg_presurf_file", "aseg_presurf_file"),
                                                                 ]),
                                  (white_pial_thickness1_node, Cortribbon_node, [("lh_white", "lh_white"), ("rh_white", "rh_white"),
