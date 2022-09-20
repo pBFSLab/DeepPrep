@@ -2,7 +2,7 @@ from pathlib import Path
 from nipype import Node, Workflow
 from interface.freesurfer import OrigAndRawavg, Brainmask, Filled, WhitePreaparc1, \
     InflatedSphere, JacobianAvgcurvCortparc, WhitePialThickness1, Curvstats, Cortribbon, \
-    Parcstats, Pctsurfcon, Hyporelabel, Aseg7ToAseg, Aseg7, Balabels
+    Parcstats, Pctsurfcon, Hyporelabel, Aseg7ToAseg, Aseg7, BalabelsMult
 from interface.fastsurfer import Segment, Noccseg, N4BiasCorrect, TalairachAndNu, UpdateAseg, \
     SampleSegmentationToSurfave
 from interface.fastcsr import FastCSR
@@ -11,7 +11,6 @@ from interface.featreg_interface import FeatReg
 
 
 def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: str,
-                             hemi: str,
                              python_interpret: Path,
                              fastsurfer_home: Path,
                              freesurfer_home: Path,
@@ -114,13 +113,13 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
     white_preaparc1_node = Node(WhitePreaparc1(), name="white_preaparc1_node")
     white_preaparc1_node.inputs.subjects_dir = subjects_dir
     white_preaparc1_node.inputs.subject_id = subject_id
-    white_preaparc1_node.inputs.hemi = hemi
 
-    white_preaparc1_node.inputs.aseg_presurf = subjects_dir / subject_id / "mri/aseg.presurf.mgz"
-    white_preaparc1_node.inputs.brain_finalsurfs = subjects_dir / subject_id / "mri/brain.finalsurfs.mgz"
-    white_preaparc1_node.inputs.wm_file = subjects_dir / subject_id / "mri/wm.mgz"
-    white_preaparc1_node.inputs.filled_file = subjects_dir / subject_id / "mri/filled.mgz"
-    white_preaparc1_node.inputs.hemi_orig = subjects_dir / subject_id / f"surf/{hemi}.orig"
+    # white_preaparc1_node.inputs.aseg_presurf = subjects_dir / subject_id / "mri/aseg.presurf.mgz"
+    # white_preaparc1_node.inputs.brain_finalsurfs = subjects_dir / subject_id / "mri/brain.finalsurfs.mgz"
+    # white_preaparc1_node.inputs.wm_file = subjects_dir / subject_id / "mri/wm.mgz"
+    # white_preaparc1_node.inputs.filled_file = subjects_dir / subject_id / "mri/filled.mgz"
+    # white_preaparc1_node.inputs.lh_orig = subjects_dir / subject_id / f"surf/lh.orig"
+    # white_preaparc1_node.inputs.rh_orig = subjects_dir / subject_id / f"surf/rh.orig"
 
     # SampleSegmentationToSurfave
     SampleSegmentationToSurfave_node = Node(SampleSegmentationToSurfave(), name='SampleSegmentationToSurfave_node')
@@ -128,21 +127,28 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
     SampleSegmentationToSurfave_node.inputs.subject_id = subject_id
     SampleSegmentationToSurfave_node.inputs.python_interpret = python_interpret
     SampleSegmentationToSurfave_node.inputs.freesurfer_home = freesurfer_home
-    SampleSegmentationToSurfave_node.inputs.hemi = hemi
 
-    hemi_DKTatlaslookup_file = fastsurfer_home / 'recon_surf' / f'{hemi}.DKTatlaslookup.txt'
+    lh_DKTatlaslookup_file = fastsurfer_home / 'recon_surf' / f'lh.DKTatlaslookup.txt'
+    rh_DKTatlaslookup_file = fastsurfer_home / 'recon_surf' / f'rh.DKTatlaslookup.txt'
     smooth_aparc_file = fastsurfer_home / 'recon_surf' / 'smooth_aparc.py'
-    SampleSegmentationToSurfave_node.inputs.hemi_DKTatlaslookup_file = hemi_DKTatlaslookup_file
+    SampleSegmentationToSurfave_node.inputs.lh_DKTatlaslookup_file = lh_DKTatlaslookup_file
+    SampleSegmentationToSurfave_node.inputs.rh_DKTatlaslookup_file = rh_DKTatlaslookup_file
     SampleSegmentationToSurfave_node.inputs.smooth_aparc_file = smooth_aparc_file
 
-    SampleSegmentationToSurfave_node.inputs.hemi_aparc_DKTatlas_mapped_prefix_file = subjects_dir / 'label' / f'{hemi}.aparc.DKTatlas.mapped.prefix.annot'
-    SampleSegmentationToSurfave_node.inputs.hemi_aparc_DKTatlas_mapped_file = subjects_dir / 'label' / f'{hemi}.aparc.DKTatlas.mapped.annot'
+    # SampleSegmentationToSurfave_node.inputs.lh_white_preaparc_file = subjects_dir / subject_id / "surf" / "lh.white.preaparc"
+    # SampleSegmentationToSurfave_node.inputs.rh_white_preaparc_file = subjects_dir / subject_id / "surf" / "rh.white.preaparc"
+    # SampleSegmentationToSurfave_node.inputs.lh_cortex_label_file = subjects_dir / subject_id / "label" / "lh.cortex.label"
+    # SampleSegmentationToSurfave_node.inputs.rh_cortex_label_file = subjects_dir / subject_id / "label" / "rh.cortex.label"
+    #
+    # SampleSegmentationToSurfave_node.inputs.lh_aparc_DKTatlas_mapped_prefix_file = subjects_dir / subject_id / 'label' / 'lh.aparc.DKTatlas.mapped.prefix.annot'
+    # SampleSegmentationToSurfave_node.inputs.rh_aparc_DKTatlas_mapped_prefix_file = subjects_dir / subject_id / 'label' / 'rh.aparc.DKTatlas.mapped.prefix.annot'
+    # SampleSegmentationToSurfave_node.inputs.lh_aparc_DKTatlas_mapped_file = subjects_dir / subject_id / 'label' / 'lh.aparc.DKTatlas.mapped.annot'
+    # SampleSegmentationToSurfave_node.inputs.rh_aparc_DKTatlas_mapped_file = subjects_dir / subject_id / 'label' / 'rh.aparc.DKTatlas.mapped.annot'
 
     # InflatedSphere
     inflated_sphere_node = Node(InflatedSphere(), name="inflate_sphere_node")
     inflated_sphere_node.inputs.subjects_dir = subjects_dir
     inflated_sphere_node.inputs.subject_id = subject_id
-    inflated_sphere_node.inputs.hemi = hemi
     inflated_sphere_node.inputs.threads = 8
 
     # FeatReg
@@ -153,88 +159,84 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
     featreg_node.inputs.freesurfer_home = freesurfer_home
     featreg_node.inputs.featreg_py = featreg_home / "featreg" / 'predict.py'
 
-    featreg_node.inputs.hemisphere = hemi
-
     # Jacobian
     JacobianAvgcurvCortparc_node = Node(JacobianAvgcurvCortparc(), name='JacobianAvgcurvCortparc_node')
     JacobianAvgcurvCortparc_node.inputs.subjects_dir = subjects_dir
     JacobianAvgcurvCortparc_node.inputs.subject_id = subject_id
-    JacobianAvgcurvCortparc_node.inputs.hemi = hemi
     JacobianAvgcurvCortparc_node.inputs.threads = 8
 
-    JacobianAvgcurvCortparc_node.inputs.jacobian_white_file = subjects_dir / subject_id / "surf" / f"{hemi}.jacobian_white"
-    JacobianAvgcurvCortparc_node.inputs.avg_curv_file = subjects_dir / subject_id / "surf" / f"{hemi}.avg_curv"
-    JacobianAvgcurvCortparc_node.inputs.aparc_annot_file = subjects_dir / subject_id / "label" / f"{hemi}.aparc.annot"
-
-
+    JacobianAvgcurvCortparc_node.inputs.lh_jacobian_white = subjects_dir / subject_id / "surf" / f"lh.jacobian_white"
+    JacobianAvgcurvCortparc_node.inputs.rh_jacobian_white = subjects_dir / subject_id / "surf" / f"rh.jacobian_white"
+    JacobianAvgcurvCortparc_node.inputs.lh_avg_curv = subjects_dir / subject_id / "surf" / f"lh.avg_curv"
+    JacobianAvgcurvCortparc_node.inputs.rh_avg_curv = subjects_dir / subject_id / "surf" / f"rh.avg_curv"
+    JacobianAvgcurvCortparc_node.inputs.lh_aparc_annot = subjects_dir / subject_id / "label" / f"lh.aparc.annot"
+    JacobianAvgcurvCortparc_node.inputs.rh_aparc_annot = subjects_dir / subject_id / "label" / f"rh.aparc.annot"
 
     # WhitePialThickness1
     white_pial_thickness1_node = Node(WhitePialThickness1(), name='white_pial_thickness1_node')
     white_pial_thickness1_node.inputs.subjects_dir = subjects_dir
     white_pial_thickness1_node.inputs.subject_id = subject_id
-    white_pial_thickness1_node.inputs.hemi = hemi
     white_pial_thickness1_node.inputs.threads = 8
 
-    white_pial_thickness1_node.inputs.hemi_cortex_hipamyg_label = subjects_dir / subject_id / "label" / f"{hemi}.cortex+hipamyg.label" ### 测试用
+    white_pial_thickness1_node.inputs.lh_cortex_hipamyg_label = subjects_dir / subject_id / "label" / f"lh.cortex+hipamyg.label" ### 测试用
+    white_pial_thickness1_node.inputs.rh_cortex_hipamyg_label = subjects_dir / subject_id / "label" / f"rh.cortex+hipamyg.label" ### 测试用
 
-    white_pial_thickness1_node.inputs.hemi_white = subjects_dir / subject_id / "surf" / f"{hemi}.white"
-
+    white_pial_thickness1_node.inputs.lh_white = subjects_dir / subject_id / "surf" / f"lh.white"
+    white_pial_thickness1_node.inputs.rh_white = subjects_dir / subject_id / "surf" / f"rh.white"
 
     # Curvstats
     Curvstats_node = Node(Curvstats(), name='Curvstats_node')
     Curvstats_node.inputs.subjects_dir = subjects_dir
     Curvstats_node.inputs.subject_id = subject_id
-    Curvstats_node.inputs.hemi = hemi
 
     # Cortribbon
     Cortribbon_node = Node(Cortribbon(), name='Cortribbon_node')
     Cortribbon_node.inputs.subjects_dir = subjects_dir
     Cortribbon_node.inputs.subject_id = subject_id
-    Cortribbon_node.inputs.hemi = hemi
     Cortribbon_node.inputs.threads = 8
 
-    Cortribbon_node.inputs.aseg_presurf_file = subjects_dir / subject_id / 'mri/aseg.presurf.mgz' ### 测试用
+    # Cortribbon_node.inputs.aseg_presurf_file = subjects_dir / subject_id / 'mri/aseg.presurf.mgz' ### 测试用
 
-    Cortribbon_node.inputs.hemi_ribbon = subjects_dir / subject_id / f'mri/{hemi}.ribbon.mgz'
+    Cortribbon_node.inputs.lh_ribbon = subjects_dir / subject_id / f'mri/lh.ribbon.mgz'
+    Cortribbon_node.inputs.rh_ribbon = subjects_dir / subject_id / f'mri/rh.ribbon.mgz'
     Cortribbon_node.inputs.ribbon = subjects_dir / subject_id / 'mri/ribbon.mgz'
 
     # Parcstats
     Parcstats_node = Node(Parcstats(), name='Parcstats_node')
     Parcstats_node.inputs.subjects_dir = subjects_dir
     Parcstats_node.inputs.subject_id = subject_id
-    Parcstats_node.inputs.hemi = hemi
     Parcstats_node.inputs.threads = 8
 
-    Parcstats_node.inputs.hemi_aparc_annot_file = subjects_dir / subject_id / 'label' / f'{hemi}.aparc.annot' ### 测试用
-    Parcstats_node.inputs.wm_file = subjects_dir / subject_id / 'mri' / 'wm.mgz' ### 测试用
+    # Parcstats_node.inputs.hemi_aparc_annot_file = subjects_dir / subject_id / 'label' / f'{hemi}.aparc.annot' ### 测试用
+    # Parcstats_node.inputs.wm_file = subjects_dir / subject_id / 'mri' / 'wm.mgz' ### 测试用
 
-    Parcstats_node.inputs.hemi_aparc_stats_file = subjects_dir / subject_id / 'stats' / f'{hemi}.aparc.stats'
-    Parcstats_node.inputs.hemi_aparc_pial_stats_file = subjects_dir / subject_id / 'stats' / f'{hemi}.aparc.pial.stats'
-    Parcstats_node.inputs.aparc_annot_ctab_file = subjects_dir / subject_id / 'label' / 'aparc.annot.ctab'
+    Parcstats_node.inputs.lh_aparc_stats = subjects_dir / subject_id / 'stats' / f'lh.aparc.stats'
+    Parcstats_node.inputs.rh_aparc_stats = subjects_dir / subject_id / 'stats' / f'rh.aparc.stats'
+    Parcstats_node.inputs.lh_aparc_pial_stats = subjects_dir / subject_id / 'stats' / f'lh.aparc.pial.stats'
+    Parcstats_node.inputs.rh_aparc_pial_stats = subjects_dir / subject_id / 'stats' / f'rh.aparc.pial.stats'
+    Parcstats_node.inputs.aparc_annot_ctab = subjects_dir / subject_id / 'label' / 'aparc.annot.ctab'
+    Parcstats_node.inputs.aparc_annot_ctab = subjects_dir / subject_id / 'label' / 'aparc.annot.ctab'
 
     # Pctsurfcon
     Pctsurfcon_node = Node(Pctsurfcon(), name='Pctsurfcon_node')
     Pctsurfcon_node.inputs.subjects_dir = subjects_dir
     Pctsurfcon_node.inputs.subject_id = subject_id
-    Pctsurfcon_node.inputs.hemi = hemi
     Pctsurfcon_node.inputs.threads = 8
-
-
-    Pctsurfcon_node.inputs.rawavg_file = subjects_dir / subject_id / 'mri' / 'rawavg.mgz' ### 测试用
-    Pctsurfcon_node.inputs.orig_file = subjects_dir / subject_id / 'mri' / 'orig.mgz' ### 测试用
-    Pctsurfcon_node.inputs.hemi_cortex_label_file = subjects_dir / subject_id / 'label' / f'{hemi}.cortex.label' ### 测试用
-
-    Pctsurfcon_node.inputs.hemi_wg_pct_mgh_file = subjects_dir / subject_id / 'surf' / f'{hemi}.w-g.pct.mgh'
-    Pctsurfcon_node.inputs.hemi_wg_pct_stats_file = subjects_dir / subject_id / 'stats' / f'{hemi}.w-g.pct.stats'
+    #
+    # Pctsurfcon_node.inputs.rawavg_file = subjects_dir / subject_id / 'mri' / 'rawavg.mgz' ### 测试用
+    # Pctsurfcon_node.inputs.orig_file = subjects_dir / subject_id / 'mri' / 'orig.mgz' ### 测试用
+    # Pctsurfcon_node.inputs.hemi_cortex_label_file = subjects_dir / subject_id / 'label' / f'{hemi}.cortex.label' ### 测试用
+    #
+    # Pctsurfcon_node.inputs.hemi_wg_pct_mgh_file = subjects_dir / subject_id / 'surf' / f'{hemi}.w-g.pct.mgh'
+    # Pctsurfcon_node.inputs.hemi_wg_pct_stats_file = subjects_dir / subject_id / 'stats' / f'{hemi}.w-g.pct.stats'
 
     # Hyporelabel
     Hyporelabel_node = Node(Hyporelabel(), name='Hyporelabel_node')
     Hyporelabel_node.inputs.subjects_dir = subjects_dir
     Hyporelabel_node.inputs.subject_id = subject_id
-    Hyporelabel_node.inputs.hemi = hemi
     Hyporelabel_node.inputs.threads = 8
 
-    Hyporelabel_node.inputs.aseg_presurf_file = subjects_dir / subject_id / 'mri' / 'aseg.presurf.mgz' ### 测试用
+    # Hyporelabel_node.inputs.aseg_presurf_file = subjects_dir / subject_id / 'mri' / 'aseg.presurf.mgz' ### 测试用
     Hyporelabel_node.inputs.aseg_presurf_hypos_file = subjects_dir / subject_id / 'mri' / 'aseg.presurf.hypos.mgz' ### 测试用
 
 
@@ -244,13 +246,13 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
     Aseg7ToAseg_node.inputs.subject_id = subject_id
     Aseg7ToAseg_node.inputs.threads = 8
 
-    ##### 测试用 lh + rh
-    Aseg7ToAseg_node.inputs.lh_cortex_label_file = subjects_dir / subject_id / 'label' / 'lh.cortex.label'
-    Aseg7ToAseg_node.inputs.lh_white_file = subjects_dir / subject_id / 'surf' / 'lh.white'
-    Aseg7ToAseg_node.inputs.lh_pial_file = subjects_dir / subject_id / 'surf' / 'lh.pial'
-    Aseg7ToAseg_node.inputs.rh_cortex_label_file = subjects_dir / subject_id / 'label' / 'rh.cortex.label'
-    Aseg7ToAseg_node.inputs.rh_white_file = subjects_dir / subject_id / 'surf' / 'rh.white'
-    Aseg7ToAseg_node.inputs.rh_pial_file = subjects_dir / subject_id / 'surf' / 'rh.pial'
+    # ##### 测试用 lh + rh
+    # Aseg7ToAseg_node.inputs.lh_cortex_label_file = subjects_dir / subject_id / 'label' / 'lh.cortex.label'
+    # Aseg7ToAseg_node.inputs.lh_white_file = subjects_dir / subject_id / 'surf' / 'lh.white'
+    # Aseg7ToAseg_node.inputs.lh_pial_file = subjects_dir / subject_id / 'surf' / 'lh.pial'
+    # Aseg7ToAseg_node.inputs.rh_cortex_label_file = subjects_dir / subject_id / 'label' / 'rh.cortex.label'
+    # Aseg7ToAseg_node.inputs.rh_white_file = subjects_dir / subject_id / 'surf' / 'rh.white'
+    # Aseg7ToAseg_node.inputs.rh_pial_file = subjects_dir / subject_id / 'surf' / 'rh.pial'
 
     Aseg7ToAseg_node.inputs.aseg_file = subjects_dir / subject_id / 'mri' / 'aseg.mgz'
 
@@ -262,30 +264,35 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
 
     Aseg7_node.inputs.subject_mri_dir = subjects_dir / subject_id / 'mri'
     Aseg7_node.inputs.aseg_presurf_hypos_file = subjects_dir / subject_id / 'mri' / 'aseg.presurf.hypos.mgz'
-    Aseg7_node.inputs.lh_cortex_label_file = subjects_dir / subject_id / 'label' / 'lh.cortex.label'
-    Aseg7_node.inputs.lh_white_file = subjects_dir / subject_id / 'surf' / 'lh.white'
-    Aseg7_node.inputs.lh_pial_file = subjects_dir / subject_id / 'surf' / 'lh.pial'
-    Aseg7_node.inputs.lh_aparc_annot_file = subjects_dir / subject_id / 'label' / 'lh.aparc.annot'
-    Aseg7_node.inputs.rh_cortex_label_file = subjects_dir / subject_id / 'label' / 'rh.cortex.label'
-    Aseg7_node.inputs.rh_white_file = subjects_dir / subject_id / 'surf' / 'rh.white'
-    Aseg7_node.inputs.rh_pial_file = subjects_dir / subject_id / 'surf' / 'rh.pial'
-    Aseg7_node.inputs.rh_aparc_annot_file = subjects_dir / subject_id / 'label' / 'rh.aparc.annot'
+
+    # Aseg7_node.inputs.lh_cortex_label_file = subjects_dir / subject_id / 'label' / 'lh.cortex.label'
+    # Aseg7_node.inputs.lh_white_file = subjects_dir / subject_id / 'surf' / 'lh.white'
+    # Aseg7_node.inputs.lh_pial_file = subjects_dir / subject_id / 'surf' / 'lh.pial'
+    # Aseg7_node.inputs.lh_aparc_annot_file = subjects_dir / subject_id / 'label' / 'lh.aparc.annot'
+    # Aseg7_node.inputs.rh_cortex_label_file = subjects_dir / subject_id / 'label' / 'rh.cortex.label'
+    # Aseg7_node.inputs.rh_white_file = subjects_dir / subject_id / 'surf' / 'rh.white'
+    # Aseg7_node.inputs.rh_pial_file = subjects_dir / subject_id / 'surf' / 'rh.pial'
+    # Aseg7_node.inputs.rh_aparc_annot_file = subjects_dir / subject_id / 'label' / 'rh.aparc.annot'
 
     Aseg7_node.inputs.aparc_aseg_file = subjects_dir / subject_id / 'mri' / 'aparc+aseg.mgz'
 
     # Balabels
-    Balabels_node = Node(Balabels(), name='Balabels_node')
+    Balabels_node = Node(BalabelsMult(), name='BalabelsMult_node')
     Balabels_node.inputs.subjects_dir = subjects_dir
     Balabels_node.inputs.subject_id = subject_id
-    Balabels_node.inputs.hemi = hemi
     Balabels_node.inputs.threads = 8
-    Balabels_node.inputs.hemi_sphere_file = subjects_dir / subject_id / 'surf' / f'{hemi}.sphere.reg'
+    # Balabels_node.inputs.lh_sphere = subjects_dir / subject_id / 'surf' / f'lh.sphere.reg'
+    # Balabels_node.inputs.rh_sphere = subjects_dir / subject_id / 'surf' / f'rh.sphere.reg'
 
-    Balabels_node.inputs.hemi_BA45_exvivo_file = subjects_dir / subject_id / 'label' / f'{hemi}.BA45_exvivo.label'
-    Balabels_node.inputs.hemi_BA_exvivo_annot_file = subjects_dir / subject_id / 'label' / f'{hemi}.BA_exvivo.annot'
+    Balabels_node.inputs.lh_BA45_exvivo_file = subjects_dir / subject_id / 'label' / f'lh.BA45_exvivo.label'
+    Balabels_node.inputs.rh_BA45_exvivo_file = subjects_dir / subject_id / 'label' / f'rh.BA45_exvivo.label'
+    Balabels_node.inputs.lh_BA_exvivo_annot_file = subjects_dir / subject_id / 'label' / f'lh.BA_exvivo.annot'
+    Balabels_node.inputs.rh_BA_exvivo_annot_file = subjects_dir / subject_id / 'label' / f'rh.BA_exvivo.annot'
     Balabels_node.inputs.BA_exvivo_thresh_file = subjects_dir / subject_id / 'label' / 'BA_exvivo.thresh.ctab'
-    Balabels_node.inputs.hemi_perirhinal_exvivo_file = subjects_dir / subject_id / 'label' / f'{hemi}.perirhinal_exvivo.label'
-    Balabels_node.inputs.hemi_entorhinal_exvivo_file = subjects_dir / subject_id / 'label' / f'{hemi}.entorhinal_exvivo.label'
+    Balabels_node.inputs.lh_perirhinal_exvivo_file = subjects_dir / subject_id / 'label' / f'lh.perirhinal_exvivo.label'
+    Balabels_node.inputs.rh_perirhinal_exvivo_file = subjects_dir / subject_id / 'label' / f'rh.perirhinal_exvivo.label'
+    Balabels_node.inputs.lh_entorhinal_exvivo_file = subjects_dir / subject_id / 'label' / f'lh.entorhinal_exvivo.label'
+    Balabels_node.inputs.rh_entorhinal_exvivo_file = subjects_dir / subject_id / 'label' / f'rh.entorhinal_exvivo.label'
 
     # create workflow
     single_structure_wf.connect([
@@ -323,47 +330,80 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
                                  (filled_node, white_preaparc1_node, [("aseg_presurf_file", "aseg_presurf"), ("brain_finalsurfs_file", "brain_finalsurfs"),
                                                                       ("wm_file", "wm_file"), ("wm_filled", "filled_file"),
                                                                         ]),
-                                 (fastcsr_node, white_preaparc1_node, [("lh_orig_file", "hemi_orig"),
+                                 (fastcsr_node, white_preaparc1_node, [("lh_orig_file", "lh_orig"), ("rh_orig_file", "rh_orig"),
                                                                         ]),
                                  (updateaseg_node, SampleSegmentationToSurfave_node, [("aparc_aseg_file", "aparc_aseg_file"),
                                                                                         ]),
-                                 (white_preaparc1_node, SampleSegmentationToSurfave_node, [("hemi_white_preaparc", "hemi_white_preaparc_file"),
-                                                                                            ("hemi_cortex_label", "hemi_cortex_label_file"),
+                                 (white_preaparc1_node, SampleSegmentationToSurfave_node, [("lh_white_preaparc", "lh_white_preaparc_file"), ("rh_white_preaparc", "rh_white_preaparc_file"),
+                                                                                            ("lh_cortex_label", "lh_cortex_label_file"), ("rh_cortex_label", "rh_cortex_label_file"),
                                                                                             ]),
-                                 (white_preaparc1_node, inflated_sphere_node, [("hemi_white_preaparc", "white_preaparc_file"),
+                                 (white_preaparc1_node, inflated_sphere_node, [("lh_white_preaparc", "lh_white_preaparc_file"), ("rh_white_preaparc", "rh_white_preaparc_file"),
                                                                                 ]),
-                                 (white_preaparc1_node, featreg_node, [("hemi_curv", "curv_file"),
+                                 (white_preaparc1_node, featreg_node, [("lh_curv", "lh_curv"), ("rh_curv", "rh_curv"),
                                                                        ]),
-                                 (inflated_sphere_node, featreg_node, [("sulc_file", "sulc_file"), ("hemi_sphere", "sphere_file"),
+                                 (inflated_sphere_node, featreg_node, [("lh_sulc", "lh_sulc"), ("rh_sulc", "rh_sulc"),
+                                                                       ("lh_sphere", "lh_sphere"), ("rh_sphere", "rh_sphere"),
                                                                       ]),
-                                 (white_preaparc1_node, JacobianAvgcurvCortparc_node, [("hemi_white_preaparc", "white_preaparc_file"),
-                                                                                       ("hemi_cortex_label", "cortex_label_file"),
+                                 (white_preaparc1_node, JacobianAvgcurvCortparc_node, [("lh_white_preaparc", "lh_white_preaparc"), ("rh_white_preaparc", "rh_white_preaparc"),
+                                                                                       ("lh_cortex_label", "lh_cortex_label"), ("rh_cortex_label", "rh_cortex_label"),
                                                                                         ]),
                                  (filled_node, JacobianAvgcurvCortparc_node, [("aseg_presurf_file", "aseg_presurf_file"),
                                                                                 ]),
-                                 (featreg_node, JacobianAvgcurvCortparc_node, [("sphere_reg_file", "sphere_reg_file"),
+                                 (featreg_node, JacobianAvgcurvCortparc_node, [("lh_sphere_reg", "lh_sphere_reg"), ("rh_sphere_reg", "rh_sphere_reg"),
                                                                                 ]),
                                  (filled_node, white_pial_thickness1_node, [("aseg_presurf_file", "aseg_presurf"), ("brain_finalsurfs_file", "brain_finalsurfs"),
                                                                                ]),
-                                 (white_preaparc1_node, white_pial_thickness1_node, [("hemi_white_preaparc", "hemi_white_preaparc"),
-                                                                                     ("hemi_cortex_label", "hemi_cortex_label"),
+                                 (white_preaparc1_node, white_pial_thickness1_node, [("lh_white_preaparc", "lh_white_preaparc"), ("rh_white_preaparc", "rh_white_preaparc"),
+                                                                                     ("lh_cortex_label", "lh_cortex_label"), ("rh_cortex_label", "rh_cortex_label"),
                                                                                     ]),
-                                 (SampleSegmentationToSurfave_node, white_pial_thickness1_node, [("hemi_aparc_DKTatlas_mapped_file", "hemi_aparc_DKTatlas_mapped_annot"),
+                                 (SampleSegmentationToSurfave_node, white_pial_thickness1_node, [("lh_aparc_DKTatlas_mapped_file", "lh_aparc_DKTatlas_mapped_annot"),
+                                                                                                 ("rh_aparc_DKTatlas_mapped_file", "rh_aparc_DKTatlas_mapped_annot"),
                                                                                                 ]),
-                                 (JacobianAvgcurvCortparc_node, white_pial_thickness1_node, [("aparc_annot_file", "hemi_aparc_annot"),
+                                 (JacobianAvgcurvCortparc_node, white_pial_thickness1_node, [("lh_aparc_annot", "lh_aparc_annot"), ("rh_aparc_annot", "rh_aparc_annot"),
                                                                                             ]),
-                                 (white_pial_thickness1_node, Cortribbon_node, [("hemi_white", "hemi_white"), ("hemi_pial", "hemi_pial"),
-                                                                                 ]),
+                                 (inflated_sphere_node, Curvstats_node, [("lh_smoothwm", "lh_smoothwm"), ("rh_smoothwm", "rh_smoothwm"),
+                                                                         ("lh_surf", "lh_surf"), ("rh_surf", "rh_surf"),
+                                                                         ("lh_curv", "lh_curv"), ("rh_curv", "rh_curv"),
+                                                                          ]),
+                                 (filled_node, Cortribbon_node, [("aseg_presurf_file", "aseg_presurf_file"),
+                                                                ]),
+                                 (white_pial_thickness1_node, Cortribbon_node, [("lh_white", "lh_white"), ("rh_white", "rh_white"),
+                                                                                ("lh_pial", "lh_pial"), ("rh_pial", "rh_pial"),
+                                                                                ]),
                                  (Cortribbon_node, Parcstats_node, [("ribbon", "ribbon_file"),
                                                                      ]),
-                                 (white_pial_thickness1_node, Parcstats_node, [("hemi_white", "hemi_white_file"), ("hemi_pial", "hemi_pial_file"),
-                                                                               ("hemi_thickness", "hemi_thickness_file"),
+                                 (filled_node, Parcstats_node, [("wm_file", "wm_file"),
+                                                               ]),
+                                 (JacobianAvgcurvCortparc_node, Parcstats_node, [("lh_aparc_annot", "lh_aparc_annot"), ("rh_aparc_annot", "rh_aparc_annot"),
+                                                                                ]),
+                                 (white_pial_thickness1_node, Parcstats_node, [("lh_white", "lh_white"), ("rh_white", "rh_white"),
+                                                                               ("lh_pial", "lh_pial"), ("rh_pial", "rh_pial"),
+                                                                               ("lh_thickness", "lh_thickness"), ("rh_thickness", "rh_thickness"),
                                                                                ]),
-                                 (white_pial_thickness1_node, Pctsurfcon_node, [("hemi_white", "hemi_white_file"),
+                                 (orig_and_rawavg_node, Pctsurfcon_node, [("orig_file", "orig_file"), ("rawavg_file", "rawavg_file"),
+                                                                         ]),
+                                 (white_preaparc1_node, Pctsurfcon_node, [("lh_cortex_label", "lh_cortex_label"), ("rh_cortex_label", "rh_cortex_label"),
+                                                                         ]),
+                                 (white_pial_thickness1_node, Pctsurfcon_node, [("lh_white", "lh_white"), ("rh_white", "rh_white"),
                                                                                 ]),
-                                 (white_pial_thickness1_node, Hyporelabel_node, [("hemi_white", "hemi_white_file"),
+                                 (filled_node, Hyporelabel_node, [("aseg_presurf_file", "aseg_presurf")
+                                                                 ]),
+                                 (white_pial_thickness1_node, Hyporelabel_node, [("lh_white", "lh_white"), ("rh_white", "rh_white"),
                                                                                 ]),
-
+                                 (white_pial_thickness1_node, Aseg7ToAseg_node, [("lh_white", "lh_white"), ("rh_white", "rh_white"),
+                                                                                 ("lh_pial", "lh_pial"), ("rh_pial", "rh_pial"),
+                                                                                ]),
+                                 (white_preaparc1_node, Aseg7ToAseg_node, [("lh_cortex_label", "lh_cortex_label"), ("rh_cortex_label", "rh_cortex_label"),
+                                                                          ]),
+                                 (white_pial_thickness1_node, Aseg7_node, [("lh_white", "lh_white"), ("rh_white", "rh_white"),
+                                                                            ("lh_pial", "lh_pial"), ("rh_pial", "rh_pial"),
+                                                                            ]),
+                                 (white_preaparc1_node, Aseg7_node, [("lh_cortex_label", "lh_cortex_label"), ("rh_cortex_label", "rh_cortex_label"),
+                                                                    ]),
+                                 (JacobianAvgcurvCortparc_node, Aseg7_node, [("lh_aparc_annot", "lh_aparc_annot"), ("rh_aparc_annot", "rh_aparc_annot"),
+                                                                            ]),
+                                 (featreg_node, Balabels_node, [("lh_sphere_reg", "lh_sphere_reg"), ("rh_sphere_reg", "rh_sphere_reg"),
+                                                                ]),
                                  ])
 
     return single_structure_wf
@@ -381,13 +421,11 @@ def pipeline():
     featreg_home = pwd.parent / "deepprep_pipeline/FeatReg"
 
     subjects_dir = Path('/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon')
-    subject_id = 'sub-001'
-
-    hemi = 'lh'
+    subject_id = 'sub-170'
 
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
-    wf = init_single_structure_wf(t1w_files, subjects_dir, subject_id, hemi, python_interpret, fastsurfer_home,
+    wf = init_single_structure_wf(t1w_files, subjects_dir, subject_id, python_interpret, fastsurfer_home,
                                   freesurfer_home, fastcsr_home, featreg_home)
     wf.base_dir = subjects_dir
     # wf.write_graph(graph2use='flat', simple_form=False)
