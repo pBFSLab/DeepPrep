@@ -2,7 +2,7 @@ from pathlib import Path
 from nipype import Node, Workflow
 from interface.freesurfer import OrigAndRawavg, Brainmask, Filled, WhitePreaparc1, \
     InflatedSphere, JacobianAvgcurvCortparc, WhitePialThickness1, Curvstats, Cortribbon, \
-    Parcstats, Pctsurfcon, Hyporelabel, Aseg7ToAseg, Aseg7, BalabelsMult
+    Parcstats, Pctsurfcon, Hyporelabel, Aseg7ToAseg, Aseg7, BalabelsMult, Segstats
 from interface.fastsurfer import Segment, Noccseg, N4BiasCorrect, TalairachAndNu, UpdateAseg, \
     SampleSegmentationToSurfave
 from interface.fastcsr import FastCSR
@@ -89,7 +89,8 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
     updateaseg_node = Node(UpdateAseg(), name='updateaseg_node')
     updateaseg_node.inputs.subjects_dir = subjects_dir
     updateaseg_node.inputs.subject_id = subject_id
-    updateaseg_node.inputs.paint_cc_file = Path("/home/youjia/workspace/DeepPrep/deepprep_pipeline/FastSurfer/recon_surf/paint_cc_into_pred.py")
+    # updateaseg_node.inputs.paint_cc_file = Path("/home/youjia/workspace/DeepPrep/deepprep_pipeline/FastSurfer/recon_surf/paint_cc_into_pred.py")
+    updateaseg_node.inputs.paint_cc_file = Path("/home/anning/workspace/DeepPrep/deepprep_pipeline/FastSurfer/recon_surf/paint_cc_into_pred.py")
     updateaseg_node.inputs.python_interpret = python_interpret
 
     updateaseg_node.inputs.aseg_auto_file = subjects_dir / subject_id / 'mri' / 'aseg.auto.mgz'
@@ -237,11 +238,11 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
     Hyporelabel_node.inputs.threads = 8
 
     # Hyporelabel_node.inputs.aseg_presurf_file = subjects_dir / subject_id / 'mri' / 'aseg.presurf.mgz' ### 测试用
-    Hyporelabel_node.inputs.aseg_presurf_hypos_file = subjects_dir / subject_id / 'mri' / 'aseg.presurf.hypos.mgz' ### 测试用
+    Hyporelabel_node.inputs.aseg_presurf_hypos = subjects_dir / subject_id / 'mri' / 'aseg.presurf.hypos.mgz' ### 测试用
 
 
     # Aseg7ToAseg
-    Aseg7ToAseg_node = Node(Aseg7ToAseg(), name='Aseg7_node')
+    Aseg7ToAseg_node = Node(Aseg7ToAseg(), name='Aseg7ToAseg_node')
     Aseg7ToAseg_node.inputs.subjects_dir = subjects_dir
     Aseg7ToAseg_node.inputs.subject_id = subject_id
     Aseg7ToAseg_node.inputs.threads = 8
@@ -263,7 +264,7 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
     Aseg7_node.inputs.threads = 8
 
     Aseg7_node.inputs.subject_mri_dir = subjects_dir / subject_id / 'mri'
-    Aseg7_node.inputs.aseg_presurf_hypos_file = subjects_dir / subject_id / 'mri' / 'aseg.presurf.hypos.mgz'
+    Aseg7_node.inputs.aseg_presurf_hypos = subjects_dir / subject_id / 'mri' / 'aseg.presurf.hypos.mgz'
 
     # Aseg7_node.inputs.lh_cortex_label_file = subjects_dir / subject_id / 'label' / 'lh.cortex.label'
     # Aseg7_node.inputs.lh_white_file = subjects_dir / subject_id / 'surf' / 'lh.white'
@@ -274,25 +275,35 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
     # Aseg7_node.inputs.rh_pial_file = subjects_dir / subject_id / 'surf' / 'rh.pial'
     # Aseg7_node.inputs.rh_aparc_annot_file = subjects_dir / subject_id / 'label' / 'rh.aparc.annot'
 
-    Aseg7_node.inputs.aparc_aseg_file = subjects_dir / subject_id / 'mri' / 'aparc+aseg.mgz'
+    Aseg7_node.inputs.aparc_aseg = subjects_dir / subject_id / 'mri' / 'aparc+aseg.mgz'
+
+    # Segstats
+    Segstats_node = Node(Segstats(), name='Segstats_node')
+    Segstats_node.inputs.subjects_dir = subjects_dir
+    Segstats_node.inputs.subject_id = subject_id
+    Segstats_node.inputs.threads = 8
 
     # Balabels
-    Balabels_node = Node(BalabelsMult(), name='BalabelsMult_node')
-    Balabels_node.inputs.subjects_dir = subjects_dir
-    Balabels_node.inputs.subject_id = subject_id
-    Balabels_node.inputs.threads = 8
-    # Balabels_node.inputs.lh_sphere = subjects_dir / subject_id / 'surf' / f'lh.sphere.reg'
-    # Balabels_node.inputs.rh_sphere = subjects_dir / subject_id / 'surf' / f'rh.sphere.reg'
+    BalabelsMult_node = Node(BalabelsMult(), name='BalabelsMult_node')
+    BalabelsMult_node.inputs.subjects_dir = subjects_dir
+    BalabelsMult_node.inputs.subject_id = subject_id
+    BalabelsMult_node.inputs.threads = 8
 
-    Balabels_node.inputs.lh_BA45_exvivo_file = subjects_dir / subject_id / 'label' / f'lh.BA45_exvivo.label'
-    Balabels_node.inputs.rh_BA45_exvivo_file = subjects_dir / subject_id / 'label' / f'rh.BA45_exvivo.label'
-    Balabels_node.inputs.lh_BA_exvivo_annot_file = subjects_dir / subject_id / 'label' / f'lh.BA_exvivo.annot'
-    Balabels_node.inputs.rh_BA_exvivo_annot_file = subjects_dir / subject_id / 'label' / f'rh.BA_exvivo.annot'
-    Balabels_node.inputs.BA_exvivo_thresh_file = subjects_dir / subject_id / 'label' / 'BA_exvivo.thresh.ctab'
-    Balabels_node.inputs.lh_perirhinal_exvivo_file = subjects_dir / subject_id / 'label' / f'lh.perirhinal_exvivo.label'
-    Balabels_node.inputs.rh_perirhinal_exvivo_file = subjects_dir / subject_id / 'label' / f'rh.perirhinal_exvivo.label'
-    Balabels_node.inputs.lh_entorhinal_exvivo_file = subjects_dir / subject_id / 'label' / f'lh.entorhinal_exvivo.label'
-    Balabels_node.inputs.rh_entorhinal_exvivo_file = subjects_dir / subject_id / 'label' / f'rh.entorhinal_exvivo.label'
+    # BalabelsMult_node.inputs.lh_sphere_reg = subjects_dir / subject_id / 'surf' / f'lh.sphere.reg'
+    # BalabelsMult_node.inputs.rh_sphere_reg = subjects_dir / subject_id / 'surf' / f'rh.sphere.reg'
+    
+    BalabelsMult_node.inputs.freesurfer_dir = os.environ['FREESURFER']
+    BalabelsMult_node.inputs.fsaverage_label_dir = '/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon/fsaverage6/label'
+    
+    BalabelsMult_node.inputs.lh_BA45_exvivo = subjects_dir / subject_id / 'label' / f'lh.BA45_exvivo.label'
+    BalabelsMult_node.inputs.rh_BA45_exvivo = subjects_dir / subject_id / 'label' / f'rh.BA45_exvivo.label'
+    # BalabelsMult_node.inputs.lh_BA_exvivo_annot = subjects_dir / subject_id / 'label' / f'lh.BA_exvivo.annot'
+    # BalabelsMult_node.inputs.rh_BA_exvivo_annot = subjects_dir / subject_id / 'label' / f'rh.BA_exvivo.annot'
+    BalabelsMult_node.inputs.BA_exvivo_thresh = subjects_dir / subject_id / 'label' / 'BA_exvivo.thresh.ctab'
+    BalabelsMult_node.inputs.lh_perirhinal_exvivo = subjects_dir / subject_id / 'label' / f'lh.perirhinal_exvivo.label'
+    BalabelsMult_node.inputs.rh_perirhinal_exvivo = subjects_dir / subject_id / 'label' / f'rh.perirhinal_exvivo.label'
+    BalabelsMult_node.inputs.lh_entorhinal_exvivo = subjects_dir / subject_id / 'label' / f'lh.entorhinal_exvivo.label'
+    BalabelsMult_node.inputs.rh_entorhinal_exvivo = subjects_dir / subject_id / 'label' / f'rh.entorhinal_exvivo.label'
 
     # create workflow
     single_structure_wf.connect([
@@ -362,9 +373,11 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
                                  (JacobianAvgcurvCortparc_node, white_pial_thickness1_node, [("lh_aparc_annot", "lh_aparc_annot"), ("rh_aparc_annot", "rh_aparc_annot"),
                                                                                             ]),
                                  (inflated_sphere_node, Curvstats_node, [("lh_smoothwm", "lh_smoothwm"), ("rh_smoothwm", "rh_smoothwm"),
-                                                                         ("lh_surf", "lh_surf"), ("rh_surf", "rh_surf"),
-                                                                         ("lh_curv", "lh_curv"), ("rh_curv", "rh_curv"),
+                                                                         ("lh_sulc", "lh_sulc"), ("rh_sulc", "rh_sulc"),
+                                                                         # ("lh_curv", "lh_curv"), ("rh_curv", "rh_curv"),
                                                                           ]),
+                                 (white_pial_thickness1_node, Curvstats_node, [("lh_curv", "lh_curv"), ("rh_curv", "rh_curv"),
+                                                                               ]),
                                  (filled_node, Cortribbon_node, [("aseg_presurf_file", "aseg_presurf_file"),
                                                                 ]),
                                  (white_pial_thickness1_node, Cortribbon_node, [("lh_white", "lh_white"), ("rh_white", "rh_white"),
@@ -402,33 +415,67 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
                                                                     ]),
                                  (JacobianAvgcurvCortparc_node, Aseg7_node, [("lh_aparc_annot", "lh_aparc_annot"), ("rh_aparc_annot", "rh_aparc_annot"),
                                                                             ]),
-                                 (featreg_node, Balabels_node, [("lh_sphere_reg", "lh_sphere_reg"), ("rh_sphere_reg", "rh_sphere_reg"),
-                                                                ]),
-                                 ])
+                                 (brainmask_node, Segstats_node, [("brainmask_file", "brainmask_file"), ("norm_file", "norm_file"),
+                                                                    ]),
+                                 (Aseg7ToAseg_node, Segstats_node, [("aseg_file", "aseg_file"),
+                                                                    ]),
+                                 (filled_node, Segstats_node, [("aseg_presurf_file", "aseg_presurf"),
+                                                                    ]),
+                                 (white_pial_thickness1_node, Segstats_node, [("lh_white", "lh_white"), ("rh_white", "rh_white"),
+                                                                              ("lh_pial", "lh_pial"), ("rh_pial", "rh_pial"),
+                                                                              ]),
+                                 (fastcsr_node, Segstats_node, [("lh_orig_premesh_file", "lh_orig_premesh"), ("rh_orig_premesh_file", "rh_orig_premesh"),
+                                                                  ]),
+                                 (Cortribbon_node, Segstats_node, [("ribbon", "ribbon_file"),
+                                                                    ]),
+                                 (featreg_node, BalabelsMult_node, [("lh_sphere_reg", "lh_sphere_reg"), ("rh_sphere_reg", "rh_sphere_reg"),
+                                                                    ])
+                                ])
 
     return single_structure_wf
 
 
 def pipeline():
+    # t1w_files = [
+    #     f'/mnt/ngshare/ProjData/SurfRecon/V001/sub-001/ses-01/anat/sub-001_ses-01_T1w.nii.gz',
+    # ]
+    # pwd = Path.cwd()
+    # python_interpret = Path('/home/youjia/anaconda3/envs/3.8/bin/python3')
+    # fastsurfer_home = pwd / "FastSurfer"
+    # freesurfer_home = Path('/usr/local/freesurfer')
+    # fastcsr_home = pwd.parent / "deepprep_pipeline/FastCSR"
+    # featreg_home = pwd.parent / "deepprep_pipeline/FeatReg"
+    #
+    # subjects_dir = Path('/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon')
+    # subject_id = 'sub-170'
+    #
+    # os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+    #
+    # wf = init_single_structure_wf(t1w_files, subjects_dir, subject_id, python_interpret, fastsurfer_home,
+    #                               freesurfer_home, fastcsr_home, featreg_home)
+    # wf.base_dir = subjects_dir
+    # # wf.write_graph(graph2use='flat', simple_form=False)
+    # wf.run()
+
     t1w_files = [
-        f'/mnt/ngshare/ProjData/SurfRecon/V001/sub-001/ses-01/anat/sub-001_ses-01_T1w.nii.gz',
+        f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/sub-MSC01/ses-struct01/anat/sub-MSC01_ses-struct01_run-01_T1w.nii.gz',
     ]
     pwd = Path.cwd()
-    python_interpret = Path('/home/youjia/anaconda3/envs/3.8/bin/python3')
+    python_interpret = Path('/home/anning/miniconda3/envs/3.8/bin/python3')
     fastsurfer_home = pwd / "FastSurfer"
     freesurfer_home = Path('/usr/local/freesurfer')
     fastcsr_home = pwd.parent / "deepprep_pipeline/FastCSR"
     featreg_home = pwd.parent / "deepprep_pipeline/FeatReg"
 
-    subjects_dir = Path('/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon')
-    subject_id = 'sub-170'
+    subjects_dir = Path('/mnt/ngshare/Data_Mirror/pipeline_test')
+    subject_id = 'sub-MSC01'
 
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
     wf = init_single_structure_wf(t1w_files, subjects_dir, subject_id, python_interpret, fastsurfer_home,
                                   freesurfer_home, fastcsr_home, featreg_home)
-    wf.base_dir = subjects_dir
-    # wf.write_graph(graph2use='flat', simple_form=False)
+    wf.base_dir = f'/mnt/ngshare/Data_Mirror/pipeline_test'
+    wf.write_graph(graph2use='flat', simple_form=False)
     wf.run()
 
 

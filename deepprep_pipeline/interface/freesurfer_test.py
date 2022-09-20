@@ -372,28 +372,33 @@ def Segstats_test():
     set_envrion()
     subjects_dir = Path(f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon')
     subject_id = 'sub-MSC01'
+    subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
+    subject_id = "sub-170"
     subject_mri_dir = subjects_dir / subject_id / 'mri'
     subject_surf_dir = subjects_dir / subject_id / 'surf'
     subject_stats_dir = subjects_dir / subject_id / 'stats'
     threads = 8
-    os.environ['SUBJECTS_DIR'] = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon'
-    for hemi in ['lh', 'rh']:
-        Segstats_node = Node(Segstats(), name='Segstats_node')
-        Segstats_node.inputs.subjects_dir = subjects_dir
-        Segstats_node.inputs.subject_id = subject_id
-        Segstats_node.inputs.threads = threads
-        Segstats_node.inputs.hemi = hemi
-        Segstats_node.inputs.brainmask_file = subject_mri_dir / 'brainmask.mgz'
-        Segstats_node.inputs.norm_file = subject_mri_dir / 'norm.mgz'
-        Segstats_node.inputs.aseg_file = subject_mri_dir / 'aseg.mgz'
-        Segstats_node.inputs.aseg_presurf_file = subject_mri_dir / 'aseg.presurf.mgz'
-        Segstats_node.inputs.ribbon_file = subject_mri_dir / 'ribbon.mgz'
-        Segstats_node.inputs.hemi_orig_nofix_file = subject_surf_dir / f'{hemi}.orig.premesh'
-        Segstats_node.inputs.hemi_white_file = subject_surf_dir / f'{hemi}.white'
-        Segstats_node.inputs.hemi_pial_file = subject_surf_dir / f'{hemi}.pial'
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
-        Segstats_node.inputs.aseg_stats_file = subject_stats_dir / 'aseg.stats'
-        Segstats_node.run()
+    Segstats_node = Node(Segstats(), name='Segstats_node')
+    Segstats_node.inputs.subjects_dir = subjects_dir
+    Segstats_node.inputs.subject_id = subject_id
+    Segstats_node.inputs.threads = threads
+
+    Segstats_node.inputs.brainmask_file = subject_mri_dir / 'brainmask.mgz'
+    Segstats_node.inputs.norm_file = subject_mri_dir / 'norm.mgz'
+    Segstats_node.inputs.aseg_file = subject_mri_dir / 'aseg.mgz'
+    Segstats_node.inputs.aseg_presurf = subject_mri_dir / 'aseg.presurf.mgz'
+    Segstats_node.inputs.ribbon_file = subject_mri_dir / 'ribbon.mgz'
+    Segstats_node.inputs.lh_orig_premesh = subject_surf_dir / f'lh.orig.premesh'
+    Segstats_node.inputs.rh_orig_premesh = subject_surf_dir / f'rh.orig.premesh'
+    Segstats_node.inputs.lh_white = subject_surf_dir / f'lh.white'
+    Segstats_node.inputs.rh_white = subject_surf_dir / f'rh.white'
+    Segstats_node.inputs.lh_pial = subject_surf_dir / f'lh.pial'
+    Segstats_node.inputs.rh_pial = subject_surf_dir / f'rh.pial'
+
+    Segstats_node.inputs.aseg_stats = subject_stats_dir / 'aseg.stats'
+    Segstats_node.run()
 
 
 def Aseg7_test():
@@ -505,7 +510,9 @@ if __name__ == '__main__':
 
     # Pctsurfcon_test()
 
-    Hyporelabel_test()
+    # Hyporelabel_test()
+
+    Segstats_test()
 
     # Aseg7_test()
     # Aseg7ToAseg_test()
