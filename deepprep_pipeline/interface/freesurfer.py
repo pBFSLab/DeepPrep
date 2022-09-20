@@ -603,58 +603,70 @@ class WhitePialThickness2(BaseInterface):
 class CurvstatsInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     subject_id = Str(desc="sub-xxx", mandatory=True)
-    hemi = Str(desc="?h", mandatory=True)
-    hemi_smoothwm_file = File(exists=True, desc="surf/?h.smoothwm", mandatory=True)
-    hemi_curv_file = File(exists=True, desc="surf/?h.curv", mandatory=True)
-    hemi_sulc_file = File(exists=True, desc="surf/?h.sulc", mandatory=True)
+
+    lh_smoothwm = File(exists=True, desc="surf/lh.smoothwm", mandatory=True)
+    rh_smoothwm = File(exists=True, desc="surf/rh.smoothwm", mandatory=True)
+    lh_curv = File(exists=True, desc="surf/lh.curv", mandatory=True)
+    rh_curv = File(exists=True, desc="surf/rh.curv", mandatory=True)
+    lh_sulc = File(exists=True, desc="surf/lh.sulc", mandatory=True)
+    rh_sulc = File(exists=True, desc="surf/rh.sulc", mandatory=True)
     threads = traits.Int(desc='threads')
 
 
 class CurvstatsOutputSpec(TraitedSpec):
-    hemi_curv_stats_file = File(exists=True, desc="stats/?h.curv.stats")
+    lh_curv_stats = File(exists=True, desc="stats/lh.curv.stats")
+    rh_curv_stats = File(exists=True, desc="stats/rh.curv.stats")
 
 
 class Curvstats(BaseInterface):
     input_spec = CurvstatsInputSpec
     output_spec = CurvstatsOutputSpec
 
-    time = 3.1 / 60  # 运行时间：分钟 / 单脑测试时间
-    cpu = 2  # 最大cpu占用：个
+    # Pool
+    time = 2.7 / 60  # 运行时间：分钟 / 单脑测试时间
+    cpu = 2.7  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
 
-    def _run_interface(self, runtime):
+    def cmd(self, hemi):
         threads = self.inputs.threads if self.inputs.threads else 0
         fsthreads = get_freesurfer_threads(threads)
 
         # in FS7 curvstats moves here
-        cmd = f"recon-all -subject {self.inputs.subject_id} -hemi {self.inputs.hemi} -curvstats -no-isrunning {fsthreads}"
+        cmd = f"recon-all -subject {self.inputs.subject_id} -hemi {hemi} -curvstats -no-isrunning {fsthreads}"
         run_cmd_with_timing(cmd)
+
+    def _run_interface(self, runtime):
+        multipool(self.cmd, Multi_Num=2)
 
         return runtime
 
     def _list_outputs(self):
         outputs = self._outputs().get()
-        outputs["hemi_curv_stats_file"] = Path(self.inputs.subjects_dir, self.inputs.subject_id,
-                                               f'stats/{self.inputs.hemi}.curv.stats')
+        outputs["lh_curv_stats"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f'stats/lh.curv.stats')
+        outputs["rh_curv_stats"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f'stats/rh.curv.stats')
 
         return outputs
 
 
 class CortribbonInputSpec(BaseInterfaceInputSpec):
-    subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
-    subject_id = Str(desc="subject id", mandatory=True)
+    subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
+    subject_id = Str(desc="sub-xxx", mandatory=True)
     threads = traits.Int(desc='threads')
-    aseg_presurf_file = File(exists=True, desc="mri/aseg.presurf.mgz", mandatory=True)
-    hemi = Str(desc="?h", mandatory=True)
-    hemi_white = File(exists=True, desc="surf/?h.white", mandatory=True)
-    hemi_pial = File(exists=True, desc="surf/?h.pial", mandatory=True)
 
-    hemi_ribbon = File(exists=False, desc="mri/?h.ribbon.mgz", mandatory=True)
+    aseg_presurf_file = File(exists=True, desc="mri/aseg.presurf.mgz", mandatory=True)
+    lh_white = File(exists=True, desc="surf/lh.white", mandatory=True)
+    rh_white = File(exists=True, desc="surf/rh.white", mandatory=True)
+    lh_pial = File(exists=True, desc="surf/lh.pial", mandatory=True)
+    rh_pial = File(exists=True, desc="surf/rh.pial", mandatory=True)
+
+    lh_ribbon = File(exists=False, desc="mri/lh.ribbon.mgz", mandatory=True)
+    rh_ribbon = File(exists=False, desc="mri/rh.ribbon.mgz", mandatory=True)
     ribbon = File(exists=False, desc="mri/ribbon.mgz", mandatory=True)
 
 
 class CortribbonOutputSpec(TraitedSpec):
-    hemi_ribbon = File(exists=True, desc="mri/?h.ribbon.mgz")
+    lh_ribbon = File(exists=True, desc="mri/lh.ribbon.mgz")
+    rh_ribbon = File(exists=True, desc="mri/rh.ribbon.mgz")
     ribbon = File(exists=True, desc="mri/ribbon.mgz")
 
 
@@ -681,33 +693,43 @@ class Cortribbon(BaseInterface):
 
     def _list_outputs(self):
         outputs = self._outputs().get()
-        outputs["hemi_ribbon"] = self.inputs.hemi_ribbon
+        outputs["lh_ribbon"] = self.inputs.lh_ribbon
+        outputs["rh_ribbon"] = self.inputs.rh_ribbon
         outputs["ribbon"] = self.inputs.ribbon
 
         return outputs
 
 
 class ParcstatsInputSpec(BaseInterfaceInputSpec):
-    subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
-    subject_id = Str(desc="subject id", mandatory=True)
+    subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
+    subject_id = Str(desc="sub-xxx", mandatory=True)
     threads = traits.Int(desc='threads')
-    hemi = Str(desc="?h", mandatory=True)
-    hemi_aparc_annot_file = File(exists=True, desc="label/?h.aparc.annot", mandatory=True)
-    wm_file = File(exists=True, desc="mri/wm.mgz", mandatory=True)
-    ribbon_file = File(exists=True, desc="mri/ribbon.mgz", mandatory=True)
-    hemi_white_file = File(exists=True, desc="surf/?h.white", mandatory=True)
-    hemi_pial_file = File(exists=True, desc="surf/?h.pial", mandatory=True)
-    hemi_thickness_file = File(exists=True, desc="surf/?h.thickness", mandatory=True)
 
-    hemi_aparc_stats_file = File(exists=False, desc="stats/?h.aparc.stats", mandatory=True)
-    hemi_aparc_pial_stats_file = File(exists=False, desc="stats/?h.aparc.pial.stats", mandatory=True)
-    aparc_annot_ctab_file = File(exists=False, desc="label/aparc.annot.ctab", mandatory=True)
+    lh_aparc_annot = File(exists=True, desc="label/lh.aparc.annot", mandatory=True)
+    rh_aparc_annot = File(exists=True, desc="label/rh.aparc.annot", mandatory=True)
+    wm_file = File(exists=True, desc="mri/wm.mgz", mandatory=True)
+    aseg_file = File(exists=True, desc="mri/aseg.mgz", mandatory=True)
+    ribbon_file = File(exists=True, desc="mri/ribbon.mgz", mandatory=True)
+    lh_white = File(exists=True, desc="surf/lh.white", mandatory=True)
+    rh_white = File(exists=True, desc="surf/rh.white", mandatory=True)
+    lh_pial = File(exists=True, desc="surf/lh.pial", mandatory=True)
+    rh_pial = File(exists=True, desc="surf/rh.pial", mandatory=True)
+    lh_thickness = File(exists=True, desc="surf/lh.thickness", mandatory=True)
+    rh_thickness = File(exists=True, desc="surf/rh.thickness", mandatory=True)
+
+    lh_aparc_stats = File(exists=False, desc="stats/lh.aparc.stats", mandatory=True)
+    rh_aparc_stats = File(exists=False, desc="stats/rh.aparc.stats", mandatory=True)
+    lh_aparc_pial_stats = File(exists=False, desc="stats/lh.aparc.pial.stats", mandatory=True)
+    rh_aparc_pial_stats = File(exists=False, desc="stats/rh.aparc.pial.stats", mandatory=True)
+    aparc_annot_ctab = File(exists=False, desc="label/aparc.annot.ctab", mandatory=True)
 
 
 class ParcstatsOutputSpec(TraitedSpec):
-    hemi_aparc_stats_file = File(exists=True, desc="stats/?h.aparc.stats")
-    hemi_aparc_pial_stats_file = File(exists=True, desc="stats/?h.aparc.pial.stats")
-    aparc_annot_ctab_file = File(exists=True, desc="label/aparc.annot.ctab")
+    lh_aparc_stats = File(exists=True, desc="stats/lh.aparc.stats")
+    rh_aparc_stats = File(exists=True, desc="stats/rh.aparc.stats")
+    lh_aparc_pial_stats = File(exists=True, desc="stats/lh.aparc.pial.stats")
+    rh_aparc_pial_stats = File(exists=True, desc="stats/rh.aparc.pial.stats")
+    aparc_annot_ctab = File(exists=True, desc="label/aparc.annot.ctab")
 
 
 class Parcstats(BaseInterface):
@@ -729,30 +751,37 @@ class Parcstats(BaseInterface):
 
     def _list_outputs(self):
         outputs = self._outputs().get()
-        outputs["hemi_aparc_stats_file"] = self.inputs.hemi_aparc_stats_file
-        outputs["hemi_aparc_pial_stats_file"] = self.inputs.hemi_aparc_pial_stats_file
-        outputs["aparc_annot_ctab_file"] = self.inputs.aparc_annot_ctab_file
+        outputs["lh_aparc_stats"] = self.inputs.lh_aparc_stats
+        outputs["rh_aparc_stats"] = self.inputs.rh_aparc_stats
+        outputs["lh_aparc_pial_stats"] = self.inputs.lh_aparc_pial_stats
+        outputs["rh_aparc_pial_stats"] = self.inputs.rh_aparc_pial_stats
+        outputs["aparc_annot_ctab"] = self.inputs.aparc_annot_ctab
 
         return outputs
 
 
 class PctsurfconInputSpec(BaseInterfaceInputSpec):
-    subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
-    subject_id = Str(desc="subject id", mandatory=True)
+    subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
+    subject_id = Str(desc="sub-xxx", mandatory=True)
     threads = traits.Int(desc='threads')
-    hemi = Str(desc="lh/rh", mandatory=True)
     rawavg_file = File(exists=True, desc="mri/rawavg.mgz", mandatory=True)
     orig_file = File(exists=True, desc="mri/orig.mgz", mandatory=True)
-    hemi_cortex_label_file = File(exists=True, desc="label/?h.cortex.label", mandatory=True)
-    hemi_white_file = File(exists=True, desc="surf/?h.white", mandatory=True)
+    lh_cortex_label = File(exists=True, desc="label/lh.cortex.label", mandatory=True)
+    rh_cortex_label = File(exists=True, desc="label/rh.cortex.label", mandatory=True)
+    lh_white = File(exists=True, desc="surf/lh.white", mandatory=True)
+    rh_white = File(exists=True, desc="surf/rh.white", mandatory=True)
 
-    hemi_wg_pct_mgh_file = File(exists=False, desc="surf/?h.w-g.pct.mgh", mandatory=True)
-    hemi_wg_pct_stats_file = File(exists=False, desc="mri/?h.w-g.pct.stats", mandatory=True)
+    lh_wg_pct_mgh = File(exists=False, desc="surf/lh.w-g.pct.mgh", mandatory=True)
+    rh_wg_pct_mgh = File(exists=False, desc="surf/rh.w-g.pct.mgh", mandatory=True)
+    lh_wg_pct_stats = File(exists=False, desc="stats/lh.w-g.pct.stats", mandatory=True)
+    rh_wg_pct_stats = File(exists=False, desc="stats/rh.w-g.pct.stats", mandatory=True)
 
 
 class PctsurfconOutputSpec(TraitedSpec):
-    hemi_wg_pct_mgh_file = File(exists=True, desc="surf/?h.w-g.pct.mgh")
-    hemi_wg_pct_stats_file = File(exists=True, desc="mri/?h.w-g.pct.stats")
+    lh_wg_pct_mgh = File(exists=True, desc="surf/lh.w-g.pct.mgh")
+    rh_wg_pct_mgh = File(exists=True, desc="surf/rh.w-g.pct.mgh")
+    lh_wg_pct_stats = File(exists=True, desc="stats/lh.w-g.pct.stats")
+    rh_wg_pct_stats = File(exists=True, desc="stats/rh.w-g.pct.stats")
 
 
 class Pctsurfcon(BaseInterface):
@@ -774,25 +803,25 @@ class Pctsurfcon(BaseInterface):
 
     def _list_outputs(self):
         outputs = self._outputs().get()
-        outputs["hemi_wg_pct_mgh_file"] = self.inputs.hemi_wg_pct_mgh_file
-        outputs["hemi_wg_pct_stats_file"] = self.inputs.hemi_wg_pct_stats_file
+        outputs["lh_wg_pct_mgh"] = self.inputs. lh_wg_pct_mgh
+        outputs["rh_wg_pct_stats"] = self.inputs. rh_wg_pct_stats
 
         return outputs
 
 
 class HyporelabelInputSpec(BaseInterfaceInputSpec):
-    subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
+    subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
     threads = traits.Int(desc='threads')
-    hemi = Str(desc="lh/rh", mandatory=True)
-    aseg_presurf_file = File(exists=True, desc="mri/aseg.presurf.mgz", mandatory=True)
-    hemi_white_file = File(exists=True, desc="surf/?h.white", mandatory=True)
+    aseg_presurf = File(exists=True, desc="mri/aseg.presurf.mgz", mandatory=True)
+    lh_white = File(exists=True, desc="surf/lh.white", mandatory=True)
+    rh_white = File(exists=True, desc="surf/rh.white", mandatory=True)
 
-    aseg_presurf_hypos_file = File(exists=False, desc="mri/aseg.presurf.hypos.mgz", mandatory=True)
+    aseg_presurf_hypos = File(exists=False, desc="mri/aseg.presurf.hypos.mgz", mandatory=True)
 
 
 class HyporelabelOutputSpec(TraitedSpec):
-    aseg_presurf_hypos_file = File(exists=True, desc="mri/aseg.presurf.hypos.mgz")
+    aseg_presurf_hypos = File(exists=True, desc="mri/aseg.presurf.hypos.mgz")
 
 
 class Hyporelabel(BaseInterface):
@@ -815,7 +844,7 @@ class Hyporelabel(BaseInterface):
 
     def _list_outputs(self):
         outputs = self._outputs().get()
-        outputs["aseg_presurf_hypos_file"] = self.inputs.aseg_presurf_hypos_file
+        outputs["aseg_presurf_hypos"] = self.inputs.aseg_presurf_hypos
 
         return outputs
 
@@ -927,8 +956,8 @@ class Segstats(BaseInterface):
 
 
 class Aseg7InputSpec(BaseInterfaceInputSpec):
-    subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
-    subject_id = Str(desc="subject id", mandatory=True)
+    subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
+    subject_id = Str(desc="sub-xxx", mandatory=True)
     subject_mri_dir = Directory(exists=True, desc="subject mri dir", mandatory=True)
     threads = traits.Int(desc='threads')
 
@@ -978,8 +1007,8 @@ class Aseg7(BaseInterface):
 
 
 class Aseg7ToAsegInputSpec(BaseInterfaceInputSpec):
-    subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
-    subject_id = Str(desc="subject id", mandatory=True)
+    subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
+    subject_id = Str(desc="sub-xxx", mandatory=True)
     threads = traits.Int(desc='threads')
 
     # aseg_presurf_hypos_file = File(exists=True, desc="mri/aseg.presurf.hypos.mgz", mandatory=True)
