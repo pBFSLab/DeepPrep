@@ -154,7 +154,7 @@ class Filled(BaseInterface):
 
 
 class WhitePreaparc1InputSpec(BaseInterfaceInputSpec):
-    subjects_dir = Directory(exists=True, desc='subject dir path', mandatory=True)
+    subjects_dir = Directory(exists=True, desc='subjects_dir', mandatory=True)
     subject_id = Str(desc="sub-xxx", mandatory=True)
     threads = traits.Int(desc='threads')
 
@@ -213,7 +213,7 @@ class WhitePreaparc1(BaseInterface):
 class WhitePreaparc2InputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc='subject dir path', mandatory=True)
     subject_id = Str(desc="sub-xxx", mandatory=True)
-    hemi = Str(desc="?h", mandatory=True)
+    hemi = Str(desc="lh", mandatory=True)
     threads = traits.Int(desc='threads')
 
     aseg_presurf = File(exists=True, desc="mri/aseg.presurf.mgz", mandatory=True)
@@ -345,8 +345,8 @@ class InflatedSphereThresholdInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
     subject_id = traits.String(mandatory=True, desc='sub-xxx')
     threads = traits.Int(desc='threads')
-    lh_white_preaparc_file = File(exists=True, desc='surf/?h.white.preaparc')
-    rh_white_preaparc_file = File(exists=True, desc='surf/?h.white.preaparc')
+    lh_white_preaparc_file = File(exists=True, desc='surf/lh.white.preaparc')
+    rh_white_preaparc_file = File(exists=True, desc='surf/rh.white.preaparc')
 
 
 class InflatedSphereThresholdOutputSpec(TraitedSpec):
@@ -506,7 +506,7 @@ class WhitePialThickness1(BaseInterface):
 
 class WhitePialThickness2InputSpec(BaseInterfaceInputSpec):
     subject = traits.Str(desc="sub-xxx", mandatory=True)
-    hemi = traits.Str(desc="?h", mandatory=True)
+    hemi = traits.Str(desc="lh", mandatory=True)
 
     autodet_gw_stats_hemi_dat = File(exists=True, desc="surf/autodet.gw.stats.?h.dat", mandatory=True)
     aseg_presurf = File(exists=True, desc="mri/aseg.presurf.mgz", mandatory=True)
@@ -850,7 +850,7 @@ class Hyporelabel(BaseInterface):
 
 
 class JacobianAvgcurvCortparcThresholdInputSpec(BaseInterfaceInputSpec):
-    subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
+    subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     subject_id = traits.Str(mandatory=True, desc='sub-xxx')
     lh_white_preaparc = File(exists=True, mandatory=True, desc='surf/lh.white.preaparc')
     rh_white_preaparc = File(exists=True, mandatory=True, desc='surf/rh.white.preaparc')
@@ -961,22 +961,22 @@ class Aseg7InputSpec(BaseInterfaceInputSpec):
     subject_mri_dir = Directory(exists=True, desc="subject mri dir", mandatory=True)
     threads = traits.Int(desc='threads')
 
-    aseg_presurf_hypos_file = File(exists=False, desc="mri/aseg.presurf.hypos.mgz", mandatory=True)
+    aseg_presurf_hypos = File(exists=False, desc="mri/aseg.presurf.hypos.mgz", mandatory=True)
     # ribbon_file = File(exists=True, desc="mri/ribbon.mgz", mandatory=True)
-    lh_cortex_label_file = File(exists=True, desc="label/lh.cortex.label", mandatory=True)
-    lh_white_file = File(exists=True, desc="surf/lh.white", mandatory=True)
-    lh_pial_file = File(exists=True, desc="surf/lh.pial", mandatory=True)
-    rh_cortex_label_file = File(exists=True, desc="label/rh.cortex.label", mandatory=True)
-    rh_white_file = File(exists=True, desc="surf/rh.white", mandatory=True)
-    rh_pial_file = File(exists=True, desc="surf/rh.pial", mandatory=True)
-    lh_aparc_annot_file = File(exists=True, desc="surf/lh.aparc.annot", mandatory=True)
-    rh_aparc_annot_file = File(exists=True, desc="surf/rh.aparc.annot", mandatory=True)
+    lh_cortex_label = File(exists=True, desc="label/lh.cortex.label", mandatory=True)
+    lh_white = File(exists=True, desc="surf/lh.white", mandatory=True)
+    lh_pial = File(exists=True, desc="surf/lh.pial", mandatory=True)
+    rh_cortex_label = File(exists=True, desc="label/rh.cortex.label", mandatory=True)
+    rh_white = File(exists=True, desc="surf/rh.white", mandatory=True)
+    rh_pial = File(exists=True, desc="surf/rh.pial", mandatory=True)
+    lh_aparc_annot = File(exists=True, desc="surf/lh.aparc.annot", mandatory=True)
+    rh_aparc_annot = File(exists=True, desc="surf/rh.aparc.annot", mandatory=True)
 
-    aparc_aseg_file = File(exists=False, desc="mri/aparc+aseg.mgz", mandatory=True)
+    aparc_aseg = File(exists=False, desc="mri/aparc+aseg.mgz", mandatory=True)
 
 
 class Aseg7OutputSpec(TraitedSpec):
-    aparc_aseg_file = File(exists=True, desc="mri/aparc+aseg.mgz")
+    aparc_aseg = File(exists=True, desc="mri/aparc+aseg.mgz")
 
 
 class Aseg7(BaseInterface):
@@ -992,17 +992,17 @@ class Aseg7(BaseInterface):
         fsthreads = get_freesurfer_threads(threads)
         cmd = f'mri_surf2volseg --o aparc+aseg.mgz --label-cortex --i aseg.mgz ' \
               f'--threads {threads} ' \
-              f'--lh-annot {self.inputs.lh_aparc_annot_file} 1000 ' \
-              f'--lh-cortex-mask {self.inputs.lh_cortex_label_file} --lh-white {self.inputs.lh_white_file} ' \
-              f'--lh-pial {self.inputs.lh_pial_file} --rh-annot {self.inputs.rh_aparc_annot_file} 2000 ' \
-              f'--rh-cortex-mask {self.inputs.rh_cortex_label_file} --rh-white {self.inputs.rh_white_file} ' \
-              f'--rh-pial {self.inputs.rh_pial_file} '
+              f'--lh-annot {self.inputs.lh_aparc_annot } 1000 ' \
+              f'--lh-cortex-mask {self.inputs.lh_cortex_label } --lh-white {self.inputs.lh_white } ' \
+              f'--lh-pial {self.inputs.lh_pial } --rh-annot {self.inputs.rh_aparc_annot } 2000 ' \
+              f'--rh-cortex-mask {self.inputs.rh_cortex_label } --rh-white {self.inputs.rh_white } ' \
+              f'--rh-pial {self.inputs.rh_pial } '
         run_cmd_with_timing(cmd)
         return runtime
 
     def _list_outputs(self):
         outputs = self._outputs().get()
-        outputs["aparc_aseg_file"] = self.inputs.aparc_aseg_file
+        outputs["aparc_aseg "] = self.inputs.aparc_aseg
         return outputs
 
 
@@ -1011,14 +1011,14 @@ class Aseg7ToAsegInputSpec(BaseInterfaceInputSpec):
     subject_id = Str(desc="sub-xxx", mandatory=True)
     threads = traits.Int(desc='threads')
 
-    # aseg_presurf_hypos_file = File(exists=True, desc="mri/aseg.presurf.hypos.mgz", mandatory=True)
+    # aseg_presurf_hypos  = File(exists=True, desc="mri/aseg.presurf.hypos.mgz", mandatory=True)
     # ribbon_file = File(exists=True, desc="mri/ribbon.mgz", mandatory=True)
-    lh_cortex_label_file = File(exists=True, desc="label/lh.cortex.label", mandatory=True)
-    lh_white_file = File(exists=True, desc="surf/lh.white", mandatory=True)
-    lh_pial_file = File(exists=True, desc="surf/lh.pial", mandatory=True)
-    rh_cortex_label_file = File(exists=True, desc="label/rh.cortex.label", mandatory=True)
-    rh_white_file = File(exists=True, desc="surf/rh.white", mandatory=True)
-    rh_pial_file = File(exists=True, desc="surf/rh.pial", mandatory=True)
+    lh_cortex_label = File(exists=True, desc="label/lh.cortex.label", mandatory=True)
+    lh_white = File(exists=True, desc="surf/lh.white", mandatory=True)
+    lh_pial = File(exists=True, desc="surf/lh.pial", mandatory=True)
+    rh_cortex_label = File(exists=True, desc="label/rh.cortex.label", mandatory=True)
+    rh_white = File(exists=True, desc="surf/rh.white", mandatory=True)
+    rh_pial = File(exists=True, desc="surf/rh.pial", mandatory=True)
 
     aseg_file = File(exists=False, desc="mri/aseg.mgz", mandatory=True)
 
@@ -1053,25 +1053,31 @@ class Aseg7ToAseg(BaseInterface):
 
 class BalabelsMultInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
-    hemi_sphere_file = File(exists=True, desc="surf/?h.sphere.reg", mandatory=True)
+    lh_sphere_reg = File(exists=True, desc="surf/lh.sphere.reg", mandatory=True)
+    rh_sphere_reg = File(exists=True, desc="surf/rh.sphere.reg", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
     threads = traits.Int(desc='threads')
-    hemi = Str(desc="lh/rh", mandatory=True)
     freesurfer_dir = Directory(exists=True, desc="freesurfer dir", mandatory=True)
     fsaverage_label_dir = Directory(exists=True, desc="fsaverage label dir", mandatory=True)
     sub_label_dir = Directory(exists=True, desc="sub label dir", mandatory=True)
     sub_stats_dir = Directory(exists=True, desc="sub stats dir", mandatory=True)
 
-    hemi_BA45_exvivo_file = File(exists=False, desc="label/?h.BA45_exvivo.label", mandatory=True)
-    hemi_perirhinal_exvivo_file = File(exists=False, desc="label/?h.perirhinal_exvivo.label", mandatory=True)
-    hemi_entorhinal_exvivo_file = File(exists=False, desc="label/?h.entorhinal_exvivo.label", mandatory=True)
-    BA_exvivo_thresh_file = File(exists=False, desc="label/BA_exvivo.thresh.ctab", mandatory=True)
+    lh_BA45_exvivo = File(exists=False, desc="label/lh.BA45_exvivo.label", mandatory=True)
+    rh_BA45_exvivo = File(exists=False, desc="label/rh.BA45_exvivo.label", mandatory=True)
+    lh_perirhinal_exvivo = File(exists=False, desc="label/lh.perirhinal_exvivo.label", mandatory=True)
+    rh_perirhinal_exvivo = File(exists=False, desc="label/rh.perirhinal_exvivo.label", mandatory=True)
+    lh_entorhinal_exvivo = File(exists=False, desc="label/lh.entorhinal_exvivo.label", mandatory=True)
+    rh_entorhinal_exvivo = File(exists=False, desc="label/rh.entorhinal_exvivo.label", mandatory=True)
+    BA_exvivo_thresh = File(exists=False, desc="label/BA_exvivo.thresh.ctab", mandatory=True)
 
 class BalabelsMultOutputSpec(TraitedSpec):
-    hemi_BA45_exvivo_file = File(exists=True, desc="label/?h.BA45_exvivo.label")
-    hemi_perirhinal_exvivo_file = File(exists=True, desc="label/?h.perirhinal_exvivo.label")
-    hemi_entorhinal_exvivo_file = File(exists=True, desc="label/?h.entorhinal_exvivo.label")
-    BA_exvivo_thresh_file = File(exists=True, desc="label/BA_exvivo.thresh.ctab")
+    lh_BA45_exvivo = File(exists=True, desc="label/lh.BA45_exvivo.label")
+    rh_BA45_exvivo = File(exists=True, desc="label/rh.BA45_exvivo.label")
+    lh_perirhinal_exvivo = File(exists=True, desc="label/lh.perirhinal_exvivo.label")
+    rh_perirhinal_exvivo = File(exists=True, desc="label/rh.perirhinal_exvivo.label")
+    lh_entorhinal_exvivo = File(exists=True, desc="label/lh.entorhinal_exvivo.label")
+    rh_entorhinal_exvivo = File(exists=True, desc="label/rh.entorhinal_exvivo.label")
+    BA_exvivo_thresh = File(exists=True, desc="label/BA_exvivo.thresh.ctab")
 
 class BalabelsMult(BaseInterface):
     input_spec = BalabelsMultInputSpec
@@ -1081,9 +1087,7 @@ class BalabelsMult(BaseInterface):
     cpu = 1  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
 
-
-
-    def _run_interface(self, runtime):
+    def cmd(self, hemi):
         threads = self.inputs.threads if self.inputs.threads else 0
 
         file_names = ['BA1_exvivo.label', 'BA2_exvivo.label','BA3a_exvivo.label', 'BA3b_exvivo.label', 'BA4a_exvivo.label',
@@ -1113,19 +1117,19 @@ class BalabelsMult(BaseInterface):
             print("time:", t2 - t1)
         def Run_1(file_name):
             for i in range(len(file_name)):
-                cmd = f"mri_label2label --srcsubject fsaverage --srclabel {self.inputs.fsaverage_label_dir}/{self.inputs.hemi}.{file_name[i]} " \
-                      f"--trgsubject {self.inputs.subject_id} --trglabel {self.inputs.sub_label_dir}/{self.inputs.hemi}.{file_name[i]} " \
-                      f"--hemi {self.inputs.hemi} --regmethod surface"
+                cmd = f"mri_label2label --srcsubject fsaverage --srclabel {self.inputs.fsaverage_label_dir}/{hemi}.{file_name[i]} " \
+                      f"--trgsubject {self.inputs.subject_id} --trglabel {self.inputs.sub_label_dir}/{hemi}.{file_name[i]} " \
+                      f"--hemi {hemi} --regmethod surface"
                 run_cmd_with_timing(cmd)
 
         multi_process(file_names,Run_1)
 
-        cmd = f'mris_label2annot --s {self.inputs.subject_id} --ctab {self.inputs.freesurfer_dir}/average/colortable_vpnl.txt --hemi {self.inputs.hemi} ' \
-              f'--a mpm.vpnl --maxstatwinner --noverbose --l {self.inputs.sub_label_dir}/{self.inputs.hemi}.FG1.mpm.vpnl.label ' \
-              f'--l {self.inputs.sub_label_dir}/{self.inputs.hemi}.FG2.mpm.vpnl.label --l {self.inputs.sub_label_dir}/{self.inputs.hemi}.FG3.mpm.vpnl.label ' \
-              f'--l {self.inputs.sub_label_dir}/{self.inputs.hemi}.FG4.mpm.vpnl.label --l {self.inputs.sub_label_dir}/{self.inputs.hemi}.hOc1.mpm.vpnl.label ' \
-              f'--l {self.inputs.sub_label_dir}/{self.inputs.hemi}.hOc2.mpm.vpnl.label --l {self.inputs.sub_label_dir}/{self.inputs.hemi}.hOc3v.mpm.vpnl.label ' \
-              f'--l {self.inputs.sub_label_dir}/{self.inputs.hemi}.hOc4v.mpm.vpnl.label'
+        cmd = f'mris_label2annot --s {self.inputs.subject_id} --ctab {self.inputs.freesurfer_dir}/average/colortable_vpnl.txt --hemi {hemi} ' \
+              f'--a mpm.vpnl --maxstatwinner --noverbose --l {self.inputs.sub_label_dir}/{hemi}.FG1.mpm.vpnl.label ' \
+              f'--l {self.inputs.sub_label_dir}/{hemi}.FG2.mpm.vpnl.label --l {self.inputs.sub_label_dir}/{hemi}.FG3.mpm.vpnl.label ' \
+              f'--l {self.inputs.sub_label_dir}/{hemi}.FG4.mpm.vpnl.label --l {self.inputs.sub_label_dir}/{hemi}.hOc1.mpm.vpnl.label ' \
+              f'--l {self.inputs.sub_label_dir}/{hemi}.hOc2.mpm.vpnl.label --l {self.inputs.sub_label_dir}/{hemi}.hOc3v.mpm.vpnl.label ' \
+              f'--l {self.inputs.sub_label_dir}/{hemi}.hOc4v.mpm.vpnl.label'
         run_cmd_with_timing(cmd)
 
         part_file_names = ['BA1_exvivo.thresh.label', 'BA2_exvivo.thresh.label','BA3a_exvivo.thresh.label', 'BA3b_exvivo.thresh.label', 'BA4a_exvivo.thresh.label',
@@ -1134,41 +1138,44 @@ class BalabelsMult(BaseInterface):
 
         def Run_2(part_file_name):
             for i in range(len(part_file_name)):
-                cmd = f"mri_label2label --srcsubject fsaverage --srclabel {self.inputs.fsaverage_label_dir}/{self.inputs.hemi}.{part_file_name[i]} " \
-                      f"--trgsubject {self.inputs.subject_id} --trglabel {self.inputs.sub_label_dir}/{self.inputs.hemi}.{part_file_name[i]} " \
-                      f"--hemi {self.inputs.hemi} --regmethod surface"
+                cmd = f"mri_label2label --srcsubject fsaverage --srclabel {self.inputs.fsaverage_label_dir}/{hemi}.{part_file_name[i]} " \
+                      f"--trgsubject {self.inputs.subject_id} --trglabel {self.inputs.sub_label_dir}/{hemi}.{part_file_name[i]} " \
+                      f"--hemi {hemi} --regmethod surface"
                 run_cmd_with_timing(cmd)
 
         multi_process(part_file_names,Run_2)
-        cmd = f'mris_label2annot --s {self.inputs.subject_id} --hemi {self.inputs.hemi} --ctab {self.inputs.freesurfer_dir}/average/colortable_BA.txt --l {self.inputs.hemi}.BA1_exvivo.label ' \
-              f'--l {self.inputs.hemi}.BA2_exvivo.label --l {self.inputs.hemi}.BA3a_exvivo.label --l {self.inputs.hemi}.BA3b_exvivo.label --l {self.inputs.hemi}.BA4a_exvivo.label ' \
-              f'--l {self.inputs.hemi}.BA4p_exvivo.label --l {self.inputs.hemi}.BA6_exvivo.label --l {self.inputs.hemi}.BA44_exvivo.label --l {self.inputs.hemi}.BA45_exvivo.label ' \
-              f'--l {self.inputs.hemi}.V1_exvivo.label --l {self.inputs.hemi}.V2_exvivo.label --l {self.inputs.hemi}.MT_exvivo.label --l {self.inputs.hemi}.perirhinal_exvivo.label ' \
-              f'--l {self.inputs.hemi}.entorhinal_exvivo.label --a BA_exvivo --maxstatwinner --noverbose'
+        cmd = f'mris_label2annot --s {self.inputs.subject_id} --hemi {hemi} --ctab {self.inputs.freesurfer_dir}/average/colortable_BA.txt --l {hemi}.BA1_exvivo.label ' \
+              f'--l {hemi}.BA2_exvivo.label --l {hemi}.BA3a_exvivo.label --l {hemi}.BA3b_exvivo.label --l {hemi}.BA4a_exvivo.label ' \
+              f'--l {hemi}.BA4p_exvivo.label --l {hemi}.BA6_exvivo.label --l {hemi}.BA44_exvivo.label --l {hemi}.BA45_exvivo.label ' \
+              f'--l {hemi}.V1_exvivo.label --l {hemi}.V2_exvivo.label --l {hemi}.MT_exvivo.label --l {hemi}.perirhinal_exvivo.label ' \
+              f'--l {hemi}.entorhinal_exvivo.label --a BA_exvivo --maxstatwinner --noverbose'
         run_cmd_with_timing(cmd)
-        cmd = f'mris_label2annot --s {self.inputs.subject_id} --hemi {self.inputs.hemi} --ctab {self.inputs.freesurfer_dir}/average/colortable_BA.txt ' \
-              f'--l {self.inputs.hemi}.BA1_exvivo.thresh.label --l {self.inputs.hemi}.BA2_exvivo.thresh.label --l {self.inputs.hemi}.BA3a_exvivo.thresh.label ' \
-              f'--l {self.inputs.hemi}.BA3b_exvivo.thresh.label --l {self.inputs.hemi}.BA4a_exvivo.thresh.label --l {self.inputs.hemi}.BA4p_exvivo.thresh.label ' \
-              f'--l {self.inputs.hemi}.BA6_exvivo.thresh.label --l {self.inputs.hemi}.BA44_exvivo.thresh.label --l {self.inputs.hemi}.BA45_exvivo.thresh.label ' \
-              f'--l {self.inputs.hemi}.V1_exvivo.thresh.label --l {self.inputs.hemi}.V2_exvivo.thresh.label --l {self.inputs.hemi}.MT_exvivo.thresh.label ' \
-              f'--l {self.inputs.hemi}.perirhinal_exvivo.thresh.label --l {self.inputs.hemi}.entorhinal_exvivo.thresh.label --a BA_exvivo.thresh --maxstatwinner --noverbose'
+        cmd = f'mris_label2annot --s {self.inputs.subject_id} --hemi {hemi} --ctab {self.inputs.freesurfer_dir}/average/colortable_BA.txt ' \
+              f'--l {hemi}.BA1_exvivo.thresh.label --l {hemi}.BA2_exvivo.thresh.label --l {hemi}.BA3a_exvivo.thresh.label ' \
+              f'--l {hemi}.BA3b_exvivo.thresh.label --l {hemi}.BA4a_exvivo.thresh.label --l {hemi}.BA4p_exvivo.thresh.label ' \
+              f'--l {hemi}.BA6_exvivo.thresh.label --l {hemi}.BA44_exvivo.thresh.label --l {hemi}.BA45_exvivo.thresh.label ' \
+              f'--l {hemi}.V1_exvivo.thresh.label --l {hemi}.V2_exvivo.thresh.label --l {hemi}.MT_exvivo.thresh.label ' \
+              f'--l {hemi}.perirhinal_exvivo.thresh.label --l {hemi}.entorhinal_exvivo.thresh.label --a BA_exvivo.thresh --maxstatwinner --noverbose'
         run_cmd_with_timing(cmd)
-        cmd = f'mris_anatomical_stats -th3 -mgz -f {self.inputs.sub_stats_dir}/{self.inputs.hemi}.BA_exvivo.stats -b ' \
-              f'-a {self.inputs.sub_label_dir}/{self.inputs.hemi}.BA_exvivo.annot ' \
-              f'-c {self.inputs.sub_label_dir}/BA_exvivo.ctab {self.inputs.subject_id} {self.inputs.hemi} white'
+        cmd = f'mris_anatomical_stats -th3 -mgz -f {self.inputs.sub_stats_dir}/{hemi}.BA_exvivo.stats -b ' \
+              f'-a {self.inputs.sub_label_dir}/{hemi}.BA_exvivo.annot ' \
+              f'-c {self.inputs.sub_label_dir}/BA_exvivo.ctab {self.inputs.subject_id} {hemi} white'
         run_cmd_with_timing(cmd)
-        cmd = f'mris_anatomical_stats -th3 -mgz -f {self.inputs.sub_stats_dir}/{self.inputs.hemi}.BA_exvivo.thresh.stats -b ' \
-              f'-a {self.inputs.sub_label_dir}/{self.inputs.hemi}.BA_exvivo.thresh.annot ' \
-              f'-c {self.inputs.sub_label_dir}/BA_exvivo.thresh.ctab {self.inputs.subject_id} {self.inputs.hemi} white'
+        cmd = f'mris_anatomical_stats -th3 -mgz -f {self.inputs.sub_stats_dir}/{hemi}.BA_exvivo.thresh.stats -b ' \
+              f'-a {self.inputs.sub_label_dir}/{hemi}.BA_exvivo.thresh.annot ' \
+              f'-c {self.inputs.sub_label_dir}/BA_exvivo.thresh.ctab {self.inputs.subject_id} {hemi} white'
         run_cmd_with_timing(cmd)
 
+    def _run_interface(self, runtime):
+        multipool(self.cmd, Multi_Num=2)
         return runtime
 
     def _list_outputs(self):
         outputs = self._outputs().get()
-        outputs["hemi_BA45_exvivo_file"] = self.inputs.hemi_BA45_exvivo_file
-        outputs["hemi_BA45_exvivo_file"] = self.inputs.hemi_BA45_exvivo_file
-        outputs["hemi_perirhinal_exvivo_file"] = self.inputs.hemi_perirhinal_exvivo_file
-        outputs["BA_exvivo_thresh_file"] = self.inputs.BA_exvivo_thresh_file
+        outputs["lh_BA45_exvivo"] = self.inputs.lh_BA45_exvivo
+        outputs["rh_BA45_exvivo"] = self.inputs.rh_BA45_exvivo
+        outputs["lh_perirhinal_exvivo"] = self.inputs.lh_perirhinal_exvivo
+        outputs["rh_perirhinal_exvivo"] = self.inputs.rh_perirhinal_exvivo
+        outputs["BA_exvivo_thresh"] = self.inputs.BA_exvivo_thresh
 
         return outputs
