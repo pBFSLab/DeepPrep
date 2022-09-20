@@ -1059,8 +1059,8 @@ class BalabelsMultInputSpec(BaseInterfaceInputSpec):
     threads = traits.Int(desc='threads')
     freesurfer_dir = Directory(exists=True, desc="freesurfer dir", mandatory=True)
     fsaverage_label_dir = Directory(exists=True, desc="fsaverage label dir", mandatory=True)
-    sub_label_dir = Directory(exists=True, desc="sub label dir", mandatory=True)
-    sub_stats_dir = Directory(exists=True, desc="sub stats dir", mandatory=True)
+    # sub_label_dir = Directory(exists=True, desc="sub label dir", mandatory=True)
+    # sub_stats_dir = Directory(exists=True, desc="sub stats dir", mandatory=True)
 
     lh_BA45_exvivo = File(exists=False, desc="label/lh.BA45_exvivo.label", mandatory=True)
     rh_BA45_exvivo = File(exists=False, desc="label/rh.BA45_exvivo.label", mandatory=True)
@@ -1087,8 +1087,14 @@ class BalabelsMult(BaseInterface):
     cpu = 1  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
 
+    def __init__(self):
+        super(BalabelsMult, self).__init__()
+
+
     def cmd(self, hemi):
         threads = self.inputs.threads if self.inputs.threads else 0
+        sub_label_dir = Path(self.inputs.subjects_dir, self.inputs.subject_id, 'label')
+        sub_stats_dir = Path(self.inputs.subjects_dir, self.inputs.subject_id, 'stats')
 
         file_names = ['BA1_exvivo.label', 'BA2_exvivo.label','BA3a_exvivo.label', 'BA3b_exvivo.label', 'BA4a_exvivo.label',
                      'BA4p_exvivo.label', 'BA6_exvivo.label', 'BA44_exvivo.label', 'BA45_exvivo.label', 'V1_exvivo.label',
@@ -1118,18 +1124,18 @@ class BalabelsMult(BaseInterface):
         def Run_1(file_name):
             for i in range(len(file_name)):
                 cmd = f"mri_label2label --srcsubject fsaverage --srclabel {self.inputs.fsaverage_label_dir}/{hemi}.{file_name[i]} " \
-                      f"--trgsubject {self.inputs.subject_id} --trglabel {self.inputs.sub_label_dir}/{hemi}.{file_name[i]} " \
+                      f"--trgsubject {self.inputs.subject_id} --trglabel {sub_label_dir}/{hemi}.{file_name[i]} " \
                       f"--hemi {hemi} --regmethod surface"
                 run_cmd_with_timing(cmd)
 
         multi_process(file_names,Run_1)
 
         cmd = f'mris_label2annot --s {self.inputs.subject_id} --ctab {self.inputs.freesurfer_dir}/average/colortable_vpnl.txt --hemi {hemi} ' \
-              f'--a mpm.vpnl --maxstatwinner --noverbose --l {self.inputs.sub_label_dir}/{hemi}.FG1.mpm.vpnl.label ' \
-              f'--l {self.inputs.sub_label_dir}/{hemi}.FG2.mpm.vpnl.label --l {self.inputs.sub_label_dir}/{hemi}.FG3.mpm.vpnl.label ' \
-              f'--l {self.inputs.sub_label_dir}/{hemi}.FG4.mpm.vpnl.label --l {self.inputs.sub_label_dir}/{hemi}.hOc1.mpm.vpnl.label ' \
-              f'--l {self.inputs.sub_label_dir}/{hemi}.hOc2.mpm.vpnl.label --l {self.inputs.sub_label_dir}/{hemi}.hOc3v.mpm.vpnl.label ' \
-              f'--l {self.inputs.sub_label_dir}/{hemi}.hOc4v.mpm.vpnl.label'
+              f'--a mpm.vpnl --maxstatwinner --noverbose --l {sub_label_dir}/{hemi}.FG1.mpm.vpnl.label ' \
+              f'--l {sub_label_dir}/{hemi}.FG2.mpm.vpnl.label --l {sub_label_dir}/{hemi}.FG3.mpm.vpnl.label ' \
+              f'--l {sub_label_dir}/{hemi}.FG4.mpm.vpnl.label --l {sub_label_dir}/{hemi}.hOc1.mpm.vpnl.label ' \
+              f'--l {sub_label_dir}/{hemi}.hOc2.mpm.vpnl.label --l {sub_label_dir}/{hemi}.hOc3v.mpm.vpnl.label ' \
+              f'--l {sub_label_dir}/{hemi}.hOc4v.mpm.vpnl.label'
         run_cmd_with_timing(cmd)
 
         part_file_names = ['BA1_exvivo.thresh.label', 'BA2_exvivo.thresh.label','BA3a_exvivo.thresh.label', 'BA3b_exvivo.thresh.label', 'BA4a_exvivo.thresh.label',
@@ -1139,7 +1145,7 @@ class BalabelsMult(BaseInterface):
         def Run_2(part_file_name):
             for i in range(len(part_file_name)):
                 cmd = f"mri_label2label --srcsubject fsaverage --srclabel {self.inputs.fsaverage_label_dir}/{hemi}.{part_file_name[i]} " \
-                      f"--trgsubject {self.inputs.subject_id} --trglabel {self.inputs.sub_label_dir}/{hemi}.{part_file_name[i]} " \
+                      f"--trgsubject {self.inputs.subject_id} --trglabel {sub_label_dir}/{hemi}.{part_file_name[i]} " \
                       f"--hemi {hemi} --regmethod surface"
                 run_cmd_with_timing(cmd)
 
@@ -1157,13 +1163,13 @@ class BalabelsMult(BaseInterface):
               f'--l {hemi}.V1_exvivo.thresh.label --l {hemi}.V2_exvivo.thresh.label --l {hemi}.MT_exvivo.thresh.label ' \
               f'--l {hemi}.perirhinal_exvivo.thresh.label --l {hemi}.entorhinal_exvivo.thresh.label --a BA_exvivo.thresh --maxstatwinner --noverbose'
         run_cmd_with_timing(cmd)
-        cmd = f'mris_anatomical_stats -th3 -mgz -f {self.inputs.sub_stats_dir}/{hemi}.BA_exvivo.stats -b ' \
-              f'-a {self.inputs.sub_label_dir}/{hemi}.BA_exvivo.annot ' \
-              f'-c {self.inputs.sub_label_dir}/BA_exvivo.ctab {self.inputs.subject_id} {hemi} white'
+        cmd = f'mris_anatomical_stats -th3 -mgz -f {sub_stats_dir}/{hemi}.BA_exvivo.stats -b ' \
+              f'-a {sub_label_dir}/{hemi}.BA_exvivo.annot ' \
+              f'-c {sub_label_dir}/BA_exvivo.ctab {self.inputs.subject_id} {hemi} white'
         run_cmd_with_timing(cmd)
-        cmd = f'mris_anatomical_stats -th3 -mgz -f {self.inputs.sub_stats_dir}/{hemi}.BA_exvivo.thresh.stats -b ' \
-              f'-a {self.inputs.sub_label_dir}/{hemi}.BA_exvivo.thresh.annot ' \
-              f'-c {self.inputs.sub_label_dir}/BA_exvivo.thresh.ctab {self.inputs.subject_id} {hemi} white'
+        cmd = f'mris_anatomical_stats -th3 -mgz -f {sub_stats_dir}/{hemi}.BA_exvivo.thresh.stats -b ' \
+              f'-a {sub_label_dir}/{hemi}.BA_exvivo.thresh.annot ' \
+              f'-c {sub_label_dir}/BA_exvivo.thresh.ctab {self.inputs.subject_id} {hemi} white'
         run_cmd_with_timing(cmd)
 
     def _run_interface(self, runtime):
