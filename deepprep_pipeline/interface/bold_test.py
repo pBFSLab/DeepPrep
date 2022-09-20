@@ -52,6 +52,8 @@ def MotionCorrection_test():
     preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
     runs = sorted([d.name for d in (preprocess_dir / subject_id / 'bold').iterdir() if d.is_dir()])
     MotionCorrection_node = Node(MotionCorrection(), name='MotionCorrection_node')
+    MotionCorrection_node.inputs.preprocess_dir = preprocess_dir
+    MotionCorrection_node.inputs.subject_id = subject_id
     for run in runs:
         MotionCorrection_node.inputs.skip_faln = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln.nii.gz'
         MotionCorrection_node.inputs.skip_faln_mc = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
