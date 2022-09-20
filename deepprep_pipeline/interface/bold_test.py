@@ -1,4 +1,4 @@
-from bold import BoldSkipReorient
+from bold import BoldSkipReorient, MotionCorrection
 from pathlib import Path
 from nipype import Node
 import os
@@ -43,6 +43,19 @@ def BoldSkipReorient_test():
         BoldSkipReorient_node.inputs.skip_bold = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld{run}_rest_skip.nii.gz'
         BoldSkipReorient_node.inputs.reorient_skip_bold = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld{run}_rest_reorient_skip.nii.gz'
         BoldSkipReorient_node.run()
+
+
+def MotionCorrection_test():
+    task = 'motor'
+    subject_id = 'sub-MSC01'
+    data_path = Path(f'/mnt/DATA/lincong/temp/DeepPrep/MSC')
+    preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
+    runs = sorted([d.name for d in (preprocess_dir / subject_id / 'bold').iterdir() if d.is_dir()])
+    MotionCorrection_node = Node(MotionCorrection(), name='MotionCorrection_node')
+    for run in runs:
+        MotionCorrection_node.inputs.skip_faln = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln.nii.gz'
+        MotionCorrection_node.inputs.skip_faln_mc = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
+    MotionCorrection_node.run()
 
 
 if __name__ == '__main__':
