@@ -82,3 +82,43 @@ class BoldSkipReorient(BaseInterface):
         outputs["reorient_skip_bold"] = self.inputs.reorient_skip_bold
 
         return outputs
+
+
+class MotionCorrectionInputSpec(BaseInterfaceInputSpec):
+    preprocess_dir = Directory(exists=True, desc="preprocess dir", mandatory=True)
+    subject_id = Str(desc="subject id", mandatory=True)
+    skip_faln = File(exists=True, desc="'bold'/run/f'{subj}_bld_rest_reorient_skip_faln.nii.gz'", mandatory=True)
+
+    skip_faln_mc = File(exists=False, desc="'bold'/run/f'{subj}_bld_rest_reorient_skip_faln_mc.nii.gz'", mandatory=True)
+
+
+class MotionCorrectionOutputSpec(TraitedSpec):
+    skip_faln_mc = File(exists=True, desc="'bold'/run/f'{subj}_bld_rest_reorient_skip_faln_mc.nii.gz'")
+
+
+class MotionCorrection(BaseInterface):
+    input_spec = MotionCorrectionInputSpec
+    output_spec = MotionCorrectionOutputSpec
+
+    time = 0 / 60  # 运行时间：分钟 / 单run测试时间
+    cpu = 0  # 最大cpu占用：个
+    gpu = 0  # 最大gpu占用：MB
+
+    def _run_interface(self, runtime):
+        shargs = [
+            '-s', self.inputs.subject_id,
+            '-d', self.inputs.preprocess_dir,
+            '-per-session',
+            '-fsd', 'bold',
+            '-fstem', f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln',
+            '-fmcstem', f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc',
+            '-nolog']
+        sh.mc_sess(*shargs, _out=sys.stdout)
+
+        return runtime
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["skip_faln_mc"] = self.inputs.skip_faln_mc
+
+        return outputs
