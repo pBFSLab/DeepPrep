@@ -1,6 +1,8 @@
 import os
 import time
 import argparse
+from multiprocessing import Pool
+
 
 
 def get_freesurfer_threads(threads: int):
@@ -20,6 +22,15 @@ def run_cmd_with_timing(cmd):
     print(cmd)
     print('=' * 50, 'runtime:', ' ' * 3, time.time() - start)
 
+def multipool(cmd, Multi_Num=2):
+    cmd_pool = []
+    cmd_pool.append(['lh'])
+    cmd_pool.append(['rh'])
+
+    pool = Pool(Multi_Num)
+    pool.starmap(cmd, cmd_pool)
+    pool.close()
+    pool.join()
 
 def set_envrion(threads: int = 1):
     # FreeSurfer recon-all env
