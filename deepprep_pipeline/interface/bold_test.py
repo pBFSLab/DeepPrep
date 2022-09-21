@@ -1,8 +1,15 @@
-from bold import BoldSkipReorient, MotionCorrection, Stc, Register, MkBrainmask, VxmRegistraion
+from bold import BoldSkipReorient, MotionCorrection, Stc, Register, MkBrainmask, VxmRegistraion, RestGauss, RestBandpass, RestRegression
 from pathlib import Path
 from nipype import Node
 import os
-
+import ants
+import bids
+import pandas as pd
+import numpy as np
+import csv
+import sh
+import nibabel as nib
+from sklearn.decomposition import PCA
 
 def set_envrion(threads: int = 1):
     # FreeSurfer recon-all env
@@ -181,6 +188,27 @@ def RestBandpass_test():
         RestBandpass_node.inputs.preprocess_dir = preprocess_dir
         RestBandpass_node.inputs.bpss = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss.nii.gz'
         RestBandpass_node.run()
+
+
+def RestRegression_test():
+    task = 'motor'
+    subject_id = 'sub-MSC01'
+    data_path = Path(f'/mnt/DATA/lincong/temp/DeepPrep/MSC')
+    subjects_dir = Path('/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+    preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
+    bold_dir = preprocess_dir / subject_id / 'bold'
+    layout = bids.BIDSLayout(str(data_path), derivatives=False)
+    RestRegression_node = Node(RestRegression(), f'RestRegression_node')
+
+    runs = sorted([d.name for d in (preprocess_dir / subject_id / 'bold').iterdir() if d.is_dir()])
+    for run in runs:
+        RestRegression_node.inputs.subject_id = subject_id
+        RestRegression_node.inputs.preprocess_dir = preprocess_dir
+        RestRegression_node.inputs.mc = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
+        RestRegression_node.inputs.all_regressors = compile_regressors(preprocess_dir, bold_dir, run, subject_id, RestRegression_node.inputs.fcmri,RestRegression_node.inputs.bpss)
+        RestRegression_node.run()
+
 if __name__ == '__main__':
     set_envrion()
     # BoldSkipReorient_test()
