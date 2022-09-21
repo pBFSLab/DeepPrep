@@ -68,13 +68,13 @@ def Stc_test():
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
     preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
     runs = sorted([d.name for d in (preprocess_dir / subject_id / 'bold').iterdir() if d.is_dir()])
-    stc_node = Node(Stc(), f'stc_node')
-    stc_node.inputs.subject_id = subject_id
-    stc_node.inputs.preprocess_dir = preprocess_dir
+    Stc_node = Node(Stc(), f'stc_node')
+    Stc_node.inputs.subject_id = subject_id
+    Stc_node.inputs.preprocess_dir = preprocess_dir
     for run in runs:
-        stc_node.inputs.skip = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip.nii.gz'
-        stc_node.inputs.faln = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln.nii.gz'
-    stc_node.run()
+        Stc_node.inputs.skip = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip.nii.gz'
+        Stc_node.inputs.faln = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln.nii.gz'
+    Stc_node.run()
 
 
 def Register_test():
