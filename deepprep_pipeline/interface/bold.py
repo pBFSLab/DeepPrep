@@ -401,3 +401,34 @@ class VxmRegistraion(BaseInterface):
         outputs["npz"] = self.inputs.npz
 
         return outputs
+
+
+class RestGaussInputSpec(BaseInterfaceInputSpec):
+    subject_id = Str(exists=True, mandatory=True, desc='subject')
+    preprocess_dir = Directory(exists=True, mandatory=True, desc='preprocess_dir')
+    fcmri = File(exists=True, mandatory=True, desc='fcmri')
+    mc = File(exists=True, mandatory=True, desc='{subj}_bld_rest_reorient_skip_faln_mc.nii.gz')
+    gauss = File(mandatory=True, desc='{subj}_bld_rest_reorient_skip_faln_mc_g1000000000.nii.gz')
+
+
+class RestGaussOutputSpec(TraitedSpec):
+    gauss = File(exists=True, mandatory=True, desc='{subj}_bld_rest_reorient_skip_faln_mc_g1000000000.nii.gz')
+
+
+class RestGauss(BaseInterface):
+    input_spec = RestGaussInputSpec
+    output_spec = RestGaussOutputSpec
+
+    # time = 120 / 60  # 运行时间：分钟
+    # cpu = 2  # 最大cpu占用：个
+    # gpu = 0  # 最大gpu占用：MB
+
+    def _run_interface(self, runtime):
+        self.inputs.gauss = gauss_nifti(str(self.inputs.mc), 1000000000)
+        return runtime
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["gauss"] = self.inputs.gauss
+        return outputs
+
