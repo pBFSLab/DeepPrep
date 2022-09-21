@@ -125,26 +125,25 @@ class MotionCorrection(BaseInterface):
 
 
 class StcInputSpec(BaseInterfaceInputSpec):
-    subject_id = Str(exists=True, mandatory=True, desc='subject')
-    preprocess_dir = Directory(exists=True, mandatory=True, desc='preprocess_dir')
-    skip = File(exists=True, mandatory=True, desc='{subj}_bld_rest_reorient_skip')
-    faln = File(mandatory=True, desc='{subj}_bld_rest_reorient_skip_faln')
+    subject_id = Str(exists=True, desc='subject', mandatory=True)
+    preprocess_dir = Directory(exists=True, desc='preprocess_dir', mandatory=True)
+    skip = File(exists=True, desc='{subj}_bld_rest_reorient_skip', mandatory=True)
+    faln = File(exists=False, desc='{subj}_bld_rest_reorient_skip_faln', mandatory=True)
 
 
 class StcOutputSpec(TraitedSpec):
-    faln = File(exists=True, mandatory=True, desc='{subj}_bld_rest_reorient_skip_faln')
+    faln = File(exists=True, desc='{subj}_bld_rest_reorient_skip_faln')
 
 
 class Stc(BaseInterface):
     input_spec = StcInputSpec
     output_spec = StcOutputSpec
 
-    # time = 120 / 60  # 运行时间：分钟
-    # cpu = 2  # 最大cpu占用：个
-    # gpu = 0  # 最大gpu占用：MB
+    time = 823 / 60  # 运行时间：分钟
+    cpu = 6  # 最大cpu占用：个
+    gpu = 0  # 最大gpu占用：MB
 
     def _run_interface(self, runtime):
-        # subjects_dir = self.inputs.subjects_dir
         input_fname = f'{self.inputs.subject_id}_bld_rest_reorient_skip'
         output_fname = f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln'
         shargs = [
@@ -168,23 +167,23 @@ class Stc(BaseInterface):
 
 
 class RegisterInputSpec(BaseInterfaceInputSpec):
-    subject_id = Str(exists=True, mandatory=True, desc='subject')
-    preprocess_dir = Directory(exists=True, mandatory=True, desc='preprocess_dir')
-    mov = File(exists=True, mandatory=True, desc='{subj}_bld_rest_reorient_skip_faln_mc.nii.gz')
-    reg = File(mandatory=True, desc='{subj}_bld_rest_reorient_skip_faln_mc.register.dat')
+    subject_id = Str(exists=True, desc='subject', mandatory=True)
+    preprocess_dir = Directory(exists=True, desc='preprocess_dir', mandatory=True)
+    mov = File(exists=True, desc='{subj}_bld_rest_reorient_skip_faln_mc.nii.gz', mandatory=True)
+    reg = File(exists=False, desc='{subj}_bld_rest_reorient_skip_faln_mc.register.dat', mandatory=True)
 
 
 class RegisterOutputSpec(TraitedSpec):
-    reg = File(exists=True, mandatory=True, desc='{subj}_bld_rest_reorient_skip_faln_mc.register.dat')
+    reg = File(exists=True, desc='{subj}_bld_rest_reorient_skip_faln_mc.register.dat')
 
 
 class Register(BaseInterface):
     input_spec = RegisterInputSpec
     output_spec = RegisterOutputSpec
 
-    # time = 120 / 60  # 运行时间：分钟
-    # cpu = 2  # 最大cpu占用：个
-    # gpu = 0  # 最大gpu占用：MB
+    time = 96 / 60  # 运行时间：分钟
+    cpu = 1  # 最大cpu占用：个
+    gpu = 0  # 最大gpu占用：MB
 
     def _run_interface(self, runtime):
         shargs = [
@@ -204,36 +203,38 @@ class Register(BaseInterface):
 
 
 class MkBrainmaskInputSpec(BaseInterfaceInputSpec):
-    recon_dir = Directory(exists=True, mandatory=True, desc='recon_dir')
-    subject_id = Str(exists=True, mandatory=True, desc='subject')
-    preprocess_dir = Directory(exists=True, mandatory=True, desc='preprocess_dir')
-    seg = File(exists=True, mandatory=True, desc='mri/aparc+aseg.mgz')
-    func = File(mandatory=True, desc='{subj}.func.aseg.nii')
-    mov = File(exists=True, mandatory=True, desc='{subj}_bld_rest_reorient_skip_faln_mc.nii.gz')
-    reg = File(exists=True, mandatory=True, desc='{subj}_bld_rest_reorient_skip_faln_mc.register.dat')
-    wm = File(mandatory=True, desc='{subj}.func.wm.nii.gz')
-    vent = File(mandatory=True, desc='{subj}.func.ventricles.nii.gz')
-    mask = File(mandatory=True, desc='{subj}.brainmask.bin.nii.gz')
+    subject_id = Str(exists=True, desc='subject', mandatory=True)
+    preprocess_dir = Directory(exists=True, desc='preprocess_dir', mandatory=True)
+    seg = File(exists=True, desc='mri/aparc+aseg.mgz', mandatory=True)
+    targ = File(exists=True, desc='mri/brainmask.mgz', mandatory=True)
+    mov = File(exists=True,  desc='{subj}_bld_rest_reorient_skip_faln_mc.nii.gz', mandatory=True)
+    reg = File(exists=True, desc='{subj}_bld_rest_reorient_skip_faln_mc.register.dat', mandatory=True)
 
+    func = File(exists=False, desc='{subj}.func.aseg.nii', mandatory=True)
+    wm = File(exists=False, desc='{subj}.func.wm.nii.gz', mandatory=True)
+    vent = File(exists=False, desc='{subj}.func.ventricles.nii.gz', mandatory=True)
+    mask = File(exists=False, desc='{subj}.brainmask.nii.gz', mandatory=True)
+    binmask = File(exists=False, desc='{subj}.brainmask.bin.nii.gz', mandatory=True)
 
 class MkBrainmaskOutputSpec(TraitedSpec):
-    func = File(exists=True, mandatory=True, desc='{subj}.func.aseg.nii')
-    wm = File(exists=True, mandatory=True, desc='{subj}.func.wm.nii.gz')
-    vent = File(exists=True, mandatory=True, desc='{subj}.func.ventricles.nii.gz')
-    mask = File(exists=True, mandatory=True, desc='{subj}.brainmask.bin.nii.gz')
+    func = File(exists=True, desc='{subj}.func.aseg.nii')
+    wm = File(exists=True, desc='{subj}.func.wm.nii.gz')
+    vent = File(exists=True, desc='{subj}.func.ventricles.nii.gz')
+    mask = File(exists=True, desc='{subj}.brainmask.nii.gz')
+    binmask = File(exists=True, desc='{subj}.brainmask.bin.nii.gz')
 
 
 class MkBrainmask(BaseInterface):
     input_spec = MkBrainmaskInputSpec
     output_spec = MkBrainmaskOutputSpec
 
-    # time = 120 / 60  # 运行时间：分钟
-    # cpu = 2  # 最大cpu占用：个
-    # gpu = 0  # 最大gpu占用：MB
+    time = 4 / 60  # 运行时间：分钟 / 单run测试时间
+    cpu = 1  # 最大cpu占用：个
+    gpu = 0  # 最大gpu占用：MB
 
     def _run_interface(self, runtime):
         shargs = [
-            '--seg', self.inputs.recon_dir / self.inputs.subject_id / 'mri/aparc+aseg.mgz',
+            '--seg', self.inputs.seg,
             '--temp', self.inputs.mov,
             '--reg', self.inputs.reg,
             '--o', self.inputs.func]
@@ -253,6 +254,14 @@ class MkBrainmask(BaseInterface):
         sh.mri_binarize(*shargs, _out=sys.stdout)
 
         shargs = [
+            '--reg', self.inputs.reg,
+            '--targ', self.inputs.targ,
+            '--mov', self.inputs.mov,
+            '--inv',
+            '--o', self.inputs.mask]
+        sh.mri_vol2vol(*shargs, _out=sys.stdout)
+
+        shargs = [
             '--i', self.inputs.mask,
             '--o', self.inputs.binmask,
             '--min', 0.0001]
@@ -264,6 +273,7 @@ class MkBrainmask(BaseInterface):
     def _list_outputs(self):
         outputs = self._outputs().get()
         outputs["func"] = self.inputs.func
+        outputs["mask"] = self.inputs.mask
         outputs["wm"] = self.inputs.wm
         outputs["vent"] = self.inputs.vent
         outputs["binmask"] = self.inputs.binmask
