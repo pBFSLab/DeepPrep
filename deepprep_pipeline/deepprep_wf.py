@@ -133,6 +133,7 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
     # SampleSegmentationToSurfave_node.inputs.lh_cortex_label_file = subjects_dir / subject_id / "label" / "lh.cortex.label"
     # SampleSegmentationToSurfave_node.inputs.rh_cortex_label_file = subjects_dir / subject_id / "label" / "rh.cortex.label"
 
+    #
     SampleSegmentationToSurfave_node.inputs.lh_aparc_DKTatlas_mapped_prefix_file = subjects_dir / subject_id / 'label' / 'lh.aparc.DKTatlas.mapped.prefix.annot'
     SampleSegmentationToSurfave_node.inputs.rh_aparc_DKTatlas_mapped_prefix_file = subjects_dir / subject_id / 'label' / 'rh.aparc.DKTatlas.mapped.prefix.annot'
     SampleSegmentationToSurfave_node.inputs.lh_aparc_DKTatlas_mapped_file = subjects_dir / subject_id / 'label' / 'lh.aparc.DKTatlas.mapped.annot'
@@ -251,7 +252,7 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
     BalabelsMult_node.inputs.threads = 8
 
     BalabelsMult_node.inputs.freesurfer_dir = os.environ['FREESURFER']
-    BalabelsMult_node.inputs.fsaverage_label_dir = '/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon/fsaverage6/label'
+    BalabelsMult_node.inputs.fsaverage_label_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon/fsaverage6/label')
     
     BalabelsMult_node.inputs.lh_BA45_exvivo = subjects_dir / subject_id / 'label' / f'lh.BA45_exvivo.label'
     BalabelsMult_node.inputs.rh_BA45_exvivo = subjects_dir / subject_id / 'label' / f'rh.BA45_exvivo.label'
@@ -261,7 +262,76 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
     BalabelsMult_node.inputs.lh_entorhinal_exvivo = subjects_dir / subject_id / 'label' / f'lh.entorhinal_exvivo.label'
     BalabelsMult_node.inputs.rh_entorhinal_exvivo = subjects_dir / subject_id / 'label' / f'rh.entorhinal_exvivo.label'
 
+
+    # ############################### part 2 ###############################
+    # updateaseg_node.inputs.aseg_noCCseg_file = subjects_dir / subject_id / 'mri' / 'aseg.auto_noCCseg.mgz'
+    # updateaseg_node.inputs.seg_file = subjects_dir / subject_id / 'mri' / 'aparc.DKTatlas+aseg.deep.mgz'
+    # updateaseg_node.outputs.aparc_aseg_file = subjects_dir / subject_id / 'mri' / 'aparc.DKTatlas+aseg.deep.withCC.mgz'
+    # white_preaparc1_node.inputs.aseg_presurf = subjects_dir / subject_id / 'mri' / 'aseg.presurf.mgz'
+    # white_preaparc1_node.inputs.brain_finalsurfs = subjects_dir / subject_id / 'mri' / 'brain.finalsurfs.mgz'
+    # white_preaparc1_node.inputs.wm_file = subjects_dir / subject_id / 'mri' / 'wm.mgz'
+    # white_preaparc1_node.inputs.filled_file = subjects_dir / subject_id / 'mri' / 'filled.mgz'
+    # white_preaparc1_node.inputs.lh_orig = subjects_dir / subject_id / 'surf' / 'lh.orig'
+    # white_preaparc1_node.inputs.rh_orig = subjects_dir / subject_id / 'surf' / 'rh.orig'
+    # white_preaparc1_node.outputs.lh_white_preaparc = subjects_dir / subject_id / 'surf' / 'lh.white.preaparc'
+    # white_preaparc1_node.outputs.rh_white_preaparc = subjects_dir / subject_id / 'surf' / 'rh.white.preaparc'
+    # white_preaparc1_node.outputs.lh_cortex_label = subjects_dir / subject_id / 'label' / 'lh.cortex.label'
+    # white_preaparc1_node.outputs.rh_cortex_label = subjects_dir / subject_id / 'label' / 'rh.cortex.label'
+    # ############################### part 2 ###############################
+    #
+    # ############################### part 3 ###############################
+    # filled_node.inputs.aseg_auto_file = subjects_dir / subject_id / 'mri/aseg.auto.mgz'
+    # filled_node.inputs.norm_file = subjects_dir / subject_id / 'mri/norm.mgz'
+    # filled_node.inputs.brainmask_file = subjects_dir / subject_id / 'mri/brainmask.mgz'
+    # filled_node.inputs.talairach_lta = subjects_dir / subject_id / 'mri/transforms/talairach.lta'
+    #
+    # lh_white_preaparc = subjects_dir / subject_id / "surf" / f"lh.white.preaparc"
+    # rh_white_preaparc = subjects_dir / subject_id / "surf" / f"rh.white.preaparc"
+    # lh_sphere_reg = subjects_dir / subject_id / "surf" / f"lh.sphere.reg"
+    # rh_sphere_reg = subjects_dir / subject_id / "surf" / f"rh.sphere.reg"
+    # lh_jacobian_white = subjects_dir / subject_id / "surf" / f"lh.jacobian_white"
+    # rh_jacobian_white = subjects_dir / subject_id / "surf" / f"rh.jacobian_white"
+    # lh_avg_curv = subjects_dir / subject_id / "surf" / f"lh.avg_curv"
+    # rh_avg_curv = subjects_dir / subject_id / "surf" / f"rh.avg_curv"
+    # aseg_presurf_dir = subjects_dir / subject_id / "mri" / "aseg.presurf.mgz"
+    # lh_cortex_label = subjects_dir / subject_id / "label" / f"lh.cortex.label"
+    # rh_cortex_label = subjects_dir / subject_id / "label" / f"rh.cortex.label"
+    # lh_aparc_annot = subjects_dir / subject_id / "label" / f"lh.aparc.annot"
+    # rh_aparc_annot = subjects_dir / subject_id / "label" / f"rh.aparc.annot"
+    #
+    # JacobianAvgcurvCortparc_node.inputs.subjects_dir = subjects_dir
+    # JacobianAvgcurvCortparc_node.inputs.subject_id = subject_id
+    # JacobianAvgcurvCortparc_node.inputs.lh_white_preaparc = lh_white_preaparc
+    # JacobianAvgcurvCortparc_node.inputs.rh_white_preaparc = rh_white_preaparc
+    # JacobianAvgcurvCortparc_node.inputs.lh_sphere_reg = lh_sphere_reg
+    # JacobianAvgcurvCortparc_node.inputs.rh_sphere_reg = rh_sphere_reg
+    # JacobianAvgcurvCortparc_node.inputs.lh_jacobian_white = lh_jacobian_white
+    # JacobianAvgcurvCortparc_node.inputs.rh_jacobian_white = rh_jacobian_white
+    # JacobianAvgcurvCortparc_node.inputs.lh_avg_curv = lh_avg_curv
+    # JacobianAvgcurvCortparc_node.inputs.rh_avg_curv = rh_avg_curv
+    # JacobianAvgcurvCortparc_node.inputs.aseg_presurf_file = aseg_presurf_dir
+    # JacobianAvgcurvCortparc_node.inputs.lh_cortex_label = lh_cortex_label
+    # JacobianAvgcurvCortparc_node.inputs.rh_cortex_label = rh_cortex_label
+    #
+    # JacobianAvgcurvCortparc_node.inputs.lh_aparc_annot = lh_aparc_annot
+    # JacobianAvgcurvCortparc_node.inputs.rh_aparc_annot = rh_aparc_annot
+    # JacobianAvgcurvCortparc_node.inputs.threads = 8
+    #
+    # ############################### part 3 ###############################
+    #
+    # ############################### part -1 ###############################
+    # featreg_node.inputs.lh_sulc = Path(subjects_dir) / subject_id / f'surf/lh.sulc'
+    # featreg_node.inputs.rh_sulc = Path(subjects_dir) / subject_id / f'surf/rh.sulc'
+    # featreg_node.inputs.lh_curv = Path(subjects_dir) / subject_id / f'surf/lh.curv'
+    # featreg_node.inputs.rh_curv = Path(subjects_dir) / subject_id / f'surf/rh.curv'
+    # featreg_node.inputs.lh_sphere = Path(subjects_dir) / subject_id / f'surf/lh.sphere'
+    # featreg_node.inputs.rh_sphere = Path(subjects_dir) / subject_id / f'surf/rh.sphere'
+    # ############################### part -1 ###############################
+
+
+
     # create workflow
+
     single_structure_wf.connect([
                                  (orig_and_rawavg_node, segment_node, [("orig_file", "in_file"),
                                                                        ]),
@@ -301,6 +371,7 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
                                                                         ]),
                                  (fastcsr_node, white_preaparc1_node, [("lh_orig_file", "lh_orig"), ("rh_orig_file", "rh_orig"),
                                                                         ]),
+
                                  (updateaseg_node, SampleSegmentationToSurfave_node, [("aparc_aseg_file", "aparc_aseg_file"),
                                                                                         ]),
                                  (white_preaparc1_node, SampleSegmentationToSurfave_node, [("lh_white_preaparc", "lh_white_preaparc_file"), ("rh_white_preaparc", "rh_white_preaparc_file"),
@@ -313,6 +384,7 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
                                  (inflated_sphere_node, featreg_node, [("lh_sulc", "lh_sulc"), ("rh_sulc", "rh_sulc"),
                                                                        ("lh_sphere", "lh_sphere"), ("rh_sphere", "rh_sphere"),
                                                                       ]),
+
                                  (white_preaparc1_node, JacobianAvgcurvCortparc_node, [("lh_white_preaparc", "lh_white_preaparc"), ("rh_white_preaparc", "rh_white_preaparc"),
                                                                                        ("lh_cortex_label", "lh_cortex_label"), ("rh_cortex_label", "rh_cortex_label"),
                                                                                         ]),
@@ -374,6 +446,7 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
                                                                     ]),
                                  (JacobianAvgcurvCortparc_node, Aseg7_node, [("lh_aparc_annot", "lh_aparc_annot"), ("rh_aparc_annot", "rh_aparc_annot"),
                                                                             ]),
+
                                  (brainmask_node, Segstats_node, [("brainmask_file", "brainmask_file"), ("norm_file", "norm_file"),
                                                                     ]),
                                  (Aseg7ToAseg_node, Segstats_node, [("aseg_file", "aseg_file"),
