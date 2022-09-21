@@ -148,6 +148,23 @@ def VxmRegistraion_test():
     VxmRegistraion_node.inputs.npz = tmpdir / 'vxminput.npz'
     VxmRegistraion_node.run()
 
+
+def RestGauss_test():
+    task = 'motor'
+    subject_id = 'sub-MSC01'
+    data_path = Path(f'/mnt/DATA/lincong/mnt/DATA/lincong/temp/DeepPrep/MSC')
+    subjects_dir = Path('/mnt/DATA/lincong/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+    preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
+    RestGauss_node = Node(RestGauss(), f'RestGauss_node')
+    RestGauss_node.inputs.fcmri = preprocess_dir / subject_id / 'fcmri'
+    runs = sorted([d.name for d in (preprocess_dir / subject_id / 'bold').iterdir() if d.is_dir()])
+    for run in runs:
+        RestGauss_node.inputs.subject_id = subject_id
+        RestGauss_node.inputs.preprocess_dir = preprocess_dir
+        RestGauss_node.inputs.mc = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
+        RestGauss_node.run()
+
 if __name__ == '__main__':
     set_envrion()
     # BoldSkipReorient_test()
