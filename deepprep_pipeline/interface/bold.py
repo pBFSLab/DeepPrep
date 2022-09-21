@@ -122,3 +122,46 @@ class MotionCorrection(BaseInterface):
         outputs["skip_faln_mc"] = self.inputs.skip_faln_mc
 
         return outputs
+
+
+class StcInputSpec(BaseInterfaceInputSpec):
+    subject_id = Str(exists=True, mandatory=True, desc='subject')
+    preprocess_dir = Directory(exists=True, mandatory=True, desc='preprocess_dir')
+    skip = File(exists=True, mandatory=True, desc='{subj}_bld_rest_reorient_skip')
+    faln = File(mandatory=True, desc='{subj}_bld_rest_reorient_skip_faln')
+
+
+class StcOutputSpec(TraitedSpec):
+    faln = File(exists=True, mandatory=True, desc='{subj}_bld_rest_reorient_skip_faln')
+
+
+class Stc(BaseInterface):
+    input_spec = StcInputSpec
+    output_spec = StcOutputSpec
+
+    # time = 120 / 60  # 运行时间：分钟
+    # cpu = 2  # 最大cpu占用：个
+    # gpu = 0  # 最大gpu占用：MB
+
+    def _run_interface(self, runtime):
+        # subjects_dir = self.inputs.subjects_dir
+        input_fname = f'{self.inputs.subject_id}_bld_rest_reorient_skip'
+        output_fname = f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln'
+        shargs = [
+            '-s', self.inputs.subject_id,
+            '-d', self.inputs.preprocess_dir,
+            '-fsd', 'bold',
+            '-so', 'odd',
+            '-ngroups', 1,
+            '-i', input_fname,
+            '-o', output_fname,
+            '-nolog']
+        sh.stc_sess(*shargs, _out=sys.stdout)
+
+        return runtime
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["faln"] = self.inputs.faln
+
+        return outputs
