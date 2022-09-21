@@ -60,5 +60,23 @@ def MotionCorrection_test():
     MotionCorrection_node.run()
 
 
+def Stc_test():
+    task = 'motor'
+    subject_id = 'sub-MSC01'
+    data_path = Path(f'/media/pbfs18/69209918-9132-4c3e-92e2-c8d11aee8786/DATA/DeepPrepData/DATA1/DeepPrep/MSC')
+    preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
+    runs = sorted([d.name for d in (preprocess_dir / subject_id / 'bold').iterdir() if d.is_dir()])
+    for run in runs:
+        skip = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip.nii.gz'
+        faln = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln.nii.gz'
+
+
+    stc_node = Node(Stc(), f'stc_node')
+    stc_node.inputs.subject_id = subject_id
+    stc_node.inputs.preprocess_dir = preprocess_dir
+    stc_node.inputs.skip = skip
+    stc_node.inputs.faln = faln
+
+    stc_node.run()
 if __name__ == '__main__':
     set_envrion()
