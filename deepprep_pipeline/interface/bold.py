@@ -471,3 +471,36 @@ class RestBandpass(BaseInterface):
         outputs["bpss"] = self.inputs.bpss
 
         return outputs
+
+
+class RestRegressionInputSpec(BaseInterfaceInputSpec):
+    subject_id = Str(exists=True, mandatory=True, desc='subject')
+    preprocess_dir = Directory(exists=True, mandatory=True, desc='preprocess_dir')
+    fcmri = File(exists=True, mandatory=True, desc='fcmri')
+    bold = File(exists=True, mandatory=True, desc='bold')
+    bpss = File(mandatory=True, desc='bpss_path')
+    all_regressors = File(mandatory=True, desc='all_regressors_path')
+
+
+class RestRegressionOutputSpec(TraitedSpec):
+    all_regressors = File(exists=True, mandatory=True, desc='all_regressors_path')
+
+
+class RestRegression(BaseInterface):
+    input_spec = RestRegressionInputSpec
+    output_spec = RestRegressionOutputSpec
+
+    # time = 120 / 60  # 运行时间：分钟
+    # cpu = 2  # 最大cpu占用：个
+    # gpu = 0  # 最大gpu占用：MB
+
+    def _run_interface(self, runtime):
+        regression(self.inputs.bpss, self.inputs.all_regressors)
+
+        return runtime
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["all_regressors"] = self.inputs.all_regressors
+
+        return outputs
