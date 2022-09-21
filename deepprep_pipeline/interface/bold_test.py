@@ -162,6 +162,25 @@ def RestGauss_test():
         RestGauss_node.inputs.mc = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
         RestGauss_node.run()
 
+
+def RestBandpass_test():
+    task = 'motor'
+    subject_id = 'sub-MSC01'
+    data_path = Path(f'/mnt/DATA/lincong/mnt/DATA/lincong/temp/DeepPrep/MSC')
+    subjects_dir = Path('/mnt/DATA/lincong/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+    preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
+    layout = bids.BIDSLayout(str(data_path), derivatives=False)
+    RestBandpass_node = Node(RestBandpass(), f'RestBandpass_node')
+    RestBandpass_node.inputs.fcmri = preprocess_dir / subject_id / 'fcmri'
+    RestBandpass_node.inputs.bold = preprocess_dir / subject_id / 'bold'
+    RestBandpass_node.inputs.bids_bolds = layout.get(subject=subject_id, suffix='bold', extension='.nii.gz')
+    runs = sorted([d.name for d in (preprocess_dir / subject_id / 'bold').iterdir() if d.is_dir()])
+    for run in runs:
+        RestBandpass_node.inputs.subject_id = subject_id
+        RestBandpass_node.inputs.preprocess_dir = preprocess_dir
+        RestBandpass_node.inputs.bpss = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss.nii.gz'
+        RestBandpass_node.run()
 if __name__ == '__main__':
     set_envrion()
     # BoldSkipReorient_test()
