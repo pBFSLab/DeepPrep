@@ -223,8 +223,8 @@ class UpdateAsegInputSpec(BaseInterfaceInputSpec):
 
 class UpdateAsegOutputSpec(TraitedSpec):
     aseg_auto_file = File(exists=True, desc="mri/aseg.auto.mgz")
-    cc_up_file = File(exists=True, desc="mri/transforms/cc_up.lta")
-    aparc_aseg_file = File(exists=True, desc="mri/aparc.DKTatlas+aseg.deep.withCC.mgz")
+    cc_up_file = File(exists=False, desc="mri/transforms/cc_up.lta")
+    aparc_aseg_file = File(exists=False, desc="mri/aparc.DKTatlas+aseg.deep.withCC.mgz")
 
 
 class UpdateAseg(BaseInterface):
