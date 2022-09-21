@@ -202,3 +202,70 @@ class Register(BaseInterface):
 
         return outputs
 
+
+class MkBrainmaskInputSpec(BaseInterfaceInputSpec):
+    recon_dir = Directory(exists=True, mandatory=True, desc='recon_dir')
+    subject_id = Str(exists=True, mandatory=True, desc='subject')
+    preprocess_dir = Directory(exists=True, mandatory=True, desc='preprocess_dir')
+    seg = File(exists=True, mandatory=True, desc='mri/aparc+aseg.mgz')
+    func = File(mandatory=True, desc='{subj}.func.aseg.nii')
+    mov = File(exists=True, mandatory=True, desc='{subj}_bld_rest_reorient_skip_faln_mc.nii.gz')
+    reg = File(exists=True, mandatory=True, desc='{subj}_bld_rest_reorient_skip_faln_mc.register.dat')
+    wm = File(mandatory=True, desc='{subj}.func.wm.nii.gz')
+    vent = File(mandatory=True, desc='{subj}.func.ventricles.nii.gz')
+    mask = File(mandatory=True, desc='{subj}.brainmask.bin.nii.gz')
+
+
+class MkBrainmaskOutputSpec(TraitedSpec):
+    func = File(exists=True, mandatory=True, desc='{subj}.func.aseg.nii')
+    wm = File(exists=True, mandatory=True, desc='{subj}.func.wm.nii.gz')
+    vent = File(exists=True, mandatory=True, desc='{subj}.func.ventricles.nii.gz')
+    mask = File(exists=True, mandatory=True, desc='{subj}.brainmask.bin.nii.gz')
+
+
+class MkBrainmask(BaseInterface):
+    input_spec = MkBrainmaskInputSpec
+    output_spec = MkBrainmaskOutputSpec
+
+    # time = 120 / 60  # 运行时间：分钟
+    # cpu = 2  # 最大cpu占用：个
+    # gpu = 0  # 最大gpu占用：MB
+
+    def _run_interface(self, runtime):
+        shargs = [
+            '--seg', self.inputs.recon_dir / self.inputs.subject_id / 'mri/aparc+aseg.mgz',
+            '--temp', self.inputs.mov,
+            '--reg', self.inputs.reg,
+            '--o', self.inputs.func]
+        sh.mri_label2vol(*shargs, _out=sys.stdout)
+
+        shargs = [
+            '--i', self.inputs.func,
+            '--wm',
+            '--erode', 1,
+            '--o', self.inputs.wm]
+        sh.mri_binarize(*shargs, _out=sys.stdout)
+
+        shargs = [
+            '--i', self.inputs.func,
+            '--ventricles',
+            '--o', self.inputs.vent]
+        sh.mri_binarize(*shargs, _out=sys.stdout)
+
+        shargs = [
+            '--i', self.inputs.mask,
+            '--o', self.inputs.binmask,
+            '--min', 0.0001]
+        sh.mri_binarize(*shargs, _out=sys.stdout)
+
+
+        return runtime
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["func"] = self.inputs.func
+        outputs["wm"] = self.inputs.wm
+        outputs["vent"] = self.inputs.vent
+        outputs["binmask"] = self.inputs.binmask
+
+        return outputs
