@@ -432,3 +432,42 @@ class RestGauss(BaseInterface):
         outputs["gauss"] = self.inputs.gauss
         return outputs
 
+
+class RestBandpassInputSpec(BaseInterfaceInputSpec):
+    subject_id = Str(exists=True, mandatory=True, desc='subject')
+    preprocess_dir = Directory(exists=True, mandatory=True, desc='preprocess_dir')
+    fcmri = File(exists=True, mandatory=True, desc='fcmri')
+    gauss = File(exists=True, mandatory=True, desc='{subj}_bld_rest_reorient_skip_faln_mc_g1000000000.nii.gz')
+    bpss = File(mandatory=True, desc='bpss_path')
+    bids_bolds = File(exists=True, mandatory=True, desc='bids_bolds')
+
+
+class RestBandpassOutputSpec(TraitedSpec):
+    bpss = File(exists=True, mandatory=True, desc='bpss_path')
+
+
+class RestBandpass(BaseInterface):
+    input_spec = RestBandpassInputSpec
+    output_spec = RestBandpassOutputSpec
+
+    # time = 120 / 60  # 运行时间：分钟
+    # cpu = 2  # 最大cpu占用：个
+    # gpu = 0  # 最大gpu占用：MB
+
+    def _run_interface(self, runtime):
+        for bids_bold in enumerate(self.inputs.bids_bolds):
+            entities = dict(bids_bold.entities)
+            if 'RepetitionTime' in entities:
+                TR = entities['RepetitionTime']
+            else:
+                bold = ants.image_read(bids_bold.path)
+                TR = bold.spacing[3]
+            self.inputs.bpss = bandpass_nifti(self.inputs.gauss, TR)
+
+        return runtime
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["bpss"] = self.inputs.bpss
+
+        return outputs
