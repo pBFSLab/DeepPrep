@@ -1,4 +1,4 @@
-from bold import BoldSkipReorient, MotionCorrection, Stc, Register, MkBrainmask
+from bold import BoldSkipReorient, MotionCorrection, Stc, Register, MkBrainmask, VxmRegistraion
 from pathlib import Path
 from nipype import Node
 import os
@@ -122,11 +122,36 @@ def MkBrainmask_test():
         Mkbrainmask_node.inputs.binmask = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}.brainmask.bin.nii.gz'
         Mkbrainmask_node.run()
 
+def VxmRegistraion_test():
+    subject_id = 'sub-MSC01'
+    data_path = Path(f'/mnt/DATA/lincong/temp/DeepPrep/MSC')
+    derivative_deepprep_path = data_path / 'derivatives' / 'deepprep'
+    tmpdir = derivative_deepprep_path / subject_id / 'tmp'
+    freesurfer_subjects_path = derivative_deepprep_path / 'Recon'
+    os.environ['SUBJECTS_DIR'] = str(freesurfer_subjects_path)
+    atlas_type = 'MNI152_T1_2mm'
+    VxmRegistraion_node = Node(VxmRegistraion(), name='VxmRegistraion_node')
+    VxmRegistraion_node.inputs.subject_id = subject_id
+    VxmRegistraion_node.inputs.norm = freesurfer_subjects_path / subject_id / 'mri' / 'norm.mgz'
+    VxmRegistraion_node.inputs.model_file = Path(__file__).parent.parent / 'model' / 'voxelmorph' / atlas_type / 'model.h5'
+    VxmRegistraion_node.inputs.atlas_type = atlas_type
+    VxmRegistraion_node.inputs.atlas = Path(__file__).parent.parent / 'model' / 'voxelmorph' / atlas_type / 'MNI152_T1_2mm_brain.nii.gz'
+    VxmRegistraion_node.inputs.vxm_atlas = Path(__file__).parent.parent / 'model' / 'voxelmorph' / atlas_type / 'MNI152_T1_2mm_brain_vxm.nii.gz'
+    VxmRegistraion_node.inputs.vxm_atlas_npz = Path(__file__).parent.parent / 'model' / 'voxelmorph' / atlas_type / 'MNI152_T1_2mm_brain_vxm.npz'
+    VxmRegistraion_node.inputs.vxm2atlas_trf = Path(__file__).parent.parent / 'model' / 'voxelmorph' / atlas_type / 'MNI152_T1_2mm_vxm2atlas.mat'
 
+    VxmRegistraion_node.inputs.vxm_warp = tmpdir / 'warp.nii.gz'
+    VxmRegistraion_node.inputs.vxm_warped = tmpdir / 'warped.nii.gz'
+    VxmRegistraion_node.inputs.trf = tmpdir / f'{subject_id}_affine.mat'
+    VxmRegistraion_node.inputs.warp = tmpdir / f'{subject_id}_warp.nii.gz'
+    VxmRegistraion_node.inputs.warped = tmpdir / f'{subject_id}_warped.nii.gz'
+    VxmRegistraion_node.inputs.npz = tmpdir / 'vxminput.npz'
+    VxmRegistraion_node.run()
 
 if __name__ == '__main__':
     set_envrion()
     # BoldSkipReorient_test()
     # MotionCorrection_test()
     # Stc_test()
+    VxmRegistraion_test()
 
