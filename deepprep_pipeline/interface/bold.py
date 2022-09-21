@@ -128,7 +128,7 @@ class StcInputSpec(BaseInterfaceInputSpec):
     subject_id = Str(exists=True, desc='subject', mandatory=True)
     preprocess_dir = Directory(exists=True, desc='preprocess_dir', mandatory=True)
     skip = File(exists=True, desc='{subj}_bld_rest_reorient_skip', mandatory=True)
-    faln = File(mandatory=False, desc='{subj}_bld_rest_reorient_skip_faln', mandatory=True)
+    faln = File(exists=False, desc='{subj}_bld_rest_reorient_skip_faln', mandatory=True)
 
 
 class StcOutputSpec(TraitedSpec):
