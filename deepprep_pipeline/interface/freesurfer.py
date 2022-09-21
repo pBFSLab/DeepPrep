@@ -803,8 +803,10 @@ class Pctsurfcon(BaseInterface):
 
     def _list_outputs(self):
         outputs = self._outputs().get()
-        outputs["lh_wg_pct_mgh"] = self.inputs. lh_wg_pct_mgh
-        outputs["rh_wg_pct_stats"] = self.inputs. rh_wg_pct_stats
+        outputs["lh_wg_pct_mgh"] = self.inputs.subjects_dir / self.inputs.subject_id / 'surf' / f'lh.w-g.pct.mgh'
+        outputs["rh_wg_pct_mgh"] = self.inputs.subjects_dir / self.inputs.subject_id / 'surf' / f'rh.w-g.pct.mgh'
+        outputs["lh_wg_pct_stats"] = self.inputs.subjects_dir / self.inputs.subject_id / 'stats' / 'lh.w-g.pct.stats'
+        outputs["rh_wg_pct_stats"] = self.inputs.subjects_dir / self.inputs.subject_id / 'stats' / 'rh.w-g.pct.stats'
 
         return outputs
 

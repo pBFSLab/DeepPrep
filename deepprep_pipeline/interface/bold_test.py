@@ -67,51 +67,47 @@ def MotionCorrection_test():
 def Stc_test():
     task = 'motor'
     subject_id = 'sub-MSC01'
-    data_path = Path(f'/media/pbfs18/69209918-9132-4c3e-92e2-c8d11aee8786/DATA/DeepPrepData/DATA1/DeepPrep/MSC')
+    data_path = Path(f'/mnt/DATA/lincong/temp/DeepPrep/MSC')
+    subjects_dir = Path('/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
     preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
     runs = sorted([d.name for d in (preprocess_dir / subject_id / 'bold').iterdir() if d.is_dir()])
+    Stc_node = Node(Stc(), f'stc_node')
+    Stc_node.inputs.subject_id = subject_id
+    Stc_node.inputs.preprocess_dir = preprocess_dir
     for run in runs:
-        skip = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip.nii.gz'
-        faln = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln.nii.gz'
-
-
-    stc_node = Node(Stc(), f'stc_node')
-    stc_node.inputs.subject_id = subject_id
-    stc_node.inputs.preprocess_dir = preprocess_dir
-    stc_node.inputs.skip = skip
-    stc_node.inputs.faln = faln
-
-    stc_node.run()
+        Stc_node.inputs.skip = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip.nii.gz'
+        Stc_node.inputs.faln = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln.nii.gz'
+    Stc_node.run()
 
 
 def Register_test():
     task = 'motor'
     subject_id = 'sub-MSC01'
-    data_path = Path(f'/media/pbfs18/69209918-9132-4c3e-92e2-c8d11aee8786/DATA/DeepPrepData/DATA1/DeepPrep/MSC')
+    data_path = Path(f'/mnt/DATA/lincong/temp/DeepPrep/MSC')
+    subjects_dir = Path('/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
     preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
     runs = sorted([d.name for d in (preprocess_dir / subject_id / 'bold').iterdir() if d.is_dir()])
     for run in runs:
-        mov = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
-        reg = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln_mc.register.dat'
-
-
-    register_node = Node(Register(), f'register_node')
-    register_node.inputs.subject_id = subject_id
-    register_node.inputs.preprocess_dir = preprocess_dir
-    register_node.inputs.mov = mov
-    register_node.inputs.reg = reg
-
-    register_node.run()
+        Register_node = Node(Register(), f'register_node')
+        Register_node.inputs.subject_id = subject_id
+        Register_node.inputs.preprocess_dir = preprocess_dir
+        Register_node.inputs.mov = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
+        Register_node.inputs.reg = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln_mc.register.dat'
+        Register_node.run()
 
 
 def MkBrainmask_test():
-    recon_dir = Path(os.environ['SUBJECTS_DIR'])
     task = 'motor'
     subject_id = 'sub-MSC01'
-    data_path = Path(f'/media/pbfs18/69209918-9132-4c3e-92e2-c8d11aee8786/DATA/DeepPrepData/DATA1/DeepPrep/MSC')
+    data_path = Path(f'/mnt/DATA/lincong/temp/DeepPrep/MSC')
+    subjects_dir = Path('/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
     preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
     runs = sorted([d.name for d in (preprocess_dir / subject_id / 'bold').iterdir() if d.is_dir()])
     for run in runs:
+<<<<<<< HEAD
         func = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}.func.aseg.nii'
         mov = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
         reg = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln_mc.register.dat'
@@ -133,11 +129,31 @@ def MkBrainmask_test():
 
 
     mkbrainmask_node.run()
+=======
+        Mkbrainmask_node = Node(MkBrainmask(), f'mkbrainmask_node')
+        Mkbrainmask_node.inputs.subject_id = subject_id
+        Mkbrainmask_node.inputs.preprocess_dir = preprocess_dir
+        Mkbrainmask_node.inputs.seg = subjects_dir / subject_id / 'mri/aparc+aseg.mgz'
+        Mkbrainmask_node.inputs.targ = subjects_dir / subject_id / 'mri/brainmask.mgz'
+        Mkbrainmask_node.inputs.func = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}.func.aseg.nii'
+        Mkbrainmask_node.inputs.mov = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
+
+        Mkbrainmask_node.inputs.reg = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln_mc.register.dat'
+        Mkbrainmask_node.inputs.wm = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}.func.wm.nii.gz'
+        Mkbrainmask_node.inputs.vent = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}.func.ventricles.nii.gz'
+        Mkbrainmask_node.inputs.mask = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}.brainmask.nii.gz'
+        Mkbrainmask_node.inputs.binmask = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}.brainmask.bin.nii.gz'
+        Mkbrainmask_node.run()
+>>>>>>> 6b4e629ff18b40f55f28767ef47db21b9cfb6bea
 
 
 if __name__ == '__main__':
     set_envrion()
+<<<<<<< HEAD
 
     # BoldSkipReorient_test()
 
     MotionCorrection_test()
+=======
+    Stc_test()
+>>>>>>> 6b4e629ff18b40f55f28767ef47db21b9cfb6bea
