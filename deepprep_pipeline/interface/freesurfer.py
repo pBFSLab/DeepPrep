@@ -413,15 +413,15 @@ class WhitePialThickness1InputSpec(BaseInterfaceInputSpec):
     wm_file = File(exists=True, desc="mri/wm.mgz", mandatory=True)
     lh_aparc_annot = File(exists=True, desc="label/lh.aparc.annot", mandatory=True)
     rh_aparc_annot = File(exists=True, desc="label/rh.aparc.annot", mandatory=True)
-    lh_cortex_hipamyg_label = File(exists=True, desc="label/lh.cortex+hipamyg.label", mandatory=True)
-    rh_cortex_hipamyg_label = File(exists=True, desc="label/rh.cortex+hipamyg.label", mandatory=True)
+    lh_cortex_hipamyg_label = File(exists=False, desc="label/lh.cortex+hipamyg.label", mandatory=True)
+    rh_cortex_hipamyg_label = File(exists=False, desc="label/rh.cortex+hipamyg.label", mandatory=True)
     lh_cortex_label = File(exists=True, desc="label/lh.cortex.label", mandatory=True)
     rh_cortex_label = File(exists=True, desc="label/rh.cortex.label", mandatory=True)
 
     lh_aparc_DKTatlas_mapped_annot = File(exists=True, desc="label/lh.aparc.DKTatlas.mapped.annot", mandatory=True)
     rh_aparc_DKTatlas_mapped_annot = File(exists=True, desc="label/hh.aparc.DKTatlas.mapped.annot", mandatory=True)
-    lh_white = File(exists=True, desc="surf/lh.white", mandatory=True)
-    rh_white = File(exists=True, desc="surf/rh.white", mandatory=True)
+    lh_white = File(exists=False, desc="surf/lh.white", mandatory=True)
+    rh_white = File(exists=False, desc="surf/rh.white", mandatory=True)
 
 
 class WhitePialThickness1OutputSpec(TraitedSpec):
@@ -961,7 +961,7 @@ class Segstats(BaseInterface):
 class Aseg7InputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     subject_id = Str(desc="sub-xxx", mandatory=True)
-    subject_mri_dir = Directory(exists=True, desc="subject mri dir", mandatory=True)
+    # subject_mri_dir = Directory(exists=True, desc="subject mri dir", mandatory=True)
     threads = traits.Int(desc='threads')
 
     aseg_presurf_hypos = File(exists=False, desc="mri/aseg.presurf.hypos.mgz", mandatory=True)
