@@ -4,6 +4,7 @@ import sys
 import sh
 import nibabel as nib
 import numpy as np
+from pathlib import Path
 
 
 class BoldSkipReorientInputSpec(BaseInterfaceInputSpec):
@@ -207,7 +208,7 @@ class MkBrainmaskInputSpec(BaseInterfaceInputSpec):
     preprocess_dir = Directory(exists=True, desc='preprocess_dir', mandatory=True)
     seg = File(exists=True, desc='mri/aparc+aseg.mgz', mandatory=True)
     targ = File(exists=True, desc='mri/brainmask.mgz', mandatory=True)
-    mov = File(exists=True,  desc='{subj}_bld_rest_reorient_skip_faln_mc.nii.gz', mandatory=True)
+    mov = File(exists=True, desc='{subj}_bld_rest_reorient_skip_faln_mc.nii.gz', mandatory=True)
     reg = File(exists=True, desc='{subj}_bld_rest_reorient_skip_faln_mc.register.dat', mandatory=True)
 
     func = File(exists=False, desc='{subj}.func.aseg.nii', mandatory=True)
@@ -215,6 +216,7 @@ class MkBrainmaskInputSpec(BaseInterfaceInputSpec):
     vent = File(exists=False, desc='{subj}.func.ventricles.nii.gz', mandatory=True)
     mask = File(exists=False, desc='{subj}.brainmask.nii.gz', mandatory=True)
     binmask = File(exists=False, desc='{subj}.brainmask.bin.nii.gz', mandatory=True)
+
 
 class MkBrainmaskOutputSpec(TraitedSpec):
     func = File(exists=True, desc='{subj}.func.aseg.nii')
@@ -267,7 +269,6 @@ class MkBrainmask(BaseInterface):
             '--min', 0.0001]
         sh.mri_binarize(*shargs, _out=sys.stdout)
 
-
         return runtime
 
     def _list_outputs(self):
@@ -277,5 +278,126 @@ class MkBrainmask(BaseInterface):
         outputs["wm"] = self.inputs.wm
         outputs["vent"] = self.inputs.vent
         outputs["binmask"] = self.inputs.binmask
+
+        return outputs
+
+
+class VxmRegistraionInputSpec(BaseInterfaceInputSpec):
+    atlas_type = Str(desc="atlas type", mandatory=True)
+    subject_id = Str(desc="subject id", mandatory=True)
+    norm = File(exists=True, desc="mri/norm.mgz", mandatory=True)
+    model_file = File(exists=True, desc="atlas_type/model.h5", mandatory=True)
+    atlas = File(exists=True, desc="model_path/{atlas_type}_brain.nii.gz", mandatory=True)
+    vxm_atlas = File(exists=True, desc="model_path/{atlas_type}_brain.nii.gz", mandatory=True)
+    vxm_atlas_npz = File(exists=True, desc="model_path/{atlas_type}_brain_vxm.npz", mandatory=True)
+    vxm2atlas_trf = File(exists=True, desc="model_path/{atlas_type}_vxm2atlas.mat", mandatory=True)
+
+    vxm_warp = File(exists=False, desc="tmpdir/warp.nii.gz", mandatory=True)
+    vxm_warped = File(exists=False, desc="tmpdir/warped.nii.gz", mandatory=True)
+    trf = File(exists=False, desc="tmpdir/sub-{subj}_affine.mat", mandatory=True)
+    warp = File(exists=False, desc="tmpdir/sub-{subj}_warp.nii.gz", mandatory=True)
+    warped = File(exists=False, desc="tmpdir/sub-{subj}_warped.nii.gz", mandatory=True)
+    npz = File(exists=False, desc="tmpdir/vxminput.npz", mandatory=True)
+
+
+class VxmRegistraionOutputSpec(TraitedSpec):
+    vxm_warp = File(exists=True, desc="tmpdir/warp.nii.gz")
+    vxm_warped = File(exists=True, desc="tmpdir/warped.nii.gz")
+    trf = File(exists=True, desc="tmpdir/sub-{subj}_affine.mat")
+    warp = File(exists=True, desc="tmpdir/sub-{subj}_warp.nii.gz")
+    warped = File(exists=True, desc="tmpdir/sub-{subj}_warped.nii.gz")
+    npz = File(exists=True, desc="tmpdir/vxminput.npz")
+
+
+class VxmRegistraion(BaseInterface):
+    input_spec = VxmRegistraionInputSpec
+    output_spec = VxmRegistraionOutputSpec
+
+    time = 15 / 60  # 运行时间：分钟 / 单run测试时间
+    cpu = 14  # 最大cpu占用：个
+    gpu = 2703  # 最大gpu占用：MB
+
+    def _run_interface(self, runtime):
+        import tensorflow as tf
+        import ants
+        import shutil
+        import voxelmorph as vxm
+
+        model_path = Path(__file__).parent.parent / 'model' / 'voxelmorph' / self.inputs.atlas_type
+        # atlas
+        if self.inputs.atlas_type == 'MNI152_T1_1mm':
+            atlas_path = '../../data/atlas/MNI152_T1_1mm_brain.nii.gz'
+            vxm_atlas_path = '../../data/atlas/MNI152_T1_1mm_brain_vxm.nii.gz'
+            vxm_atlas_npz_path = '../../data/atlas/MNI152_T1_1mm_brain_vxm.npz'
+            vxm2atlas_trf = '../../data/atlas/MNI152_T1_1mm_vxm2atlas.mat'
+        elif self.inputs.atlas_type == 'MNI152_T1_2mm':
+            atlas_path = model_path / 'MNI152_T1_2mm_brain.nii.gz'
+            vxm_atlas_path = model_path / 'MNI152_T1_2mm_brain_vxm.nii.gz'
+            vxm_atlas_npz_path = model_path / 'MNI152_T1_2mm_brain_vxm.npz'
+            vxm2atlas_trf = model_path / 'MNI152_T1_2mm_vxm2atlas.mat'
+        elif self.inputs.atlas_type == 'FS_T1_2mm':
+            atlas_path = '../../data/atlas/FS_T1_2mm_brain.nii.gz'
+            vxm_atlas_path = '../../data/atlas/FS_T1_2mm_brain_vxm.nii.gz'
+            vxm_atlas_npz_path = '../../data/atlas/FS_T1_2mm_brain_vxm.npz'
+            vxm2atlas_trf = '../../data/atlas/FS_T1_2mm_vxm2atlas.mat'
+        else:
+            raise Exception('atlas type error')
+
+        norm = ants.image_read(str(self.inputs.norm))
+        vxm_atlas = ants.image_read(str(vxm_atlas_path))
+        tx = ants.registration(fixed=vxm_atlas, moving=norm, type_of_transform='Affine')
+        trf = ants.read_transform(tx['fwdtransforms'][0])
+        ants.write_transform(trf, str(self.inputs.trf))
+        affined = tx['warpedmovout']
+        vol = affined.numpy() / 255.0
+        np.savez_compressed(self.inputs.npz, vol=vol)
+
+        # voxelmorph
+        # tensorflow device handling
+        gpuid = '0'
+        device, nb_devices = vxm.tf.utils.setup_device(gpuid)
+
+        # load moving and fixed images
+        add_feat_axis = True
+        moving = vxm.py.utils.load_volfile(str(self.inputs.npz), add_batch_axis=True, add_feat_axis=add_feat_axis)
+        fixed, fixed_affine = vxm.py.utils.load_volfile(str(vxm_atlas_npz_path), add_batch_axis=True,
+                                                        add_feat_axis=add_feat_axis,
+                                                        ret_affine=True)
+        vxm_atlas_nib = nib.load(str(vxm_atlas_path))
+        fixed_affine = vxm_atlas_nib.affine.copy()
+        inshape = moving.shape[1:-1]
+        nb_feats = moving.shape[-1]
+
+        with tf.device(device):
+            # load model and predict
+            warp = vxm.networks.VxmDense.load(self.inputs.model_file).register(moving, fixed)
+            # warp = vxm.networks.VxmDenseSemiSupervisedSeg.load(args.model).register(moving, fixed)
+            moving = affined.numpy()[np.newaxis, ..., np.newaxis]
+            moved = vxm.networks.Transform(inshape, nb_feats=nb_feats).predict([moving, warp])
+
+        # save warp
+        vxm.py.utils.save_volfile(warp.squeeze(), str(self.inputs.vxm_warp), fixed_affine)
+        shutil.copy(self.inputs.vxm_warp, self.inputs.warp)
+
+        # save moved image
+        vxm.py.utils.save_volfile(moved.squeeze(), str(self.inputs.vxm_warped), fixed_affine)
+
+        # affine to atlas
+        atlas = ants.image_read(str(atlas_path))
+        vxm_warped = ants.image_read(str(self.inputs.vxm_warped))
+        warped = ants.apply_transforms(fixed=atlas, moving=vxm_warped, transformlist=[str(vxm2atlas_trf)])
+        Path(self.inputs.warped).parent.mkdir(parents=True, exist_ok=True)
+        ants.image_write(warped, str(self.inputs.warped))
+
+        return runtime
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["vxm_warp"] = self.inputs.vxm_warp
+        outputs["vxm_warped"] = self.inputs.vxm_warped
+        outputs["trf"] = self.inputs.trf
+        outputs["warp"] = self.inputs.warp
+        outputs["warped"] = self.inputs.warped
+        outputs["npz"] = self.inputs.npz
 
         return outputs
