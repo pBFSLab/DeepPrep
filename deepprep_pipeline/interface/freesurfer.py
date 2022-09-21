@@ -7,7 +7,7 @@ from threading import Thread
 import time
 
 class BrainmaskInputSpec(BaseInterfaceInputSpec):
-    subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
+    subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
     need_t1 = traits.BaseCBool(desc='bool', mandatory=True)
     nu_file = File(exists=True, desc="mri/nu.mgz", mandatory=True)
@@ -63,7 +63,7 @@ class Brainmask(BaseInterface):
 
 class OrigAndRawavgInputSpec(BaseInterfaceInputSpec):
     t1w_files = traits.List(desc='t1w path or t1w paths', mandatory=True)
-    subjects_dir = Directory(exists=True, desc='subject dir path', mandatory=True)
+    subjects_dir = Directory(exists=True, desc='subjects dir', mandatory=True)
     subject_id = Str(desc='subject id', mandatory=True)
     threads = traits.Int(desc='threads')
 
@@ -97,7 +97,7 @@ class OrigAndRawavg(BaseInterface):
 
 
 class FilledInputSpec(BaseInterfaceInputSpec):
-    subjects_dir = Directory(exists=True, desc='subject dir path', mandatory=True)
+    subjects_dir = Directory(exists=True, desc='subjects dir', mandatory=True)
     subject_id = Str(desc='subject id', mandatory=True)
     threads = traits.Int(desc='threads')
 
@@ -211,7 +211,7 @@ class WhitePreaparc1(BaseInterface):
 
 
 class WhitePreaparc2InputSpec(BaseInterfaceInputSpec):
-    subjects_dir = Directory(exists=True, desc='subject dir path', mandatory=True)
+    subjects_dir = Directory(exists=True, desc='subjects dir', mandatory=True)
     subject_id = Str(desc="sub-xxx", mandatory=True)
     hemi = Str(desc="lh", mandatory=True)
     threads = traits.Int(desc='threads')
@@ -220,7 +220,7 @@ class WhitePreaparc2InputSpec(BaseInterfaceInputSpec):
     brain_finalsurfs = File(exists=True, desc="mri/brain.finalsurfs.mgz", mandatory=True)
     wm_file = File(exists=True, desc="mri/wm.mgz", mandatory=True)
     filled_file = File(exists=True, desc="mri/filled.mgz", mandatory=True)
-    hemi_orig = File(exists=True, desc="surf/?h.orig", mandatory=True)
+    hemi_orig = File(exists=True, desc="surf/lh.orig", mandatory=True)
     hemi_orig_premesh = File(exists=True, desc="surf/?h.orig.premesh", mandatory=True)
     autodet_gw_stats_hemi_dat = File(exists=True, desc="surf/autodet.gw.stats.?h.dat", mandatory=True)
     hemi_white_preaparc = File(exists=True, desc="surf/?h.white.preaparc", mandatory=True)
@@ -342,7 +342,7 @@ class WhitePreaparc2(BaseInterface):
 #         return outputs
 
 class InflatedSphereThresholdInputSpec(BaseInterfaceInputSpec):
-    subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
+    subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     subject_id = traits.String(mandatory=True, desc='sub-xxx')
     threads = traits.Int(desc='threads')
     lh_white_preaparc_file = File(exists=True, desc='surf/lh.white.preaparc')
@@ -402,7 +402,7 @@ class InflatedSphere(BaseInterface):
 
 
 class WhitePialThickness1InputSpec(BaseInterfaceInputSpec):
-    subjects_dir = Directory(exists=True, desc='subject dir path', mandatory=True)
+    subjects_dir = Directory(exists=True, desc='subjects dir', mandatory=True)
     subject_id = traits.Str(desc="sub-xxx", mandatory=True)
     threads = traits.Int(desc='threads')
 
@@ -913,24 +913,27 @@ class JacobianAvgcurvCortparc(BaseInterface):
 
 
 class SegstatsInputSpec(BaseInterfaceInputSpec):
-    subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
+    subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
     threads = traits.Int(desc='threads')
-    hemi = Str(desc="lh/rh", mandatory=True)
+
     brainmask_file = File(exists=True, desc="mri/brainmask.mgz", mandatory=True)
     norm_file = File(exists=True, desc="mri/norm.mgz", mandatory=True)
     aseg_file = File(exists=True, desc="mri/aseg.mgz", mandatory=True)
-    aseg_presurf_file = File(exists=True, desc="mri/aseg.presurf.mgz", mandatory=True)
+    aseg_presurf = File(exists=True, desc="mri/aseg.presurf.mgz", mandatory=True)
     ribbon_file = File(exists=True, desc="mri/ribbon.mgz", mandatory=True)
-    hemi_orig_nofix_file = File(exists=True, desc="surf/?h.orig.nofix", mandatory=True)
-    hemi_white_file = File(exists=True, desc="surf/?h.white", mandatory=True)
-    hemi_pial_file = File(exists=True, desc="surf/?h.pial", mandatory=True)
+    lh_orig_premesh = File(exists=True, desc="surf/lh.orig.premesh", mandatory=True)
+    rh_orig_premesh = File(exists=True, desc="surf/rh.orig.premesh", mandatory=True)
+    lh_white = File(exists=True, desc="surf/lh.white", mandatory=True)
+    rh_white = File(exists=True, desc="surf/rh.white", mandatory=True)
+    lh_pial = File(exists=True, desc="surf/lh.pial", mandatory=True)
+    rh_pial = File(exists=True, desc="surf/rh.pial", mandatory=True)
 
-    aseg_stats_file = File(exists=False, desc="stats/aseg.stats", mandatory=True)
+    aseg_stats = File(exists=False, desc="stats/aseg.stats", mandatory=True)
 
 
 class SegstatsOutputSpec(TraitedSpec):
-    aseg_stats_file = File(exists=True, desc="stats/aseg.stats")
+    aseg_stats = File(exists=True, desc="stats/aseg.stats")
 
 
 class Segstats(BaseInterface):
@@ -952,7 +955,7 @@ class Segstats(BaseInterface):
 
     def _list_outputs(self):
         outputs = self._outputs().get()
-        outputs['aseg_stats_file'] = self.inputs.aseg_stats_file
+        outputs['aseg_stats'] = self.inputs.aseg_stats
 
         return outputs
 
@@ -1054,7 +1057,7 @@ class Aseg7ToAseg(BaseInterface):
 
 
 class BalabelsMultInputSpec(BaseInterfaceInputSpec):
-    subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
+    subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     lh_sphere_reg = File(exists=True, desc="surf/lh.sphere.reg", mandatory=True)
     rh_sphere_reg = File(exists=True, desc="surf/rh.sphere.reg", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)

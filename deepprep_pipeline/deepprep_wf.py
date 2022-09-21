@@ -2,7 +2,7 @@ from pathlib import Path
 from nipype import Node, Workflow
 from interface.freesurfer import OrigAndRawavg, Brainmask, Filled, WhitePreaparc1, \
     InflatedSphere, JacobianAvgcurvCortparc, WhitePialThickness1, Curvstats, Cortribbon, \
-    Parcstats, Pctsurfcon, Hyporelabel, Aseg7ToAseg, Aseg7, BalabelsMult
+    Parcstats, Pctsurfcon, Hyporelabel, Aseg7ToAseg, Aseg7, BalabelsMult, Segstats
 from interface.fastsurfer import Segment, Noccseg, N4BiasCorrect, TalairachAndNu, UpdateAseg, \
     SampleSegmentationToSurfave
 from interface.fastcsr import FastCSR
@@ -277,14 +277,20 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
 
     Aseg7_node.inputs.aparc_aseg = subjects_dir / subject_id / 'mri' / 'aparc+aseg.mgz'
 
+    # Segstats
+    Segstats_node = Node(Segstats(), name='Segstats_node')
+    Segstats_node.inputs.subjects_dir = subjects_dir
+    Segstats_node.inputs.subject_id = subject_id
+    Segstats_node.inputs.threads = 8
+
     # Balabels
     BalabelsMult_node = Node(BalabelsMult(), name='BalabelsMult_node')
     BalabelsMult_node.inputs.subjects_dir = subjects_dir
     BalabelsMult_node.inputs.subject_id = subject_id
     BalabelsMult_node.inputs.threads = 8
 
-    BalabelsMult_node.inputs.lh_sphere_reg = subjects_dir / subject_id / 'surf' / f'lh.sphere.reg'
-    BalabelsMult_node.inputs.rh_sphere_reg = subjects_dir / subject_id / 'surf' / f'rh.sphere.reg'
+    # BalabelsMult_node.inputs.lh_sphere_reg = subjects_dir / subject_id / 'surf' / f'lh.sphere.reg'
+    # BalabelsMult_node.inputs.rh_sphere_reg = subjects_dir / subject_id / 'surf' / f'rh.sphere.reg'
     
     BalabelsMult_node.inputs.freesurfer_dir = os.environ['FREESURFER']
     BalabelsMult_node.inputs.fsaverage_label_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon/fsaverage6/label')
@@ -407,8 +413,6 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
                                  (fastcsr_node, white_preaparc1_node, [("lh_orig_file", "lh_orig"), ("rh_orig_file", "rh_orig"),
                                                                         ]),
 
-
-                                ############################### part 2 ###############################
                                  (updateaseg_node, SampleSegmentationToSurfave_node, [("aparc_aseg_file", "aparc_aseg_file"),
                                                                                         ]),
                                  (white_preaparc1_node, SampleSegmentationToSurfave_node, [("lh_white_preaparc", "lh_white_preaparc_file"), ("rh_white_preaparc", "rh_white_preaparc_file"),
@@ -421,8 +425,6 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
                                  (inflated_sphere_node, featreg_node, [("lh_sulc", "lh_sulc"), ("rh_sulc", "rh_sulc"),
                                                                        ("lh_sphere", "lh_sphere"), ("rh_sphere", "rh_sphere"),
                                                                       ]),
-
-                                 ############################### part 3 ###############################
 
                                  (white_preaparc1_node, JacobianAvgcurvCortparc_node, [("lh_white_preaparc", "lh_white_preaparc"), ("rh_white_preaparc", "rh_white_preaparc"),
                                                                                        ("lh_cortex_label", "lh_cortex_label"), ("rh_cortex_label", "rh_cortex_label"),
@@ -486,10 +488,22 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
                                  (JacobianAvgcurvCortparc_node, Aseg7_node, [("lh_aparc_annot", "lh_aparc_annot"), ("rh_aparc_annot", "rh_aparc_annot"),
                                                                             ]),
 
-                                 ############################### part -1 ###############################
+                                 (brainmask_node, Segstats_node, [("brainmask_file", "brainmask_file"), ("norm_file", "norm_file"),
+                                                                    ]),
+                                 (Aseg7ToAseg_node, Segstats_node, [("aseg_file", "aseg_file"),
+                                                                    ]),
+                                 (filled_node, Segstats_node, [("aseg_presurf_file", "aseg_presurf"),
+                                                                    ]),
+                                 (white_pial_thickness1_node, Segstats_node, [("lh_white", "lh_white"), ("rh_white", "rh_white"),
+                                                                              ("lh_pial", "lh_pial"), ("rh_pial", "rh_pial"),
+                                                                              ]),
+                                 (fastcsr_node, Segstats_node, [("lh_orig_premesh_file", "lh_orig_premesh"), ("rh_orig_premesh_file", "rh_orig_premesh"),
+                                                                  ]),
+                                 (Cortribbon_node, Segstats_node, [("ribbon", "ribbon_file"),
+                                                                    ]),
                                  (featreg_node, BalabelsMult_node, [("lh_sphere_reg", "lh_sphere_reg"), ("rh_sphere_reg", "rh_sphere_reg"),
                                                                     ])
-        ])
+                                ])
 
     return single_structure_wf
 
