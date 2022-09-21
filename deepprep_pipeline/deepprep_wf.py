@@ -79,7 +79,7 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
     brainmask_node.inputs.subjects_dir = subjects_dir
     brainmask_node.inputs.subject_id = subject_id
     brainmask_node.inputs.need_t1 = True
-    brainmask_node.inputs.mask_file = subjects_dir / subject_id / 'mri' / 'mask.mgz'
+    # brainmask_node.inputs.mask_file = subjects_dir / subject_id / 'mri' / 'mask.mgz'
 
     brainmask_node.inputs.T1_file = subjects_dir / subject_id / 'mri' / 'T1.mgz'
     brainmask_node.inputs.brainmask_file = subjects_dir / subject_id / 'mri' / 'brainmask.mgz'
@@ -263,7 +263,7 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
     Aseg7_node.inputs.subject_id = subject_id
     Aseg7_node.inputs.threads = 8
 
-    Aseg7_node.inputs.subject_mri_dir = subjects_dir / subject_id / 'mri'
+    # Aseg7_node.inputs.subject_mri_dir = subjects_dir / subject_id / 'mri'
     Aseg7_node.inputs.aseg_presurf_hypos = subjects_dir / subject_id / 'mri' / 'aseg.presurf.hypos.mgz'
 
     # Aseg7_node.inputs.lh_cortex_label_file = subjects_dir / subject_id / 'label' / 'lh.cortex.label'
@@ -307,9 +307,9 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
 
 
     # ############################### part 2 ###############################
-    # updateaseg_node.inputs.aseg_noCCseg_file = subjects_dir / subject_id / 'mri' / 'aseg.auto_noCCseg.mgz'
-    # updateaseg_node.inputs.seg_file = subjects_dir / subject_id / 'mri' / 'aparc.DKTatlas+aseg.deep.mgz'
-    # updateaseg_node.outputs.aparc_aseg_file = subjects_dir / subject_id / 'mri' / 'aparc.DKTatlas+aseg.deep.withCC.mgz'
+    # # updateaseg_node.inputs.aseg_noCCseg_file = subjects_dir / subject_id / 'mri' / 'aseg.auto_noCCseg.mgz'
+    # # updateaseg_node.inputs.seg_file = subjects_dir / subject_id / 'mri' / 'aparc.DKTatlas+aseg.deep.mgz'
+    # # updateaseg_node.outputs.aparc_aseg_file = subjects_dir / subject_id / 'mri' / 'aparc.DKTatlas+aseg.deep.withCC.mgz'
     # white_preaparc1_node.inputs.aseg_presurf = subjects_dir / subject_id / 'mri' / 'aseg.presurf.mgz'
     # white_preaparc1_node.inputs.brain_finalsurfs = subjects_dir / subject_id / 'mri' / 'brain.finalsurfs.mgz'
     # white_preaparc1_node.inputs.wm_file = subjects_dir / subject_id / 'mri' / 'wm.mgz'
@@ -371,7 +371,22 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
     # featreg_node.inputs.rh_sphere = Path(subjects_dir) / subject_id / f'surf/rh.sphere'
     # ############################### part -1 ###############################
 
-
+    # white_pial_thickness1_node.inputs.lh_white_preaparc = subjects_dir / subject_id / "surf" / "lh.white.preaparc"
+    # white_pial_thickness1_node.inputs.rh_white_preaparc = subjects_dir / subject_id / "surf" / "rh.white.preaparc"
+    # white_pial_thickness1_node.inputs.aseg_presurf = subjects_dir / subject_id / "mri" / "aseg.presurf.mgz"
+    # white_pial_thickness1_node.inputs.brain_finalsurfs = subjects_dir / subject_id / "mri" / "brain.finalsurfs.mgz"
+    # white_pial_thickness1_node.inputs.wm_file = subjects_dir / subject_id / "mri" / "wm.mgz"
+    # white_pial_thickness1_node.inputs.lh_aparc_annot = subjects_dir / subject_id / "label" / "lh.aparc.annot"
+    # white_pial_thickness1_node.inputs.rh_aparc_annot = subjects_dir / subject_id / "label" / "rh.aparc.annot"
+    # white_pial_thickness1_node.inputs.lh_cortex_hipamyg_label = subjects_dir / subject_id / "label" / "lh.cortex+hipamyg.label"
+    # white_pial_thickness1_node.inputs.rh_cortex_hipamyg_label = subjects_dir / subject_id / "label" / "rh.cortex+hipamyg.label"
+    # white_pial_thickness1_node.inputs.lh_cortex_label = subjects_dir / subject_id / "label" / "lh.cortex.label"
+    # white_pial_thickness1_node.inputs.rh_cortex_label = subjects_dir / subject_id / "label" / "rh.cortex.label"
+    #
+    # white_pial_thickness1_node.inputs.lh_aparc_DKTatlas_mapped_annot = subjects_dir / subject_id / "label" / "lh.aparc.DKTatlas.mapped.annot"
+    # white_pial_thickness1_node.inputs.rh_aparc_DKTatlas_mapped_annot = subjects_dir / subject_id / "label" / "rh.aparc.DKTatlas.mapped.annot"
+    # white_pial_thickness1_node.inputs.lh_white = subjects_dir / subject_id / "surf" / "lh.white"
+    # white_pial_thickness1_node.inputs.rh_white = subjects_dir / subject_id / "surf" / "rh.white"
 
     # create workflow
 
