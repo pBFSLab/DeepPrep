@@ -129,12 +129,20 @@ def UpdateAseg_test():
     subject_id = 'sub-MSC01'
     subject_mri_dir = subjects_dir / subject_id / 'mri'
     os.environ['SUBJECTS_DIR'] = '/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon'
+
+
+    subjects_dir = Path('/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon')
+    subject_id = 'sub-001'
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+
+
     paint_cc_file = Path.cwd().parent / 'FastSurfer' / 'recon_surf' / 'paint_cc_into_pred.py'
     updateaseg_node = Node(UpdateAseg(), name='updateaseg_node')
     updateaseg_node.inputs.subjects_dir = subjects_dir
     updateaseg_node.inputs.subject_id = subject_id
     updateaseg_node.inputs.paint_cc_file = paint_cc_file
-    updateaseg_node.inputs.python_interpret = '/home/lincong/miniconda3/envs/pytorch3.8/bin/python'
+    # updateaseg_node.inputs.python_interpret = '/home/lincong/miniconda3/envs/pytorch3.8/bin/python'
+    updateaseg_node.inputs.python_interpret = '/home/youjia/anaconda3/envs/3.8/bin/python3'
     updateaseg_node.inputs.seg_file = subject_mri_dir / 'aparc.DKTatlas+aseg.deep.mgz'
     updateaseg_node.inputs.aseg_noCCseg_file = subject_mri_dir / 'aseg.auto_noCCseg.mgz'
     updateaseg_node.inputs.aseg_auto_file = subject_mri_dir / 'aseg.auto.mgz'
@@ -156,7 +164,9 @@ def SampleSegmentationToSurfave_test():
     SampleSegmentationToSurfave_node.inputs.subject_id = subject_id
     SampleSegmentationToSurfave_node.inputs.python_interpret = Path('/home/youjia/anaconda3/envs/3.8/bin/python3')
     SampleSegmentationToSurfave_node.inputs.freesurfer_home = Path('/usr/local/freesurfer')
-    SampleSegmentationToSurfave_node.inputs.aparc_aseg_file = subject_mri_dir / 'aparc.DKTatlas+aseg.deep.withCC.mgz'
+    # SampleSegmentationToSurfave_node.inputs.aparc_aseg_file = subject_mri_dir / 'aparc.DKTatlas+aseg.deep.withCC.mgz'
+    SampleSegmentationToSurfave_node.inputs.aparc_aseg_file = subject_mri_dir / 'aparc.DKTatlas+aseg.orig.mgz'
+    # SampleSegmentationToSurfave_node.inputs.aparc_aseg_file = subject_mri_dir / 'aseg.auto.mgz'
     smooth_aparc_file = Path.cwd().parent / 'FastSurfer' / 'recon_surf' / 'smooth_aparc.py'
     SampleSegmentationToSurfave_node.inputs.smooth_aparc_file = smooth_aparc_file
 
@@ -188,4 +198,6 @@ if __name__ == '__main__':
 
     # talairach_and_nu_test()
 
-    SampleSegmentationToSurfave_test()
+    UpdateAseg_test()
+
+    # SampleSegmentationToSurfave_test()
