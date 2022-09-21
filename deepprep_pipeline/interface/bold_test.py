@@ -32,6 +32,7 @@ def BoldSkipReorient_test():
     subject_id = 'sub-MSC01'
     data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')
     preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
+    preprocess_dir = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep_wftest/{subject_id}/tmp/task-{task}')
     runs = sorted([d.name for d in (preprocess_dir / subject_id / 'bold').iterdir() if d.is_dir()])
 
     for run in runs:
@@ -50,6 +51,9 @@ def MotionCorrection_test():
     subject_id = 'sub-MSC01'
     data_path = Path(f'/mnt/DATA/lincong/temp/DeepPrep/MSC')
     preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
+    data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')
+    preprocess_dir = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep_wftest/{subject_id}/tmp/task-{task}')
+
     runs = sorted([d.name for d in (preprocess_dir / subject_id / 'bold').iterdir() if d.is_dir()])
     MotionCorrection_node = Node(MotionCorrection(), name='MotionCorrection_node')
     MotionCorrection_node.inputs.preprocess_dir = preprocess_dir
@@ -129,5 +133,11 @@ def MkBrainmask_test():
 
 
     mkbrainmask_node.run()
+
+
 if __name__ == '__main__':
     set_envrion()
+
+    # BoldSkipReorient_test()
+
+    MotionCorrection_test()
