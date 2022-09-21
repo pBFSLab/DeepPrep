@@ -274,10 +274,10 @@ class SampleSegmentationToSurfaveInputSpec(BaseInterfaceInputSpec):
     lh_cortex_label_file = File(exists=True, desc="label/lh.cortex.label", mandatory=True)
     rh_cortex_label_file = File(exists=True, desc="label/rh.cortex.label", mandatory=True)
 
-    # lh_aparc_DKTatlas_mapped_prefix_file = File(desc="label/lh.aparc.DKTatlas.mapped.prefix.annot", mandatory=True)
-    # rh_aparc_DKTatlas_mapped_prefix_file = File(desc="label/rh.aparc.DKTatlas.mapped.prefix.annot", mandatory=True)
-    # lh_aparc_DKTatlas_mapped_file = File(desc="label/lh.aparc.DKTatlas.mapped.annot", mandatory=True)
-    # rh_aparc_DKTatlas_mapped_file = File(desc="label/rh.aparc.DKTatlas.mapped.annot", mandatory=True)
+    lh_aparc_DKTatlas_mapped_prefix_file = File(desc="label/lh.aparc.DKTatlas.mapped.prefix.annot", mandatory=True)
+    rh_aparc_DKTatlas_mapped_prefix_file = File(desc="label/rh.aparc.DKTatlas.mapped.prefix.annot", mandatory=True)
+    lh_aparc_DKTatlas_mapped_file = File(desc="label/lh.aparc.DKTatlas.mapped.annot", mandatory=True)
+    rh_aparc_DKTatlas_mapped_file = File(desc="label/rh.aparc.DKTatlas.mapped.annot", mandatory=True)
 
 
 class SampleSegmentationToSurfaveOutputSpec(TraitedSpec):
@@ -335,9 +335,9 @@ class SampleSegmentationToSurfave(BaseInterface):
         return runtime
     def _list_outputs(self):
         outputs = self._outputs().get()
-        outputs["lh_aparc_DKTatlas_mapped_prefix_file"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f"label/lh.aparc.DKTatlas.mapped.prefix.annot")
-        outputs["rh_aparc_DKTatlas_mapped_prefix_file"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f"label/rh.aparc.DKTatlas.mapped.prefix.annot")
-        outputs["lh_aparc_DKTatlas_mapped_file"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f"label/lh.aparc.DKTatlas.mapped.annot")
-        outputs["rh_aparc_DKTatlas_mapped_file"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f"label/rh.aparc.DKTatlas.mapped.annot")
+        outputs["lh_aparc_DKTatlas_mapped_prefix_file"] = self.inputs.lh_aparc_DKTatlas_mapped_prefix_file
+        outputs["rh_aparc_DKTatlas_mapped_prefix_file"] = self.inputs.rh_aparc_DKTatlas_mapped_prefix_file
+        outputs["lh_aparc_DKTatlas_mapped_file"] = self.inputs.lh_aparc_DKTatlas_mapped_file
+        outputs["rh_aparc_DKTatlas_mapped_file"] = self.inputs.rh_aparc_DKTatlas_mapped_file
 
         return outputs
