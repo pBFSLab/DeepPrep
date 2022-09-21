@@ -70,7 +70,6 @@ def Stc_test():
         skip = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip.nii.gz'
         faln = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln.nii.gz'
 
-
     stc_node = Node(Stc(), f'stc_node')
     stc_node.inputs.subject_id = subject_id
     stc_node.inputs.preprocess_dir = preprocess_dir
@@ -83,21 +82,18 @@ def Stc_test():
 def Register_test():
     task = 'motor'
     subject_id = 'sub-MSC01'
-    data_path = Path(f'/media/pbfs18/69209918-9132-4c3e-92e2-c8d11aee8786/DATA/DeepPrepData/DATA1/DeepPrep/MSC')
+    data_path = Path(f'/mnt/DATA/lincong/temp/DeepPrep/MSC')
+    subjects_dir = Path('/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
     preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
     runs = sorted([d.name for d in (preprocess_dir / subject_id / 'bold').iterdir() if d.is_dir()])
     for run in runs:
-        mov = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
-        reg = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln_mc.register.dat'
-
-
-    register_node = Node(Register(), f'register_node')
-    register_node.inputs.subject_id = subject_id
-    register_node.inputs.preprocess_dir = preprocess_dir
-    register_node.inputs.mov = mov
-    register_node.inputs.reg = reg
-
-    register_node.run()
+        Register_node = Node(Register(), f'register_node')
+        Register_node.inputs.subject_id = subject_id
+        Register_node.inputs.preprocess_dir = preprocess_dir
+        Register_node.inputs.mov = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
+        Register_node.inputs.reg = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln_mc.register.dat'
+        Register_node.run()
 
 
 def MkBrainmask_test():
@@ -123,6 +119,8 @@ def MkBrainmask_test():
         Mkbrainmask_node.inputs.mask = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}.brainmask.nii.gz'
         Mkbrainmask_node.inputs.binmask = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}.brainmask.bin.nii.gz'
         Mkbrainmask_node.run()
+
+
 if __name__ == '__main__':
     set_envrion()
-    MkBrainmask_test()
+    Register_test()
