@@ -141,8 +141,8 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
     # SampleSegmentationToSurfave_node.inputs.lh_cortex_label_file = subjects_dir / subject_id / "label" / "lh.cortex.label"
     # SampleSegmentationToSurfave_node.inputs.rh_cortex_label_file = subjects_dir / subject_id / "label" / "rh.cortex.label"
     #
-    # SampleSegmentationToSurfave_node.inputs.lh_aparc_DKTatlas_mapped_prefix_file = subjects_dir / subject_id / 'label' / 'lh.aparc.DKTatlas.mapped.prefix.annot'
-    # SampleSegmentationToSurfave_node.inputs.rh_aparc_DKTatlas_mapped_prefix_file = subjects_dir / subject_id / 'label' / 'rh.aparc.DKTatlas.mapped.prefix.annot'
+    SampleSegmentationToSurfave_node.inputs.lh_aparc_DKTatlas_mapped_prefix_file = subjects_dir / subject_id / 'label' / 'lh.aparc.DKTatlas.mapped.prefix.annot'
+    SampleSegmentationToSurfave_node.inputs.rh_aparc_DKTatlas_mapped_prefix_file = subjects_dir / subject_id / 'label' / 'rh.aparc.DKTatlas.mapped.prefix.annot'
     # SampleSegmentationToSurfave_node.inputs.lh_aparc_DKTatlas_mapped_file = subjects_dir / subject_id / 'label' / 'lh.aparc.DKTatlas.mapped.annot'
     # SampleSegmentationToSurfave_node.inputs.rh_aparc_DKTatlas_mapped_file = subjects_dir / subject_id / 'label' / 'rh.aparc.DKTatlas.mapped.annot'
 
@@ -287,7 +287,7 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
     BalabelsMult_node.inputs.rh_sphere_reg = subjects_dir / subject_id / 'surf' / f'rh.sphere.reg'
     
     BalabelsMult_node.inputs.freesurfer_dir = os.environ['FREESURFER']
-    BalabelsMult_node.inputs.fsaverage_label_dir = '/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon/fsaverage6/label'
+    BalabelsMult_node.inputs.fsaverage_label_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon/fsaverage6/label')
     
     BalabelsMult_node.inputs.lh_BA45_exvivo = subjects_dir / subject_id / 'label' / f'lh.BA45_exvivo.label'
     BalabelsMult_node.inputs.rh_BA45_exvivo = subjects_dir / subject_id / 'label' / f'rh.BA45_exvivo.label'
@@ -298,6 +298,30 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
     BalabelsMult_node.inputs.rh_perirhinal_exvivo = subjects_dir / subject_id / 'label' / f'rh.perirhinal_exvivo.label'
     BalabelsMult_node.inputs.lh_entorhinal_exvivo = subjects_dir / subject_id / 'label' / f'lh.entorhinal_exvivo.label'
     BalabelsMult_node.inputs.rh_entorhinal_exvivo = subjects_dir / subject_id / 'label' / f'rh.entorhinal_exvivo.label'
+
+
+
+    ############################### part 2 ###############################
+    updateaseg_node.inputs.aseg_noCCseg_file = subjects_dir / subject_id / 'mri' / 'aseg.auto_noCCseg.mgz'
+    updateaseg_node.inputs.seg_file = subjects_dir / subject_id / 'mri' / 'aparc.DKTatlas+aseg.deep.mgz'
+    updateaseg_node.outputs.aparc_aseg_file = subjects_dir / subject_id / 'mri' / 'aparc.DKTatlas+aseg.deep.withCC.mgz'
+    white_preaparc1_node.inputs.aseg_presurf = subjects_dir / subject_id / 'mri' / 'aseg.presurf.mgz'
+    white_preaparc1_node.inputs.brain_finalsurfs = subjects_dir / subject_id / 'mri' / 'brain.finalsurfs.mgz'
+    white_preaparc1_node.inputs.wm_file = subjects_dir / subject_id / 'mri' / 'wm.mgz'
+    white_preaparc1_node.inputs.filled_file = subjects_dir / subject_id / 'mri' / 'filled.mgz'
+    white_preaparc1_node.inputs.lh_orig = subjects_dir / subject_id / 'surf' / 'lh.orig'
+    white_preaparc1_node.inputs.rh_orig = subjects_dir / subject_id / 'surf' / 'rh.orig'
+    white_preaparc1_node.outputs.lh_white_preaparc = subjects_dir / subject_id / 'surf' / 'lh.white.preaparc'
+    white_preaparc1_node.outputs.rh_white_preaparc = subjects_dir / subject_id / 'surf' / 'rh.white.preaparc'
+    white_preaparc1_node.outputs.lh_cortex_label = subjects_dir / subject_id / 'label' / 'lh.cortex.label'
+    white_preaparc1_node.outputs.rh_cortex_label = subjects_dir / subject_id / 'label' / 'rh.cortex.label'
+    ############################### part 2 ###############################
+
+    ############################### part 3 ###############################
+
+    ############################### part 3 ###############################
+
+
 
     # create workflow
     single_structure_wf.connect([
@@ -337,78 +361,81 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
                                  #                                        ]),
                                  # (fastcsr_node, white_preaparc1_node, [("lh_orig_file", "lh_orig"), ("rh_orig_file", "rh_orig"),
                                  #                                        ]),
-                                 # (updateaseg_node, SampleSegmentationToSurfave_node, [("aparc_aseg_file", "aparc_aseg_file"),
-                                 #                                                        ]),
-                                 # (white_preaparc1_node, SampleSegmentationToSurfave_node, [("lh_white_preaparc", "lh_white_preaparc_file"), ("rh_white_preaparc", "rh_white_preaparc_file"),
-                                 #                                                            ("lh_cortex_label", "lh_cortex_label_file"), ("rh_cortex_label", "rh_cortex_label_file"),
-                                 #                                                            ]),
-                                 # (white_preaparc1_node, inflated_sphere_node, [("lh_white_preaparc", "lh_white_preaparc_file"), ("rh_white_preaparc", "rh_white_preaparc_file"),
-                                 #                                                ]),
-                                 # (white_preaparc1_node, featreg_node, [("lh_curv", "lh_curv"), ("rh_curv", "rh_curv"),
-                                 #                                       ]),
-                                 # (inflated_sphere_node, featreg_node, [("lh_sulc", "lh_sulc"), ("rh_sulc", "rh_sulc"),
-                                 #                                       ("lh_sphere", "lh_sphere"), ("rh_sphere", "rh_sphere"),
-                                 #                                      ]),
-                                 # (white_preaparc1_node, JacobianAvgcurvCortparc_node, [("lh_white_preaparc", "lh_white_preaparc"), ("rh_white_preaparc", "rh_white_preaparc"),
-                                 #                                                       ("lh_cortex_label", "lh_cortex_label"), ("rh_cortex_label", "rh_cortex_label"),
-                                 #                                                        ]),
-                                 # (filled_node, JacobianAvgcurvCortparc_node, [("aseg_presurf_file", "aseg_presurf_file"),
-                                 #                                                ]),
-                                 # (featreg_node, JacobianAvgcurvCortparc_node, [("lh_sphere_reg", "lh_sphere_reg"), ("rh_sphere_reg", "rh_sphere_reg"),
-                                 #                                                ]),
-                                 # (filled_node, white_pial_thickness1_node, [("aseg_presurf_file", "aseg_presurf"), ("brain_finalsurfs_file", "brain_finalsurfs"),
-                                 #                                               ]),
-                                 # (white_preaparc1_node, white_pial_thickness1_node, [("lh_white_preaparc", "lh_white_preaparc"), ("rh_white_preaparc", "rh_white_preaparc"),
-                                 #                                                     ("lh_cortex_label", "lh_cortex_label"), ("rh_cortex_label", "rh_cortex_label"),
-                                 #                                                    ]),
-                                 # (SampleSegmentationToSurfave_node, white_pial_thickness1_node, [("lh_aparc_DKTatlas_mapped_file", "lh_aparc_DKTatlas_mapped_annot"),
-                                 #                                                                 ("rh_aparc_DKTatlas_mapped_file", "rh_aparc_DKTatlas_mapped_annot"),
-                                 #                                                                ]),
-                                 # (JacobianAvgcurvCortparc_node, white_pial_thickness1_node, [("lh_aparc_annot", "lh_aparc_annot"), ("rh_aparc_annot", "rh_aparc_annot"),
-                                 #                                                            ]),
-                                 # (inflated_sphere_node, Curvstats_node, [("lh_smoothwm", "lh_smoothwm"), ("rh_smoothwm", "rh_smoothwm"),
-                                 #                                         ("lh_sulc", "lh_sulc"), ("rh_sulc", "rh_sulc"),
-                                 #                                         # ("lh_curv", "lh_curv"), ("rh_curv", "rh_curv"),
-                                 #                                          ]),
-                                 # (white_pial_thickness1_node, Curvstats_node, [("lh_curv", "lh_curv"), ("rh_curv", "rh_curv"),
-                                 #                                               ]),
-                                 # (filled_node, Cortribbon_node, [("aseg_presurf_file", "aseg_presurf_file"),
-                                 #                                ]),
-                                 # (white_pial_thickness1_node, Cortribbon_node, [("lh_white", "lh_white"), ("rh_white", "rh_white"),
-                                 #                                                ("lh_pial", "lh_pial"), ("rh_pial", "rh_pial"),
-                                 #                                                ]),
-                                 # (Cortribbon_node, Parcstats_node, [("ribbon", "ribbon_file"),
-                                 #                                     ]),
-                                 # (filled_node, Parcstats_node, [("wm_file", "wm_file"),
-                                 #                               ]),
-                                 # (JacobianAvgcurvCortparc_node, Parcstats_node, [("lh_aparc_annot", "lh_aparc_annot"), ("rh_aparc_annot", "rh_aparc_annot"),
-                                 #                                                ]),
-                                 # (white_pial_thickness1_node, Parcstats_node, [("lh_white", "lh_white"), ("rh_white", "rh_white"),
-                                 #                                               ("lh_pial", "lh_pial"), ("rh_pial", "rh_pial"),
-                                 #                                               ("lh_thickness", "lh_thickness"), ("rh_thickness", "rh_thickness"),
-                                 #                                               ]),
-                                 # (orig_and_rawavg_node, Pctsurfcon_node, [("orig_file", "orig_file"), ("rawavg_file", "rawavg_file"),
-                                 #                                         ]),
-                                 # (white_preaparc1_node, Pctsurfcon_node, [("lh_cortex_label", "lh_cortex_label"), ("rh_cortex_label", "rh_cortex_label"),
-                                 #                                         ]),
-                                 # (white_pial_thickness1_node, Pctsurfcon_node, [("lh_white", "lh_white"), ("rh_white", "rh_white"),
-                                 #                                                ]),
-                                 # (filled_node, Hyporelabel_node, [("aseg_presurf_file", "aseg_presurf")
-                                 #                                 ]),
-                                 # (white_pial_thickness1_node, Hyporelabel_node, [("lh_white", "lh_white"), ("rh_white", "rh_white"),
-                                 #                                                ]),
-                                 # (white_pial_thickness1_node, Aseg7ToAseg_node, [("lh_white", "lh_white"), ("rh_white", "rh_white"),
-                                 #                                                 ("lh_pial", "lh_pial"), ("rh_pial", "rh_pial"),
-                                 #                                                ]),
-                                 # (white_preaparc1_node, Aseg7ToAseg_node, [("lh_cortex_label", "lh_cortex_label"), ("rh_cortex_label", "rh_cortex_label"),
-                                 #                                          ]),
-                                 # (white_pial_thickness1_node, Aseg7_node, [("lh_white", "lh_white"), ("rh_white", "rh_white"),
-                                 #                                            ("lh_pial", "lh_pial"), ("rh_pial", "rh_pial"),
-                                 #                                            ]),
-                                 # (white_preaparc1_node, Aseg7_node, [("lh_cortex_label", "lh_cortex_label"), ("rh_cortex_label", "rh_cortex_label"),
-                                 #                                    ]),
-                                 # (JacobianAvgcurvCortparc_node, Aseg7_node, [("lh_aparc_annot", "lh_aparc_annot"), ("rh_aparc_annot", "rh_aparc_annot"),
-                                 #                                            ]),
+
+
+                                ############################### part 2 ###############################
+                                 (updateaseg_node, SampleSegmentationToSurfave_node, [("aparc_aseg_file", "aparc_aseg_file"),
+                                                                                        ]),
+                                 (white_preaparc1_node, SampleSegmentationToSurfave_node, [("lh_white_preaparc", "lh_white_preaparc_file"), ("rh_white_preaparc", "rh_white_preaparc_file"),
+                                                                                            ("lh_cortex_label", "lh_cortex_label_file"), ("rh_cortex_label", "rh_cortex_label_file"),
+                                                                                            ]),
+                                 (white_preaparc1_node, inflated_sphere_node, [("lh_white_preaparc", "lh_white_preaparc_file"), ("rh_white_preaparc", "rh_white_preaparc_file"),
+                                                                                ]),
+                                 (white_preaparc1_node, featreg_node, [("lh_curv", "lh_curv"), ("rh_curv", "rh_curv"),
+                                                                       ]),
+                                 (inflated_sphere_node, featreg_node, [("lh_sulc", "lh_sulc"), ("rh_sulc", "rh_sulc"),
+                                                                       ("lh_sphere", "lh_sphere"), ("rh_sphere", "rh_sphere"),
+                                                                      ]),
+                                 (white_preaparc1_node, JacobianAvgcurvCortparc_node, [("lh_white_preaparc", "lh_white_preaparc"), ("rh_white_preaparc", "rh_white_preaparc"),
+                                                                                       ("lh_cortex_label", "lh_cortex_label"), ("rh_cortex_label", "rh_cortex_label"),
+                                                                                        ]),
+                                 (filled_node, JacobianAvgcurvCortparc_node, [("aseg_presurf_file", "aseg_presurf_file"),
+                                                                                ]),
+                                 (featreg_node, JacobianAvgcurvCortparc_node, [("lh_sphere_reg", "lh_sphere_reg"), ("rh_sphere_reg", "rh_sphere_reg"),
+                                                                                ]),
+                                 (filled_node, white_pial_thickness1_node, [("aseg_presurf_file", "aseg_presurf"), ("brain_finalsurfs_file", "brain_finalsurfs"),
+                                                                               ]),
+                                 (white_preaparc1_node, white_pial_thickness1_node, [("lh_white_preaparc", "lh_white_preaparc"), ("rh_white_preaparc", "rh_white_preaparc"),
+                                                                                     ("lh_cortex_label", "lh_cortex_label"), ("rh_cortex_label", "rh_cortex_label"),
+                                                                                    ]),
+                                 (SampleSegmentationToSurfave_node, white_pial_thickness1_node, [("lh_aparc_DKTatlas_mapped_file", "lh_aparc_DKTatlas_mapped_annot"),
+                                                                                                 ("rh_aparc_DKTatlas_mapped_file", "rh_aparc_DKTatlas_mapped_annot"),
+                                                                                                ]),
+                                 (JacobianAvgcurvCortparc_node, white_pial_thickness1_node, [("lh_aparc_annot", "lh_aparc_annot"), ("rh_aparc_annot", "rh_aparc_annot"),
+                                                                                            ]),
+                                 (inflated_sphere_node, Curvstats_node, [("lh_smoothwm", "lh_smoothwm"), ("rh_smoothwm", "rh_smoothwm"),
+                                                                         ("lh_sulc", "lh_sulc"), ("rh_sulc", "rh_sulc"),
+                                                                         # ("lh_curv", "lh_curv"), ("rh_curv", "rh_curv"),
+                                                                          ]),
+                                 (white_pial_thickness1_node, Curvstats_node, [("lh_curv", "lh_curv"), ("rh_curv", "rh_curv"),
+                                                                               ]),
+                                 (filled_node, Cortribbon_node, [("aseg_presurf_file", "aseg_presurf_file"),
+                                                                ]),
+                                 (white_pial_thickness1_node, Cortribbon_node, [("lh_white", "lh_white"), ("rh_white", "rh_white"),
+                                                                                ("lh_pial", "lh_pial"), ("rh_pial", "rh_pial"),
+                                                                                ]),
+                                 (Cortribbon_node, Parcstats_node, [("ribbon", "ribbon_file"),
+                                                                     ]),
+                                 (filled_node, Parcstats_node, [("wm_file", "wm_file"),
+                                                               ]),
+                                 (JacobianAvgcurvCortparc_node, Parcstats_node, [("lh_aparc_annot", "lh_aparc_annot"), ("rh_aparc_annot", "rh_aparc_annot"),
+                                                                                ]),
+                                 (white_pial_thickness1_node, Parcstats_node, [("lh_white", "lh_white"), ("rh_white", "rh_white"),
+                                                                               ("lh_pial", "lh_pial"), ("rh_pial", "rh_pial"),
+                                                                               ("lh_thickness", "lh_thickness"), ("rh_thickness", "rh_thickness"),
+                                                                               ]),
+                                 (orig_and_rawavg_node, Pctsurfcon_node, [("orig_file", "orig_file"), ("rawavg_file", "rawavg_file"),
+                                                                         ]),
+                                 (white_preaparc1_node, Pctsurfcon_node, [("lh_cortex_label", "lh_cortex_label"), ("rh_cortex_label", "rh_cortex_label"),
+                                                                         ]),
+                                 (white_pial_thickness1_node, Pctsurfcon_node, [("lh_white", "lh_white"), ("rh_white", "rh_white"),
+                                                                                ]),
+                                 (filled_node, Hyporelabel_node, [("aseg_presurf_file", "aseg_presurf")
+                                                                 ]),
+                                 (white_pial_thickness1_node, Hyporelabel_node, [("lh_white", "lh_white"), ("rh_white", "rh_white"),
+                                                                                ]),
+                                 (white_pial_thickness1_node, Aseg7ToAseg_node, [("lh_white", "lh_white"), ("rh_white", "rh_white"),
+                                                                                 ("lh_pial", "lh_pial"), ("rh_pial", "rh_pial"),
+                                                                                ]),
+                                 (white_preaparc1_node, Aseg7ToAseg_node, [("lh_cortex_label", "lh_cortex_label"), ("rh_cortex_label", "rh_cortex_label"),
+                                                                          ]),
+                                 (white_pial_thickness1_node, Aseg7_node, [("lh_white", "lh_white"), ("rh_white", "rh_white"),
+                                                                            ("lh_pial", "lh_pial"), ("rh_pial", "rh_pial"),
+                                                                            ]),
+                                 (white_preaparc1_node, Aseg7_node, [("lh_cortex_label", "lh_cortex_label"), ("rh_cortex_label", "rh_cortex_label"),
+                                                                    ]),
+                                 (JacobianAvgcurvCortparc_node, Aseg7_node, [("lh_aparc_annot", "lh_aparc_annot"), ("rh_aparc_annot", "rh_aparc_annot"),
+                                                                            ]),
                                  (featreg_node, BalabelsMult_node, [("lh_sphere_reg", "lh_sphere_reg"), ("rh_sphere_reg", "rh_sphere_reg"),
                                                                     ])
         ])
