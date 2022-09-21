@@ -125,26 +125,25 @@ class MotionCorrection(BaseInterface):
 
 
 class StcInputSpec(BaseInterfaceInputSpec):
-    subject_id = Str(exists=True, mandatory=True, desc='subject')
-    preprocess_dir = Directory(exists=True, mandatory=True, desc='preprocess_dir')
-    skip = File(exists=True, mandatory=True, desc='{subj}_bld_rest_reorient_skip')
-    faln = File(mandatory=True, desc='{subj}_bld_rest_reorient_skip_faln')
+    subject_id = Str(exists=True, desc='subject', mandatory=True)
+    preprocess_dir = Directory(exists=True, desc='preprocess_dir', mandatory=True)
+    skip = File(exists=True, desc='{subj}_bld_rest_reorient_skip', mandatory=True)
+    faln = File(mandatory=False, desc='{subj}_bld_rest_reorient_skip_faln', mandatory=True)
 
 
 class StcOutputSpec(TraitedSpec):
-    faln = File(exists=True, mandatory=True, desc='{subj}_bld_rest_reorient_skip_faln')
+    faln = File(exists=True, desc='{subj}_bld_rest_reorient_skip_faln')
 
 
 class Stc(BaseInterface):
     input_spec = StcInputSpec
     output_spec = StcOutputSpec
 
-    # time = 120 / 60  # 运行时间：分钟
-    # cpu = 2  # 最大cpu占用：个
-    # gpu = 0  # 最大gpu占用：MB
+    time = 823 / 60  # 运行时间：分钟
+    cpu = 6  # 最大cpu占用：个
+    gpu = 0  # 最大gpu占用：MB
 
     def _run_interface(self, runtime):
-        # subjects_dir = self.inputs.subjects_dir
         input_fname = f'{self.inputs.subject_id}_bld_rest_reorient_skip'
         output_fname = f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln'
         shargs = [
