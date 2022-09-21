@@ -165,3 +165,40 @@ class Stc(BaseInterface):
         outputs["faln"] = self.inputs.faln
 
         return outputs
+
+
+class RegisterInputSpec(BaseInterfaceInputSpec):
+    subject_id = Str(exists=True, mandatory=True, desc='subject')
+    preprocess_dir = Directory(exists=True, mandatory=True, desc='preprocess_dir')
+    mov = File(exists=True, mandatory=True, desc='{subj}_bld_rest_reorient_skip_faln_mc.nii.gz')
+    reg = File(mandatory=True, desc='{subj}_bld_rest_reorient_skip_faln_mc.register.dat')
+
+
+class RegisterOutputSpec(TraitedSpec):
+    reg = File(exists=True, mandatory=True, desc='{subj}_bld_rest_reorient_skip_faln_mc.register.dat')
+
+
+class Register(BaseInterface):
+    input_spec = RegisterInputSpec
+    output_spec = RegisterOutputSpec
+
+    # time = 120 / 60  # 运行时间：分钟
+    # cpu = 2  # 最大cpu占用：个
+    # gpu = 0  # 最大gpu占用：MB
+
+    def _run_interface(self, runtime):
+        shargs = [
+            '--bold',
+            '--s', self.inputs.subject_id,
+            '--mov', self.inputs.mov,
+            '--reg', self.inputs.reg]
+        sh.bbregister(*shargs, _out=sys.stdout)
+
+        return runtime
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["reg"] = self.inputs.reg
+
+        return outputs
+
