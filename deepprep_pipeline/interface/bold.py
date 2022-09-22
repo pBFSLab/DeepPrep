@@ -7,7 +7,7 @@ import numpy as np
 from pathlib import Path
 import ants
 import bids
-
+import os
 
 
 class BoldSkipReorientInputSpec(BaseInterfaceInputSpec):
@@ -542,5 +542,312 @@ class RestRegression(BaseInterface):
         outputs["resid"] = self.inputs.resid
         outputs["resid_snr"] = self.inputs.resid_snr
         outputs["resid_sd1"] = self.inputs.resid_sd1
+
+        return outputs
+
+class VxmRegNormMNI152InputSpec(BaseInterfaceInputSpec):
+    subject_id = Str(exists=True, desc='subject', mandatory=True)
+    subj = Str(exists=True, desc='subj', mandatory=True)
+    task = Str(exists=True, desc='task', mandatory=True)
+    preprocess_dir = Directory(exists=True, desc='preprocess_dir', mandatory=True)
+    data_path = Directory(exists=True, desc='data_path', mandatory=True)
+    deepprep_subj_path = Directory(exists=True, desc='deepprep_subj_path', mandatory=True)
+    preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
+    workdir = Directory(exists=True, desc='tmp/ task-{task}', mandatory=True)
+    norm = File(exists=True, desc='mri/norm.mgz', mandatory=True)
+
+class VxmRegNormMNI152OutputSpec(TraitedSpec):
+    deepprep_subj_path = Directory(exists=True, desc='deepprep_subj_path')
+
+class VxmRegNormMNI152(BaseInterface):
+    input_spec = VxmRegNormMNI152InputSpec
+    output_spec = VxmRegNormMNI152OutputSpec
+
+    # time = 120 / 60  # 运行时间：分钟
+    # cpu = 2  # 最大cpu占用：个
+    # gpu = 0  # 最大gpu占用：MB
+
+    def register_dat_to_fslmat(self, mov_file, ref_file, reg_file, fslmat_file):
+        sh.tkregister2('--mov', mov_file,
+                       '--targ', ref_file,
+                       '--reg', reg_file,
+                       '--fslregout', fslmat_file,
+                       '--noedit')
+
+    def register_dat_to_trf(self, mov_file, ref_file, reg_file, workdir, trf_file):
+        import SimpleITK as sitk
+
+        fsltrf_file = os.path.join(workdir, 'fsl_trf.fsl')
+        self.register_dat_to_fslmat(mov_file, ref_file, reg_file, fsltrf_file)
+        first_frame_file = os.path.join(workdir, 'frame0.nii.gz')
+        bold = ants.image_read(str(mov_file))
+        frame0_np = bold[:, :, :, 0]
+        origin = bold.origin[:3]
+        spacing = bold.spacing[:3]
+        direction = bold.direction[:3, :3].copy()
+        frame0 = ants.from_numpy(frame0_np, origin=origin, spacing=spacing, direction=direction)
+        ants.image_write(frame0, str(first_frame_file))
+        tfm_file = os.path.join(workdir, 'itk_trf.tfm')
+        base_path, _ = os.path.split(os.path.abspath(__file__))
+        base_path = Path(base_path).parent
+        c3d_affine_tool = os.path.join(base_path, 'resource', 'c3d_affine_tool')
+        cmd = f'{c3d_affine_tool} -ref {ref_file} -src {first_frame_file} {fsltrf_file} -fsl2ras -oitk {tfm_file}'
+        os.system(cmd)
+        trf_sitk = sitk.ReadTransform(tfm_file)
+        trf = ants.new_ants_transform()
+        trf.set_parameters(trf_sitk.GetParameters())
+        trf.set_fixed_parameters(trf_sitk.GetFixedParameters())
+        ants.write_transform(trf, trf_file)
+
+    def native_bold_to_T1_2mm_ants(self, residual_file, subj, subj_t1_file, reg_file, save_file, workdir,
+                                   verbose=False):
+        subj_t1_2mm_file = os.path.join(os.path.split(save_file)[0], 'norm_2mm.nii.gz')
+        sh.mri_convert('-ds', 2, 2, 2,
+                       '-i', subj_t1_file,
+                       '-o', subj_t1_2mm_file)
+        trf_file = os.path.join(workdir, 'reg.mat')
+        self.register_dat_to_trf(residual_file, subj_t1_2mm_file, reg_file, workdir, trf_file)
+        bold_img = ants.image_read(str(residual_file))
+        fixed = ants.image_read(subj_t1_2mm_file)
+        affined_bold_img = ants.apply_transforms(fixed=fixed, moving=bold_img, transformlist=[trf_file], imagetype=3)
+        if verbose:
+            ants.image_write(affined_bold_img, save_file)
+        return affined_bold_img
+
+    def vxm_warp_bold_2mm(self,resid_t1, affine_file, warp_file, warped_file, verbose=True):
+        import voxelmorph as vxm
+        import tensorflow as tf
+        import time
+
+        atlas_file = Path(__file__).parent.parent / 'model' / 'voxelmorph' / 'MNI152_T1_2mm' / 'MNI152_T1_2mm_brain_vxm.nii.gz'
+        MNI152_2mm_file = Path(__file__).parent.parent/ 'model' / 'voxelmorph' / 'MNI152_T1_2mm' / 'MNI152_T1_2mm_brain.nii.gz'
+        MNI152_2mm = ants.image_read(str(MNI152_2mm_file))
+        atlas = ants.image_read(str(atlas_file))
+        if isinstance(resid_t1, str):
+            bold_img = ants.image_read(resid_t1)
+        else:
+            bold_img = resid_t1
+        n_frame = bold_img.shape[3]
+        bold_origin = bold_img.origin
+        bold_spacing = bold_img.spacing
+        bold_direction = bold_img.direction.copy()
+
+        # tensorflow device handling
+        gpuid = '0'
+        device, nb_devices = vxm.tf.utils.setup_device(gpuid)
+
+        fwdtrf_MNI152_2mm = [str(affine_file)]
+        trf_file = Path(__file__).parent.parent / 'model' / 'voxelmorph' / 'MNI152_T1_2mm' / 'MNI152_T1_2mm_vxm2atlas.mat'
+        fwdtrf_atlas2MNI152_2mm = [str(trf_file)]
+        deform, deform_affine = vxm.py.utils.load_volfile(str(warp_file), add_batch_axis=True, ret_affine=True)
+
+        # affine to MNI152 croped
+        tic = time.time()
+        # affined_img = ants.apply_transforms(atlas, bold_img, fwdtrf_MNI152_2mm, imagetype=3)
+        affined_np = ants.apply_transforms(atlas, bold_img, fwdtrf_MNI152_2mm, imagetype=3).numpy()
+        # print(sys.getrefcount(affined_img))
+        # del affined_img
+        toc = time.time()
+        print(toc - tic)
+        # gc.collect()
+        # voxelmorph warp
+        tic = time.time()
+        warped_np = np.zeros(shape=(*atlas.shape, n_frame), dtype=np.float32)
+        with tf.device(device):
+            transform = vxm.networks.Transform(atlas.shape, interp_method='linear', nb_feats=1)
+            # for idx in range(affined_np.shape[3]):
+            #     frame_np = affined_np[:, :, :, idx]
+            #     frame_np = frame_np[..., np.newaxis]
+            #     frame_np = frame_np[np.newaxis, ...]
+            #
+            #     moved = transform.predict([frame_np, deform])
+            #     warped_np[:, :, :, idx] = moved.squeeze()
+            tf_dataset = tf.data.Dataset.from_tensor_slices(np.transpose(affined_np, (3, 0, 1, 2)))
+            del affined_np
+            batch_size = 16
+            deform = tf.convert_to_tensor(deform)
+            deform = tf.keras.backend.tile(deform, [batch_size, 1, 1, 1, 1])
+            for idx, batch_data in enumerate(tf_dataset.batch(batch_size=batch_size)):
+                if batch_data.shape[0] != deform.shape[0]:
+                    deform = deform[:batch_data.shape[0], :, :, :, :]
+                moved = transform.predict([batch_data, deform]).squeeze()
+                if len(moved.shape) == 4:
+                    moved_data = np.transpose(moved, (1, 2, 3, 0))
+                else:
+                    moved_data = moved[:, :, :, np.newaxis]
+                warped_np[:, :, :, idx * batch_size:(idx + 1) * batch_size] = moved_data
+                print(f'batch: {idx}')
+            del transform
+            del tf_dataset
+            del moved
+            del moved_data
+        toc = time.time()
+        print(toc - tic)
+
+        # affine to MNI152
+        tic = time.time()
+        origin = (*atlas.origin, bold_origin[3])
+        spacing = (*atlas.spacing, bold_spacing[3])
+        direction = bold_direction.copy()
+        direction[:3, :3] = atlas.direction
+
+        warped_img = ants.from_numpy(warped_np, origin=origin, spacing=spacing, direction=direction)
+        del warped_np
+        moved_img = ants.apply_transforms(MNI152_2mm, warped_img, fwdtrf_atlas2MNI152_2mm, imagetype=3)
+        del warped_img
+        moved_np = moved_img.numpy()
+        del moved_img
+        toc = time.time()
+        print(toc - tic)
+
+        # save
+        origin = (*MNI152_2mm.origin, bold_origin[3])
+        spacing = (*MNI152_2mm.spacing, bold_spacing[3])
+        direction = bold_direction.copy()
+        direction[:3, :3] = MNI152_2mm.direction
+        warped_bold_img = ants.from_numpy(moved_np, origin=origin, spacing=spacing, direction=direction)
+        del moved_np
+        warped_file = str(warped_file)
+        if verbose:
+            ants.image_write(warped_bold_img, warped_file)
+        return warped_bold_img
+
+    def _run_interface(self, runtime):
+        layout = bids.BIDSLayout(str(self.inputs.data_path), derivatives=False)
+        if self.inputs.task is None:
+            bids_bolds = layout.get(subject=self.inputs.subj, suffix='bold', extension='.nii.gz')
+        else:
+            bids_bolds = layout.get(subject=self.inputs.subj, task=self.inputs.task, suffix='bold', extension='.nii.gz')
+
+        for bids_bold in bids_bolds:
+            entities = dict(bids_bold.entities)
+            file_prefix = Path(bids_bold.path).name.replace('.nii.gz', '')
+            if 'session' in entities:
+                ses = entities['session']
+                subj_func_path = Path(self.inputs.deepprep_subj_path) / f'ses-{ses}' / 'func'
+            else:
+                subj_func_path = Path(self.inputs.deepprep_subj_path) / 'func'
+            if self.inputs.preprocess_method == 'rest':
+                bold_file = subj_func_path / f'{file_prefix}_resid.nii.gz'
+            else:
+                bold_file = subj_func_path / f'{file_prefix}_mc.nii.gz'
+
+            reg_file = subj_func_path / f'{file_prefix}_bbregister.register.dat'
+            bold_t1_file = subj_func_path / f'{self.inputs.subj}_native_t1_2mm.nii.gz'
+            bold_t1_out = self.native_bold_to_T1_2mm_ants(bold_file, self.inputs.subj, self.inputs.norm, reg_file,
+                                                      bold_t1_file, self.inputs.workdir, verbose=False)
+
+            warp_file = subj_func_path / f'sub-{self.inputs.subj}_warp.nii.gz'
+            affine_file = subj_func_path / f'sub-{self.inputs.subj}_affine.mat'
+            warped_file = subj_func_path / f'sub-{self.inputs.subj}_MNI2mm.nii.gz'
+            warped_img = self.vxm_warp_bold_2mm(bold_t1_out, affine_file, warp_file, warped_file, verbose=True)
+        return runtime
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["deepprep_subj_path"] = self.inputs.deepprep_subj_path
+
+
+        return outputs
+
+class SmoothInputSpec(BaseInterfaceInputSpec):
+    subject_id = Str(exists=True, desc='subject', mandatory=True)
+    subj = Str(exists=True, desc='subj', mandatory=True)
+    task = Str(exists=True, desc='task', mandatory=True)
+    preprocess_dir = Directory(exists=True, desc='preprocess_dir', mandatory=True)
+    data_path = Directory(exists=True, desc='data_path', mandatory=True)
+    deepprep_subj_path = Directory(exists=True, desc='deepprep_subj_path', mandatory=True)
+    preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
+    workdir = Directory(exists=True, desc='tmp/ task-{task}', mandatory=True)
+class SmoothclassOutputSpec(TraitedSpec):
+
+    deepprep_subj_path = Directory(exists=True, desc='deepprep_subj_path')
+
+class Smooth(BaseInterface):
+    input_spec = SmoothInputSpec
+    output_spec = SmoothclassOutputSpec
+
+    # time = 120 / 60  # 运行时间：分钟
+    # cpu = 2  # 最大cpu占用：个
+    # gpu = 0  # 最大gpu占用：MB
+
+    def save_bold(self,warped_img, temp_file, bold_file, save_file):
+        import os
+
+        ants.image_write(warped_img, str(temp_file))
+        bold_info = nib.load(bold_file)
+        affine_info = nib.load(temp_file)
+        bold2 = nib.Nifti1Image(warped_img.numpy(), affine=affine_info.affine, header=bold_info.header)
+        del bold_info
+        del affine_info
+        os.remove(temp_file)
+        nib.save(bold2, save_file)
+
+    def bold_smooth_6_ants(self,t12mm, t12mm_sm6_file, temp_file, bold_file, verbose=False):
+        # mask file
+        MNI152_T1_2mm_brain_mask = '/usr/local/fsl/data/standard/MNI152_T1_2mm_brain_mask.nii.gz'
+        brain_mask = ants.image_read(MNI152_T1_2mm_brain_mask)
+
+        if isinstance(t12mm, str):
+            bold_img = ants.image_read(t12mm)
+        else:
+            bold_img = t12mm
+
+        bold_origin = bold_img.origin
+        bold_spacing = bold_img.spacing
+        bold_direction = bold_img.direction.copy()
+
+        # smooth
+        smoothed_img = ants.from_numpy(bold_img.numpy(), bold_origin[:3], bold_spacing[:3],
+                                       bold_direction[:3, :3].copy(), has_components=True)
+        # mask
+        smoothed_np = ants.smooth_image(smoothed_img, sigma=6, FWHM=True).numpy()
+        del smoothed_img
+        mask_np = brain_mask.numpy()
+        masked_np = np.zeros(smoothed_np.shape, dtype=np.float32)
+        idx = mask_np == 1
+        masked_np[idx, :] = smoothed_np[idx, :]
+        del smoothed_np
+        masked_img = ants.from_numpy(masked_np, bold_origin, bold_spacing, bold_direction)
+        del masked_np
+        if verbose:
+            # save
+            self.save_bold(masked_img, temp_file, bold_file, t12mm_sm6_file)
+            # ants.image_write(masked_img, str(t12mm_sm6_file))
+        return masked_img
+
+    def _run_interface(self, runtime):
+        layout = bids.BIDSLayout(str(self.inputs.data_path), derivatives=False)
+        if self.inputs.task is None:
+            bids_bolds = layout.get(subject=self.inputs.subj, suffix='bold', extension='.nii.gz')
+        else:
+            bids_bolds = layout.get(subject=self.inputs.subj, task=self.inputs.task, suffix='bold', extension='.nii.gz')
+        for bids_bold in bids_bolds:
+            entities = dict(bids_bold.entities)
+            file_prefix = Path(bids_bold.path).name.replace('.nii.gz', '')
+            if 'session' in entities:
+                ses = entities['session']
+                subj_func_path = Path(self.inputs.deepprep_subj_path) / f'ses-{ses}' / 'func'
+            else:
+                subj_func_path = Path(self.inputs.deepprep_subj_path) / 'func'
+            if self.inputs.preprocess_method == 'rest':
+                bold_file = subj_func_path / f'{file_prefix}_resid.nii.gz'
+                save_file = subj_func_path / f'{file_prefix}_resid_MIN2mm_sm6.nii.gz'
+            else:
+                bold_file = subj_func_path / f'{file_prefix}_mc.nii.gz'
+                save_file = subj_func_path / f'{file_prefix}_mc_MIN2mm.nii.gz'
+            if self.inputs.preprocess_method == 'rest':
+                temp_file = Path(self.inputs.workdir) / f'{file_prefix}_MNI2mm_sm6_temp.nii.gz'
+                warped_img = subj_func_path / f'{self.inputs.subject_id}_MNI2mm.nii.gz'
+                self.bold_smooth_6_ants(str(warped_img), save_file, temp_file, bold_file, verbose=True)
+            else:
+                temp_file = Path(self.inputs.workdir) / f'{file_prefix}_MNI2mm_temp.nii.gz'
+                warped_img = subj_func_path / f'{self.inputs.subject_id}_MNI2mm.nii.gz'
+                self.save_bold(str(warped_img), temp_file, bold_file, save_file)
+        return runtime
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["deepprep_subj_path"] = self.inputs.deepprep_subj_path
 
         return outputs
