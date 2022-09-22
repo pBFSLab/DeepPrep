@@ -100,7 +100,7 @@ class MotionCorrection(BaseInterface):
     input_spec = MotionCorrectionInputSpec
     output_spec = MotionCorrectionOutputSpec
 
-    time = 0 / 60  # 运行时间：分钟 / 单run测试时间
+    time = 400 / 60  # 运行时间：分钟 / 单run测试时间
     cpu = 0  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
 
@@ -139,7 +139,7 @@ class Stc(BaseInterface):
     input_spec = StcInputSpec
     output_spec = StcOutputSpec
 
-    time = 823 / 60  # 运行时间：分钟
+    time = 214 / 60  # 运行时间：分钟
     cpu = 6  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
 
