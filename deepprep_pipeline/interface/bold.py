@@ -445,11 +445,11 @@ class RestBandpassInputSpec(BaseInterfaceInputSpec):
     preprocess_dir = Directory(exists=True, desc='preprocess_dir', mandatory=True)
     data_path = Directory(exists=True, desc='data path', mandatory=True)
     gauss = File(exists=True, desc='{subj}_bld_rest_reorient_skip_faln_mc_g1000000000.nii.gz', mandatory=True)
-    bpss = File(exists=False, desc='bpss_path', mandatory=True)
+    bpss = File(exists=False, desc='{subj}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss.nii.gz', mandatory=True)
 
 
 class RestBandpassOutputSpec(TraitedSpec):
-    bpss = File(exists=True, desc='bpss_path')
+    bpss = File(exists=True, desc='{subj}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss.nii.gz')
 
 
 class RestBandpass(BaseInterface):
@@ -497,18 +497,18 @@ class RestRegressionInputSpec(BaseInterfaceInputSpec):
     bold_dir = Directory(exists=True, desc='bold_dir', mandatory=True)
     task = Str(exists=True, desc='task', mandatory=True)
     data_path = Directory(exists=True, desc='data_path', mandatory=True)
-    bpss = File(exists=True, desc='bpss path', mandatory=True)
+    bpss = File(exists=True, desc='{subj}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss.nii.gz', mandatory=True)
 
 
-    resid = File(exists=False, desc='resid path', mandatory=True)
-    resid_snr = File(exists=False, desc='resid_snr path', mandatory=True)
-    resid_sd1 = File(exists=False, desc='resid_sd1 path', mandatory=True)
+    resid = File(exists=False, desc='{subj}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss_resid.nii.gz', mandatory=True)
+    resid_snr = File(exists=False, desc='{subj}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss_resid_snr.nii.gz', mandatory=True)
+    resid_sd1 = File(exists=False, desc='{subj}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss_resid_sd1.nii.gz', mandatory=True)
 
 
 class RestRegressionOutputSpec(TraitedSpec):
-    resid = File(exists=True, desc='resid path')
-    resid_snr = File(exists=True, desc='resid_snr path')
-    resid_sd1 = File(exists=True, desc='resid_sd1 path')
+    resid = File(exists=True, desc='{subj}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss_resid.nii.gz')
+    resid_snr = File(exists=True, desc='{subj}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss_resid_snr.nii.gz')
+    resid_sd1 = File(exists=True, desc='{subj}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss_resid_sd1.nii.gz')
 
 
 class RestRegression(BaseInterface):
