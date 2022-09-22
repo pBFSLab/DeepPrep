@@ -21,9 +21,13 @@ class SegmentInputSpec(BaseInterfaceInputSpec):
     network_coronal_path = File(exists=True, mandatory=True, desc="pre-trained weights of coronal network")
     network_axial_path = File(exists=True, mandatory=True, desc="pre-trained weights of axial network")
 
+    aparc_DKTatlas_aseg_deep = File(exists=False, desc="mri/aparc.DKTatlas+aseg.deep.mgz", mandatory=True)
+    aparc_DKTatlas_aseg_orig = File(exists=False, desc="mri/aparc.DKTatlas+aseg.orig.mgz", mandatory=True)
+
 
 class SegmentOutputSpec(TraitedSpec):
-    aseg_deep_file = File(exists=True, desc='the output seg image: mri/aparc.DKTatlas+aseg.deep.mgz')
+    aparc_DKTatlas_aseg_deep = File(exists=True, desc="mri/aparc.DKTatlas+aseg.deep.mgz")
+    aparc_DKTatlas_aseg_orig = File(exists=True, desc="mri/aparc.DKTatlas+aseg.orig.mgz")
 
 
 class Segment(BaseInterface):
@@ -50,11 +54,15 @@ class Segment(BaseInterface):
               '--batch_size 1 --simple_run --run_viewagg_on check'
         run_cmd_with_timing(cmd)
 
+        cmd = f'mri_convert {self.inputs.aparc_DKTatlas_aseg_deep} {self.inputs.aparc_DKTatlas_aseg_orig}'
+        run_cmd_with_timing(cmd)
+
         return runtime
 
     def _list_outputs(self):
         outputs = self._outputs().get()
-        outputs['aseg_deep_file'] = self.inputs.out_file
+        outputs["aparc_DKTatlas_aseg_deep"] = self.inputs.aparc_DKTatlas_aseg_deep
+        outputs["aparc_DKTatlas_aseg_orig"] = self.inputs.aparc_DKTatlas_aseg_orig
 
         return outputs
 
