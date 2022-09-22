@@ -1,16 +1,13 @@
 from nipype.interfaces.base import BaseInterface, \
-    BaseInterfaceInputSpec, traits, File, TraitedSpec, Directory, Str
+    BaseInterfaceInputSpec, File, TraitedSpec, Directory, Str
 import sys
 import sh
 import nibabel as nib
 import numpy as np
 from pathlib import Path
-import os
 import ants
 import bids
-import pandas as pd
-import csv
-from sklearn.decomposition import PCA
+
 
 
 class BoldSkipReorientInputSpec(BaseInterfaceInputSpec):
