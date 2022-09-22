@@ -226,6 +226,7 @@ def save_bold(warped_img, temp_file, bold_file, save_file):
     bold2 = nib.Nifti1Image(warped_img.numpy(), affine=affine_info.affine, header=bold_info.header)
     del bold_info
     del affine_info
+    os.remove(temp_file)
     nib.save(bold2, save_file)
 
 
