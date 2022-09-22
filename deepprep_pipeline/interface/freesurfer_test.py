@@ -11,7 +11,7 @@ from run import set_envrion
 def OrigAndRawavg_test():
     set_envrion(1)
     # subjects_dir = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon'
-    subjects_dir = '/mnt/ngshare/Data_Mirror/pipeline_test'
+    subjects_dir = Path('/mnt/ngshare/Data_Mirror/pipeline_test')
     os.environ['SUBJECTS_DIR'] = subjects_dir  # 设置FreeSurfer的subjects_dir
 
     # subject_id = 'OrigAndRawavg_test1'
@@ -24,6 +24,9 @@ def OrigAndRawavg_test():
     origandrawavg_node.inputs.subjects_dir = subjects_dir
     origandrawavg_node.inputs.subject_id = subject_id
     origandrawavg_node.inputs.threads = 1
+    origandrawavg_node.inputs.aparc_DKTatlas_aseg_deep = subjects_dir / subject_id / "mri" / "aparc.DKTatlas+aseg.deep.mgz"
+    origandrawavg_node.inputs.aparc_DKTatlas_aseg_orig = subjects_dir / subject_id / "mri" / "aparc.DKTatlas+aseg.orig.mgz"
+
     origandrawavg_node.run()
 
     # subject_id = 'OrigAndRawavg_test2'
