@@ -10,10 +10,12 @@ from run import set_envrion
 
 def OrigAndRawavg_test():
     set_envrion(1)
-    subjects_dir = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon'
+    # subjects_dir = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon'
+    subjects_dir = '/mnt/ngshare/Data_Mirror/pipeline_test'
     os.environ['SUBJECTS_DIR'] = subjects_dir  # 设置FreeSurfer的subjects_dir
 
-    subject_id = 'OrigAndRawavg_test1'
+    # subject_id = 'OrigAndRawavg_test1'
+    subject_id = 'sub-MSC01'
     t1w_files = [
         f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/sub-MSC01/ses-struct01/anat/sub-MSC01_ses-struct01_run-01_T1w.nii.gz',
     ]
@@ -24,17 +26,17 @@ def OrigAndRawavg_test():
     origandrawavg_node.inputs.threads = 1
     origandrawavg_node.run()
 
-    subject_id = 'OrigAndRawavg_test2'
-    t1w_files = [
-        f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/sub-MSC01/ses-struct01/anat/sub-MSC01_ses-struct01_run-01_T1w.nii.gz',
-        f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/sub-MSC01/ses-struct01/anat/sub-MSC01_ses-struct01_run-01_T1w.nii.gz',
-    ]
-    origandrawavg_node = Node(OrigAndRawavg(), f'origandrawavg_node')
-    origandrawavg_node.inputs.t1w_files = t1w_files
-    origandrawavg_node.inputs.subjects_dir = subjects_dir
-    origandrawavg_node.inputs.subject_id = subject_id
-    origandrawavg_node.inputs.threads = 1
-    origandrawavg_node.run()
+    # subject_id = 'OrigAndRawavg_test2'
+    # t1w_files = [
+    #     f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/sub-MSC01/ses-struct01/anat/sub-MSC01_ses-struct01_run-01_T1w.nii.gz',
+    #     f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/sub-MSC01/ses-struct01/anat/sub-MSC01_ses-struct01_run-01_T1w.nii.gz',
+    # ]
+    # origandrawavg_node = Node(OrigAndRawavg(), f'origandrawavg_node')
+    # origandrawavg_node.inputs.t1w_files = t1w_files
+    # origandrawavg_node.inputs.subjects_dir = subjects_dir
+    # origandrawavg_node.inputs.subject_id = subject_id
+    # origandrawavg_node.inputs.threads = 1
+    # origandrawavg_node.run()
 
 
 def Brainmask_test():
@@ -120,6 +122,10 @@ def Curvstats_test():
     set_envrion()
     subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
     subject_id = "sub-002"
+
+    subjects_dir = Path("/mnt/ngshare/Data_Mirror/pipeline_test")
+    subject_id = "sub-MSC01"
+
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
     subject_stats_dir = subjects_dir / subject_id / 'stats'
     subject_surf_dir = subjects_dir / subject_id / 'surf'
@@ -145,6 +151,9 @@ def white_pial_thickness1_test():
     subject_id = "sub-002"
     threads = 8
 
+    subjects_dir = Path('/mnt/ngshare/Data_Mirror/pipeline_test')
+    subject_id = 'sub-MSC01'
+
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
     white_pial_thickness1 = Node(WhitePialThickness1(), name="white_pial_thickness1")
@@ -164,8 +173,8 @@ def white_pial_thickness1_test():
     white_pial_thickness1.inputs.lh_cortex_label = subjects_dir / subject_id / "label" / "lh.cortex.label"
     white_pial_thickness1.inputs.rh_cortex_label = subjects_dir / subject_id / "label" / "rh.cortex.label"
 
-    white_pial_thickness1.inputs.lh_aparc_DKTatlas_mapped_annot = subjects_dir / subject_id / "label" / "lh.aparc.DKTatlas.mapped.annot"
-    white_pial_thickness1.inputs.rh_aparc_DKTatlas_mapped_annot = subjects_dir / subject_id / "label" / "rh.aparc.DKTatlas.mapped.annot"
+    # white_pial_thickness1.inputs.lh_aparc_DKTatlas_mapped_annot = subjects_dir / subject_id / "label" / "lh.aparc.DKTatlas.mapped.annot"
+    # white_pial_thickness1.inputs.rh_aparc_DKTatlas_mapped_annot = subjects_dir / subject_id / "label" / "rh.aparc.DKTatlas.mapped.annot"
     white_pial_thickness1.inputs.lh_white = subjects_dir / subject_id / "surf" / "lh.white"
     white_pial_thickness1.inputs.rh_white = subjects_dir / subject_id / "surf" / "rh.white"
 
@@ -213,6 +222,9 @@ def Cortribbon_test():
     subject_id = "sub-002"
     threads = 8
 
+    subjects_dir = Path("/mnt/ngshare/Data_Mirror/pipeline_test")
+    subject_id = 'sub-MSC01'
+
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
     subject_mri_dir = subjects_dir / subject_id / 'mri'
     subject_surf_dir = subjects_dir / subject_id / 'surf'
@@ -240,6 +252,10 @@ def Parcstats_test():
     subjects_dir = Path(f'/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon')
     subject_id = 'sub-MSC01'
     subject_id = 'sub-170'
+
+    subjects_dir = Path('/mnt/ngshare/Data_Mirror/pipeline_test')
+    subject_id = 'sub-MSC01'
+
     subject_mri_dir = subjects_dir / subject_id / 'mri'
     subject_surf_dir = subjects_dir / subject_id / 'surf'
     subject_label_dir = subjects_dir / subject_id / 'label'
@@ -278,6 +294,10 @@ def Pctsurfcon_test():
     subjects_dir = Path(f'/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon')
     subject_id = 'sub-MSC01'
     subject_id = 'sub-170'
+
+    subjects_dir = Path('/mnt/ngshare/Data_Mirror/pipeline_test')
+    subject_id = 'sub-MSC01'
+
     subject_mri_dir = subjects_dir / subject_id / 'mri'
     subject_surf_dir = subjects_dir / subject_id / 'surf'
     subject_label_dir = subjects_dir / subject_id / 'label'
@@ -434,23 +454,27 @@ def Aseg7ToAseg_test():
     set_envrion()
     subjects_dir = Path(f'/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon')
     subject_id = 'sub-765'
+
+    subjects_dir = Path('/mnt/ngshare/Data_Mirror/pipeline_test')
+    subject_id = 'sub-MSC01'
+
     subject_mri_dir = subjects_dir / subject_id / 'mri'
     subject_surf_dir = subjects_dir / subject_id / 'surf'
     subject_label_dir = subjects_dir / subject_id / 'label'
     threads = 8
-    os.environ['SUBJECTS_DIR'] = '/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon'
-    Aseg7ToAseg_node = Node(Aseg7ToAseg(), name='Aseg7_node')
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+    Aseg7ToAseg_node = Node(Aseg7ToAseg(), name='Aseg7ToAseg_node')
     Aseg7ToAseg_node.inputs.subjects_dir = subjects_dir
     Aseg7ToAseg_node.inputs.subject_id = subject_id
     Aseg7ToAseg_node.inputs.threads = threads
     # Aseg7ToAseg_node.inputs.aseg_presurf_hypos_file = subject_mri_dir / 'aseg.presurf.hypos.mgz'
     # Aseg7ToAseg_node.inputs.ribbon_file = subject_mri_dir / 'ribbon.mgz'
-    Aseg7ToAseg_node.inputs.lh_cortex_label_file = subject_label_dir / 'lh.cortex.label'
-    Aseg7ToAseg_node.inputs.lh_white_file = subject_surf_dir / 'lh.white'
-    Aseg7ToAseg_node.inputs.lh_pial_file = subject_surf_dir / 'lh.pial'
-    Aseg7ToAseg_node.inputs.rh_cortex_label_file = subject_label_dir / 'rh.cortex.label'
-    Aseg7ToAseg_node.inputs.rh_white_file = subject_surf_dir / 'rh.white'
-    Aseg7ToAseg_node.inputs.rh_pial_file = subject_surf_dir / 'rh.pial'
+    Aseg7ToAseg_node.inputs.lh_cortex_label = subject_label_dir / 'lh.cortex.label'
+    Aseg7ToAseg_node.inputs.lh_white = subject_surf_dir / 'lh.white'
+    Aseg7ToAseg_node.inputs.lh_pial = subject_surf_dir / 'lh.pial'
+    Aseg7ToAseg_node.inputs.rh_cortex_label = subject_label_dir / 'rh.cortex.label'
+    Aseg7ToAseg_node.inputs.rh_white = subject_surf_dir / 'rh.white'
+    Aseg7ToAseg_node.inputs.rh_pial = subject_surf_dir / 'rh.pial'
 
     Aseg7ToAseg_node.inputs.aseg_file = subject_mri_dir / 'aseg.mgz'
     Aseg7ToAseg_node.run()
@@ -506,13 +530,14 @@ if __name__ == '__main__':
 
     # Cortribbon_test()
 
+    # Aseg7ToAseg_test()
+
     # Parcstats_test()
 
-    # Pctsurfcon_test()
+    Pctsurfcon_test()
 
     # Hyporelabel_test()
 
-    Segstats_test()
+    # Segstats_test()
 
     # Aseg7_test()
-    # Aseg7ToAseg_test()
