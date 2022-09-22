@@ -4,13 +4,13 @@ import argparse
 from multiprocessing import Pool
 
 
-
 def get_freesurfer_threads(threads: int):
     if threads and threads > 1:
         fsthreads = f'-threads {threads} -itkthreads {threads}'
     else:
         fsthreads = ''
     return fsthreads
+
 
 def run_cmd_with_timing(cmd):
     print('*' * 50)
@@ -22,6 +22,7 @@ def run_cmd_with_timing(cmd):
     print(cmd)
     print('=' * 50, 'runtime:', ' ' * 3, time.time() - start)
 
+
 def multipool(cmd, Multi_Num=2):
     cmd_pool = []
     cmd_pool.append(['lh'])
@@ -32,20 +33,23 @@ def multipool(cmd, Multi_Num=2):
     pool.close()
     pool.join()
 
+
 def set_envrion(threads: int = 1):
     # FreeSurfer recon-all env
-    os.environ['FREESURFER_HOME'] = '/usr/local/freesurfer'
-    os.environ['FREESURFER'] = '/usr/local/freesurfer'
-    os.environ['SUBJECTS_DIR'] = '/usr/local/freesurfer/subjects'
-    os.environ['PATH'] = '/usr/local/freesurfer/bin:/usr/local/freesurfer/mni/bin:/usr/local/freesurfer/tktools:' + \
-                         '/usr/local/freesurfer/fsfast/bin:' + os.environ['PATH']
-    os.environ['MINC_BIN_DIR'] = '/usr/local/freesurfer/mni/bin'
-    os.environ['MINC_LIB_DIR'] = '/usr/local/freesurfer/mni/lib'
-    os.environ['PERL5LIB'] = '/usr/local/freesurfer/mni/share/perl5'
-    os.environ['MNI_PERL5LIB'] = '/usr/local/freesurfer/mni/share/perl5'
+    freesurfer_home = '/usr/local/freesurfer720'
+    os.environ['FREESURFER_HOME'] = f'{freesurfer_home}'
+    os.environ['FREESURFER'] = f'{freesurfer_home}'
+    os.environ['SUBJECTS_DIR'] = f'{freesurfer_home}/subjects'
+    os.environ['PATH'] = f'{freesurfer_home}/bin:/usr/local/freesurfer/mni/bin:/usr/local/freesurfer/tktools:' + \
+                         f'{freesurfer_home}/fsfast/bin:' + os.environ['PATH']
+    os.environ['MINC_BIN_DIR'] = f'{freesurfer_home}/mni/bin'
+    os.environ['MINC_LIB_DIR'] = f'{freesurfer_home}/mni/lib'
+    os.environ['PERL5LIB'] = f'{freesurfer_home}/mni/share/perl5'
+    os.environ['MNI_PERL5LIB'] = f'{freesurfer_home}/mni/share/perl5'
     # FreeSurfer fsfast env
     os.environ['FSF_OUTPUT_FORMAT'] = 'nii.gz'
     os.environ['FSLOUTPUTTYPE'] = 'NIFTI_GZ'
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
