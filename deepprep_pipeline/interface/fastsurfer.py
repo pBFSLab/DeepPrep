@@ -8,10 +8,10 @@ from multiprocessing import Pool
 class SegmentInputSpec(BaseInterfaceInputSpec):
     python_interpret = File(exists=True, mandatory=True, desc='the python interpret to use')
     in_file = File(exists=True, mandatory=True, desc='name of file to process. Default: mri/orig.mgz')
-    out_file = File(mandatory=True,
-                    desc='name under which segmentation will be saved. Default: mri/aparc.DKTatlas+aseg.deep.mgz. '
-                         'If a separate subfolder is desired (e.g. FS conform, add it to the name: '
-                         'mri/aparc.DKTatlas+aseg.deep.mgz)')  # Do not set exists=True !!
+    # out_file = File(mandatory=True,
+    #                 desc='name under which segmentation will be saved. Default: mri/aparc.DKTatlas+aseg.deep.mgz. '
+    #                      'If a separate subfolder is desired (e.g. FS conform, add it to the name: '
+    #                      'mri/aparc.DKTatlas+aseg.deep.mgz)')  # Do not set exists=True !!
     conformed_file = File(desc='Name under which the conformed input image will be saved, in the same directory as '
                                'the segmentation (the input image is always conformed first, if it is not already '
                                'conformed). The original input image is saved in the output directory as '
@@ -40,12 +40,12 @@ class Segment(BaseInterface):
 
     def _run_interface(self, runtime):
         if not traits_extension.isdefined(self.inputs.conformed_file):
-            conformed_file = Path(self.inputs.out_file).parent / 'conformed.mgz'
+            conformed_file = Path(self.inputs.in_file).parent / 'conformed.mgz'
         else:
             conformed_file = self.inputs.conformed_file
         cmd = f'{self.inputs.python_interpret} {self.inputs.eval_py} ' \
               f'--in_name {self.inputs.in_file} ' \
-              f'--out_name {self.inputs.out_file} ' \
+              f'--out_name {self.inputs.aparc_DKTatlas_aseg_deep} ' \
               f'--conformed_name {conformed_file} ' \
               '--order 1 ' \
               f'--network_sagittal_path {self.inputs.network_sagittal_path} ' \
@@ -223,6 +223,7 @@ class UpdateAsegInputSpec(BaseInterfaceInputSpec):
     paint_cc_file = File(exists=True, desc="FastSurfer/recon_surf/paint_cc_into_pred.py", mandatory=True)
     aseg_noCCseg_file = File(exists=True, desc="mri/aseg.auto_noCCseg.mgz", mandatory=True)
     seg_file = File(exists=True, desc="mri/aparc.DKTatlas+aseg.deep.mgz", mandatory=True)
+    norm_file = File(exists=True, desc="mri/norm.mgz", mandatory=True)
 
     aseg_auto_file = File(exists=False, desc="mri/aseg.auto.mgz", mandatory=True)
     cc_up_file = File(exists=False, desc="mri/transforms/cc_up.lta", mandatory=True)

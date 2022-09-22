@@ -7,15 +7,16 @@ import argparse
 
 def set_envrion(threads: int = 1):
     # FreeSurfer recon-all env
-    os.environ['FREESURFER_HOME'] = '/usr/local/freesurfer'
-    os.environ['FREESURFER'] = '/usr/local/freesurfer'
-    os.environ['SUBJECTS_DIR'] = '/usr/local/freesurfer/subjects'
-    os.environ['PATH'] = '/usr/local/freesurfer/bin:/usr/local/freesurfer/mni/bin:/usr/local/freesurfer/tktools:' + \
-                         '/usr/local/freesurfer/fsfast/bin:' + os.environ['PATH']
-    os.environ['MINC_BIN_DIR'] = '/usr/local/freesurfer/mni/bin'
-    os.environ['MINC_LIB_DIR'] = '/usr/local/freesurfer/mni/lib'
-    os.environ['PERL5LIB'] = '/usr/local/freesurfer/mni/share/perl5'
-    os.environ['MNI_PERL5LIB'] = '/usr/local/freesurfer/mni/share/perl5'
+    freesurfer_home = '/usr/local/freesurfer720'
+    os.environ['FREESURFER_HOME'] = f'{freesurfer_home}'
+    os.environ['FREESURFER'] = f'{freesurfer_home}'
+    os.environ['SUBJECTS_DIR'] = f'{freesurfer_home}/subjects'
+    os.environ['PATH'] = f'{freesurfer_home}/bin:{freesurfer_home}/mni/bin:{freesurfer_home}/tktools:' + \
+                         f'{freesurfer_home}/fsfast/bin:' + os.environ['PATH']
+    os.environ['MINC_BIN_DIR'] = f'{freesurfer_home}/mni/bin'
+    os.environ['MINC_LIB_DIR'] = f'{freesurfer_home}/mni/lib'
+    os.environ['PERL5LIB'] = f'{freesurfer_home}/mni/share/perl5'
+    os.environ['MNI_PERL5LIB'] = f'{freesurfer_home}/mni/share/perl5'
     # FreeSurfer fsfast env
     os.environ['FSF_OUTPUT_FORMAT'] = 'nii.gz'
     os.environ['FSLOUTPUTTYPE'] = 'NIFTI_GZ'
@@ -34,17 +35,17 @@ def Segment_test():
     fastsurfer_eval = fastsurfer_home / 'FastSurferCNN' / 'eval.py'  # inference script
     weight_dir = fastsurfer_home / 'checkpoints'  # model checkpoints dir
 
-    subjects_dir = Path("mnt/ngshare/Data_Mirror/pipeline_test")
+    subjects_dir = Path("/mnt/ngshare/Data_Mirror/pipeline_test")
     subject_id = "sub-MSC01"
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
     network_sagittal_path = weight_dir / "Sagittal_Weights_FastSurferCNN" / "ckpts" / "Epoch_30_training_state.pkl"
     network_coronal_path = weight_dir / "Coronal_Weights_FastSurferCNN" / "ckpts" / "Epoch_30_training_state.pkl"
     network_axial_path = weight_dir / "Axial_Weights_FastSurferCNN" / "ckpts" / "Epoch_30_training_state.pkl"
 
     segment_node = Node(Segment(), f'segment_node')
-    segment_node.inputs.python_interpret = '/home/pbfs18/anaconda3/envs/3.8/bin/python3'
-    segment_node.inputs.in_file = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon/sub-MSC01_ses-struct01_run-01/mri/orig.mgz'
-    segment_node.inputs.out_file = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon/sub-MSC01_ses-struct01_run-01/mri/aparc.DKTatlas+aseg.deep.mgz'
+    segment_node.inputs.python_interpret = '/home/anning/miniconda3/envs/3.8/bin/python3'
+    segment_node.inputs.in_file = subjects_dir / subject_id / "mri" / "orig.mgz"
     segment_node.inputs.eval_py = fastsurfer_eval
     segment_node.inputs.network_sagittal_path = network_sagittal_path
     segment_node.inputs.network_coronal_path = network_coronal_path
@@ -53,7 +54,7 @@ def Segment_test():
     segment_node.inputs.aparc_DKTatlas_aseg_deep = subjects_dir / subject_id / "mri" / "aparc.DKTatlas+aseg.deep.mgz"
     segment_node.inputs.aparc_DKTatlas_aseg_orig = subjects_dir / subject_id / "mri" / "aparc.DKTatlas+aseg.orig.mgz"
 
-    segment_node.inputs.conformed_file = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon/sub-MSC01_ses-struct01_run-01/mri/conformed.mgz'
+    segment_node.inputs.conformed_file = subjects_dir / subject_id / "mri" / "conformed.mgz"
     segment_node.run()
 
 
@@ -62,13 +63,17 @@ def Noccseg_test():
     fastsurfer_home = pwd.parent / "FastSurfer"
     reduce_to_aseg_py = fastsurfer_home / 'recon_surf' / 'reduce_to_aseg.py'
 
-    noccseg_node = Node(Noccseg(), f'noccseg_node')
-    noccseg_node.inputs.python_interpret = '/home/pbfs18/anaconda3/envs/3.8/bin/python3'
-    noccseg_node.inputs.reduce_to_aseg_py = reduce_to_aseg_py
-    noccseg_node.inputs.in_file = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon/sub-MSC01_ses-struct01_run-1/mri/aparc.DKTatlas+aseg.deep.mgz'
+    subjects_dir = Path('/mnt/ngshare/Data_Mirror/pipeline_test')
+    subject_id = "sub-MSC01"
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
-    noccseg_node.inputs.mask_file = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon/sub-MSC01_ses-struct01_run-1/mri/mask.mgz'
-    noccseg_node.inputs.aseg_noccseg_file = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon/sub-MSC01_ses-struct01_run-1/mri/aseg.auto_noCCseg.mgz'
+    noccseg_node = Node(Noccseg(), f'noccseg_node')
+    noccseg_node.inputs.python_interpret = '/home/anning/miniconda3/envs/3.8/bin/python3'
+    noccseg_node.inputs.reduce_to_aseg_py = reduce_to_aseg_py
+    noccseg_node.inputs.in_file = subjects_dir / subject_id / "mri" / "aparc.DKTatlas+aseg.deep.mgz"
+
+    noccseg_node.inputs.mask_file = subjects_dir / subject_id / 'mri/mask.mgz'
+    noccseg_node.inputs.aseg_noCCseg_file = subjects_dir / subject_id / 'mri/aseg.auto_noCCseg.mgz'
 
     noccseg_node.run()
 
@@ -112,7 +117,7 @@ def talairach_and_nu_test():
     orig_nu_file = sub_mri_dir / "orig_nu.mgz"
     orig_file = sub_mri_dir / "orig.mgz"
 
-    talairach_lta = sub_mri_dir / "transforms" / "talairach.xfm.lta"
+    talairach_lta = sub_mri_dir / "transforms" / "talairach.lta"
     nu_file = sub_mri_dir / "nu.mgz"
 
     freesurfer_home = Path(os.environ['FREESURFER_HOME'])
@@ -208,10 +213,12 @@ if __name__ == '__main__':
 
     # Segment_test()
 
+    # Noccseg_test()
+
     # N4_bias_correct_test()
 
-    talairach_and_nu_test()
+    # talairach_and_nu_test()
 
-    # UpdateAseg_test()
+    UpdateAseg_test()
 
     # SampleSegmentationToSurfave_test()

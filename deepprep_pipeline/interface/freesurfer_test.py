@@ -24,8 +24,6 @@ def OrigAndRawavg_test():
     origandrawavg_node.inputs.subjects_dir = subjects_dir
     origandrawavg_node.inputs.subject_id = subject_id
     origandrawavg_node.inputs.threads = 1
-    origandrawavg_node.inputs.aparc_DKTatlas_aseg_deep = subjects_dir / subject_id / "mri" / "aparc.DKTatlas+aseg.deep.mgz"
-    origandrawavg_node.inputs.aparc_DKTatlas_aseg_orig = subjects_dir / subject_id / "mri" / "aparc.DKTatlas+aseg.orig.mgz"
 
     origandrawavg_node.run()
 
@@ -44,7 +42,7 @@ def OrigAndRawavg_test():
 
 def Brainmask_test():
     set_envrion()
-    subjects_dir = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon')
+    subjects_dir = Path(f'/mnt/ngshare/Data_Mirror/pipeline_test')
     subject_id = 'sub-MSC01'
     brainmask_node = Node(Brainmask(), name='brainmask_node')
     brainmask_node.inputs.subjects_dir = subjects_dir
@@ -60,8 +58,8 @@ def Brainmask_test():
 
 def filled_test():
     set_envrion()
-    subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
-    subject_id = "sub-001"
+    subjects_dir = Path("/mnt/ngshare/Data_Mirror/pipeline_test")
+    subject_id = "sub-MSC01"
     threads = 8
 
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
@@ -74,16 +72,15 @@ def filled_test():
     filled_node.inputs.aseg_auto_file = subjects_dir / subject_id / 'mri/aseg.auto.mgz'
     filled_node.inputs.norm_file = subjects_dir / subject_id / 'mri/norm.mgz'
     filled_node.inputs.brainmask_file = subjects_dir / subject_id / 'mri/brainmask.mgz'
-    filled_node.inputs.talairach_file = subjects_dir / subject_id / 'mri/transforms/talairach.lta'
+    filled_node.inputs.talairach_lta = subjects_dir / subject_id / 'mri/transforms/talairach.lta'
 
     filled_node.run()
 
 
 
 def white_preaparc1_test():
-    fswhitepreaparc = False
-    subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
-    subject_id = "sub-002"
+    subjects_dir = Path("/mnt/ngshare/Data_Mirror/pipeline_test")
+    subject_id = "sub-MSC01"
     threads = 8
 
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
@@ -104,8 +101,8 @@ def white_preaparc1_test():
 
 
 def InflatedSphere_test():
-    subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
-    subject_id = "sub-002"
+    subjects_dir = Path("/mnt/ngshare/Data_Mirror/pipeline_test")
+    subject_id = "sub-MSC01"
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
     lh_white_preaparc_file = subjects_dir / subject_id / "surf" / "lh.white.preaparc"
@@ -274,7 +271,7 @@ def Parcstats_test():
     Parcstats_node.inputs.lh_aparc_annot = subject_label_dir / f'lh.aparc.annot'
     Parcstats_node.inputs.rh_aparc_annot = subject_label_dir / f'rh.aparc.annot'
     Parcstats_node.inputs.wm_file = subject_mri_dir / 'wm.mgz'
-    Parcstats_node.inputs.aseg_file = subject_mri_dir / 'aseg.mgz'
+    # Parcstats_node.inputs.aseg_file = subject_mri_dir / 'aseg.mgz'
     Parcstats_node.inputs.ribbon_file = subject_mri_dir / 'ribbon.mgz'
     Parcstats_node.inputs.lh_white = subject_surf_dir / f'lh.white'
     Parcstats_node.inputs.rh_white = subject_surf_dir / f'rh.white'
@@ -283,11 +280,11 @@ def Parcstats_test():
     Parcstats_node.inputs.lh_thickness = subject_surf_dir / f'lh.thickness'
     Parcstats_node.inputs.rh_thickness = subject_surf_dir / f'rh.thickness'
 
-    Parcstats_node.inputs.lh_aparc_stats = subject_stats_dir / f'lh.aparc.stats'
-    Parcstats_node.inputs.rh_aparc_stats = subject_stats_dir / f'rh.aparc.stats'
-    Parcstats_node.inputs.lh_aparc_pial_stats = subject_stats_dir / f'lh.aparc.pial.stats'
-    Parcstats_node.inputs.rh_aparc_pial_stats = subject_stats_dir / f'rh.aparc.pial.stats'
-    Parcstats_node.inputs.aparc_annot_ctab = subject_label_dir / 'aparc.annot.ctab'
+    # Parcstats_node.inputs.lh_aparc_stats = subject_stats_dir / f'lh.aparc.stats'
+    # Parcstats_node.inputs.rh_aparc_stats = subject_stats_dir / f'rh.aparc.stats'
+    # Parcstats_node.inputs.lh_aparc_pial_stats = subject_stats_dir / f'lh.aparc.pial.stats'
+    # Parcstats_node.inputs.rh_aparc_pial_stats = subject_stats_dir / f'rh.aparc.pial.stats'
+    # Parcstats_node.inputs.aparc_annot_ctab = subject_label_dir / 'aparc.annot.ctab'
     Parcstats_node.run()
 
 
@@ -333,6 +330,10 @@ def Hyporelabel_test():
     subjects_dir = Path(f'/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon')
     subject_id = 'sub-MSC01'
     subject_id = 'sub-170'
+
+    subjects_dir = Path('/mnt/ngshare/Data_Mirror/pipeline_test')
+    subject_id = 'sub-MSC01'
+
     subject_mri_dir = subjects_dir / subject_id / 'mri'
     subject_surf_dir = subjects_dir / subject_id / 'surf'
     threads = 8
@@ -350,8 +351,8 @@ def Hyporelabel_test():
 
 
 def JacobianAvgcurvCortparc_test():
-    subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
-    subject_id = "sub-002"
+    subjects_dir = Path("/mnt/ngshare/Data_Mirror/pipeline_test")
+    subject_id = "sub-MSC01"
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
     lh_white_preaparc = subjects_dir / subject_id / "surf" / f"lh.white.preaparc"
@@ -393,10 +394,14 @@ def JacobianAvgcurvCortparc_test():
 
 def Segstats_test():
     set_envrion()
-    subjects_dir = Path(f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon')
-    subject_id = 'sub-MSC01'
-    subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
-    subject_id = "sub-170"
+    # subjects_dir = Path(f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon')
+    # subject_id = 'sub-MSC01'
+    # subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
+    # subject_id = "sub-170"
+
+    subjects_dir = Path("/mnt/ngshare/Data_Mirror/pipeline_test")
+    subject_id = "sub-MSC01"
+
     subject_mri_dir = subjects_dir / subject_id / 'mri'
     subject_surf_dir = subjects_dir / subject_id / 'surf'
     subject_stats_dir = subjects_dir / subject_id / 'stats'
@@ -426,30 +431,36 @@ def Segstats_test():
 
 def Aseg7_test():
     set_envrion()
-    subjects_dir = Path(f'/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon')
-    subject_id = 'sub-765'
+    # subjects_dir = Path(f'/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon')
+    # subject_id = 'sub-765'
+
+    subjects_dir = Path("/mnt/ngshare/Data_Mirror/pipeline_test")
+    subject_id = "sub-MSC01"
+
     subject_mri_dir = subjects_dir / subject_id / 'mri'
     subject_surf_dir = subjects_dir / subject_id / 'surf'
     subject_label_dir = subjects_dir / subject_id / 'label'
     threads = 8
-    os.environ['SUBJECTS_DIR'] = '/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon'
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+
     Aseg7_node = Node(Aseg7(), name='Aseg7_node')
     Aseg7_node.inputs.subjects_dir = subjects_dir
     Aseg7_node.inputs.subject_id = subject_id
     Aseg7_node.inputs.threads = threads
-    Aseg7_node.inputs.subject_mri_dir = subject_mri_dir
-    Aseg7_node.inputs.aseg_presurf_hypos_file = subject_mri_dir / 'aseg.presurf.hypos.mgz'
+    # Aseg7_node.inputs.subject_mri_dir = subject_mri_dir
+    Aseg7_node.inputs.aseg_presurf_hypos = subject_mri_dir / 'aseg.presurf.hypos.mgz'
+    Aseg7_node.inputs.aseg_file = subject_mri_dir / 'aseg.mgz'
     # Aseg7_node.inputs.ribbon_file = subject_mri_dir / 'ribbon.mgz'
-    Aseg7_node.inputs.lh_cortex_label_file = subject_label_dir / 'lh.cortex.label'
-    Aseg7_node.inputs.lh_white_file = subject_surf_dir / 'lh.white'
-    Aseg7_node.inputs.lh_pial_file = subject_surf_dir / 'lh.pial'
-    Aseg7_node.inputs.lh_aparc_annot_file = subject_label_dir / 'lh.aparc.annot'
-    Aseg7_node.inputs.rh_cortex_label_file = subject_label_dir / 'rh.cortex.label'
-    Aseg7_node.inputs.rh_white_file = subject_surf_dir / 'rh.white'
-    Aseg7_node.inputs.rh_pial_file = subject_surf_dir / 'rh.pial'
-    Aseg7_node.inputs.rh_aparc_annot_file = subject_label_dir / 'rh.aparc.annot'
+    Aseg7_node.inputs.lh_cortex_label = subject_label_dir / 'lh.cortex.label'
+    Aseg7_node.inputs.lh_white = subject_surf_dir / 'lh.white'
+    Aseg7_node.inputs.lh_pial = subject_surf_dir / 'lh.pial'
+    Aseg7_node.inputs.lh_aparc_annot = subject_label_dir / 'lh.aparc.annot'
+    Aseg7_node.inputs.rh_cortex_label = subject_label_dir / 'rh.cortex.label'
+    Aseg7_node.inputs.rh_white = subject_surf_dir / 'rh.white'
+    Aseg7_node.inputs.rh_pial = subject_surf_dir / 'rh.pial'
+    Aseg7_node.inputs.rh_aparc_annot = subject_label_dir / 'rh.aparc.annot'
 
-    Aseg7_node.inputs.aparc_aseg_file = subject_mri_dir / 'aparc+aseg.mgz'
+    Aseg7_node.inputs.aparc_aseg = subject_mri_dir / 'aparc+aseg.mgz'
     Aseg7_node.run()
 
 
@@ -485,30 +496,37 @@ def Aseg7ToAseg_test():
 
 def BalabelsMult_test():
     set_envrion()
-    subjects_dir = Path(f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon')
+    # subjects_dir = Path(f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon')
+    # subject_id = 'sub-MSC01'
+
+    subjects_dir = Path('/mnt/ngshare/Data_Mirror/pipeline_test')
     subject_id = 'sub-MSC01'
+
     subject_surf_dir = subjects_dir / subject_id / 'surf'
     subject_label_dir = subjects_dir / subject_id / 'label'
-    subject_stats_dir = subjects_dir / subject_id / 'stats'
+    # subject_stats_dir = subjects_dir / subject_id / 'stats'
     threads = 10
-    os.environ['SUBJECTS_DIR'] = '/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon'
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+    BalabelsMult_node = Node(BalabelsMult(), name='BalabelsMult_node')
+    BalabelsMult_node.inputs.subjects_dir = subjects_dir
+    BalabelsMult_node.inputs.subject_id = subject_id
+    BalabelsMult_node.inputs.threads = threads
+    # BalabelsMult_node.inputs.sub_label_dir = subjects_dir / subject_id / 'label'
+    # BalabelsMult_node.inputs.sub_stats_dir = subjects_dir / subject_id / 'stats'
+    BalabelsMult_node.inputs.freesurfer_dir = os.environ['FREESURFER_HOME']
 
-    for hemi in ['lh', 'rh']:
-        BalabelsMult_node = Node(BalabelsMult(), name='BalabelsMult_node')
-        BalabelsMult_node.inputs.subjects_dir = subjects_dir
-        BalabelsMult_node.inputs.subject_id = subject_id
-        BalabelsMult_node.inputs.hemi = hemi
-        BalabelsMult_node.inputs.threads = threads
-        BalabelsMult_node.inputs.sub_label_dir = subject_label_dir
-        BalabelsMult_node.inputs.sub_stats_dir = subject_stats_dir
-        BalabelsMult_node.inputs.freesurfer_dir = os.environ['FREESURFER']
-        BalabelsMult_node.inputs.hemi_sphere_file = subject_surf_dir / f'{hemi}.sphere.reg'
-        BalabelsMult_node.inputs.fsaverage_label_dir = subjects_dir / 'fsaverage' / 'label'
-        BalabelsMult_node.inputs.hemi_BA45_exvivo_file = subject_label_dir / f'{hemi}.BA45_exvivo.label'
-        BalabelsMult_node.inputs.BA_exvivo_thresh_file = subject_label_dir / 'BA_exvivo.thresh.ctab'
-        BalabelsMult_node.inputs.hemi_perirhinal_exvivo_file = subject_label_dir / f'{hemi}.perirhinal_exvivo.label'
-        BalabelsMult_node.inputs.hemi_entorhinal_exvivo_file = subject_label_dir / f'{hemi}.entorhinal_exvivo.label'
-        BalabelsMult_node.run()
+    BalabelsMult_node.inputs.lh_sphere_reg = subject_surf_dir / f'lh.sphere.reg'
+    BalabelsMult_node.inputs.rh_sphere_reg = subject_surf_dir / f'rh.sphere.reg'
+    BalabelsMult_node.inputs.fsaverage_label_dir = Path(os.environ['FREESURFER_HOME']) / "fsaverage/label"
+
+    BalabelsMult_node.inputs.lh_BA45_exvivo = subject_label_dir / f'lh.BA45_exvivo.label'
+    BalabelsMult_node.inputs.rh_BA45_exvivo = subject_label_dir / f'rh.BA45_exvivo.label'
+    BalabelsMult_node.inputs.BA_exvivo_thresh = subject_label_dir / 'BA_exvivo.thresh.ctab'
+    BalabelsMult_node.inputs.lh_perirhinal_exvivo = subject_label_dir / f'lh.perirhinal_exvivo.label'
+    BalabelsMult_node.inputs.rh_perirhinal_exvivo = subject_label_dir / f'rh.perirhinal_exvivo.label'
+    BalabelsMult_node.inputs.lh_entorhinal_exvivo = subject_label_dir / f'lh.entorhinal_exvivo.label'
+    BalabelsMult_node.inputs.rh_entorhinal_exvivo = subject_label_dir / f'rh.entorhinal_exvivo.label'
+    BalabelsMult_node.run()
 
 
 if __name__ == '__main__':
@@ -520,10 +538,9 @@ if __name__ == '__main__':
 
     # filled_test()
 
+    white_preaparc1_test()
+
     # InflatedSphere_test()
-
-    # white_preaparc1_test()
-
 
     # JacobianAvgcurvCortparc_test()
 
@@ -533,14 +550,18 @@ if __name__ == '__main__':
 
     # Cortribbon_test()
 
-    # Aseg7ToAseg_test()
+    # #
 
     # Parcstats_test()
 
-    Pctsurfcon_test()
+    # # Pctsurfcon_test()
 
-    # Hyporelabel_test()
+    # # Hyporelabel_test()
+
+    # Aseg7ToAseg_test()
+
+    # Aseg7_test()
 
     # Segstats_test()
 
-    # Aseg7_test()
+    BalabelsMult_test()
