@@ -34,6 +34,9 @@ def Segment_test():
     fastsurfer_eval = fastsurfer_home / 'FastSurferCNN' / 'eval.py'  # inference script
     weight_dir = fastsurfer_home / 'checkpoints'  # model checkpoints dir
 
+    subjects_dir = Path("mnt/ngshare/Data_Mirror/pipeline_test")
+    subject_id = "sub-MSC01"
+
     network_sagittal_path = weight_dir / "Sagittal_Weights_FastSurferCNN" / "ckpts" / "Epoch_30_training_state.pkl"
     network_coronal_path = weight_dir / "Coronal_Weights_FastSurferCNN" / "ckpts" / "Epoch_30_training_state.pkl"
     network_axial_path = weight_dir / "Axial_Weights_FastSurferCNN" / "ckpts" / "Epoch_30_training_state.pkl"
@@ -47,7 +50,8 @@ def Segment_test():
     segment_node.inputs.network_coronal_path = network_coronal_path
     segment_node.inputs.network_axial_path = network_axial_path
 
-    # segment_node.run()
+    segment_node.inputs.aparc_DKTatlas_aseg_deep = subjects_dir / subject_id / "mri" / "aparc.DKTatlas+aseg.deep.mgz"
+    segment_node.inputs.aparc_DKTatlas_aseg_orig = subjects_dir / subject_id / "mri" / "aparc.DKTatlas+aseg.orig.mgz"
 
     segment_node.inputs.conformed_file = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon/sub-MSC01_ses-struct01_run-01/mri/conformed.mgz'
     segment_node.run()

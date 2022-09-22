@@ -354,7 +354,7 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
         ###################### ???
         # segment -> orig: orig_and_rawavg_node: mri/aparc.DKTatlas+aseg.orig.mgz
 
-                                 (segment_node, auto_noccseg_node, [("aseg_deep_file", "in_file"),
+                                 (segment_node, auto_noccseg_node, [("aparc_DKTatlas_aseg_deep", "in_file"),
                                                                     ]),
                                  (orig_and_rawavg_node, N4_bias_correct_node, [("orig_file", "orig_file"),
                                                                                ]),
@@ -368,7 +368,7 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
                                                                         ]),
                                  (auto_noccseg_node, brainmask_node, [("mask_file", "mask_file"),
                                                                         ]),
-                                 (segment_node, updateaseg_node, [("aseg_deep_file", "seg_file"),
+                                 (segment_node, updateaseg_node, [("aparc_DKTatlas_aseg_deep", "seg_file"),
                                                                   ]),
                                  (auto_noccseg_node, updateaseg_node, [("aseg_noCCseg_file", "aseg_noCCseg_file"),
                                                                           ]),

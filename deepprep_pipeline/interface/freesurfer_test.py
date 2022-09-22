@@ -12,7 +12,7 @@ def OrigAndRawavg_test():
     set_envrion(1)
     # subjects_dir = '/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/derivatives/deepprep/Recon'
     subjects_dir = Path('/mnt/ngshare/Data_Mirror/pipeline_test')
-    os.environ['SUBJECTS_DIR'] = subjects_dir  # 设置FreeSurfer的subjects_dir
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)  # 设置FreeSurfer的subjects_dir
 
     # subject_id = 'OrigAndRawavg_test1'
     subject_id = 'sub-MSC01'
