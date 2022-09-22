@@ -67,10 +67,15 @@ class OrigAndRawavgInputSpec(BaseInterfaceInputSpec):
     subject_id = Str(desc='subject id', mandatory=True)
     threads = traits.Int(desc='threads')
 
+    aparc_DKTatlas_aseg_deep = File(exists=True, desc="mri/aparc.DKTatlas+aseg.deep.mgz", mandatory=True)
+    aparc_DKTatlas_aseg_orig = File(exists=False, desc="mri/aparc.DKTatlas+aseg.orig.mgz", mandatory=True)
+
 
 class OrigAndRawavgOutputSpec(TraitedSpec):
-    orig_file = File(exists=True, desc='orig.mgz')
-    rawavg_file = File(exists=True, desc='rawavg.mgz')
+    orig_file = File(exists=True, desc='mri/orig.mgz')
+    rawavg_file = File(exists=True, desc='mri/rawavg.mgz')
+
+    aparc_DKTatlas_aseg_orig = File(exists=True, desc="mri/aparc.DKTatlas+aseg.orig.mgz")
 
 
 class OrigAndRawavg(BaseInterface):
@@ -83,6 +88,9 @@ class OrigAndRawavg(BaseInterface):
     def _run_interface(self, runtime):
         threads = self.inputs.threads if self.inputs.threads else 0
         fsthreads = get_freesurfer_threads(threads)
+
+        cmd = f'mri_convert {self.inputs.aparc_DKTatlas_aseg_deep} {self.inputs.aparc_DKTatlas_aseg_orig}'
+        run_cmd_with_timing(cmd)
 
         files = ' -i '.join(self.inputs.t1w_files)
         cmd = f"recon-all -subject {self.inputs.subject_id} -i {files} -motioncor {fsthreads}"
