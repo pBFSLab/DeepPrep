@@ -125,7 +125,7 @@ class TalairachAndNu(BaseInterface):
     gpu = 0
 
     def _run_interface(self, runtime):
-        sub_mri_dir = Path(self.inputs.subjects_dir) / self.inputs.subject_id
+        sub_mri_dir = Path(self.inputs.subjects_dir) / self.inputs.subject_id / "mri"
 
         if self.inputs.threads is None:
             self.inputs.threads = 1
