@@ -185,7 +185,7 @@ def bold_smooth_6(t12mm_file, t12mm_sm6_file):
 
 
 # @profile
-def bold_smooth_6_ants(t12mm, t12mm_sm6_file, verbose=False):
+def bold_smooth_6_ants(t12mm, t12mm_sm6_file, temp_file, bold_file, verbose=False):
     # mask file
     MNI152_T1_2mm_brain_mask = '/usr/local/fsl/data/standard/MNI152_T1_2mm_brain_mask.nii.gz'
     brain_mask = ants.image_read(MNI152_T1_2mm_brain_mask)
@@ -202,8 +202,6 @@ def bold_smooth_6_ants(t12mm, t12mm_sm6_file, verbose=False):
     # smooth
     smoothed_img = ants.from_numpy(bold_img.numpy(), bold_origin[:3], bold_spacing[:3],
                                    bold_direction[:3, :3].copy(), has_components=True)
-    # smoothed_img = ants.smooth_image(smoothed_img, sigma=6, FWHM=True)
-
     # mask
     smoothed_np = ants.smooth_image(smoothed_img, sigma=6, FWHM=True).numpy()
     del smoothed_img
@@ -216,8 +214,20 @@ def bold_smooth_6_ants(t12mm, t12mm_sm6_file, verbose=False):
     del masked_np
     if verbose:
         # save
-        ants.image_write(masked_img, str(t12mm_sm6_file))
+        save_bold(masked_img, temp_file, bold_file, t12mm_sm6_file)
+        # ants.image_write(masked_img, str(t12mm_sm6_file))
     return masked_img
+
+
+def save_bold(warped_img, temp_file, bold_file, save_file):
+    ants.image_write(warped_img, str(temp_file))
+    bold_info = nib.load(bold_file)
+    affine_info = nib.load(temp_file)
+    bold2 = nib.Nifti1Image(warped_img.numpy(), affine=affine_info.affine, header=bold_info.header)
+    del bold_info
+    del affine_info
+    os.remove(temp_file)
+    nib.save(bold2, save_file)
 
 
 # @profile
@@ -319,13 +329,12 @@ def warp_bold_2mm(subj_func_path, subj, workdir, norm_file, bold_file, reg_file,
     bold_t1_file = subj_func_path / f'{subj}_native_t1_2mm.nii.gz'
     # native_bold_to_T1_2mm(residual_file, subj, subj_t1_file, reg_file, resid_t1_file)
     bold_t1 = native_bold_to_T1_2mm_ants(bold_file, subj, norm_file, reg_file, bold_t1_file, workdir,
-                                          verbose=verbose)
+                                         verbose=verbose)
     warp_file = subj_func_path / f'sub-{subj}_warp.nii.gz'
     affine_file = subj_func_path / f'sub-{subj}_affine.mat'
     warped_file = subj_func_path / f'sub-{subj}_MNI2mm.nii.gz'
 
     warped_img = vxm_warp_bold_2mm(bold_t1, affine_file, warp_file, warped_file, verbose=verbose)
-
     # bold_smooth_6(warped_file, smoothed_file)
     bold_smooth_6_ants(warped_img, save_file, verbose=True)
     # exit()
@@ -603,7 +612,7 @@ def parse_args():
                         help='Output directory $FREESURFER_HOME (pass via environment or here)')
     parser.add_argument("-t", "--task", action='store', nargs='+',
                         help='a space delimited list of tasks identifiers or a single task')
-    parser.add_argument("-p", "--preprocess",  required=True, help='choose the pre-processing method(rest or task)')
+    parser.add_argument("-p", "--preprocess", required=True, help='choose the pre-processing method(rest or task)')
     parser.add_argument("-s", "--subject", action="store", nargs="+", type=_drop_sub,
                         help="a space delimited list of subject identifiers or a single "
                              "identifier (the sub- prefix can be removed)")
@@ -712,13 +721,25 @@ if __name__ == '__main__':
 
                 # native bold to MNI152 2mm
                 if preprocess_method == 'rest':
-                    resid_file = subj_func_path / f'{file_prefix}_resid.nii.gz'
-                    reg_file = subj_func_path / f'{file_prefix}_bbregister.register.dat'
+                    bold_file = subj_func_path / f'{file_prefix}_resid.nii.gz'
                     save_file = subj_func_path / f'{file_prefix}_resid_MIN2mm_sm6.nii.gz'
-                    warp_bold_2mm(subj_func_path, subj, workdir, norm_file, resid_file, reg_file, save_file, verbose=False)
                 else:
-                    mc_file = subj_func_path / f'{file_prefix}_mc.nii.gz'
-                    reg_file = subj_func_path / f'{file_prefix}_bbregister.register.dat'
-                    save_file = subj_func_path / f'{file_prefix}_mc_MIN2mm_sm6.nii.gz'
-                    warp_bold_2mm(subj_func_path, subj, workdir, norm_file, mc_file, reg_file, save_file, verbose=False)
+                    bold_file = subj_func_path / f'{file_prefix}_mc.nii.gz'
+                    save_file = subj_func_path / f'{file_prefix}_mc_MIN2mm.nii.gz'
+
+                reg_file = subj_func_path / f'{file_prefix}_bbregister.register.dat'
+                bold_t1_file = subj_func_path / f'{subj}_native_t1_2mm.nii.gz'
+                bold_t1 = native_bold_to_T1_2mm_ants(bold_file, subj, norm_file, reg_file, bold_t1_file, workdir,
+                                                     verbose=False)
+
+                warp_file = subj_func_path / f'sub-{subj}_warp.nii.gz'
+                affine_file = subj_func_path / f'sub-{subj}_affine.mat'
+                warped_file = subj_func_path / f'sub-{subj}_MNI2mm.nii.gz'
+                warped_img = vxm_warp_bold_2mm(bold_t1, affine_file, warp_file, warped_file, verbose=False)
+                if preprocess_method == 'rest':
+                    temp_file = workdir / f'{file_prefix}_MNI2mm_sm6_temp.nii.gz'
+                    bold_smooth_6_ants(warped_img, save_file, temp_file, bold_file, verbose=True)
+                else:
+                    temp_file = workdir / f'{file_prefix}_MNI2mm_temp.nii.gz'
+                    save_bold(warped_img, temp_file, bold_file, save_file)
             # shutil.rmtree(workdir)
