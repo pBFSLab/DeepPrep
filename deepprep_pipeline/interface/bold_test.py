@@ -75,6 +75,11 @@ def Stc_test():
     subjects_dir = Path('/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
     preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
+
+    data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')
+    subjects_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon')
+    preprocess_dir = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep_wftest/{subject_id}/tmp/task-{task}')
+
     runs = sorted([d.name for d in (preprocess_dir / subject_id / 'bold').iterdir() if d.is_dir()])
     Stc_node = Node(Stc(), name='stc_node')
     Stc_node.inputs.subject_id = subject_id
@@ -90,8 +95,14 @@ def Register_test():
     subject_id = 'sub-MSC01'
     data_path = Path(f'/mnt/DATA/lincong/temp/DeepPrep/MSC')
     subjects_dir = Path('/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
-    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
     preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
+
+
+    data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')
+    subjects_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon')
+    preprocess_dir = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep_wftest/{subject_id}/tmp/task-{task}')
+
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
     runs = sorted([d.name for d in (preprocess_dir / subject_id / 'bold').iterdir() if d.is_dir()])
     for run in runs:
         Register_node = Node(Register(), name='register_node')
@@ -216,3 +227,8 @@ if __name__ == '__main__':
     # Stc_test()
     VxmRegistraion_test()
 
+    # MotionCorrection_test()
+
+    # Stc_test()
+
+    Register_test()
