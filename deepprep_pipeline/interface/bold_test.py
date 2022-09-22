@@ -1,5 +1,5 @@
 from bold import BoldSkipReorient, MotionCorrection, Stc, Register, MkBrainmask, VxmRegistraion, RestGauss, \
-    RestBandpass, RestRegression
+    RestBandpass, RestRegression, VxmRegNormMNI152, Smooth
 from pathlib import Path
 from nipype import Node
 import os
@@ -232,6 +232,53 @@ def RestRegression_test():
 
     RestRegression_node.run()
 
+def VxmRegNormMNI152_test():
+    task = 'motor'
+    subject_id = 'sub-MSC01'
+    subj = 'MSC01'
+    preprocess_method = 'task'
+
+    data_path = Path(f'/mnt/DATA/lincong/temp/DeepPrep/MSC')
+    derivative_deepprep_path = data_path / 'derivatives' / 'deepprep'
+    deepprep_subj_path = derivative_deepprep_path / f'sub-{subj}'
+    subjects_dir = Path('/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
+    workdir = deepprep_subj_path / 'tmp' / f'task-{task}'
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+    preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
+    VxmRegNormMNI152_node = Node(VxmRegNormMNI152(), name='VxmRegNormMNI152_node')
+    VxmRegNormMNI152_node.inputs.subject_id = subject_id
+    VxmRegNormMNI152_node.inputs.workdir = workdir
+    VxmRegNormMNI152_node.inputs.subj = subj
+    VxmRegNormMNI152_node.inputs.task = task
+    VxmRegNormMNI152_node.inputs.preprocess_dir = preprocess_dir
+    VxmRegNormMNI152_node.inputs.data_path = data_path
+    VxmRegNormMNI152_node.inputs.deepprep_subj_path = deepprep_subj_path
+    VxmRegNormMNI152_node.inputs.preprocess_method = preprocess_method
+    VxmRegNormMNI152_node.inputs.norm = derivative_deepprep_path / 'Recon' / f'sub-{subj}' / 'mri' / 'norm.mgz'
+    VxmRegNormMNI152_node.run()
+
+def Smooth_test():
+    task = 'motor'
+    subject_id = 'sub-MSC01'
+    subj = 'MSC01'
+    preprocess_method = 'rest'
+    data_path = Path(f'/mnt/DATA/lincong/temp/DeepPrep/MSC')
+    derivative_deepprep_path = data_path / 'derivatives' / 'deepprep'
+    deepprep_subj_path = derivative_deepprep_path / f'sub-{subj}'
+    subjects_dir = Path('/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
+    workdir = deepprep_subj_path / 'tmp' / f'task-{task}'
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+    preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
+    Smooth_node = Node(Smooth(), name='Smooth_node')
+    Smooth_node.inputs.subject_id = subject_id
+    Smooth_node.inputs.subj = subj
+    Smooth_node.inputs.task = task
+    Smooth_node.inputs.workdir = workdir
+    Smooth_node.inputs.preprocess_dir = preprocess_dir
+    Smooth_node.inputs.data_path = data_path
+    Smooth_node.inputs.deepprep_subj_path = deepprep_subj_path
+    Smooth_node.inputs.preprocess_method = preprocess_method
+    Smooth_node.run()
 
 if __name__ == '__main__':
     set_envrion()
@@ -241,4 +288,4 @@ if __name__ == '__main__':
     # VxmRegistraion_test()
     # MotionCorrection_test()
     # Stc_test()
-    Register_test()
+    Smooth_test()
