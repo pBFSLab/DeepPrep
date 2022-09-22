@@ -58,11 +58,11 @@ def FeatReg_test():
 
 
     featreg_node = Node(FeatReg(), f'featreg_node')
-    featreg_node.inputs.python_interpret = Path('/home/youjia/anaconda3/envs/3.8/bin/python3')
+    featreg_node.inputs.python_interpret = Path('/home/anning/miniconda3/envs/3.8/bin/python3')
     featreg_node.inputs.featreg_py = featreg_py
 
-    subjects_dir = '/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon'
-    subject_id = 'sub-002'
+    subjects_dir = '/mnt/ngshare/Data_Mirror/pipeline_test'
+    subject_id = 'sub-MSC01'
 
     os.environ['SUBJECTS_DIR'] = subjects_dir
 
