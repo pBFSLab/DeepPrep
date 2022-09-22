@@ -418,8 +418,8 @@ class WhitePialThickness1InputSpec(BaseInterfaceInputSpec):
     lh_cortex_label = File(exists=True, desc="label/lh.cortex.label", mandatory=True)
     rh_cortex_label = File(exists=True, desc="label/rh.cortex.label", mandatory=True)
 
-    lh_aparc_DKTatlas_mapped_annot = File(exists=True, desc="label/lh.aparc.DKTatlas.mapped.annot", mandatory=True)
-    rh_aparc_DKTatlas_mapped_annot = File(exists=True, desc="label/hh.aparc.DKTatlas.mapped.annot", mandatory=True)
+    # lh_aparc_DKTatlas_mapped_annot = File(exists=True, desc="label/lh.aparc.DKTatlas.mapped.annot", mandatory=True)
+    # rh_aparc_DKTatlas_mapped_annot = File(exists=True, desc="label/rh.aparc.DKTatlas.mapped.annot", mandatory=True)
     lh_white = File(exists=False, desc="surf/lh.white", mandatory=True)
     rh_white = File(exists=False, desc="surf/rh.white", mandatory=True)
 
@@ -535,8 +535,8 @@ class WhitePialThickness2OutputSpec(TraitedSpec):
 
 class WhitePialThickness2(BaseInterface):
     # The two methods (WhitePialThickness1 and WhitePialThickness2) are exacly same.
-    input_spec = WhitePialThickness1InputSpec
-    output_spec = WhitePialThickness1OutputSpec
+    input_spec = WhitePialThickness2InputSpec
+    output_spec = WhitePialThickness2OutputSpec
 
     def __init__(self, output_dir: Path, threads: int):
         super(WhitePialThickness2, self).__init__()
@@ -803,10 +803,10 @@ class Pctsurfcon(BaseInterface):
 
     def _list_outputs(self):
         outputs = self._outputs().get()
-        outputs["lh_wg_pct_mgh"] = self.inputs.subjects_dir / self.inputs.subject_id / 'surf' / f'lh.w-g.pct.mgh'
-        outputs["rh_wg_pct_mgh"] = self.inputs.subjects_dir / self.inputs.subject_id / 'surf' / f'rh.w-g.pct.mgh'
-        outputs["lh_wg_pct_stats"] = self.inputs.subjects_dir / self.inputs.subject_id / 'stats' / 'lh.w-g.pct.stats'
-        outputs["rh_wg_pct_stats"] = self.inputs.subjects_dir / self.inputs.subject_id / 'stats' / 'rh.w-g.pct.stats'
+        outputs["lh_wg_pct_mgh"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, 'surf', f'lh.w-g.pct.mgh')
+        outputs["rh_wg_pct_mgh"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, 'surf', f'rh.w-g.pct.mgh')
+        outputs["lh_wg_pct_stats"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, 'stats', 'lh.w-g.pct.stats')
+        outputs["rh_wg_pct_stats"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, 'stats', 'rh.w-g.pct.stats')
 
         return outputs
 
