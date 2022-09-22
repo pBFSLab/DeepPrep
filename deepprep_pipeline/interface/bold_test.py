@@ -1,4 +1,5 @@
-from bold import BoldSkipReorient, MotionCorrection, Stc, Register, MkBrainmask, VxmRegistraion, RestGauss, RestBandpass, RestRegression
+from bold import BoldSkipReorient, MotionCorrection, Stc, Register, MkBrainmask, VxmRegistraion, RestGauss, \
+    RestBandpass, RestRegression
 from pathlib import Path
 from nipype import Node
 import os
@@ -10,6 +11,7 @@ import csv
 import sh
 import nibabel as nib
 from sklearn.decomposition import PCA
+
 
 def set_envrion(threads: int = 1):
     # FreeSurfer recon-all env
@@ -97,7 +99,6 @@ def Register_test():
     subjects_dir = Path('/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
     preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
 
-
     data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')
     subjects_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon')
     preprocess_dir = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep_wftest/{subject_id}/tmp/task-{task}')
@@ -137,6 +138,7 @@ def MkBrainmask_test():
         Mkbrainmask_node.inputs.binmask = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}.brainmask.bin.nii.gz'
         Mkbrainmask_node.run()
 
+
 def VxmRegistraion_test():
     subject_id = 'sub-MSC01'
     data_path = Path(f'/mnt/DATA/lincong/temp/DeepPrep/MSC')
@@ -167,68 +169,76 @@ def VxmRegistraion_test():
 def RestGauss_test():
     task = 'motor'
     subject_id = 'sub-MSC01'
-    data_path = Path(f'/mnt/DATA/lincong/mnt/DATA/lincong/temp/DeepPrep/MSC')
-    subjects_dir = Path('/mnt/DATA/lincong/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
+    data_path = Path(f'/mnt/DATA/lincong/temp/DeepPrep/MSC')
+    subjects_dir = Path('/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
     preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
-    RestGauss_node = Node(RestGauss(), f'RestGauss_node')
-    RestGauss_node.inputs.fcmri = preprocess_dir / subject_id / 'fcmri'
+
     runs = sorted([d.name for d in (preprocess_dir / subject_id / 'bold').iterdir() if d.is_dir()])
     for run in runs:
+        RestGauss_node = Node(RestGauss(), f'RestGauss_node')
         RestGauss_node.inputs.subject_id = subject_id
         RestGauss_node.inputs.preprocess_dir = preprocess_dir
         RestGauss_node.inputs.mc = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
+        RestGauss_node.inputs.gauss = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln_mc_g1000000000.nii.gz'
         RestGauss_node.run()
 
 
 def RestBandpass_test():
     task = 'motor'
     subject_id = 'sub-MSC01'
-    data_path = Path(f'/mnt/DATA/lincong/mnt/DATA/lincong/temp/DeepPrep/MSC')
-    subjects_dir = Path('/mnt/DATA/lincong/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
+    subj = 'MSC01'
+    data_path = Path(f'/mnt/DATA/lincong/temp/DeepPrep/MSC')
+    subjects_dir = Path('/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
     preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
-    layout = bids.BIDSLayout(str(data_path), derivatives=False)
-    RestBandpass_node = Node(RestBandpass(), f'RestBandpass_node')
-    RestBandpass_node.inputs.fcmri = preprocess_dir / subject_id / 'fcmri'
-    RestBandpass_node.inputs.bold = preprocess_dir / subject_id / 'bold'
-    RestBandpass_node.inputs.bids_bolds = layout.get(subject=subject_id, suffix='bold', extension='.nii.gz')
     runs = sorted([d.name for d in (preprocess_dir / subject_id / 'bold').iterdir() if d.is_dir()])
+    RestBandpass_node = Node(RestBandpass(), name='RestBandpass_node')
+    RestBandpass_node.inputs.subject_id = subject_id
+    RestBandpass_node.inputs.data_path = data_path
+    RestBandpass_node.inputs.preprocess_dir = preprocess_dir
+    RestBandpass_node.inputs.subj = subj
+    RestBandpass_node.inputs.task = task
     for run in runs:
-        RestBandpass_node.inputs.subject_id = subject_id
-        RestBandpass_node.inputs.preprocess_dir = preprocess_dir
         RestBandpass_node.inputs.bpss = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss.nii.gz'
-        RestBandpass_node.run()
+        RestBandpass_node.inputs.gauss = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln_mc_g1000000000.nii.gz'
+    RestBandpass_node.run()
 
 
 def RestRegression_test():
     task = 'motor'
     subject_id = 'sub-MSC01'
+    subj = 'MSC01'
     data_path = Path(f'/mnt/DATA/lincong/temp/DeepPrep/MSC')
     subjects_dir = Path('/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
     preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
     bold_dir = preprocess_dir / subject_id / 'bold'
-    layout = bids.BIDSLayout(str(data_path), derivatives=False)
+    fcmri_dir = preprocess_dir / subject_id / 'fcmri'
     RestRegression_node = Node(RestRegression(), f'RestRegression_node')
-
+    RestRegression_node.inputs.subject_id = subject_id
+    RestRegression_node.inputs.preprocess_dir = preprocess_dir
+    RestRegression_node.inputs.bold_dir = bold_dir
+    RestRegression_node.inputs.data_path = data_path
+    RestRegression_node.inputs.task = task
+    RestRegression_node.inputs.subj = subj
+    RestRegression_node.inputs.fcmri_dir = fcmri_dir
     runs = sorted([d.name for d in (preprocess_dir / subject_id / 'bold').iterdir() if d.is_dir()])
     for run in runs:
-        RestRegression_node.inputs.subject_id = subject_id
-        RestRegression_node.inputs.preprocess_dir = preprocess_dir
-        RestRegression_node.inputs.mc = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
-        RestRegression_node.inputs.all_regressors = compile_regressors(preprocess_dir, bold_dir, run, subject_id, RestRegression_node.inputs.fcmri,RestRegression_node.inputs.bpss)
-        RestRegression_node.run()
+        RestRegression_node.inputs.bpss = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss.nii.gz'
+        RestRegression_node.inputs.resid = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss_resid.nii.gz'
+        RestRegression_node.inputs.resid_snr = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss_resid_snr.nii.gz'
+        RestRegression_node.inputs.resid_sd1 = preprocess_dir / subject_id / 'bold' / run / f'{subject_id}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss_resid_sd1.nii.gz'
+
+    RestRegression_node.run()
+
 
 if __name__ == '__main__':
     set_envrion()
     # BoldSkipReorient_test()
     # MotionCorrection_test()
     # Stc_test()
-    VxmRegistraion_test()
-
+    # VxmRegistraion_test()
     # MotionCorrection_test()
-
     # Stc_test()
-
     Register_test()
