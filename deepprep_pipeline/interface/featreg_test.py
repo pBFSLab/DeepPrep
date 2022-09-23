@@ -3,6 +3,7 @@ from featreg_interface import FeatReg
 from nipype import Node
 import os
 import argparse
+from run import set_envrion
 
 
 def parse_args():
@@ -28,34 +29,10 @@ def parse_args():
     return argparse.Namespace(**args_dict)
 
 
-def set_envrion(threads: int = 1):
-    # FreeSurfer recon-all env
-    os.environ['FREESURFER_HOME'] = '/usr/local/freesurfer'
-    os.environ['FREESURFER'] = '/usr/local/freesurfer'
-    os.environ['SUBJECTS_DIR'] = '/usr/local/freesurfer/subjects'
-    os.environ['PATH'] = '/usr/local/freesurfer/bin:/usr/local/freesurfer/mni/bin:/usr/local/freesurfer/tktools:' + \
-                         '/usr/local/freesurfer/fsfast/bin:' + os.environ['PATH']
-    os.environ['MINC_BIN_DIR'] = '/usr/local/freesurfer/mni/bin'
-    os.environ['MINC_LIB_DIR'] = '/usr/local/freesurfer/mni/lib'
-    os.environ['PERL5LIB'] = '/usr/local/freesurfer/mni/share/perl5'
-    os.environ['MNI_PERL5LIB'] = '/usr/local/freesurfer/mni/share/perl5'
-    # FreeSurfer fsfast env
-    os.environ['FSF_OUTPUT_FORMAT'] = 'nii.gz'
-    os.environ['FSLOUTPUTTYPE'] = 'NIFTI_GZ'
-
-    # FSL
-    os.environ['PATH'] = '/usr/local/fsl/bin:' + os.environ['PATH']
-
-    # set threads
-    os.environ['OMP_NUM_THREADS'] = str(threads)
-    os.environ['ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS'] = str(threads)
-
-
 def FeatReg_test():
     pwd = Path.cwd()  # 当前目录,# get featreg dir Absolute path
     featreg_home = pwd.parent / "FeatReg"
     featreg_py = featreg_home / "featreg" / 'predict.py'  # inference script
-
 
     featreg_node = Node(FeatReg(), f'featreg_node')
     featreg_node.inputs.python_interpret = Path('/home/anning/miniconda3/envs/3.8/bin/python3')
