@@ -1,14 +1,10 @@
-import os
 import sdcconfig as config
-import bids
 from pathlib import Path
+import nibabel as nb
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from niworkflows.engine.workflows import LiterateWorkflow as Workflow
 from niworkflows.utils.connections import pop_file, listify
-from nipype.interfaces.base.traits_extension import isdefined
-
-import nibabel as nb
 
 
 class BidsLayout:
@@ -168,7 +164,7 @@ def init_func_sdc_wf(layout, bold_file, bold_mc=None, bold_mask=None, ref_image=
     # Take first file as reference
     ref_file = pop_file(bold_file)
     metadata = all_metadata[0]
-    # get original image orientation
+    # get original image orientation # TODO fMRIPrep默认都是使用的RAS
     ref_orientation = get_img_orientation(ref_file)
 
     echo_idxs = listify(entities.get("echo", []))
@@ -229,18 +225,14 @@ def init_func_sdc_wf(layout, bold_file, bold_mc=None, bold_mask=None, ref_image=
 
         if not estimator_key:
             from pathlib import Path
-            import re
             from sdcflows.fieldmaps import get_identifier
 
-            # Fallback to IntendedFor
-            intended_rel = re.sub(
-                r"^sub-[a-zA-Z0-9]*/",
-                "",
-                str(Path(
-                    bold_file if not multiecho else bold_file[0]
-                ).relative_to(layout.root))
-            )
-            estimator_key = get_identifier(intended_rel)
+            # issuse#2 sdcflows 不能正常获取 fmap 估计器的bug
+            # Fallback to estimators
+            func_dir = Path(os.path.dirname(bold_file))
+            fmap_dir = func_dir.parent / 'fmap'
+            fmap_files = [str(i) for i in fmap_dir.iterdir()]
+            estimator_key = get_identifier(fmap_files[0], by="sources")
 
         if not estimator_key:
             has_fieldmap = False
@@ -251,6 +243,8 @@ def init_func_sdc_wf(layout, bold_file, bold_mc=None, bold_mask=None, ref_image=
             config.loggers.workflow.info(
                 f"Found usable B0-map (fieldmap) estimator(s) <{', '.join(estimator_key)}> "
                 f"to correct <{bold_file}> for susceptibility-derived distortions.")
+    if not has_fieldmap:
+        return
 
     from niworkflows.interfaces.utility import KeySelect
     from sdcflows.workflows.apply.registration import init_coeff2epi_wf
@@ -282,7 +276,7 @@ def init_func_sdc_wf(layout, bold_file, bold_mc=None, bold_mask=None, ref_image=
         omp_nthreads=config.nipype.omp_nthreads,
     )
     unwarp_wf.inputs.inputnode.metadata = metadata
-    # unwarp_wf.inputs.inputnode.hmc_xforms = None
+    # unwarp_wf.inputs.inputnode.hmc_xforms = None  # use the already mc bold file
 
     # Top-level BOLD splitter
     from nipype.interfaces.fsl import Split as FSLSplit
@@ -290,14 +284,14 @@ def init_func_sdc_wf(layout, bold_file, bold_mc=None, bold_mask=None, ref_image=
         FSLSplit(dimension="t"), name="bold_split", mem_gb=mem_gb["filesize"] * 3
     )
     bold_split.inputs.in_file = bold_mc
-    bold_split.inputs.out_base_name = Path(bold_mc).name.split('.')[0]
+    bold_split.inputs.out_base_name = os.path.basename(bold_mc).split('.')[0]
 
     output_select = pe.Node(
         KeySelect(fields=["fmap", "fmap_ref", "fmap_coeff", "fmap_mask", "sdc_method"]),
         name="output_select",
         run_without_submitting=True,
     )
-    output_select.inputs.key = estimator_key[0] if estimator_key else 'auto_00000'  # TODO estimator_key获取有BUG
+    output_select.inputs.key = estimator_key[0] if (len(estimator_key) > 0) else 'auto_00000'
     # if len(estimator_key) > 1:
     #     config.loggers.workflow.warning(
     #         f"Several fieldmaps <{', '.join(estimator_key)}> are "
@@ -335,7 +329,7 @@ def init_func_sdc_wf(layout, bold_file, bold_mc=None, bold_mask=None, ref_image=
     # Create DataSink object
     ds_sdc_wf = pe.Node(DataSink(), name='ds_sdc_wf')
     # Name of the output folder
-    ds_sdc_wf.inputs.base_directory = str(Path(bold_mc).parent)
+    ds_sdc_wf.inputs.base_directory = os.path.dirname(bold_mc)
     # Define substitution strings
     substitutions = [('0000_unwarped_merged', '_sdc'),
                      ]

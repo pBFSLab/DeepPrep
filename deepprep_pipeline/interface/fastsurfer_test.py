@@ -2,31 +2,7 @@ from pathlib import Path
 from fastsurfer import Segment, Noccseg, N4BiasCorrect, TalairachAndNu, UpdateAseg, SampleSegmentationToSurfave
 from nipype import Node
 import os
-import argparse
-
-
-def set_envrion(threads: int = 1):
-    # FreeSurfer recon-all env
-    freesurfer_home = '/usr/local/freesurfer720'
-    os.environ['FREESURFER_HOME'] = f'{freesurfer_home}'
-    os.environ['FREESURFER'] = f'{freesurfer_home}'
-    os.environ['SUBJECTS_DIR'] = f'{freesurfer_home}/subjects'
-    os.environ['PATH'] = f'{freesurfer_home}/bin:{freesurfer_home}/mni/bin:{freesurfer_home}/tktools:' + \
-                         f'{freesurfer_home}/fsfast/bin:' + os.environ['PATH']
-    os.environ['MINC_BIN_DIR'] = f'{freesurfer_home}/mni/bin'
-    os.environ['MINC_LIB_DIR'] = f'{freesurfer_home}/mni/lib'
-    os.environ['PERL5LIB'] = f'{freesurfer_home}/mni/share/perl5'
-    os.environ['MNI_PERL5LIB'] = f'{freesurfer_home}/mni/share/perl5'
-    # FreeSurfer fsfast env
-    os.environ['FSF_OUTPUT_FORMAT'] = 'nii.gz'
-    os.environ['FSLOUTPUTTYPE'] = 'NIFTI_GZ'
-
-    # FSL
-    os.environ['PATH'] = '/usr/local/fsl/bin:' + os.environ['PATH']
-
-    # set threads
-    os.environ['OMP_NUM_THREADS'] = str(threads)
-    os.environ['ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS'] = str(threads)
+from run import set_envrion
 
 
 def Segment_test():

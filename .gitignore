@@ -1,8 +1,15 @@
 /app_pipeline/data/
 /app_pipeline/resources/
 /deepprep_pipeline/workdir/
+/deepprep_pipeline/FastCSR/model/
 
 .idea
+
+*.xdebug_tksurfer
+*.pptx
+*.log
+
+*.whl
 
 __pycache__/
 *.py[cod]
