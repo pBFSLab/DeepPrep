@@ -15,6 +15,8 @@ import time
 class BoldSkipReorientInputSpec(BaseInterfaceInputSpec):
     preprocess_dir = Directory(exists=True, desc="preprocess dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
+
+
 class BoldSkipReorientOutputSpec(TraitedSpec):
     preprocess_dir = Directory(exists=True, desc="preprocess dir", mandatory=True)
 
@@ -126,8 +128,6 @@ class MotionCorrection(BaseInterface):
 class StcInputSpec(BaseInterfaceInputSpec):
     subject_id = Str(exists=True, desc='subject', mandatory=True)
     preprocess_dir = Directory(exists=True, desc='preprocess_dir', mandatory=True)
-    skip = File(exists=True, desc='{subj}_bld_rest_reorient_skip', mandatory=True)
-    faln = File(exists=False, desc='{subj}_bld_rest_reorient_skip_faln', mandatory=True)
 
 
 class StcOutputSpec(TraitedSpec):
