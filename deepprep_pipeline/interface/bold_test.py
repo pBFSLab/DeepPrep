@@ -1,16 +1,8 @@
 from bold import BoldSkipReorient, MotionCorrection, Stc, Register, MkBrainmask, VxmRegistraion, RestGauss, \
-    RestBandpass, RestRegression, VxmRegNormMNI152, Smooth
+    RestBandpass, RestRegression, VxmRegNormMNI152, Smooth, MkTemplate
 from pathlib import Path
 from nipype import Node
 import os
-import ants
-import bids
-import pandas as pd
-import numpy as np
-import csv
-import sh
-import nibabel as nib
-from sklearn.decomposition import PCA
 from run import set_envrion
 
 
@@ -226,6 +218,17 @@ def Smooth_test():
     Smooth_node.inputs.preprocess_method = preprocess_method
     Smooth_node.run()
 
+def MkTemplate_test():
+    task = 'motor'
+    subject_id = 'sub-MSC01'
+    subjects_dir = Path('/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
+    data_path = Path(f'/mnt/DATA/lincong/temp/DeepPrep/MSC')
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+    preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
+    MkTemplate_node = Node(MkTemplate(), name='MkTemplate_node')
+    MkTemplate_node.inputs.subject_id = subject_id
+    MkTemplate_node.inputs.preprocess_dir = preprocess_dir
+    MkTemplate_node.run()
 if __name__ == '__main__':
     set_envrion()
 
