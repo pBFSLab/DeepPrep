@@ -24,9 +24,7 @@ def run_cmd_with_timing(cmd):
 
 
 def multipool(cmd, Multi_Num=2):
-    cmd_pool = []
-    cmd_pool.append(['lh'])
-    cmd_pool.append(['rh'])
+    cmd_pool = ['lh', 'rh']
 
     pool = Pool(Multi_Num)
     pool.starmap(cmd, cmd_pool)
@@ -49,6 +47,13 @@ def set_envrion(threads: int = 1):
     # FreeSurfer fsfast env
     os.environ['FSF_OUTPUT_FORMAT'] = 'nii.gz'
     os.environ['FSLOUTPUTTYPE'] = 'NIFTI_GZ'
+
+    # FSL
+    os.environ['PATH'] = '/usr/local/fsl/bin:' + os.environ['PATH']
+
+    # set threads
+    os.environ['OMP_NUM_THREADS'] = str(threads)
+    os.environ['ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS'] = str(threads)
 
 
 def parse_args():

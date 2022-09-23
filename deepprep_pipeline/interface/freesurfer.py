@@ -84,8 +84,6 @@ class OrigAndRawavg(BaseInterface):
         threads = self.inputs.threads if self.inputs.threads else 0
         fsthreads = get_freesurfer_threads(threads)
 
-
-
         files = ' -i '.join(self.inputs.t1w_files)
         cmd = f"recon-all -subject {self.inputs.subject_id} -i {files} -motioncor {fsthreads}"
         run_cmd_with_timing(cmd)
@@ -1079,20 +1077,13 @@ class BalabelsMultInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     lh_sphere_reg = File(exists=True, desc="surf/lh.sphere.reg", mandatory=True)
     rh_sphere_reg = File(exists=True, desc="surf/rh.sphere.reg", mandatory=True)
+    lh_white = File(exists=True, desc="surf/lh.white", mandatory=True)
+    rh_white = File(exists=True, desc="surf/rh.white", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
     threads = traits.Int(desc='threads')
     freesurfer_dir = Directory(exists=True, desc="freesurfer dir", mandatory=True)
     fsaverage_label_dir = Directory(exists=True, desc="fsaverage label dir", mandatory=True)
-    # sub_label_dir = Directory(exists=True, desc="sub label dir", mandatory=True)
-    # sub_stats_dir = Directory(exists=True, desc="sub stats dir", mandatory=True)
 
-    lh_BA45_exvivo = File(exists=False, desc="label/lh.BA45_exvivo.label", mandatory=True)
-    rh_BA45_exvivo = File(exists=False, desc="label/rh.BA45_exvivo.label", mandatory=True)
-    lh_perirhinal_exvivo = File(exists=False, desc="label/lh.perirhinal_exvivo.label", mandatory=True)
-    rh_perirhinal_exvivo = File(exists=False, desc="label/rh.perirhinal_exvivo.label", mandatory=True)
-    lh_entorhinal_exvivo = File(exists=False, desc="label/lh.entorhinal_exvivo.label", mandatory=True)
-    rh_entorhinal_exvivo = File(exists=False, desc="label/rh.entorhinal_exvivo.label", mandatory=True)
-    BA_exvivo_thresh = File(exists=False, desc="label/BA_exvivo.thresh.ctab", mandatory=True)
 
 class BalabelsMultOutputSpec(TraitedSpec):
     lh_BA45_exvivo = File(exists=True, desc="label/lh.BA45_exvivo.label")
@@ -1206,10 +1197,13 @@ class BalabelsMult(BaseInterface):
 
     def _list_outputs(self):
         outputs = self._outputs().get()
-        outputs["lh_BA45_exvivo"] = self.inputs.lh_BA45_exvivo
-        outputs["rh_BA45_exvivo"] = self.inputs.rh_BA45_exvivo
-        outputs["lh_perirhinal_exvivo"] = self.inputs.lh_perirhinal_exvivo
-        outputs["rh_perirhinal_exvivo"] = self.inputs.rh_perirhinal_exvivo
-        outputs["BA_exvivo_thresh"] = self.inputs.BA_exvivo_thresh
+        sub_label_dir = Path(self.inputs.subjects_dir, self.inputs.subject_id, 'label')
+        outputs["lh_BA45_exvivo"] = sub_label_dir / f'lh.BA45_exvivo.label'
+        outputs["rh_BA45_exvivo"] = sub_label_dir / f'rh.BA45_exvivo.label'
+        outputs["lh_perirhinal_exvivo"] = sub_label_dir / f'lh.perirhinal_exvivo.label'
+        outputs["rh_perirhinal_exvivo"] = sub_label_dir / f'rh.perirhinal_exvivo.label'
+        outputs["lh_entorhinal_exvivo"] = sub_label_dir / f'lh.entorhinal_exvivo.label'
+        outputs["rh_entorhinal_exvivo"] = sub_label_dir / f'rh.entorhinal_exvivo.label'
+        outputs["BA_exvivo_thresh"] = sub_label_dir / 'BA_exvivo.thresh.ctab'
 
         return outputs

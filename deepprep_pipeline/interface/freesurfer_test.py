@@ -517,15 +517,17 @@ def BalabelsMult_test():
 
     BalabelsMult_node.inputs.lh_sphere_reg = subject_surf_dir / f'lh.sphere.reg'
     BalabelsMult_node.inputs.rh_sphere_reg = subject_surf_dir / f'rh.sphere.reg'
-    BalabelsMult_node.inputs.fsaverage_label_dir = Path(os.environ['FREESURFER_HOME']) / "fsaverage/label"
+    BalabelsMult_node.inputs.lh_white = subject_surf_dir / f'lh.white'
+    BalabelsMult_node.inputs.rh_white = subject_surf_dir / f'rh.white'
+    BalabelsMult_node.inputs.fsaverage_label_dir = Path(os.environ['FREESURFER_HOME']) / "subjects/fsaverage/label"
 
-    BalabelsMult_node.inputs.lh_BA45_exvivo = subject_label_dir / f'lh.BA45_exvivo.label'
-    BalabelsMult_node.inputs.rh_BA45_exvivo = subject_label_dir / f'rh.BA45_exvivo.label'
-    BalabelsMult_node.inputs.BA_exvivo_thresh = subject_label_dir / 'BA_exvivo.thresh.ctab'
-    BalabelsMult_node.inputs.lh_perirhinal_exvivo = subject_label_dir / f'lh.perirhinal_exvivo.label'
-    BalabelsMult_node.inputs.rh_perirhinal_exvivo = subject_label_dir / f'rh.perirhinal_exvivo.label'
-    BalabelsMult_node.inputs.lh_entorhinal_exvivo = subject_label_dir / f'lh.entorhinal_exvivo.label'
-    BalabelsMult_node.inputs.rh_entorhinal_exvivo = subject_label_dir / f'rh.entorhinal_exvivo.label'
+    # BalabelsMult_node.inputs.lh_BA45_exvivo = subject_label_dir / f'lh.BA45_exvivo.label'
+    # BalabelsMult_node.inputs.rh_BA45_exvivo = subject_label_dir / f'rh.BA45_exvivo.label'
+    # BalabelsMult_node.inputs.BA_exvivo_thresh = subject_label_dir / 'BA_exvivo.thresh.ctab'
+    # BalabelsMult_node.inputs.lh_perirhinal_exvivo = subject_label_dir / f'lh.perirhinal_exvivo.label'
+    # BalabelsMult_node.inputs.rh_perirhinal_exvivo = subject_label_dir / f'rh.perirhinal_exvivo.label'
+    # BalabelsMult_node.inputs.lh_entorhinal_exvivo = subject_label_dir / f'lh.entorhinal_exvivo.label'
+    # BalabelsMult_node.inputs.rh_entorhinal_exvivo = subject_label_dir / f'rh.entorhinal_exvivo.label'
     BalabelsMult_node.run()
 
 
@@ -538,7 +540,7 @@ if __name__ == '__main__':
 
     # filled_test()
 
-    white_preaparc1_test()
+    # white_preaparc1_test()
 
     # InflatedSphere_test()
 
