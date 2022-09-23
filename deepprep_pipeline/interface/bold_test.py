@@ -25,6 +25,7 @@ def BoldSkipReorient_test():
 
     BoldSkipReorient_node = Node(BoldSkipReorient(), name='BoldSkipReorient_node')
     BoldSkipReorient_node.inputs.subject_id = subject_id
+    BoldSkipReorient_node.inputs.data_path = data_path
     BoldSkipReorient_node.inputs.preprocess_dir = preprocess_dir
     BoldSkipReorient_node.run()
 
@@ -105,7 +106,7 @@ def VxmRegistraion_test():
     VxmRegistraion_node.inputs.norm = freesurfer_subjects_path / subject_id / 'mri' / 'norm.mgz'
     VxmRegistraion_node.inputs.model_file = Path(__file__).parent.parent / 'model' / 'voxelmorph' / atlas_type / 'model.h5'
     VxmRegistraion_node.inputs.atlas_type = atlas_type
-
+    VxmRegistraion_node.inputs.data_path = data_path
     VxmRegistraion_node.inputs.vxm_warp = tmpdir / 'warp.nii.gz'
     VxmRegistraion_node.inputs.vxm_warped = tmpdir / 'warped.nii.gz'
     VxmRegistraion_node.inputs.trf = tmpdir / f'{subject_id}_affine.mat'
