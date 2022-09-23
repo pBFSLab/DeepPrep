@@ -21,7 +21,7 @@ def BoldSkipReorient_test():
     data_path = Path(f'/mnt/DATA/lincong/temp/DeepPrep/MSC')
     data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')  # BIDS path
 
-    preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
+    preprocess_dir = data_path / 'derivatives' / 'deepprep_wftest' / subject_id / 'tmp' / f'task-{task}'
 
     BoldSkipReorient_node = Node(BoldSkipReorient(), name='BoldSkipReorient_node')
     BoldSkipReorient_node.inputs.subject_id = subject_id
@@ -35,6 +35,10 @@ def MotionCorrection_test():
     data_path = Path(f'/mnt/DATA/lincong/temp/DeepPrep/MSC')
     preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
 
+    data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')  # BIDS path
+    preprocess_dir = data_path / 'derivatives' / 'deepprep_wftest' / subject_id / 'tmp' / f'task-{task}'
+    # preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
+
     MotionCorrection_node = Node(MotionCorrection(), name='MotionCorrection_node')
     MotionCorrection_node.inputs.preprocess_dir = preprocess_dir
     MotionCorrection_node.inputs.subject_id = subject_id
@@ -46,8 +50,14 @@ def Stc_test():
     subject_id = 'sub-MSC01'
     data_path = Path(f'/mnt/DATA/lincong/temp/DeepPrep/MSC')
     subjects_dir = Path('/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
-    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
     preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
+
+
+    data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')  # BIDS path
+    preprocess_dir = data_path / 'derivatives' / 'deepprep_wftest' / subject_id / 'tmp' / f'task-{task}'
+    # preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
+
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
     # data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')
     # subjects_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon')
@@ -218,6 +228,10 @@ def Smooth_test():
 if __name__ == '__main__':
     set_envrion()
 
-    BoldSkipReorient_test()
+    # BoldSkipReorient_test()
+
+    # Stc_test()
+
+    MotionCorrection_test()
 
     # VxmRegNormMNI152_test()
