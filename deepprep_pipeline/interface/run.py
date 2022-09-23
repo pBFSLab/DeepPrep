@@ -24,7 +24,7 @@ def run_cmd_with_timing(cmd):
 
 
 def multipool(cmd, Multi_Num=2):
-    cmd_pool = ['lh', 'rh']
+    cmd_pool = [['lh'], ['rh']]
 
     pool = Pool(Multi_Num)
     pool.starmap(cmd, cmd_pool)
