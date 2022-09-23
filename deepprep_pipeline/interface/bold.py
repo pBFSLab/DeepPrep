@@ -16,9 +16,11 @@ class BoldSkipReorientInputSpec(BaseInterfaceInputSpec):
     subject_id = Str(exists=True, desc="subject id", mandatory=True)
     data_path = Directory(exists=True, desc="data path", mandatory=True)
     task = Str(exists=True, desc="task", mandatory=True)
+    preprocess_dir = Directory(exists=True, desc="preprocess dir", mandatory=True)
+
 
 class BoldSkipReorientOutputSpec(TraitedSpec):
-    preprocess_dir = Directory(exists=True, desc="preprocess dir", mandatory=True)
+    preprocess_dir = Directory(exists=True, desc="preprocess dir")
 
 
 class BoldSkipReorient(BaseInterface):
@@ -203,6 +205,7 @@ class RegisterInputSpec(BaseInterfaceInputSpec):
     subject_id = Str(exists=True, desc='subject', mandatory=True)
     preprocess_dir = Directory(exists=True, desc='preprocess_dir', mandatory=True)
 
+
 class RegisterOutputSpec(TraitedSpec):
     preprocess_dir = Directory(exists=True, desc='preprocess_dir')
 
@@ -241,6 +244,7 @@ class MkBrainmaskInputSpec(BaseInterfaceInputSpec):
     subject_id = Str(exists=True, desc='subject', mandatory=True)
     subjects_dir = Directory(exists=True, desc='subjects_dir', mandatory=True)
     preprocess_dir = Directory(exists=True, desc='preprocess_dir', mandatory=True)
+
 
 class MkBrainmaskOutputSpec(TraitedSpec):
     preprocess_dir = Directory(exists=True, desc='preprocess_dir')
@@ -346,7 +350,7 @@ class VxmRegistraion(BaseInterface):
         import tensorflow as tf
         import ants
         import shutil
-        import voxelmorph as vxm
+        import deepprep_pipeline.voxelmorph as vxm
 
         deepprep_subj_path = self.inputs.data_path / 'derivatives' / 'deepprep' / f'{self.inputs.subject_id}'
         deepprep_subj_path.mkdir(exist_ok=True)
@@ -453,7 +457,7 @@ class RestGauss(BaseInterface):
     gpu = 0  # 最大gpu占用：MB
 
     def cmd(self, run):
-        from app.filters.filters import gauss_nifti
+        from deepprep_pipeline.app.filters.filters import gauss_nifti
 
         mc = Path(self.inputs.preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
         fcmri_dir = f'{self.inputs.preprocess_dir} / {self.inputs.subject_id} / fcmri'
@@ -567,8 +571,8 @@ class RestRegression(BaseInterface):
             os.symlink(src_fsaverage4_dir, fsaverage4_dir)
 
     def _run_interface(self, runtime):
-        from app.regressors.regressors import compile_regressors, regression
-        from app.surface_projection import surface_projection as sp
+        from deepprep_pipeline.app.regressors.regressors import compile_regressors, regression
+        from deepprep_pipeline.app.surface_projection import surface_projection as sp
         layout = bids.BIDSLayout(str(self.inputs.data_path), derivatives=False)
 
         if self.inputs.task is None:
@@ -694,7 +698,7 @@ class VxmRegNormMNI152(BaseInterface):
         return affined_bold_img
 
     def vxm_warp_bold_2mm(self,resid_t1, affine_file, warp_file, warped_file, verbose=True):
-        import voxelmorph as vxm
+        import deepprep_pipeline.voxelmorph as vxm
         import tensorflow as tf
         import time
 
