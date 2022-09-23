@@ -3,14 +3,6 @@ from bold import BoldSkipReorient, MotionCorrection, Stc, Register, MkBrainmask,
 from pathlib import Path
 from nipype import Node
 import os
-import ants
-import bids
-import pandas as pd
-import numpy as np
-import csv
-import sh
-import nibabel as nib
-from sklearn.decomposition import PCA
 from run import set_envrion
 
 
