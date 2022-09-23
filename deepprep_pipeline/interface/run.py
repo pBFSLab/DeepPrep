@@ -34,7 +34,7 @@ def multipool(cmd, Multi_Num=2):
 def multipool_run(cmd, runs, Multi_Num=2):
     cmd_pool = []
     for i in range(len(runs)):
-        cmd_pool.append(runs[i])
+        cmd_pool.append([runs[i]])
 
     pool = Pool(Multi_Num)
     pool.starmap(cmd, cmd_pool)
