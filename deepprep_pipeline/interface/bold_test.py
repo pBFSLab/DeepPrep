@@ -11,29 +11,7 @@ import csv
 import sh
 import nibabel as nib
 from sklearn.decomposition import PCA
-
-
-def set_envrion(threads: int = 1):
-    # FreeSurfer recon-all env
-    os.environ['FREESURFER_HOME'] = '/usr/local/freesurfer'
-    os.environ['FREESURFER'] = '/usr/local/freesurfer'
-    os.environ['SUBJECTS_DIR'] = '/usr/local/freesurfer/subjects'
-    os.environ['PATH'] = '/usr/local/freesurfer/bin:/usr/local/freesurfer/mni/bin:/usr/local/freesurfer/tktools:' + \
-                         '/usr/local/freesurfer/fsfast/bin:' + os.environ['PATH']
-    os.environ['MINC_BIN_DIR'] = '/usr/local/freesurfer/mni/bin'
-    os.environ['MINC_LIB_DIR'] = '/usr/local/freesurfer/mni/lib'
-    os.environ['PERL5LIB'] = '/usr/local/freesurfer/mni/share/perl5'
-    os.environ['MNI_PERL5LIB'] = '/usr/local/freesurfer/mni/share/perl5'
-    # FreeSurfer fsfast env
-    os.environ['FSF_OUTPUT_FORMAT'] = 'nii.gz'
-    os.environ['FSLOUTPUTTYPE'] = 'NIFTI_GZ'
-
-    # FSL
-    os.environ['PATH'] = '/usr/local/fsl/bin:' + os.environ['PATH']
-
-    # set threads
-    os.environ['OMP_NUM_THREADS'] = str(threads)
-    os.environ['ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS'] = str(threads)
+from run import set_envrion
 
 
 def BoldSkipReorient_test():
@@ -41,6 +19,8 @@ def BoldSkipReorient_test():
     task = 'motor'
     subject_id = 'sub-MSC01'
     data_path = Path(f'/mnt/DATA/lincong/temp/DeepPrep/MSC')
+    data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')  # BIDS path
+
     preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
 
     BoldSkipReorient_node = Node(BoldSkipReorient(), name='BoldSkipReorient_node')
@@ -238,4 +218,6 @@ def Smooth_test():
 if __name__ == '__main__':
     set_envrion()
 
-    VxmRegNormMNI152_test()
+    BoldSkipReorient_test()
+
+    # VxmRegNormMNI152_test()
