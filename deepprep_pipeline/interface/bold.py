@@ -934,14 +934,13 @@ class MkTemplateInputSpec(BaseInterfaceInputSpec):
     subject_id = Str(exists=True, desc='subject', mandatory=True)
     preprocess_dir = Directory(exists=True, desc='preprocess_dir', mandatory=True)
 
-
 class MkTemplateOutputSpec(TraitedSpec):
     preprocess_dir = Directory(exists=True, desc='preprocess_dir')
 
 
 class MkTemplate(BaseInterface):
-    input_spec = SmoothInputSpec
-    output_spec = SmoothclassOutputSpec
+    input_spec = MkTemplateInputSpec
+    output_spec = MkTemplateOutputSpec
 
     # time = 120 / 60  # 运行时间：分钟
     # cpu = 2  # 最大cpu占用：个
