@@ -961,3 +961,4 @@ class MkTemplate(BaseInterface):
         outputs["preprocess_dir"] = self.inputs.preprocess_dir
 
         return outputs
+
