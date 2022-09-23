@@ -31,6 +31,25 @@ def multipool(cmd, Multi_Num=2):
     pool.close()
     pool.join()
 
+def multipool_run(cmd, runs, Multi_Num=2):
+    cmd_pool = []
+    for i in range(len(runs)):
+        cmd_pool.append(runs[i])
+
+    pool = Pool(Multi_Num)
+    pool.starmap(cmd, cmd_pool)
+    pool.close()
+    pool.join()
+
+def multipool_BidsBolds(cmd, idx, bids_entities, bids_path, Multi_Num=2):
+    cmd_pool = []
+    for i in range(len(idx)):
+        cmd_pool.append([idx[i], bids_entities[i], bids_path[i]])
+
+    pool = Pool(Multi_Num)
+    pool.starmap(cmd, cmd_pool)
+    pool.close()
+    pool.join()
 
 def set_envrion(threads: int = 1):
     # FreeSurfer recon-all env
