@@ -5,10 +5,9 @@ from bold import VxmRegistraion, BoldSkipReorient, Stc, MkTemplate, \
     RestBandpass, RestRegression, Smooth
 
 
-def init_single_bold_common_wf(subject_id: str, subj: str, task: str, preprocess_method: str,
-                             data_path: Path, derivative_deepprep_path: Path,
-                             subjects_dir: Path, workdir: Path, preprocess_dir: Path):
-    single_bold_common_wf = Workflow(name=f'single_bold_{subject_id.replace("-", "_")}_wf')
+def init_single_bold_common_wf(subject_id: str, task: str,
+                             data_path: Path, subjects_dir: Path, preprocess_dir: Path):
+    single_bold_common_wf = Workflow(name=f'single_bold_common_{subject_id.replace("-", "_")}_wf')
 
     ########################################### BOLD - Common ###########################################
     # bold skip reorient
@@ -17,13 +16,10 @@ def init_single_bold_common_wf(subject_id: str, subj: str, task: str, preprocess
     BoldSkipReorient_node.inputs.data_path = data_path
     BoldSkipReorient_node.inputs.task = task
     BoldSkipReorient_node.inputs.preprocess_dir = preprocess_dir
-    # BoldSkipReorient_node.run()
 
     # Stc
     Stc_node = Node(Stc(), name='stc_node')
     Stc_node.inputs.subject_id = subject_id
-    # Stc_node.inputs.preprocess_dir = preprocess_dir
-    # Stc_node.run()
 
     # make template
     MkTemplate_node = Node(MkTemplate(), name='MkTemplate_node')
@@ -31,19 +27,16 @@ def init_single_bold_common_wf(subject_id: str, subj: str, task: str, preprocess
 
     # Motion correction
     MotionCorrection_node = Node(MotionCorrection(), name='MotionCorrection_node')
-    # MotionCorrection_node.inputs.preprocess_dir = preprocess_dir
     MotionCorrection_node.inputs.subject_id = subject_id
 
     # bb register
     Register_node = Node(Register(), name='register_node')
     Register_node.inputs.subject_id = subject_id
-    # Register_node.inputs.preprocess_dir = preprocess_dir
 
     # Make brainmask
     Mkbrainmask_node = Node(MkBrainmask(), name='mkbrainmask_node')
     Mkbrainmask_node.inputs.subject_id = subject_id
     Mkbrainmask_node.inputs.subjects_dir = subjects_dir
-    # Mkbrainmask_node.inputs.preprocess_dir = preprocess_dir
 
     # create workflow
 
@@ -64,9 +57,9 @@ def init_single_bold_common_wf(subject_id: str, subj: str, task: str, preprocess
 
 
 def init_single_bold_rest_wf(subject_id: str, subj: str, task: str, preprocess_method: str,
-                             data_path: Path, derivative_deepprep_path: Path,
-                             subjects_dir: Path, workdir: Path, preprocess_dir: Path):
-    single_bold_rest_wf = Workflow(name=f'single_bold_{subject_id.replace("-", "_")}_wf')
+                             data_path: Path,
+                             subjects_dir: Path, preprocess_dir: Path):
+    single_bold_rest_wf = Workflow(name=f'single_bold_rest_{subject_id.replace("-", "_")}_wf')
 
     # Voxelmorph registration
     VxmRegistraion_node = Node(VxmRegistraion(), name='VxmRegistraion_node')
@@ -75,8 +68,10 @@ def init_single_bold_rest_wf(subject_id: str, subj: str, task: str, preprocess_m
 
     VxmRegistraion_node.inputs.subject_id = subject_id
     VxmRegistraion_node.inputs.norm = subjects_dir / subject_id / 'mri' / 'norm.mgz'
+    # VxmRegistraion_node.inputs.model_file = Path(
+    #     __file__).parent.parent / 'model' / 'voxelmorph' / atlas_type / 'model.h5'
     VxmRegistraion_node.inputs.model_file = Path(
-        __file__).parent.parent / 'model' / 'voxelmorph' / atlas_type / 'model.h5'
+        __file__).parent.parent / 'deepprep_pipeline' / 'model' / 'voxelmorph' / atlas_type / 'model.h5'
     VxmRegistraion_node.inputs.atlas_type = atlas_type
 
     VxmRegistraion_node.inputs.vxm_warp = derivative_deepprep_path / 'tmp' / 'warp.nii.gz'
@@ -95,14 +90,12 @@ def init_single_bold_rest_wf(subject_id: str, subj: str, task: str, preprocess_m
     RestBandpass_node = Node(RestBandpass(), name='RestBandpass_node')
     RestBandpass_node.inputs.subject_id = subject_id
     RestBandpass_node.inputs.data_path = data_path
-    # RestBandpass_node.inputs.preprocess_dir = preprocess_dir
     RestBandpass_node.inputs.subj = subj
     RestBandpass_node.inputs.task = task
 
     # Rest Regression
     RestRegression_node = Node(RestRegression(), f'RestRegression_node')
     RestRegression_node.inputs.subject_id = subject_id
-    # RestRegression_node.inputs.preprocess_dir = preprocess_dir
     RestRegression_node.inputs.bold_dir = preprocess_dir / subject_id / 'bold'
     RestRegression_node.inputs.data_path = data_path
     RestRegression_node.inputs.task = task
@@ -112,10 +105,8 @@ def init_single_bold_rest_wf(subject_id: str, subj: str, task: str, preprocess_m
     # voxel morph registration
     VxmRegNormMNI152_node = Node(VxmRegNormMNI152(), name='VxmRegNormMNI152_node')
     VxmRegNormMNI152_node.inputs.subject_id = subject_id
-    VxmRegNormMNI152_node.inputs.workdir = workdir
     VxmRegNormMNI152_node.inputs.subj = subj
     VxmRegNormMNI152_node.inputs.task = task
-    # VxmRegNormMNI152_node.inputs.preprocess_dir = preprocess_dir
     VxmRegNormMNI152_node.inputs.data_path = data_path
     VxmRegNormMNI152_node.inputs.deepprep_subj_path = derivative_deepprep_path / subject_id
     VxmRegNormMNI152_node.inputs.preprocess_method = preprocess_method
@@ -126,8 +117,6 @@ def init_single_bold_rest_wf(subject_id: str, subj: str, task: str, preprocess_m
     Smooth_node.inputs.subject_id = subject_id
     Smooth_node.inputs.subj = subj
     Smooth_node.inputs.task = task
-    Smooth_node.inputs.workdir = workdir
-    # Smooth_node.inputs.preprocess_dir = preprocess_dir
     Smooth_node.inputs.data_path = data_path
     Smooth_node.inputs.deepprep_subj_path = derivative_deepprep_path / subject_id
     Smooth_node.inputs.preprocess_method = preprocess_method
@@ -136,6 +125,8 @@ def init_single_bold_rest_wf(subject_id: str, subj: str, task: str, preprocess_m
     # create workflow
 
     single_bold_rest_wf.connect([
+        (VxmRegistraion_node, RestGauss_node, [("preprocess_dir", "preprocess_dir"),
+                                             ]),
         (RestGauss_node, RestBandpass_node, [("preprocess_dir", "preprocess_dir"),
                                             ]),
         (RestBandpass_node, RestRegression_node, [("preprocess_dir", "preprocess_dir"),
@@ -155,35 +146,38 @@ def pipeline():
     task = 'motor'
     preprocess_method = 'task'
 
-    python_interpret = Path('/home/youjia/anaconda3/envs/3.8/bin/python3')
-    freesurfer_home = Path('/usr/local/freesurfer')
+    # data_path = Path(f'/mnt/ngshare/DeepPrep/MSC') # BIDS path
+    # derivative_deepprep_path = data_path / 'derivatives' / 'deepprep_wftest'
 
+    data_path = Path(f'/mnt/DATA/lincong/temp/DeepPrep/MSC')
+    derivative_deepprep_path = data_path / 'derivatives' / 'deepprep'
 
-    data_path = Path(f'/mnt/ngshare/DeepPrep/MSC') # BIDS path
-    derivative_deepprep_path = data_path / 'derivatives' / 'deepprep_wftest'
     deepprep_subj_path = derivative_deepprep_path / f'sub-{subj}'
     subjects_dir = derivative_deepprep_path / "Recon"  # ！！ structure 预处理结果所在的SUBJECTS_DIR路径
 
-    workdir = deepprep_subj_path / 'tmp' / f'task-{task}'
     preprocess_dir = deepprep_subj_path / 'tmp' / f'task-{task}'
 
 
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
 
-    wf_common = init_single_bold_common_wf(subject_id, subj, task, preprocess_method, data_path, derivative_deepprep_path,
-                                  subjects_dir, workdir, preprocess_dir)
+    wf_common = init_single_bold_common_wf(subject_id, task, data_path,
+                                  subjects_dir, preprocess_dir)
     wf_rest = init_single_bold_rest_wf(subject_id, subj, task, preprocess_method, data_path,
-                                           derivative_deepprep_path,
-                                           subjects_dir, workdir, preprocess_dir)
+                                           subjects_dir, preprocess_dir)
 
     wf_common.base_dir = preprocess_dir / subject_id  # ！！ 缓存的存储位置，运行过程的tmp文件，可以删除
     wf_rest.base_dir = preprocess_dir / subject_id  # ！！ 缓存的存储位置，运行过程的tmp文件，可以删除
 
-    wf_rest.RestGauss_node.mc = init_single_bold_common_wf.MotionCorrection_node.outputs.skip_faln_mc
+    wf_full = Workflow(name=f'single_bold_full_{subject_id.replace("-", "_")}_wf')
+
+    wf_full.connect([
+        (wf_common, wf_rest, [("MotionCorrection_node.preprocess_dir", "VxmRegistraion_node.preprocess_dir"),
+                            ]),
+    ])
     # wf_common.write_graph(graph2use='flat', simple_form=False)
 
-    # wf_common.run()
+    wf_full.run()
 
 
 if __name__ == '__main__':

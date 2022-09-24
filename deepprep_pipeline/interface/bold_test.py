@@ -121,7 +121,8 @@ def VxmRegistraion_test():
     VxmRegistraion_node = Node(VxmRegistraion(), name='VxmRegistraion_node')
     VxmRegistraion_node.inputs.subject_id = subject_id
     VxmRegistraion_node.inputs.norm = subjects_dir / subject_id / 'mri' / 'norm.mgz'
-    VxmRegistraion_node.inputs.model_file = Path(__file__).parent.parent / 'model' / 'voxelmorph' / atlas_type / 'model.h5'
+    # VxmRegistraion_node.inputs.model_file = Path(__file__).parent.parent / 'model' / 'voxelmorph' / atlas_type / 'model.h5'
+    VxmRegistraion_node.inputs.model_file = Path(__file__).parent.parent / 'deepprep_pipeline' / 'model' / 'voxelmorph' / atlas_type / 'model.h5'
     VxmRegistraion_node.inputs.atlas_type = atlas_type
     VxmRegistraion_node.inputs.data_path = data_path
     VxmRegistraion_node.inputs.deepprep_subj_path = derivative_deepprep_path / subject_id
