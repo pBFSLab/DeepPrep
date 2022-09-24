@@ -247,13 +247,11 @@ def Smooth_test():
     subjects_dir = Path('/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
     workdir = deepprep_subj_path / 'tmp' / f'task-{task}'
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
-    preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
     Smooth_node = Node(Smooth(), name='Smooth_node')
     Smooth_node.inputs.subject_id = subject_id
     Smooth_node.inputs.subj = subj
     Smooth_node.inputs.task = task
     Smooth_node.inputs.workdir = workdir
-    Smooth_node.inputs.preprocess_dir = preprocess_dir
     Smooth_node.inputs.data_path = data_path
     Smooth_node.inputs.deepprep_subj_path = deepprep_subj_path
     Smooth_node.inputs.preprocess_method = preprocess_method
@@ -299,6 +297,8 @@ if __name__ == '__main__':
 
     # RestRegression_test()
 
-    VxmRegNormMNI152_test()
+    # VxmRegNormMNI152_test()
+
+    Smooth_test()
 
 

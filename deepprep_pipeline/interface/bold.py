@@ -541,9 +541,6 @@ class RestBandpass(BaseInterface):
             all_idx.append(idx)
             all_bids_entities.append(bids_bold.entities)
             all_bids_path.append(bids_bold.path)
-        all_idx = all_idx[:3]
-        all_bids_entities = all_bids_entities[:3]
-        all_bids_path = all_bids_path[:3]
         multipool_BidsBolds(self.cmd, all_idx, all_bids_entities, all_bids_path, Multi_Num=8)
 
         return runtime
@@ -602,45 +599,43 @@ class RestRegression(BaseInterface):
         else:
             bids_bolds = layout.get(subject=self.inputs.subj, task=self.inputs.task, suffix='bold', extension='.nii.gz')
         for idx, bids_bold in enumerate(bids_bolds):
-            if idx < 3:
-                run = f'{idx + 1:03}'
-                bpss_path = f'{self.inputs.preprocess_dir}/{self.inputs.subject_id}/bold/{run}/{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss.nii.gz'
+            run = f'{idx + 1:03}'
+            bpss_path = f'{self.inputs.preprocess_dir}/{self.inputs.subject_id}/bold/{run}/{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss.nii.gz'
 
-                all_regressors = compile_regressors(Path(self.inputs.preprocess_dir), Path(self.inputs.bold_dir), run, self.inputs.subject_id,
-                                                Path(self.inputs.fcmri_dir), bpss_path)
-                regression(bpss_path, all_regressors)
+            all_regressors = compile_regressors(Path(self.inputs.preprocess_dir), Path(self.inputs.bold_dir), run, self.inputs.subject_id,
+                                            Path(self.inputs.fcmri_dir), bpss_path)
+            regression(bpss_path, all_regressors)
 
         self.setenv_smooth_downsampling()
         deepprep_subj_path = Path(self.inputs.data_path) / 'derivatives' / 'deepprep' / f'{self.inputs.subject_id}'
         subj_bold_dir = Path(self.inputs.preprocess_dir) / f'{self.inputs.subject_id}' / 'bold'
         for idx, bids_bold in enumerate(bids_bolds):
-            if idx < 3:
-                run = f"{idx + 1:03}"
-                entities = dict(bids_bold.entities)
-                # subj = entities['subject']
-                file_prefix = Path(bids_bold.path).name.replace('.nii.gz', '')
-                if 'session' in entities:
-                    subj_func_path = deepprep_subj_path / f"ses-{entities['session']}" / 'func'
-                    subj_surf_path = deepprep_subj_path / f"ses-{entities['session']}" / 'surf'
-                else:
-                    subj_func_path = deepprep_subj_path / 'func'
-                    subj_surf_path = deepprep_subj_path / 'surf'
-                subj_surf_path.mkdir(exist_ok=True)
-                src_resid_file = subj_bold_dir / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss_resid.nii.gz'
-                dst_resid_file = subj_func_path / f'{file_prefix}_resid.nii.gz'
-                shutil.copy(src_resid_file, dst_resid_file)
-                src_mc_file = subj_bold_dir / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
-                dst_mc_file = subj_func_path / f'{file_prefix}_mc.nii.gz'
-                shutil.copy(src_mc_file, dst_mc_file)
-                src_reg_file = subj_bold_dir / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.register.dat'
-                dst_reg_file = subj_func_path / f'{file_prefix}_bbregister.register.dat'
-                shutil.copy(src_reg_file, dst_reg_file)
+            run = f"{idx + 1:03}"
+            entities = dict(bids_bold.entities)
+            # subj = entities['subject']
+            file_prefix = Path(bids_bold.path).name.replace('.nii.gz', '')
+            if 'session' in entities:
+                subj_func_path = deepprep_subj_path / f"ses-{entities['session']}" / 'func'
+                subj_surf_path = deepprep_subj_path / f"ses-{entities['session']}" / 'surf'
+            else:
+                subj_func_path = deepprep_subj_path / 'func'
+                subj_surf_path = deepprep_subj_path / 'surf'
+            subj_surf_path.mkdir(exist_ok=True)
+            src_resid_file = subj_bold_dir / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss_resid.nii.gz'
+            dst_resid_file = subj_func_path / f'{file_prefix}_resid.nii.gz'
+            shutil.copy(src_resid_file, dst_resid_file)
+            src_mc_file = subj_bold_dir / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
+            dst_mc_file = subj_func_path / f'{file_prefix}_mc.nii.gz'
+            shutil.copy(src_mc_file, dst_mc_file)
+            src_reg_file = subj_bold_dir / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.register.dat'
+            dst_reg_file = subj_func_path / f'{file_prefix}_bbregister.register.dat'
+            shutil.copy(src_reg_file, dst_reg_file)
 
-                # smooth_downsampling
-                for hemi in ['lh', 'rh']:
-                    fs6_path = sp.indi_to_fs6(subj_surf_path, f'{self.inputs.subject_id}', dst_resid_file, dst_reg_file, hemi)
-                    sm6_path = sp.smooth_fs6(fs6_path, hemi)
-                    sp.downsample_fs6_to_fs4(sm6_path, hemi)
+            # smooth_downsampling
+            for hemi in ['lh', 'rh']:
+                fs6_path = sp.indi_to_fs6(subj_surf_path, f'{self.inputs.subject_id}', dst_resid_file, dst_reg_file, hemi)
+                sm6_path = sp.smooth_fs6(fs6_path, hemi)
+                sp.downsample_fs6_to_fs4(sm6_path, hemi)
         return runtime
 
     def _list_outputs(self):
@@ -656,11 +651,10 @@ class VxmRegNormMNI152InputSpec(BaseInterfaceInputSpec):
     subject_id = Str(exists=True, desc='subject', mandatory=True)
     subj = Str(exists=True, desc='subj', mandatory=True)
     task = Str(exists=True, desc='task', mandatory=True)
-    # preprocess_dir = Directory(exists=True, desc='preprocess_dir', mandatory=True)
     data_path = Directory(exists=True, desc='data_path', mandatory=True)
     deepprep_subj_path = Directory(exists=True, desc='deepprep_subj_path', mandatory=True) #
     preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
-    workdir = Directory(exists=True, desc='tmp/ task-{task}', mandatory=True)
+    preprocess_dir = Directory(exists=True, desc='tmp/ task-{task}', mandatory=True)
     norm = File(exists=True, desc='mri/norm.mgz', mandatory=True)
 
 class VxmRegNormMNI152OutputSpec(TraitedSpec):
@@ -681,12 +675,12 @@ class VxmRegNormMNI152(BaseInterface):
                        '--fslregout', fslmat_file,
                        '--noedit')
 
-    def register_dat_to_trf(self, mov_file, ref_file, reg_file, workdir, trf_file):
+    def register_dat_to_trf(self, mov_file, ref_file, reg_file, preprocess_dir, trf_file):
         import SimpleITK as sitk
 
-        fsltrf_file = os.path.join(workdir, 'fsl_trf.fsl')
+        fsltrf_file = os.path.join(preprocess_dir, 'fsl_trf.fsl')
         self.register_dat_to_fslmat(mov_file, ref_file, reg_file, fsltrf_file)
-        first_frame_file = os.path.join(workdir, 'frame0.nii.gz')
+        first_frame_file = os.path.join(preprocess_dir, 'frame0.nii.gz')
         bold = ants.image_read(str(mov_file))
         frame0_np = bold[:, :, :, 0]
         origin = bold.origin[:3]
@@ -694,7 +688,7 @@ class VxmRegNormMNI152(BaseInterface):
         direction = bold.direction[:3, :3].copy()
         frame0 = ants.from_numpy(frame0_np, origin=origin, spacing=spacing, direction=direction)
         ants.image_write(frame0, str(first_frame_file))
-        tfm_file = os.path.join(workdir, 'itk_trf.tfm')
+        tfm_file = os.path.join(preprocess_dir, 'itk_trf.tfm')
         base_path, _ = os.path.split(os.path.abspath(__file__))
         base_path = Path(base_path).parent
         c3d_affine_tool = os.path.join(base_path, 'resource', 'c3d_affine_tool')
@@ -706,14 +700,14 @@ class VxmRegNormMNI152(BaseInterface):
         trf.set_fixed_parameters(trf_sitk.GetFixedParameters())
         ants.write_transform(trf, trf_file)
 
-    def native_bold_to_T1_2mm_ants(self, residual_file, subj, subj_t1_file, reg_file, save_file, workdir,
+    def native_bold_to_T1_2mm_ants(self, residual_file, subj, subj_t1_file, reg_file, save_file, preprocess_dir,
                                    verbose=False):
         subj_t1_2mm_file = os.path.join(os.path.split(save_file)[0], 'norm_2mm.nii.gz')
         sh.mri_convert('-ds', 2, 2, 2,
                        '-i', subj_t1_file,
                        '-o', subj_t1_2mm_file)
-        trf_file = os.path.join(workdir, 'reg.mat')
-        self.register_dat_to_trf(residual_file, subj_t1_2mm_file, reg_file, workdir, trf_file)
+        trf_file = os.path.join(preprocess_dir, 'reg.mat')
+        self.register_dat_to_trf(residual_file, subj_t1_2mm_file, reg_file, preprocess_dir, trf_file)
         bold_img = ants.image_read(str(residual_file))
         fixed = ants.image_read(subj_t1_2mm_file)
         affined_bold_img = ants.apply_transforms(fixed=fixed, moving=bold_img, transformlist=[trf_file], imagetype=3)
@@ -842,7 +836,7 @@ class VxmRegNormMNI152(BaseInterface):
             reg_file = subj_func_path / f'{file_prefix}_bbregister.register.dat'
             bold_t1_file = subj_func_path / f'{self.inputs.subj}_native_t1_2mm.nii.gz'
             bold_t1_out = self.native_bold_to_T1_2mm_ants(bold_file, self.inputs.subj, self.inputs.norm, reg_file,
-                                                      bold_t1_file, self.inputs.workdir, verbose=False)
+                                                      bold_t1_file, self.inputs.preprocess_dir, verbose=False)
 
             warp_file = subj_func_path / f'sub-{self.inputs.subj}_warp.nii.gz'
             affine_file = subj_func_path / f'sub-{self.inputs.subj}_affine.mat'
@@ -861,11 +855,10 @@ class SmoothInputSpec(BaseInterfaceInputSpec):
     subject_id = Str(exists=True, desc='subject', mandatory=True)
     subj = Str(exists=True, desc='subj', mandatory=True)
     task = Str(exists=True, desc='task', mandatory=True)
-    preprocess_dir = Directory(exists=True, desc='preprocess_dir', mandatory=True)
     data_path = Directory(exists=True, desc='data_path', mandatory=True)
     deepprep_subj_path = Directory(exists=True, desc='deepprep_subj_path', mandatory=True)
     preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
-    workdir = Directory(exists=True, desc='tmp/ task-{task}', mandatory=True)
+    preprocess_dir = Directory(exists=True, desc='tmp/ task-{task}', mandatory=True)
 class SmoothclassOutputSpec(TraitedSpec):
 
     deepprep_subj_path = Directory(exists=True, desc='deepprep_subj_path')
@@ -942,11 +935,11 @@ class Smooth(BaseInterface):
                 bold_file = subj_func_path / f'{file_prefix}_mc.nii.gz'
                 save_file = subj_func_path / f'{file_prefix}_mc_MIN2mm.nii.gz'
             if self.inputs.preprocess_method == 'rest':
-                temp_file = Path(self.inputs.workdir) / f'{file_prefix}_MNI2mm_sm6_temp.nii.gz'
+                temp_file = Path(self.inputs.preprocess_dir) / f'{file_prefix}_MNI2mm_sm6_temp.nii.gz'
                 warped_img = subj_func_path / f'{self.inputs.subject_id}_MNI2mm.nii.gz'
                 self.bold_smooth_6_ants(str(warped_img), save_file, temp_file, bold_file, verbose=True)
             else:
-                temp_file = Path(self.inputs.workdir) / f'{file_prefix}_MNI2mm_temp.nii.gz'
+                temp_file = Path(self.inputs.preprocess_dir) / f'{file_prefix}_MNI2mm_temp.nii.gz'
                 warped_img = subj_func_path / f'{self.inputs.subject_id}_MNI2mm.nii.gz'
                 self.save_bold(str(warped_img), temp_file, bold_file, save_file)
         return runtime
