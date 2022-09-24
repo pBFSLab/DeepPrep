@@ -1,7 +1,8 @@
 from pathlib import Path
 from nipype import Node, Workflow
 from bold import VxmRegistraion, BoldSkipReorient, Stc, MkTemplate, \
-    MotionCorrection, Register, MkBrainmask, VxmRegNormMNI152
+    MotionCorrection, Register, MkBrainmask, VxmRegNormMNI152, RestGauss, \
+    RestBandpass, RestRegression, Smooth
 
 
 def init_single_bold_common_wf(subject_id: str, subj: str, task: str, preprocess_method: str,
@@ -62,86 +63,90 @@ def init_single_bold_common_wf(subject_id: str, subj: str, task: str, preprocess
     return single_bold_common_wf
 
 
-# def init_single_bold_rest_wf(subject_id: str, subj: str, task: str, preprocess_method: str,
-#                              data_path: Path, derivative_deepprep_path: Path,
-#                              subjects_dir: Path, workdir: Path, preprocess_dir: Path):
-#     single_bold_rest_wf = Workflow(name=f'single_bold_{subject_id.replace("-", "_")}_wf')
-#
-#     # Voxelmorph registration
-#     VxmRegistraion_node = Node(VxmRegistraion(), name='VxmRegistraion_node')
-#     VxmRegistraion_node.inputs.subject_id = subject_id
-#     VxmRegistraion_node.inputs.norm = freesurfer_subjects_path / subject_id / 'mri' / 'norm.mgz'
-#     VxmRegistraion_node.inputs.model_file = Path(
-#         __file__).parent.parent / 'model' / 'voxelmorph' / atlas_type / 'model.h5'
-#     VxmRegistraion_node.inputs.atlas_type = atlas_type
-#
-#     VxmRegistraion_node.inputs.vxm_warp = tmpdir / 'warp.nii.gz'
-#     VxmRegistraion_node.inputs.vxm_warped = tmpdir / 'warped.nii.gz'
-#     VxmRegistraion_node.inputs.trf = tmpdir / f'{subject_id}_affine.mat'
-#     VxmRegistraion_node.inputs.warp = tmpdir / f'{subject_id}_warp.nii.gz'
-#     VxmRegistraion_node.inputs.warped = tmpdir / f'{subject_id}_warped.nii.gz'
-#     VxmRegistraion_node.inputs.npz = tmpdir / 'vxminput.npz'
-#
-#     # Rest Gauss
-#     RestGauss_node = Node(RestGauss(), f'RestGauss_node')
-#     RestGauss_node.inputs.subject_id = subject_id
-#     # RestGauss_node.inputs.preprocess_dir = preprocess_dir
-#
-#     # Rest Bandpass
-#     RestBandpass_node = Node(RestBandpass(), name='RestBandpass_node')
-#     RestBandpass_node.inputs.subject_id = subject_id
-#     RestBandpass_node.inputs.data_path = data_path
-#     # RestBandpass_node.inputs.preprocess_dir = preprocess_dir
-#     RestBandpass_node.inputs.subj = subj
-#     RestBandpass_node.inputs.task = task
-#
-#     # Rest Regression
-#     RestRegression_node = Node(RestRegression(), f'RestRegression_node')
-#     RestRegression_node.inputs.subject_id = subject_id
-#     # RestRegression_node.inputs.preprocess_dir = preprocess_dir
-#     RestRegression_node.inputs.bold_dir = bold_dir
-#     RestRegression_node.inputs.data_path = data_path
-#     RestRegression_node.inputs.task = task
-#     RestRegression_node.inputs.subj = subj
-#     RestRegression_node.inputs.fcmri_dir = fcmri_dir
-#
-#     # voxel morph registration
-#     VxmRegNormMNI152_node = Node(VxmRegNormMNI152(), name='VxmRegNormMNI152_node')
-#     VxmRegNormMNI152_node.inputs.subject_id = subject_id
-#     VxmRegNormMNI152_node.inputs.workdir = workdir
-#     VxmRegNormMNI152_node.inputs.subj = subj
-#     VxmRegNormMNI152_node.inputs.task = task
-#     # VxmRegNormMNI152_node.inputs.preprocess_dir = preprocess_dir
-#     VxmRegNormMNI152_node.inputs.data_path = data_path
-#     VxmRegNormMNI152_node.inputs.deepprep_subj_path = derivative_deepprep_path / subject_id
-#     VxmRegNormMNI152_node.inputs.preprocess_method = preprocess_method
-#     VxmRegNormMNI152_node.inputs.norm = derivative_deepprep_path / 'Recon' / f'sub-{subj}' / 'mri' / 'norm.mgz'
-#
-#     # Smooth
-#     Smooth_node = Node(Smooth(), name='Smooth_node')
-#     Smooth_node.inputs.subject_id = subject_id
-#     Smooth_node.inputs.subj = subj
-#     Smooth_node.inputs.task = task
-#     Smooth_node.inputs.workdir = workdir
-#     # Smooth_node.inputs.preprocess_dir = preprocess_dir
-#     Smooth_node.inputs.data_path = data_path
-#     Smooth_node.inputs.deepprep_subj_path = deepprep_subj_path
-#     Smooth_node.inputs.preprocess_method = preprocess_method
-#
-#
-#     # create workflow
-#
-#     single_bold_rest_wf.connect([
-#         # (MotionCorrection_node, RestGauss_node, [("preprocess_dir", "preprocess_dir"),
-#         #                                             ]),
-#         # (RestGauss_node, RestBandpass_node, [("preprocess_dir", "preprocess_dir"),
-#         #                                             ]),
-#         # (RestBandpass_node, RestRegression_node, [("preprocess_dir", "preprocess_dir"),
-#         #                                             ]),
-#     #
-#     ])
-#
-#     return single_bold_rest_wf
+def init_single_bold_rest_wf(subject_id: str, subj: str, task: str, preprocess_method: str,
+                             data_path: Path, derivative_deepprep_path: Path,
+                             subjects_dir: Path, workdir: Path, preprocess_dir: Path):
+    single_bold_rest_wf = Workflow(name=f'single_bold_{subject_id.replace("-", "_")}_wf')
+
+    # Voxelmorph registration
+    VxmRegistraion_node = Node(VxmRegistraion(), name='VxmRegistraion_node')
+    atlas_type = 'MNI152_T1_2mm'
+    derivative_deepprep_path = data_path / 'derivatives' / 'deepprep'
+
+    VxmRegistraion_node.inputs.subject_id = subject_id
+    VxmRegistraion_node.inputs.norm = subjects_dir / subject_id / 'mri' / 'norm.mgz'
+    VxmRegistraion_node.inputs.model_file = Path(
+        __file__).parent.parent / 'model' / 'voxelmorph' / atlas_type / 'model.h5'
+    VxmRegistraion_node.inputs.atlas_type = atlas_type
+
+    VxmRegistraion_node.inputs.vxm_warp = derivative_deepprep_path / 'tmp' / 'warp.nii.gz'
+    VxmRegistraion_node.inputs.vxm_warped = derivative_deepprep_path / 'tmp' / 'warped.nii.gz'
+    VxmRegistraion_node.inputs.trf = derivative_deepprep_path / 'tmp' / f'{subject_id}_affine.mat'
+    VxmRegistraion_node.inputs.warp = derivative_deepprep_path / 'tmp' / f'{subject_id}_warp.nii.gz'
+    VxmRegistraion_node.inputs.warped = derivative_deepprep_path / 'tmp' / f'{subject_id}_warped.nii.gz'
+    VxmRegistraion_node.inputs.npz = derivative_deepprep_path / 'tmp' / 'vxminput.npz'
+
+    # Rest Gauss
+    RestGauss_node = Node(RestGauss(), f'RestGauss_node')
+    RestGauss_node.inputs.subject_id = subject_id
+
+
+    # Rest Bandpass
+    RestBandpass_node = Node(RestBandpass(), name='RestBandpass_node')
+    RestBandpass_node.inputs.subject_id = subject_id
+    RestBandpass_node.inputs.data_path = data_path
+    # RestBandpass_node.inputs.preprocess_dir = preprocess_dir
+    RestBandpass_node.inputs.subj = subj
+    RestBandpass_node.inputs.task = task
+
+    # Rest Regression
+    RestRegression_node = Node(RestRegression(), f'RestRegression_node')
+    RestRegression_node.inputs.subject_id = subject_id
+    # RestRegression_node.inputs.preprocess_dir = preprocess_dir
+    RestRegression_node.inputs.bold_dir = preprocess_dir / subject_id / 'bold'
+    RestRegression_node.inputs.data_path = data_path
+    RestRegression_node.inputs.task = task
+    RestRegression_node.inputs.subj = subj
+    RestRegression_node.inputs.fcmri_dir = preprocess_dir / subject_id / 'fcmri'
+
+    # voxel morph registration
+    VxmRegNormMNI152_node = Node(VxmRegNormMNI152(), name='VxmRegNormMNI152_node')
+    VxmRegNormMNI152_node.inputs.subject_id = subject_id
+    VxmRegNormMNI152_node.inputs.workdir = workdir
+    VxmRegNormMNI152_node.inputs.subj = subj
+    VxmRegNormMNI152_node.inputs.task = task
+    # VxmRegNormMNI152_node.inputs.preprocess_dir = preprocess_dir
+    VxmRegNormMNI152_node.inputs.data_path = data_path
+    VxmRegNormMNI152_node.inputs.deepprep_subj_path = derivative_deepprep_path / subject_id
+    VxmRegNormMNI152_node.inputs.preprocess_method = preprocess_method
+    VxmRegNormMNI152_node.inputs.norm = derivative_deepprep_path / 'Recon' / f'sub-{subj}' / 'mri' / 'norm.mgz'
+
+    # Smooth
+    Smooth_node = Node(Smooth(), name='Smooth_node')
+    Smooth_node.inputs.subject_id = subject_id
+    Smooth_node.inputs.subj = subj
+    Smooth_node.inputs.task = task
+    Smooth_node.inputs.workdir = workdir
+    # Smooth_node.inputs.preprocess_dir = preprocess_dir
+    Smooth_node.inputs.data_path = data_path
+    Smooth_node.inputs.deepprep_subj_path = derivative_deepprep_path / subject_id
+    Smooth_node.inputs.preprocess_method = preprocess_method
+
+
+    # create workflow
+
+    single_bold_rest_wf.connect([
+        (RestGauss_node, RestBandpass_node, [("preprocess_dir", "preprocess_dir"),
+                                            ]),
+        (RestBandpass_node, RestRegression_node, [("preprocess_dir", "preprocess_dir"),
+                                                    ]),
+        (RestRegression_node, VxmRegNormMNI152_node, [("preprocess_dir", "preprocess_dir"),
+                                                    ]),
+        (VxmRegNormMNI152_node, Smooth_node, [("deepprep_subj_path", "deepprep_subj_path"),
+                                                ]),
+    ])
+
+    return single_bold_rest_wf
 
 def pipeline():
 
@@ -168,11 +173,15 @@ def pipeline():
 
     wf_common = init_single_bold_common_wf(subject_id, subj, task, preprocess_method, data_path, derivative_deepprep_path,
                                   subjects_dir, workdir, preprocess_dir)
-    wf_common.base_dir = preprocess_dir / subject_id  # ！！ 缓存的存储位置，运行过程的tmp文件，可以删除
-    # wf.BoldSkipReorient_node.inputs
-    # wf_common.write_graph(graph2use='flat', simple_form=False)
+    wf_rest = init_single_bold_rest_wf(subject_id, subj, task, preprocess_method, data_path,
+                                           derivative_deepprep_path,
+                                           subjects_dir, workdir, preprocess_dir)
 
-    wf_common.inputs.BoldSkipReorient_node.subject_id = subject_id
+    wf_common.base_dir = preprocess_dir / subject_id  # ！！ 缓存的存储位置，运行过程的tmp文件，可以删除
+    wf_rest.base_dir = preprocess_dir / subject_id  # ！！ 缓存的存储位置，运行过程的tmp文件，可以删除
+
+    wf_rest.RestGauss_node.mc = init_single_bold_common_wf.MotionCorrection_node.outputs.skip_faln_mc
+    # wf_common.write_graph(graph2use='flat', simple_form=False)
 
     # wf_common.run()
 
