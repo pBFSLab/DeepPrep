@@ -336,6 +336,7 @@ class VxmRegistraionInputSpec(BaseInterfaceInputSpec):
     subject_id = Str(desc="subject id", mandatory=True)
     data_path = Directory(exists=True, desc='data path', mandatory=True)
     deepprep_subj_path = Directory(exists=True, desc='deepprep subjects dir', mandatory=True)
+    preprocess_dir = Directory(exists=True, desc="preprocess dir", mandatory=True)
     norm = File(exists=True, desc="mri/norm.mgz", mandatory=True)
     model_file = File(exists=True, desc="atlas_type/model.h5", mandatory=True)
 
@@ -354,6 +355,9 @@ class VxmRegistraionOutputSpec(TraitedSpec):
     warp = File(exists=True, desc="tmpdir/sub-{subj}_warp.nii.gz")
     warped = File(exists=True, desc="tmpdir/sub-{subj}_warped.nii.gz")
     npz = File(exists=True, desc="tmpdir/vxminput.npz")
+
+    preprocess_dir = Directory(exists=False, desc="preprocess dir")
+
 
 
 class VxmRegistraion(BaseInterface):
