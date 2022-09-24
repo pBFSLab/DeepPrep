@@ -6,10 +6,15 @@ import sh
 import nibabel as nib
 import numpy as np
 from pathlib import Path
-import ants
 import bids
 import os
 import shutil
+import tensorflow as tf
+import ants
+import shutil
+import deepprep_pipeline.voxelmorph as vxm
+
+from deepprep_pipeline.app.filters.filters import bandpass_nifti
 
 class BoldSkipReorientInputSpec(BaseInterfaceInputSpec):
     preprocess_dir = Directory(exists=True, desc="preprocess dir", mandatory=True)
@@ -17,8 +22,10 @@ class BoldSkipReorientInputSpec(BaseInterfaceInputSpec):
     data_path = Directory(exists=True, desc="data path", mandatory=True)
     task = Str(exists=True, desc="task", mandatory=True)
 
+
+
 class BoldSkipReorientOutputSpec(TraitedSpec):
-    preprocess_dir = Directory(exists=True, desc="preprocess dir", mandatory=True)
+    preprocess_dir = Directory(exists=False, desc="preprocess dir")
 
 
 class BoldSkipReorient(BaseInterface):
@@ -68,6 +75,9 @@ class BoldSkipReorient(BaseInterface):
         nib.save(newimg, outfile)
 
     def cmd(self, run):
+
+        subj_bold_dir = Path(self.inputs.preprocess_dir) / f'{self.inputs.subject_id}' / 'bold'
+
         bold = Path(self.inputs.preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld{run}_rest.nii.gz'
         skip_bold = Path(self.inputs.preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld{run}_rest_skip.nii.gz'
         reorient_skip_bold = Path(self.inputs.preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld{run}_rest_reorient_skip.nii.gz'
@@ -76,15 +86,18 @@ class BoldSkipReorient(BaseInterface):
 
         # reorient
         self.swapdim(str(skip_bold), 'x', '-y', 'z', str(reorient_skip_bold))
+        shutil.copy(subj_bold_dir / run / f'{self.inputs.subject_id}_bld{run}_rest_reorient_skip.nii.gz',
+                  subj_bold_dir / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip.nii.gz')
+
     def _run_interface(self, runtime):
         layout = bids.BIDSLayout(str(self.inputs.data_path), derivatives=False)
         sess = layout.get_session(subject=self.inputs.subject_id)
-        deepprep_subj_path = self.inputs.data_path / 'derivatives' / 'deepprep' / f'{self.inputs.subject_id}'
+        deepprep_subj_path = Path(self.inputs.data_path) / 'derivatives' / 'deepprep' / f'{self.inputs.subject_id}'
         tmpdir = deepprep_subj_path / 'tmp'
         trf_file = tmpdir / f'{self.inputs.subject_id}_affine.mat'
         warp_file = tmpdir / f'{self.inputs.subject_id}_warp.nii.gz'
         warped_file = tmpdir / f'{self.inputs.subject_id}_warped.nii.gz'
-        subj_bold_dir = self.inputs.preprocess_dir / f'{self.inputs.subject_id}' / 'bold'
+        subj_bold_dir = Path(self.inputs.preprocess_dir) / f'{self.inputs.subject_id}' / 'bold'
         subj_bold_dir.mkdir(parents=True, exist_ok=True)
         if len(sess) == 0:
             subj_func_path = deepprep_subj_path / 'func'
@@ -106,6 +119,10 @@ class BoldSkipReorient(BaseInterface):
                 shutil.copy(trf_file, subj_func_path / f'{self.inputs.subject_id}_affine.mat')
                 shutil.copy(warp_file, subj_func_path / f'{self.inputs.subject_id}_warp.nii.gz')
                 shutil.copy(warped_file, subj_func_path / f'{self.inputs.subject_id}_warped.nii.gz')
+        if self.inputs.task is None:
+            bids_bolds = layout.get(subject=self.inputs.subject_id, suffix='bold', extension='.nii.gz')
+        else:
+            bids_bolds = layout.get(subject=self.inputs.subject_id, task=self.inputs.task, suffix='bold', extension='.nii.gz')
         for idx, bids_bold in enumerate(bids_bolds):
             bids_file = Path(bids_bold.path)
             run = f'{idx + 1:03}'
@@ -113,6 +130,8 @@ class BoldSkipReorient(BaseInterface):
             shutil.copy(bids_file, subj_bold_dir / run / f'{self.inputs.subject_id}_bld{run}_rest.nii.gz')
         runs = sorted([d.name for d in (Path(self.inputs.preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if d.is_dir()])
         multipool_run(self.cmd, runs, Multi_Num=8)
+
+
         return runtime
 
     def _list_outputs(self):
@@ -128,7 +147,7 @@ class MotionCorrectionInputSpec(BaseInterfaceInputSpec):
 
 
 class MotionCorrectionOutputSpec(TraitedSpec):
-    preprocess_dir = Directory(exists=True, desc="preprocess dir")
+    preprocess_dir = Directory(exists=False, desc="preprocess dir")
 
 
 class MotionCorrection(BaseInterface):
@@ -165,7 +184,7 @@ class StcInputSpec(BaseInterfaceInputSpec):
 
 
 class StcOutputSpec(TraitedSpec):
-    preprocess_dir = Directory(exists=True, desc='preprocess_dir')
+    preprocess_dir = Directory(exists=False, desc='preprocess_dir')
 
 
 class Stc(BaseInterface):
@@ -203,8 +222,9 @@ class RegisterInputSpec(BaseInterfaceInputSpec):
     subject_id = Str(exists=True, desc='subject', mandatory=True)
     preprocess_dir = Directory(exists=True, desc='preprocess_dir', mandatory=True)
 
+
 class RegisterOutputSpec(TraitedSpec):
-    preprocess_dir = Directory(exists=True, desc='preprocess_dir')
+    preprocess_dir = Directory(exists=False, desc='preprocess_dir')
 
 
 class Register(BaseInterface):
@@ -242,8 +262,9 @@ class MkBrainmaskInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc='subjects_dir', mandatory=True)
     preprocess_dir = Directory(exists=True, desc='preprocess_dir', mandatory=True)
 
+
 class MkBrainmaskOutputSpec(TraitedSpec):
-    preprocess_dir = Directory(exists=True, desc='preprocess_dir')
+    preprocess_dir = Directory(exists=False, desc='preprocess_dir')
 
 
 class MkBrainmask(BaseInterface):
@@ -314,6 +335,7 @@ class VxmRegistraionInputSpec(BaseInterfaceInputSpec):
     atlas_type = Str(desc="atlas type", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
     data_path = Directory(exists=True, desc='data path', mandatory=True)
+    deepprep_subj_path = Directory(exists=True, desc='deepprep subjects dir', mandatory=True)
     norm = File(exists=True, desc="mri/norm.mgz", mandatory=True)
     model_file = File(exists=True, desc="atlas_type/model.h5", mandatory=True)
 
@@ -343,15 +365,16 @@ class VxmRegistraion(BaseInterface):
     gpu = 2703  # 最大gpu占用：MB
 
     def _run_interface(self, runtime):
-        import tensorflow as tf
-        import ants
-        import shutil
-        import voxelmorph as vxm
+        # import tensorflow as tf
+        # import ants
+        # import shutil
+        # import deepprep_pipeline.voxelmorph as vxm
 
-        deepprep_subj_path = self.inputs.data_path / 'derivatives' / 'deepprep' / f'{self.inputs.subject_id}'
-        deepprep_subj_path.mkdir(exist_ok=True)
+        # deepprep_subj_path = Path(self.inputs.data_path) / 'derivatives' / 'deepprep' / f'{self.inputs.subject_id}'
+        # deepprep_subj_path = Path(self.inputs.data_path) / 'derivatives' / 'deepprep_wftest' / f'{self.inputs.subject_id}'
+        Path(self.inputs.deepprep_subj_path).mkdir(exist_ok=True)
 
-        tmpdir = deepprep_subj_path / 'tmp'
+        tmpdir = Path(self.inputs.deepprep_subj_path) / 'tmp'
         tmpdir.mkdir(exist_ok=True)
 
         model_path = Path(__file__).parent.parent / 'model' / 'voxelmorph' / self.inputs.atlas_type
@@ -441,7 +464,7 @@ class RestGaussInputSpec(BaseInterfaceInputSpec):
 
 
 class RestGaussOutputSpec(TraitedSpec):
-    preprocess_dir = Directory(exists=True, desc='preprocess_dir')
+    preprocess_dir = Directory(exists=False, desc='preprocess_dir')
 
 
 class RestGauss(BaseInterface):
@@ -453,7 +476,7 @@ class RestGauss(BaseInterface):
     gpu = 0  # 最大gpu占用：MB
 
     def cmd(self, run):
-        from app.filters.filters import gauss_nifti
+        from deepprep_pipeline.app.filters.filters import gauss_nifti
 
         mc = Path(self.inputs.preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
         fcmri_dir = f'{self.inputs.preprocess_dir} / {self.inputs.subject_id} / fcmri'
@@ -478,7 +501,7 @@ class RestBandpassInputSpec(BaseInterfaceInputSpec):
     data_path = Directory(exists=True, desc='data path', mandatory=True)
 
 class RestBandpassOutputSpec(TraitedSpec):
-    preprocess_dir = Directory(exists=True, desc='preprocess_dir')
+    preprocess_dir = Directory(exists=False, desc='preprocess_dir')
 
 
 class RestBandpass(BaseInterface):
@@ -492,7 +515,7 @@ class RestBandpass(BaseInterface):
 
 
     def cmd(self, idx, bids_entities, bids_path):
-        from app.filters.filters import bandpass_nifti
+        from deepprep_pipeline.app.filters.filters import bandpass_nifti
 
         entities = dict(bids_entities)
         print(entities)
@@ -518,6 +541,9 @@ class RestBandpass(BaseInterface):
             all_idx.append(idx)
             all_bids_entities.append(bids_bold.entities)
             all_bids_path.append(bids_bold.path)
+        all_idx = all_idx[:3]
+        all_bids_entities = all_bids_entities[:3]
+        all_bids_path = all_bids_path[:3]
         multipool_BidsBolds(self.cmd, all_idx, all_bids_entities, all_bids_path, Multi_Num=8)
 
         return runtime
@@ -539,7 +565,7 @@ class RestRegressionInputSpec(BaseInterfaceInputSpec):
     data_path = Directory(exists=True, desc='data_path', mandatory=True)
 
 class RestRegressionOutputSpec(TraitedSpec):
-    preprocess_dir = Directory(exists=True, desc='preprocess_dir')
+    preprocess_dir = Directory(exists=False, desc='preprocess_dir')
 
 class RestRegression(BaseInterface):
     input_spec = RestRegressionInputSpec
@@ -567,8 +593,8 @@ class RestRegression(BaseInterface):
             os.symlink(src_fsaverage4_dir, fsaverage4_dir)
 
     def _run_interface(self, runtime):
-        from app.regressors.regressors import compile_regressors, regression
-        from app.surface_projection import surface_projection as sp
+        from deepprep_pipeline.app.regressors.regressors import compile_regressors, regression
+        from deepprep_pipeline.app.surface_projection import surface_projection as sp
         layout = bids.BIDSLayout(str(self.inputs.data_path), derivatives=False)
 
         if self.inputs.task is None:
@@ -576,43 +602,45 @@ class RestRegression(BaseInterface):
         else:
             bids_bolds = layout.get(subject=self.inputs.subj, task=self.inputs.task, suffix='bold', extension='.nii.gz')
         for idx, bids_bold in enumerate(bids_bolds):
-            run = f'{idx + 1:03}'
-            bpss_path = f'{self.inputs.preprocess_dir}/{self.inputs.subject_id}/bold/{run}/{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc_g1000000000.nii.gz'
+            if idx < 3:
+                run = f'{idx + 1:03}'
+                bpss_path = f'{self.inputs.preprocess_dir}/{self.inputs.subject_id}/bold/{run}/{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss.nii.gz'
 
-            all_regressors = compile_regressors(Path(self.inputs.preprocess_dir), Path(self.inputs.bold_dir), run, self.inputs.subject_id,
-                                            Path(self.inputs.fcmri_dir), bpss_path)
-            regression(bpss_path, all_regressors)
+                all_regressors = compile_regressors(Path(self.inputs.preprocess_dir), Path(self.inputs.bold_dir), run, self.inputs.subject_id,
+                                                Path(self.inputs.fcmri_dir), bpss_path)
+                regression(bpss_path, all_regressors)
 
         self.setenv_smooth_downsampling()
-        deepprep_subj_path = self.inputs.data_path / 'derivatives' / 'deepprep' / f'{self.inputs.subject_id}'
-        subj_bold_dir = self.inputs.preprocess_dir / f'{self.inputs.subject_id}' / 'bold'
+        deepprep_subj_path = Path(self.inputs.data_path) / 'derivatives' / 'deepprep' / f'{self.inputs.subject_id}'
+        subj_bold_dir = Path(self.inputs.preprocess_dir) / f'{self.inputs.subject_id}' / 'bold'
         for idx, bids_bold in enumerate(bids_bolds):
-            run = f"{idx + 1:03}"
-            entities = dict(bids_bold.entities)
-            # subj = entities['subject']
-            file_prefix = Path(bids_bold.path).name.replace('.nii.gz', '')
-            if 'session' in entities:
-                subj_func_path = deepprep_subj_path / f"ses-{entities['session']}" / 'func'
-                subj_surf_path = deepprep_subj_path / f"ses-{entities['session']}" / 'surf'
-            else:
-                subj_func_path = deepprep_subj_path / 'func'
-                subj_surf_path = deepprep_subj_path / 'surf'
-            subj_surf_path.mkdir(exist_ok=True)
-            src_resid_file = subj_bold_dir / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss_resid.nii.gz'
-            dst_resid_file = subj_func_path / f'{file_prefix}_resid.nii.gz'
-            shutil.copy(src_resid_file, dst_resid_file)
-            src_mc_file = subj_bold_dir / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
-            dst_mc_file = subj_func_path / f'{file_prefix}_mc.nii.gz'
-            shutil.copy(src_mc_file, dst_mc_file)
-            src_reg_file = subj_bold_dir / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.register.dat'
-            dst_reg_file = subj_func_path / f'{file_prefix}_bbregister.register.dat'
-            shutil.copy(src_reg_file, dst_reg_file)
+            if idx < 3:
+                run = f"{idx + 1:03}"
+                entities = dict(bids_bold.entities)
+                # subj = entities['subject']
+                file_prefix = Path(bids_bold.path).name.replace('.nii.gz', '')
+                if 'session' in entities:
+                    subj_func_path = deepprep_subj_path / f"ses-{entities['session']}" / 'func'
+                    subj_surf_path = deepprep_subj_path / f"ses-{entities['session']}" / 'surf'
+                else:
+                    subj_func_path = deepprep_subj_path / 'func'
+                    subj_surf_path = deepprep_subj_path / 'surf'
+                subj_surf_path.mkdir(exist_ok=True)
+                src_resid_file = subj_bold_dir / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss_resid.nii.gz'
+                dst_resid_file = subj_func_path / f'{file_prefix}_resid.nii.gz'
+                shutil.copy(src_resid_file, dst_resid_file)
+                src_mc_file = subj_bold_dir / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
+                dst_mc_file = subj_func_path / f'{file_prefix}_mc.nii.gz'
+                shutil.copy(src_mc_file, dst_mc_file)
+                src_reg_file = subj_bold_dir / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.register.dat'
+                dst_reg_file = subj_func_path / f'{file_prefix}_bbregister.register.dat'
+                shutil.copy(src_reg_file, dst_reg_file)
 
-            # smooth_downsampling
-            for hemi in ['lh', 'rh']:
-                fs6_path = sp.indi_to_fs6(subj_surf_path, f'{self.inputs.subject_id}', dst_resid_file, dst_reg_file, hemi)
-                sm6_path = sp.smooth_fs6(fs6_path, hemi)
-                sp.downsample_fs6_to_fs4(sm6_path, hemi)
+                # smooth_downsampling
+                for hemi in ['lh', 'rh']:
+                    fs6_path = sp.indi_to_fs6(subj_surf_path, f'{self.inputs.subject_id}', dst_resid_file, dst_reg_file, hemi)
+                    sm6_path = sp.smooth_fs6(fs6_path, hemi)
+                    sp.downsample_fs6_to_fs4(sm6_path, hemi)
         return runtime
 
     def _list_outputs(self):
@@ -628,9 +656,9 @@ class VxmRegNormMNI152InputSpec(BaseInterfaceInputSpec):
     subject_id = Str(exists=True, desc='subject', mandatory=True)
     subj = Str(exists=True, desc='subj', mandatory=True)
     task = Str(exists=True, desc='task', mandatory=True)
-    preprocess_dir = Directory(exists=True, desc='preprocess_dir', mandatory=True)
+    # preprocess_dir = Directory(exists=True, desc='preprocess_dir', mandatory=True)
     data_path = Directory(exists=True, desc='data_path', mandatory=True)
-    deepprep_subj_path = Directory(exists=True, desc='deepprep_subj_path', mandatory=True)
+    deepprep_subj_path = Directory(exists=True, desc='deepprep_subj_path', mandatory=True) #
     preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
     workdir = Directory(exists=True, desc='tmp/ task-{task}', mandatory=True)
     norm = File(exists=True, desc='mri/norm.mgz', mandatory=True)
@@ -694,7 +722,7 @@ class VxmRegNormMNI152(BaseInterface):
         return affined_bold_img
 
     def vxm_warp_bold_2mm(self,resid_t1, affine_file, warp_file, warped_file, verbose=True):
-        import voxelmorph as vxm
+        import deepprep_pipeline.voxelmorph as vxm
         import tensorflow as tf
         import time
 
@@ -935,7 +963,7 @@ class MkTemplateInputSpec(BaseInterfaceInputSpec):
     preprocess_dir = Directory(exists=True, desc='preprocess_dir', mandatory=True)
 
 class MkTemplateOutputSpec(TraitedSpec):
-    preprocess_dir = Directory(exists=True, desc='preprocess_dir')
+    preprocess_dir = Directory(exists=False, desc='preprocess_dir')
 
 
 class MkTemplate(BaseInterface):
