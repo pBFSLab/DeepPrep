@@ -18,6 +18,7 @@ def BoldSkipReorient_test():
     BoldSkipReorient_node = Node(BoldSkipReorient(), name='BoldSkipReorient_node')
     BoldSkipReorient_node.inputs.subject_id = subject_id
     BoldSkipReorient_node.inputs.data_path = data_path
+    BoldSkipReorient_node.inputs.task = task
     BoldSkipReorient_node.inputs.preprocess_dir = preprocess_dir
     BoldSkipReorient_node.run()
 
@@ -42,18 +43,19 @@ def Stc_test():
     task = 'motor'
     subject_id = 'sub-MSC01'
     data_path = Path(f'/mnt/DATA/lincong/temp/DeepPrep/MSC')
-    subjects_dir = Path('/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
+    # subjects_dir = Path('/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
     preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
 
 
     data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')  # BIDS path
     preprocess_dir = data_path / 'derivatives' / 'deepprep_wftest' / subject_id / 'tmp' / f'task-{task}'
     # preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
+    subjects_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon')
+
 
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
     # data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')
-    # subjects_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon')
     # preprocess_dir = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep_wftest/{subject_id}/tmp/task-{task}')
 
     Stc_node = Node(Stc(), name='stc_node')
@@ -69,8 +71,9 @@ def Register_test():
     subjects_dir = Path('/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
     preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
 
-    # subjects_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon')
-    # preprocess_dir = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep_wftest/{subject_id}/tmp/task-{task}')
+    data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')  # BIDS path
+    preprocess_dir = data_path / 'derivatives' / 'deepprep_wftest' / subject_id / 'tmp' / f'task-{task}'
+    subjects_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon')
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
     Register_node = Node(Register(), name='register_node')
@@ -84,8 +87,13 @@ def MkBrainmask_test():
     subject_id = 'sub-MSC01'
     data_path = Path(f'/mnt/DATA/lincong/temp/DeepPrep/MSC')
     subjects_dir = Path('/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
-    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
     preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
+
+    data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')  # BIDS path
+    subjects_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon')
+    preprocess_dir = data_path / 'derivatives' / 'deepprep_wftest' / subject_id / 'tmp' / f'task-{task}'
+
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
     Mkbrainmask_node = Node(MkBrainmask(), name='mkbrainmask_node')
     Mkbrainmask_node.inputs.subject_id = subject_id
@@ -100,15 +108,23 @@ def VxmRegistraion_test():
     data_path = Path(f'/mnt/DATA/lincong/temp/DeepPrep/MSC')
     derivative_deepprep_path = data_path / 'derivatives' / 'deepprep'
     tmpdir = derivative_deepprep_path / subject_id / 'tmp'
-    freesurfer_subjects_path = derivative_deepprep_path / 'Recon'
-    os.environ['SUBJECTS_DIR'] = str(freesurfer_subjects_path)
+    subjects_dir = derivative_deepprep_path / 'Recon'
+
+    data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')  # BIDS path
+    subjects_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep_wftest/Recon')
+    derivative_deepprep_path = data_path / 'derivatives' / 'deepprep_wftest'
+    tmpdir = derivative_deepprep_path / subject_id / 'tmp'
+
+
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
     atlas_type = 'MNI152_T1_2mm'
     VxmRegistraion_node = Node(VxmRegistraion(), name='VxmRegistraion_node')
     VxmRegistraion_node.inputs.subject_id = subject_id
-    VxmRegistraion_node.inputs.norm = freesurfer_subjects_path / subject_id / 'mri' / 'norm.mgz'
+    VxmRegistraion_node.inputs.norm = subjects_dir / subject_id / 'mri' / 'norm.mgz'
     VxmRegistraion_node.inputs.model_file = Path(__file__).parent.parent / 'model' / 'voxelmorph' / atlas_type / 'model.h5'
     VxmRegistraion_node.inputs.atlas_type = atlas_type
     VxmRegistraion_node.inputs.data_path = data_path
+    VxmRegistraion_node.inputs.deepprep_subj_path = derivative_deepprep_path / subject_id
     VxmRegistraion_node.inputs.vxm_warp = tmpdir / 'warp.nii.gz'
     VxmRegistraion_node.inputs.vxm_warped = tmpdir / 'warped.nii.gz'
     VxmRegistraion_node.inputs.trf = tmpdir / f'{subject_id}_affine.mat'
@@ -121,10 +137,16 @@ def VxmRegistraion_test():
 def RestGauss_test():
     task = 'motor'
     subject_id = 'sub-MSC01'
-    data_path = Path(f'/mnt/DATA/lincong/temp/DeepPrep/MSC')
-    subjects_dir = Path('/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
+    # data_path = Path(f'/mnt/DATA/lincong/temp/DeepPrep/MSC')
+    # subjects_dir = Path('/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
+    # os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+    # preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
+
+    data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')  # BIDS path
+    subjects_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep_wftest/Recon')
+    preprocess_dir = data_path / 'derivatives' / 'deepprep_wftest' / subject_id / 'tmp' / f'task-{task}'
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
-    preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
+
 
     RestGauss_node = Node(RestGauss(), f'RestGauss_node')
     RestGauss_node.inputs.subject_id = subject_id
@@ -140,6 +162,12 @@ def RestBandpass_test():
     subjects_dir = Path('/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
     preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
+
+    data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')  # BIDS path
+    subjects_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep_wftest/Recon')
+    preprocess_dir = data_path / 'derivatives' / 'deepprep_wftest' / subject_id / 'tmp' / f'task-{task}'
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+
     RestBandpass_node = Node(RestBandpass(), name='RestBandpass_node')
     RestBandpass_node.inputs.subject_id = subject_id
     RestBandpass_node.inputs.data_path = data_path
@@ -157,6 +185,12 @@ def RestRegression_test():
     subjects_dir = Path('/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
     preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
+
+    data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')  # BIDS path
+    subjects_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep_wftest/Recon')
+    preprocess_dir = data_path / 'derivatives' / 'deepprep_wftest' / subject_id / 'tmp' / f'task-{task}'
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+
     bold_dir = preprocess_dir / subject_id / 'bold'
     fcmri_dir = preprocess_dir / subject_id / 'fcmri'
     RestRegression_node = Node(RestRegression(), f'RestRegression_node')
@@ -182,13 +216,20 @@ def VxmRegNormMNI152_test():
     subjects_dir = Path('/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
     workdir = deepprep_subj_path / 'tmp' / f'task-{task}'
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
-    preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
+
+    data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')  # BIDS path
+    derivative_deepprep_path = data_path / 'derivatives' / 'deepprep_wftest'
+    deepprep_subj_path = derivative_deepprep_path / f'sub-{subj}'
+    subjects_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep_wftest/Recon')
+    workdir = deepprep_subj_path / 'tmp' / f'task-{task}'
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+
+
     VxmRegNormMNI152_node = Node(VxmRegNormMNI152(), name='VxmRegNormMNI152_node')
     VxmRegNormMNI152_node.inputs.subject_id = subject_id
     VxmRegNormMNI152_node.inputs.workdir = workdir
     VxmRegNormMNI152_node.inputs.subj = subj
     VxmRegNormMNI152_node.inputs.task = task
-    VxmRegNormMNI152_node.inputs.preprocess_dir = preprocess_dir
     VxmRegNormMNI152_node.inputs.data_path = data_path
     VxmRegNormMNI152_node.inputs.deepprep_subj_path = deepprep_subj_path
     VxmRegNormMNI152_node.inputs.preprocess_method = preprocess_method
@@ -221,14 +262,18 @@ def Smooth_test():
 def MkTemplate_test():
     task = 'motor'
     subject_id = 'sub-MSC01'
-    subjects_dir = Path('/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
     data_path = Path(f'/mnt/DATA/lincong/temp/DeepPrep/MSC')
-    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
     preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
+
+    data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')  # BIDS path
+    preprocess_dir = data_path / 'derivatives' / 'deepprep_wftest' / subject_id / 'tmp' / f'task-{task}'
+
     MkTemplate_node = Node(MkTemplate(), name='MkTemplate_node')
     MkTemplate_node.inputs.subject_id = subject_id
     MkTemplate_node.inputs.preprocess_dir = preprocess_dir
     MkTemplate_node.run()
+
+
 if __name__ == '__main__':
     set_envrion()
 
@@ -236,6 +281,23 @@ if __name__ == '__main__':
 
     # Stc_test()
 
-    MotionCorrection_test()
+    # MkTemplate_test()
 
-    # VxmRegNormMNI152_test()
+    # MotionCorrection_test()
+
+    # Register_test()
+
+    # MkBrainmask_test()
+
+    ######## rest #########
+
+    # VxmRegistraion_test()
+
+    # RestGauss_test()
+
+    # RestBandpass_test()
+
+    # RestRegression_test()
+
+    VxmRegNormMNI152_test()
+
