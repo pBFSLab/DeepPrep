@@ -236,6 +236,6 @@ if __name__ == '__main__':
 
     # Stc_test()
 
-    MotionCorrection_test()
+    MkTemplate_test()
 
     # VxmRegNormMNI152_test()
