@@ -7,6 +7,7 @@ from interface.fastsurfer import Segment, Noccseg, N4BiasCorrect, TalairachAndNu
     SampleSegmentationToSurfave
 from interface.fastcsr import FastCSR
 from interface.featreg_interface import FeatReg
+from run import set_envrion
 
 
 def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: str,
@@ -514,79 +515,94 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
     return single_structure_wf
 
 
-def pipeline():
+def pipeline(t1w_files, subjects_dir, subject_id):
     # t1w_files = [
     #     f'/mnt/ngshare/ProjData/SurfRecon/V001/sub-001/ses-01/anat/sub-001_ses-01_T1w.nii.gz',
     # ]
-    # pwd = Path.cwd()
-    # python_interpret = Path('/home/youjia/anaconda3/envs/3.8/bin/python3')
-    # fastsurfer_home = pwd / "FastSurfer"
-    # freesurfer_home = Path('/usr/local/freesurfer')
-    # fastcsr_home = pwd.parent / "deepprep_pipeline/FastCSR"
-    # featreg_home = pwd.parent / "deepprep_pipeline/FeatReg"
-    #
-    # subjects_dir = Path('/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon')
-    # subject_id = 'sub-001'
-    #
-    # os.environ['SUBJECTS_DIR'] = str(subjects_dir)
-    #
-    # wf = init_single_structure_wf(t1w_files, subjects_dir, subject_id, python_interpret, fastsurfer_home,
-    #                               freesurfer_home, fastcsr_home, featreg_home)
-    # wf.base_dir = subjects_dir
-    # # wf.write_graph(graph2use='flat', simple_form=False)
-    # wf.run()
-
-    # t1w_files = [
-    #     f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/sub-MSC01/ses-struct01/anat/sub-MSC01_ses-struct01_run-01_T1w.nii.gz',
-    # ]
-    t1w_files = ['/home/anning/Downloads/anat/001/guo_mei_hui_fMRI_22-9-20_ABI1_t1iso_TFE_20220920161141_201.nii.gz']
     pwd = Path.cwd()
-    python_interpret = Path('/home/anning/miniconda3/envs/3.8/bin/python3')
+    python_interpret = Path('/home/youjia/anaconda3/envs/3.8/bin/python3')
     fastsurfer_home = pwd / "FastSurfer"
     freesurfer_home = Path('/usr/local/freesurfer')
     fastcsr_home = pwd.parent / "deepprep_pipeline/FastCSR"
     featreg_home = pwd.parent / "deepprep_pipeline/FeatReg"
 
-    subjects_dir = Path('/mnt/ngshare/Data_Mirror/pipeline_test')
-    subject_id = 'sub-guomeihui'
+    # subjects_dir = Path('/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon')
+    # subject_id = 'sub-001'
 
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
     wf = init_single_structure_wf(t1w_files, subjects_dir, subject_id, python_interpret, fastsurfer_home,
                                   freesurfer_home, fastcsr_home, featreg_home)
-    wf.base_dir = f'/mnt/ngshare/Data_Mirror/pipeline_test'
-    wf.write_graph(graph2use='flat', simple_form=False)
+    wf.base_dir = subjects_dir
+    # wf.write_graph(graph2use='flat', simple_form=False)
     wf.run()
+
+
+    ##############################################################
+    # t1w_files = [
+    #     f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/sub-MSC01/ses-struct01/anat/sub-MSC01_ses-struct01_run-01_T1w.nii.gz',
+    # ]
+    # t1w_files = ['/home/anning/Downloads/anat/001/guo_mei_hui_fMRI_22-9-20_ABI1_t1iso_TFE_20220920161141_201.nii.gz']
+    # pwd = Path.cwd()
+    # python_interpret = Path('/home/anning/miniconda3/envs/3.8/bin/python3')
+    # fastsurfer_home = pwd / "FastSurfer"
+    # freesurfer_home = Path('/usr/local/freesurfer')
+    # fastcsr_home = pwd.parent / "deepprep_pipeline/FastCSR"
+    # featreg_home = pwd.parent / "deepprep_pipeline/FeatReg"
+    #
+    # subjects_dir = Path('/mnt/ngshare/Data_Mirror/pipeline_test')
+    # subject_id = 'sub-guomeihui'
+    #
+    # os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+    #
+    # wf = init_single_structure_wf(t1w_files, subjects_dir, subject_id, python_interpret, fastsurfer_home,
+    #                               freesurfer_home, fastcsr_home, featreg_home)
+    # wf.base_dir = f'/mnt/ngshare/Data_Mirror/pipeline_test'
+    # wf.write_graph(graph2use='flat', simple_form=False)
+    # wf.run()
 
 
 if __name__ == '__main__':
     import os
-
-
-    def set_envrion(threads: int = 1):
-        # FreeSurfer recon-all env
-        freesurfer_home = '/usr/local/freesurfer720'
-        os.environ['FREESURFER_HOME'] = f'{freesurfer_home}'
-        os.environ['FREESURFER'] = f'{freesurfer_home}'
-        os.environ['SUBJECTS_DIR'] = f'{freesurfer_home}/subjects'
-        os.environ['PATH'] = f'{freesurfer_home}/bin:{freesurfer_home}/mni/bin:{freesurfer_home}/tktools:' + \
-                             f'{freesurfer_home}/fsfast/bin:' + os.environ['PATH']
-        os.environ['MINC_BIN_DIR'] = f'{freesurfer_home}/mni/bin'
-        os.environ['MINC_LIB_DIR'] = f'{freesurfer_home}/mni/lib'
-        os.environ['PERL5LIB'] = f'{freesurfer_home}/mni/share/perl5'
-        os.environ['MNI_PERL5LIB'] = f'{freesurfer_home}/mni/share/perl5'
-        # FreeSurfer fsfast env
-        os.environ['FSF_OUTPUT_FORMAT'] = 'nii.gz'
-        os.environ['FSLOUTPUTTYPE'] = 'NIFTI_GZ'
-        # FSL
-        os.environ['PATH'] = '/usr/local/fsl/bin:' + os.environ['PATH']
-        # ANFI
-        os.environ['PATH'] = '/home/anning/abin:' + os.environ['PATH']
-        # ANTs
-        os.environ['PATH'] = '/usr/local/ANTs/bin:' + os.environ['PATH']
-        # Convert3D
-        os.environ['PATH'] = '/usr/local/c3d-1.1.0-Linux-x86_64/bin:' + os.environ['PATH']
-
+    import bids
 
     set_envrion()
-    pipeline()
+
+    data_path = Path("/run/user/1000/gvfs/sftp:host=30.30.30.66,user=zhenyu/mnt/ngshare/Data_Orig/HNU_1")
+    layout = bids.BIDSLayout(str(data_path), derivatives=False)
+    subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
+    # pipeline(layout.get(return_type='filename', suffix="T1w")[:2], subjects_dir, subject_id=f"sub-0025427")
+    for t1w_files in layout.get(return_type='filename', suffix="T1w")[:2]:
+        sub_info = layout.parse_file_entities(t1w_files)
+        subject_id = f"sub-{sub_info['subject']}-ses-{sub_info['session']}"
+        print(subject_id)
+        t1w = [t1w_files]
+        pipeline(t1w, subjects_dir, subject_id)
+
+
+    # def set_envrion(threads: int = 1):
+    #     # FreeSurfer recon-all env
+    #     freesurfer_home = '/usr/local/freesurfer720'
+    #     os.environ['FREESURFER_HOME'] = f'{freesurfer_home}'
+    #     os.environ['FREESURFER'] = f'{freesurfer_home}'
+    #     os.environ['SUBJECTS_DIR'] = f'{freesurfer_home}/subjects'
+    #     os.environ['PATH'] = f'{freesurfer_home}/bin:{freesurfer_home}/mni/bin:{freesurfer_home}/tktools:' + \
+    #                          f'{freesurfer_home}/fsfast/bin:' + os.environ['PATH']
+    #     os.environ['MINC_BIN_DIR'] = f'{freesurfer_home}/mni/bin'
+    #     os.environ['MINC_LIB_DIR'] = f'{freesurfer_home}/mni/lib'
+    #     os.environ['PERL5LIB'] = f'{freesurfer_home}/mni/share/perl5'
+    #     os.environ['MNI_PERL5LIB'] = f'{freesurfer_home}/mni/share/perl5'
+    #     # FreeSurfer fsfast env
+    #     os.environ['FSF_OUTPUT_FORMAT'] = 'nii.gz'
+    #     os.environ['FSLOUTPUTTYPE'] = 'NIFTI_GZ'
+    #     # FSL
+    #     os.environ['PATH'] = '/usr/local/fsl/bin:' + os.environ['PATH']
+    #     # ANFI
+    #     os.environ['PATH'] = '/home/anning/abin:' + os.environ['PATH']
+    #     # ANTs
+    #     os.environ['PATH'] = '/usr/local/ANTs/bin:' + os.environ['PATH']
+    #     # Convert3D
+    #     os.environ['PATH'] = '/usr/local/c3d-1.1.0-Linux-x86_64/bin:' + os.environ['PATH']
+
+
+
