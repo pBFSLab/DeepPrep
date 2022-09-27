@@ -5,6 +5,7 @@ import json
 import time
 import bids
 from app.utils.utils import timing_func
+from multiprocessing import Pool
 
 
 def set_envrion(threads: int = 1):
@@ -672,79 +673,79 @@ def preprocess(subject_id, sub_t1: str, sub_recon_path: Path, rewrite=True):
     subj_label = sub_recon_path / 'label'
     subj_stats = sub_recon_path / 'stats'
 
-    # =============== Volume =============== #
+    # # =============== Volume =============== #
 
-    # Create seg
-    fastsurfer_seg(sub_t1, fs_home, subj_mri)
-
+    # # Create seg
+    # fastsurfer_seg(sub_t1, fs_home, subj_mri)
+    #
     # # Creating orig and rawavg from input
-    creat_orig_and_rawavg(subj_mri)
+    # creat_orig_and_rawavg(subj_mri)
 
-    # # Create noccseg
-    creat_aseg_noccseg(fs_recon_bin, subj_mri)
-
-    # # Computing Talairach Transform and NU (bias corrected)
-    creat_talairach_and_nu(fs_recon_bin, subj_mri, threads)
-
-    # Creating brainmask from aseg and norm, and update aseg
-    creat_brainmask(subj_mri, need_t1=need_t1)
-
-    # update aseg
-    update_aseg(fs_recon_bin, subj_mri, subject=subject_id)
-
-    # Create segstats, stats/aparc.DKTatlas+aseg.deep.volume.stats
-    if need_vol_segstats:
-        create_segstats(subj_mri, subj_stats, subject=subject_id)
-
-    # Creating filled from brain
-    create_filled_from_brain(fsthreads=fsthreads, subject=subject_id)
-
-    # # =============== SURFACES =============== #
-    create_orig_fix(fs_recon_bin, fc_home, subj_mri, subj_surf,
-                    threads, fsthreads,
-                    fsfixed, fstess, fsqsphere,
-                    subject=subject_id)
-
+    # # # Create noccseg
+    # creat_aseg_noccseg(fs_recon_bin, subj_mri)
+    #
+    # Computing Talairach Transform and NU (bias corrected)
+    # creat_talairach_and_nu(fs_recon_bin, subj_mri, threads)
+    #
+    # # Creating brainmask from aseg and norm, and update aseg
+    # creat_brainmask(subj_mri, need_t1=need_t1)
+    #
+    # # update aseg
+    # update_aseg(fs_recon_bin, subj_mri, subject=subject_id)
+    #
+    # # Create segstats, stats/aparc.DKTatlas+aseg.deep.volume.stats
+    # if need_vol_segstats:
+    #     create_segstats(subj_mri, subj_stats, subject=subject_id)
+    #
+    # # Creating filled from brain
+    # create_filled_from_brain(fsthreads=fsthreads, subject=subject_id)
+    #
+    # # # =============== SURFACES =============== #
+    # create_orig_fix(fs_recon_bin, fc_home, subj_mri, subj_surf,
+    #                 threads, fsthreads,
+    #                 fsfixed, fstess, fsqsphere,
+    #                 subject=subject_id)
+    # #
     for hemi in ['lh', 'rh']:
         create_white_preaparc(hemi, threads, fsthreads,
                               fswhitepreaparc,
                               subject=subject_id)
-        create_inflated_sphere(hemi, fsthreads,
-                               subject=subject_id)
-        create_surfreg(fs_recon_bin, fr_home, subj_mri, subj_surf, subj_label,
-                       hemi, fssurfreg, subject=subject_id)
-
-        create_jacobian_avgcurv_cortparc(hemi, fsthreads,
-                                         subject=subject_id)
+        # create_inflated_sphere(hemi, fsthreads,
+        #                        subject=subject_id)
+        # create_surfreg(fs_recon_bin, fr_home, subj_mri, subj_surf, subj_label,
+        #                hemi, fssurfreg, subject=subject_id)
+        #
+        # create_jacobian_avgcurv_cortparc(hemi, fsthreads,
+        #                                  subject=subject_id)
 
         # 2*22s map DKatlas to aseg
-        map_seg_to_surf(fs_recon_bin, subj_surf, subj_label,
-                        hemi,
-                        subject=subject_id)
-        create_white_pial_thickness(subj_mri, subj_surf,
-                                    hemi, fsthreads, fswhitepial,
-                                    subject=subject_id)
+        # map_seg_to_surf(fs_recon_bin, subj_surf, subj_label,
+        #                 hemi,
+        #                 subject=subject_id)
+        # create_white_pial_thickness(subj_mri, subj_surf,
+        #                             hemi, fsthreads, fswhitepial,
+        #                             subject=subject_id)
 
     # =============== STATS =============== #
-    for hemi in ['lh', 'rh']:
-        # for hemi in ['lh']:
-        # 2*2s ?h.curv.stats
-        create_curvstats(hemi, fsthreads,
-                         subject=subject_id)
-
-    create_ribbon(fsthreads, subject=subject_id)
-
-    create_fs_aseg_stats(subj_mri, subj_surf, subj_label, threads, fsthreads, fsstats, subject=subject_id)
-
-    # =============== OPTIONAL STATS =============== #
-    # stats DKatlas
-    # map_stats(subj_label, subj_stats, subject=subject_id)
-
-    # create_pctsurcon_hypo_segstats(subj_mri, subj_surf, subj_label, threads, fsthreads,
-    #                                fsstats, fssurfreg, subject=subject_id)
-    # create_wmparc_from_mapped(subj_mri, subj_surf, subj_label, subj_stats, threads, fsaparc,
-    #                           subject=subject_id)
-    create_balabels(fsthreads, subject=subject_id)
+    # for hemi in ['lh', 'rh']:
+    #     # for hemi in ['lh']:
+    #     # 2*2s ?h.curv.stats
+    #     create_curvstats(hemi, fsthreads,
+    #                      subject=subject_id)
+    #
+    # create_ribbon(fsthreads, subject=subject_id)
+    #
+    # create_fs_aseg_stats(subj_mri, subj_surf, subj_label, threads, fsthreads, fsstats, subject=subject_id)
+    #
+    # # =============== OPTIONAL STATS =============== #
+    # # stats DKatlas
+    # # map_stats(subj_label, subj_stats, subject=subject_id)
+    # #
+    # # create_pctsurcon_hypo_segstats(subj_mri, subj_surf, subj_label, threads, fsthreads,
+    # #                                fsstats, fssurfreg, subject=subject_id)
+    # # create_wmparc_from_mapped(subj_mri, subj_surf, subj_label, subj_stats, threads, fsaparc,
+    # #                           subject=subject_id)
+    # create_balabels(fsthreads, subject=subject_id)
 
 
 def parse_args():
@@ -779,16 +780,19 @@ if __name__ == '__main__':
 
     python = args.python
 
-    threads = 1
+    threads = 30
     need_t1 = True
     need_vol_segstats = False
     fstess = False
     fsqsphere = False
     fsfixed = False
-    fswhitepreaparc = False
+    fswhitepreaparc = True
     fssurfreg = False
     fsstats = True
     fswhitepial = False
+
+    Multi_Num = 2
+    args_list1 = []
 
     # DeepPrep dataset_description
     derivative_deepprep_path = data_path / 'derivatives' / 'deepprep'
@@ -808,7 +812,7 @@ if __name__ == '__main__':
     set_envrion(threads=threads)
 
     layout = bids.BIDSLayout(str(data_path), derivatives=True)
-    subjs = layout.get_subjects()
+    # subjs = layout.get_subjects()
 
     # FreeSurfer Subject Path
     deepprep_path = Path(layout.derivatives['deepprep'].root)
@@ -821,7 +825,9 @@ if __name__ == '__main__':
     else:
         fsthreads = ''
 
-    subjs.sort()
+    # subjs.sort()
+    #####################
+    subjs = ['216', '262', '305']
     for subj in subjs:
 
         bids_t1s = layout.get(subject=subj, datatype='anat', suffix='T1w', extension='.nii.gz')
@@ -832,7 +838,8 @@ if __name__ == '__main__':
             subj_recon_path = deepprep_subj_path / subject_id
             sub_t1 = bids_t1s[0].path
             print(f'{subject_id}  :  {subj_recon_path}  :  {str(sub_t1)}')
-            preprocess(subject_id, sub_t1, subj_recon_path, rewrite=args.rewrite)
+            # preprocess(subject_id, sub_t1, subj_recon_path, rewrite=args.rewrite)
+            args_list1.append([subject_id, sub_t1, subj_recon_path, args.rewrite])
 
         else:
             if args.respective:
@@ -845,7 +852,8 @@ if __name__ == '__main__':
                     subj_recon_path = deepprep_subj_path / subject_id
                     sub_t1 = bids_t1.path
                     print(f'{subject_id}  :  {subj_recon_path}  :  {str(sub_t1)}')
-                    preprocess(subject_id, sub_t1, subj_recon_path, rewrite=args.rewrite)
+                    # preprocess(subject_id, sub_t1, subj_recon_path, rewrite=args.rewrite)
+                    args_list1.append([subject_id, sub_t1, subj_recon_path, args.rewrite])
             # combine T1
             else:
                 subject_id = f'sub-{subj}'
@@ -858,6 +866,11 @@ if __name__ == '__main__':
                 create_rawavg(t1_list_str, fsthreads=fsthreads, subject=subject_id)
                 sub_t1 = subj_recon_path / 'mri' / 'rawavg.mgz'
                 print(f'{subject_id}  :  {subj_recon_path}  :  {str(sub_t1)}')
-                preprocess(subject_id, str(sub_t1), subj_recon_path)
+                # preprocess(subject_id, str(sub_t1), subj_recon_path)
+                args_list1.append([subject_id, str(sub_t1), subj_recon_path])
 
+    pool = Pool(Multi_Num)
+    pool.starmap(preprocess, args_list1)
+    pool.close()
+    pool.join()
     print('time: ', time.time() - start_time)
