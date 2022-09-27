@@ -6,6 +6,7 @@ from pathlib import Path
 from threading import Thread
 import time
 
+
 class BrainmaskInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
@@ -54,7 +55,7 @@ class Brainmask(BaseInterface):
 
     def _list_outputs(self):
         outputs = self._outputs().get()
-        outputs["brainmask_file"] = self.inputs.brainmask_file
+        outputs["br ainmask_file"] = self.inputs.brainmask_file
         outputs["norm_file"] = self.inputs.norm_file
         outputs["T1_file"] = self.inputs.T1_file
 
@@ -1094,6 +1095,7 @@ class BalabelsMultOutputSpec(TraitedSpec):
     rh_entorhinal_exvivo = File(exists=True, desc="label/rh.entorhinal_exvivo.label")
     BA_exvivo_thresh = File(exists=True, desc="label/BA_exvivo.thresh.ctab")
 
+
 class BalabelsMult(BaseInterface):
     input_spec = BalabelsMultInputSpec
     output_spec = BalabelsMultOutputSpec
@@ -1120,7 +1122,7 @@ class BalabelsMult(BaseInterface):
 
         # file_names = []
 
-        def multi_process(file_names,Run):
+        def multi_process(file_names, Run):
             all_num = len(file_names)
             num_per_thread = all_num // threads
             thread_pool = []
