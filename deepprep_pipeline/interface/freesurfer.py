@@ -1202,13 +1202,13 @@ class BalabelsMult(BaseInterface):
         fsaverage6_dir = Path(self.inputs.subjects_dir, "fsaverage6")
 
         if not fsaverage_dir.exists():
-            os.system(f"cp {Path(self.inputs.freesurfer_dir) / 'fsaverage'} {fsaverage_dir}")
+            os.system(f"cp -r {Path(self.inputs.freesurfer_dir) / 'subjects/fsaverage'} {fsaverage_dir}")
         if not fsaverage4_dir.exists():
-            os.system(f"cp {Path(self.inputs.freesurfer_dir) / 'fsaverage4'} {fsaverage4_dir}")
+            os.system(f"cp -r {Path(self.inputs.freesurfer_dir) / 'subjects/fsaverage4'} {fsaverage4_dir}")
         if not fsaverage5_dir.exists():
-            os.system(f"cp {Path(self.inputs.freesurfer_dir) / 'fsaverage5'} {fsaverage5_dir}")
+            os.system(f"cp -r {Path(self.inputs.freesurfer_dir) / 'subjects/fsaverage5'} {fsaverage5_dir}")
         if not fsaverage6_dir.exists():
-            os.system(f"cp {Path(self.inputs.freesurfer_dir) / 'fsaverage6'} {fsaverage6_dir}")
+            os.system(f"cp -r {Path(self.inputs.freesurfer_dir) / 'subjects/fsaverage6'} {fsaverage6_dir}")
 
 
         multipool(self.cmd, Multi_Num=2)
