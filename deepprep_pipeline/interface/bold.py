@@ -343,6 +343,7 @@ class VxmRegistraionInputSpec(BaseInterfaceInputSpec):
     preprocess_dir = Directory(exists=True, desc="preprocess dir", mandatory=True)
     norm = File(exists=True, desc="mri/norm.mgz", mandatory=True)
     model_file = File(exists=True, desc="atlas_type/model.h5", mandatory=True)
+    model_path = Directory(exists=True, desc="voxelmorph model dir", mandatory=True)
 
     vxm_warp = File(exists=False, desc="tmpdir/warp.nii.gz", mandatory=True)
     vxm_warped = File(exists=False, desc="tmpdir/warped.nii.gz", mandatory=True)
@@ -382,8 +383,7 @@ class VxmRegistraion(BaseInterface):
         tmpdir = Path(self.inputs.deepprep_subj_path) / 'tmp'
         tmpdir.mkdir(exist_ok=True)
 
-        # TODO 这里改为把ATLAS的路径直接传进来，现在这个写法不够灵活
-        model_path = Path(__file__).parent.parent / 'model' / 'voxelmorph' / self.inputs.atlas_type
+        # model_path = Path(__file__).parent.parent / 'model' / 'voxelmorph' / self.inputs.atlas_type
         # atlas
         if self.inputs.atlas_type == 'MNI152_T1_1mm':
             atlas_path = '../../data/atlas/MNI152_T1_1mm_brain.nii.gz'
@@ -391,10 +391,10 @@ class VxmRegistraion(BaseInterface):
             vxm_atlas_npz_path = '../../data/atlas/MNI152_T1_1mm_brain_vxm.npz'
             vxm2atlas_trf = '../../data/atlas/MNI152_T1_1mm_vxm2atlas.mat'
         elif self.inputs.atlas_type == 'MNI152_T1_2mm':
-            atlas_path = model_path / 'MNI152_T1_2mm_brain.nii.gz'
-            vxm_atlas_path = model_path / 'MNI152_T1_2mm_brain_vxm.nii.gz'
-            vxm_atlas_npz_path = model_path / 'MNI152_T1_2mm_brain_vxm.npz'
-            vxm2atlas_trf = model_path / 'MNI152_T1_2mm_vxm2atlas.mat'
+            atlas_path = self.inputs.model_path / 'MNI152_T1_2mm_brain.nii.gz'
+            vxm_atlas_path = self.inputs.model_path / 'MNI152_T1_2mm_brain_vxm.nii.gz'
+            vxm_atlas_npz_path = self.inputs.model_path / 'MNI152_T1_2mm_brain_vxm.npz'
+            vxm2atlas_trf = self.inputs.model_path / 'MNI152_T1_2mm_vxm2atlas.mat'
         elif self.inputs.atlas_type == 'FS_T1_2mm':
             atlas_path = '../../data/atlas/FS_T1_2mm_brain.nii.gz'
             vxm_atlas_path = '../../data/atlas/FS_T1_2mm_brain_vxm.nii.gz'
