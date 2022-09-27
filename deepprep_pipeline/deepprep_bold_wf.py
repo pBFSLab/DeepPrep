@@ -25,6 +25,8 @@ def init_single_bold_common_wf(subject_id: str, subj: str, task: str,
     VxmRegistraion_node.inputs.model_file = Path(
         __file__).parent.parent / 'deepprep_pipeline' / 'model' / 'voxelmorph' / atlas_type / 'model.h5'
     VxmRegistraion_node.inputs.atlas_type = atlas_type
+    VxmRegistraion_node.inputs.model_path = Path(__file__).parent.parent / 'model' / 'voxelmorph' / atlas_type
+
 
     VxmRegistraion_node.inputs.vxm_warp = deepprep_subj_path / 'tmp' / 'warp.nii.gz'
     VxmRegistraion_node.inputs.vxm_warped = deepprep_subj_path / 'tmp' / 'warped.nii.gz'
@@ -147,6 +149,8 @@ def init_single_bold_rest_wf(subject_id: str, subj: str, task: str, preprocess_m
     Smooth_node.inputs.data_path = data_path
     Smooth_node.inputs.deepprep_subj_path = derivative_deepprep_path / subject_id
     Smooth_node.inputs.preprocess_method = preprocess_method
+    Smooth_node.inputs.MNI152_T1_2mm_brain_mask = '/usr/local/fsl/data/standard/MNI152_T1_2mm_brain_mask.nii.gz'
+
 
     # create workflow
 
