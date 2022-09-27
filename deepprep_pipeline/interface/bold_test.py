@@ -246,16 +246,26 @@ def Smooth_test():
     derivative_deepprep_path = data_path / 'derivatives' / 'deepprep'
     deepprep_subj_path = derivative_deepprep_path / f'sub-{subj}'
     subjects_dir = Path('/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
-    workdir = deepprep_subj_path / 'tmp' / f'task-{task}'
+
+    data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')  # BIDS path
+    subjects_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep_wftest/Recon')
+    preprocess_dir = data_path / 'derivatives' / 'deepprep_wftest' / subject_id / 'tmp' / f'task-{task}'
+    derivative_deepprep_path = data_path / 'derivatives' / 'deepprep_wftest'
+    deepprep_subj_path = derivative_deepprep_path / f'sub-{subj}'
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+
+
+    # os.environ['SUBJECTS_DIR'] = str(subjects_dir)
     Smooth_node = Node(Smooth(), name='Smooth_node')
     Smooth_node.inputs.subject_id = subject_id
     Smooth_node.inputs.subj = subj
     Smooth_node.inputs.task = task
-    Smooth_node.inputs.workdir = workdir
     Smooth_node.inputs.data_path = data_path
     Smooth_node.inputs.deepprep_subj_path = deepprep_subj_path
     Smooth_node.inputs.preprocess_method = preprocess_method
+    Smooth_node.inputs.preprocess_dir = preprocess_dir
+    Smooth_node.inputs.MNI152_T1_2mm_brain_mask = '/usr/local/fsl/data/standard/MNI152_T1_2mm_brain_mask.nii.gz'
+
     Smooth_node.run()
 
 def MkTemplate_test():
