@@ -1,3 +1,5 @@
+import os
+
 from nipype.interfaces.base import BaseInterface, \
     BaseInterfaceInputSpec, traits, File, TraitedSpec, Directory, Str
 from run import run_cmd_with_timing, get_freesurfer_threads, multipool
@@ -1194,6 +1196,21 @@ class BalabelsMult(BaseInterface):
         run_cmd_with_timing(cmd)
 
     def _run_interface(self, runtime):
+        fsaverage_dir = Path(self.inputs.subjects_dir, "fsaverage")
+        fsaverage4_dir = Path(self.inputs.subjects_dir, "fsaverage4")
+        fsaverage5_dir = Path(self.inputs.subjects_dir, "fsaverage5")
+        fsaverage6_dir = Path(self.inputs.subjects_dir, "fsaverage6")
+
+        if not fsaverage_dir.exists():
+            os.system(f"cp {self.inputs.freesurfer_dir / 'fsaverage'} {fsaverage_dir}")
+        if not fsaverage4_dir.exists():
+            os.system(f"cp {self.inputs.fsaverage4_dir / 'fsaverage4'} {fsaverage4_dir}")
+        if not fsaverage5_dir.exists():
+            os.system(f"cp {self.inputs.fsaverage5_dir / 'fsaverage5'} {fsaverage5_dir}")
+        if not fsaverage6_dir.exists():
+            os.system(f"cp {self.inputs.fsaverage6_dir / 'fsaverage6'} {fsaverage6_dir}")
+
+
         multipool(self.cmd, Multi_Num=2)
         return runtime
 
