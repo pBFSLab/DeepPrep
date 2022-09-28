@@ -83,7 +83,7 @@ def init_single_bold_common_wf(subject_id: str, subj: str, task: str,
     return single_bold_common_wf
 
 
-def init_single_bold_rest_wf(subject_id: str, subj: str, task: str, preprocess_method: str,
+def init_single_bold_rest_wf(subject_id: str, subj: str, task: str, mni152_target: str, preprocess_method: str,
                              data_path: Path, derivative_deepprep_path: Path,
                              subjects_dir: Path, preprocess_dir: Path):
     single_bold_rest_wf = Workflow(name=f'single_bold_rest_{subject_id.replace("-", "_")}_wf')
@@ -147,6 +147,7 @@ def init_single_bold_rest_wf(subject_id: str, subj: str, task: str, preprocess_m
     Smooth_node.inputs.data_path = data_path
     Smooth_node.inputs.deepprep_subj_path = derivative_deepprep_path / subject_id
     Smooth_node.inputs.preprocess_method = preprocess_method
+    Smooth_node.inputs.MNI152_T1_2mm_brain_mask = mni152_target
 
     # create workflow
 
@@ -173,6 +174,8 @@ def pipeline():
     task = 'motor'
     preprocess_method = 'task'
 
+    MNI152_target = '/usr/local/fsl/data/standard/MNI152_T1_2mm_brain_mask.nii.gz'  # Smooth target
+
     data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')  # BIDS path
     derivative_deepprep_path = data_path / 'derivatives' / 'deepprep_wftest'  # bold result output dir path
 
@@ -187,8 +190,8 @@ def pipeline():
 
     wf_common = init_single_bold_common_wf(subject_id, subj, task, data_path, derivative_deepprep_path,
                                            subjects_dir, preprocess_dir)
-    wf_rest = init_single_bold_rest_wf(subject_id, subj, task, preprocess_method, data_path, derivative_deepprep_path,
-                                       subjects_dir, preprocess_dir)
+    wf_rest = init_single_bold_rest_wf(subject_id, subj, task, MNI152_target, preprocess_method, data_path,
+                                       derivative_deepprep_path, subjects_dir, preprocess_dir)
 
     # wf_common.base_dir = preprocess_dir / subject_id  # ！！ 缓存的存储位置，运行过程的tmp文件，可以删除
     # wf_rest.base_dir = preprocess_dir / subject_id  # ！！ 缓存的存储位置，运行过程的tmp文件，可以删除
