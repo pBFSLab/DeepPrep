@@ -27,17 +27,30 @@ def multipool(cmd, Multi_Num=2):
     cmd_pool = [['lh'], ['rh']]
 
     pool = Pool(Multi_Num)
+    # pool.starmap(cmd, cmd_pool)
+    pool.apply_async(cmd, cmd_pool)
+    pool.close()
+    pool.join()
+
+def multiregressionpool(cmd, hemi, subj_surf_path, dst_resid_file, dst_reg_file, Multi_Num=2):
+    cmd_pool = []
+    for i in range(len(hemi)):
+        cmd_pool.append([hemi[i], subj_surf_path, dst_resid_file, dst_reg_file])
+
+    pool = Pool(Multi_Num)
     pool.starmap(cmd, cmd_pool)
     pool.close()
     pool.join()
 
+
+    # TODO 临时改一下
 def multipool_run(cmd, runs, Multi_Num=2):
-    cmd_pool = []
-    for i in range(len(runs)):
-        cmd_pool.append([runs[i]])
+    # cmd_pool = []
+    # for i in range(len(runs)):
+    #     cmd_pool.append([runs[i]])
 
     pool = Pool(Multi_Num)
-    pool.starmap(cmd, cmd_pool)
+    pool.starmap(cmd, runs)
     pool.close()
     pool.join()
 
@@ -51,9 +64,19 @@ def multipool_BidsBolds(cmd, idx, bids_entities, bids_path, Multi_Num=2):
     pool.close()
     pool.join()
 
+def multipool_BidsBolds_2(cmd, bids_entities, bids_path, Multi_Num=2):
+    cmd_pool = []
+    for i in range(len(bids_entities)):
+        cmd_pool.append([bids_entities[i], bids_path[i]])
+
+    pool = Pool(Multi_Num)
+    pool.starmap(cmd, cmd_pool)
+    pool.close()
+    pool.join()
+
 def set_envrion(threads: int = 1):
     # FreeSurfer recon-all env
-    freesurfer_home = '/usr/local/freesurfer720'
+    freesurfer_home = '/usr/local/freesurfer'
     os.environ['FREESURFER_HOME'] = f'{freesurfer_home}'
     os.environ['FREESURFER'] = f'{freesurfer_home}'
     os.environ['SUBJECTS_DIR'] = f'{freesurfer_home}/subjects'
