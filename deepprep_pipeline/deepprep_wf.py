@@ -519,23 +519,23 @@ def pipeline(t1w_files, subjects_dir, subject_id):
     # t1w_files = [
     #     f'/mnt/ngshare/ProjData/SurfRecon/V001/sub-001/ses-01/anat/sub-001_ses-01_T1w.nii.gz',
     # ]
-    pwd = Path.cwd()
-    python_interpret = Path('/home/youjia/anaconda3/envs/3.8/bin/python3')
-    fastsurfer_home = pwd / "FastSurfer"
-    freesurfer_home = Path('/usr/local/freesurfer')
-    fastcsr_home = pwd.parent / "deepprep_pipeline/FastCSR"
-    featreg_home = pwd.parent / "deepprep_pipeline/FeatReg"
-
-    # subjects_dir = Path('/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon')
-    # subject_id = 'sub-001'
-
-    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
-
-    wf = init_single_structure_wf(t1w_files, subjects_dir, subject_id, python_interpret, fastsurfer_home,
-                                  freesurfer_home, fastcsr_home, featreg_home)
-    wf.base_dir = subjects_dir
-    # wf.write_graph(graph2use='flat', simple_form=False)
-    wf.run()
+    # pwd = Path.cwd()
+    # python_interpret = Path('/home/youjia/anaconda3/envs/3.8/bin/python3')
+    # fastsurfer_home = pwd / "FastSurfer"
+    # freesurfer_home = Path('/usr/local/freesurfer')
+    # fastcsr_home = pwd.parent / "deepprep_pipeline/FastCSR"
+    # featreg_home = pwd.parent / "deepprep_pipeline/FeatReg"
+    #
+    # # subjects_dir = Path('/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon')
+    # # subject_id = 'sub-001'
+    #
+    # os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+    #
+    # wf = init_single_structure_wf(t1w_files, subjects_dir, subject_id, python_interpret, fastsurfer_home,
+    #                               freesurfer_home, fastcsr_home, featreg_home)
+    # wf.base_dir = subjects_dir
+    # # wf.write_graph(graph2use='flat', simple_form=False)
+    # wf.run()
 
 
     ##############################################################
@@ -543,23 +543,23 @@ def pipeline(t1w_files, subjects_dir, subject_id):
     #     f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/sub-MSC01/ses-struct01/anat/sub-MSC01_ses-struct01_run-01_T1w.nii.gz',
     # ]
     # t1w_files = ['/home/anning/Downloads/anat/001/guo_mei_hui_fMRI_22-9-20_ABI1_t1iso_TFE_20220920161141_201.nii.gz']
-    # pwd = Path.cwd()
-    # python_interpret = Path('/home/anning/miniconda3/envs/3.8/bin/python3')
-    # fastsurfer_home = pwd / "FastSurfer"
-    # freesurfer_home = Path('/usr/local/freesurfer')
-    # fastcsr_home = pwd.parent / "deepprep_pipeline/FastCSR"
-    # featreg_home = pwd.parent / "deepprep_pipeline/FeatReg"
-    #
+    pwd = Path.cwd()
+    python_interpret = Path('/home/anning/miniconda3/envs/3.8/bin/python3')
+    fastsurfer_home = pwd / "FastSurfer"
+    freesurfer_home = Path('/usr/local/freesurfer')
+    fastcsr_home = pwd.parent / "deepprep_pipeline/FastCSR"
+    featreg_home = pwd.parent / "deepprep_pipeline/FeatReg"
+
     # subjects_dir = Path('/mnt/ngshare/Data_Mirror/pipeline_test')
     # subject_id = 'sub-guomeihui'
     #
-    # os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
     #
-    # wf = init_single_structure_wf(t1w_files, subjects_dir, subject_id, python_interpret, fastsurfer_home,
-    #                               freesurfer_home, fastcsr_home, featreg_home)
-    # wf.base_dir = f'/mnt/ngshare/Data_Mirror/pipeline_test'
-    # wf.write_graph(graph2use='flat', simple_form=False)
-    # wf.run()
+    wf = init_single_structure_wf(t1w_files, subjects_dir, subject_id, python_interpret, fastsurfer_home,
+                                  freesurfer_home, fastcsr_home, featreg_home)
+    wf.base_dir = f'/mnt/ngshare/Data_Mirror/pipeline_test'
+    wf.write_graph(graph2use='flat', simple_form=False)
+    wf.run()
 
 
 if __name__ == '__main__':
