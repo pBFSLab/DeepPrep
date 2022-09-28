@@ -8,6 +8,7 @@ from interface.fastsurfer import Segment, Noccseg, N4BiasCorrect, TalairachAndNu
 from interface.fastcsr import FastCSR
 from interface.featreg_interface import FeatReg
 from run import set_envrion
+from multiprocessing import Pool
 
 
 def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: str,
@@ -570,39 +571,22 @@ if __name__ == '__main__':
 
     data_path = Path("/run/user/1000/gvfs/sftp:host=30.30.30.66,user=zhenyu/mnt/ngshare/Data_Orig/HNU_1")
     layout = bids.BIDSLayout(str(data_path), derivatives=False)
-    subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon")
-    # pipeline(layout.get(return_type='filename', suffix="T1w")[:2], subjects_dir, subject_id=f"sub-0025427")
-    for t1w_files in layout.get(return_type='filename', suffix="T1w")[:2]:
+    subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/HNU_1")
+
+    cmd_pool = []
+    Multi_num = 1
+
+    for t1w_files in layout.get(return_type='filename', suffix="T1w"):
         sub_info = layout.parse_file_entities(t1w_files)
         subject_id = f"sub-{sub_info['subject']}-ses-{sub_info['session']}"
         print(subject_id)
         t1w = [t1w_files]
-        pipeline(t1w, subjects_dir, subject_id)
+        cmd_pool.append([t1w, subjects_dir, subject_id])
+        # pipeline(t1w, subjects_dir, subject_id)
 
-
-    # def set_envrion(threads: int = 1):
-    #     # FreeSurfer recon-all env
-    #     freesurfer_home = '/usr/local/freesurfer720'
-    #     os.environ['FREESURFER_HOME'] = f'{freesurfer_home}'
-    #     os.environ['FREESURFER'] = f'{freesurfer_home}'
-    #     os.environ['SUBJECTS_DIR'] = f'{freesurfer_home}/subjects'
-    #     os.environ['PATH'] = f'{freesurfer_home}/bin:{freesurfer_home}/mni/bin:{freesurfer_home}/tktools:' + \
-    #                          f'{freesurfer_home}/fsfast/bin:' + os.environ['PATH']
-    #     os.environ['MINC_BIN_DIR'] = f'{freesurfer_home}/mni/bin'
-    #     os.environ['MINC_LIB_DIR'] = f'{freesurfer_home}/mni/lib'
-    #     os.environ['PERL5LIB'] = f'{freesurfer_home}/mni/share/perl5'
-    #     os.environ['MNI_PERL5LIB'] = f'{freesurfer_home}/mni/share/perl5'
-    #     # FreeSurfer fsfast env
-    #     os.environ['FSF_OUTPUT_FORMAT'] = 'nii.gz'
-    #     os.environ['FSLOUTPUTTYPE'] = 'NIFTI_GZ'
-    #     # FSL
-    #     os.environ['PATH'] = '/usr/local/fsl/bin:' + os.environ['PATH']
-    #     # ANFI
-    #     os.environ['PATH'] = '/home/anning/abin:' + os.environ['PATH']
-    #     # ANTs
-    #     os.environ['PATH'] = '/usr/local/ANTs/bin:' + os.environ['PATH']
-    #     # Convert3D
-    #     os.environ['PATH'] = '/usr/local/c3d-1.1.0-Linux-x86_64/bin:' + os.environ['PATH']
-
+    pool = Pool(Multi_num)
+    pool.starmap(pipeline, cmd_pool)
+    pool.close()
+    pool.join()
 
 
