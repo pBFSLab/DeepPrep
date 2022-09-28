@@ -43,11 +43,10 @@ def multiregressionpool(cmd, hemi, subj_surf_path, dst_resid_file, dst_reg_file,
     pool.join()
 
 
-    # TODO 临时改一下
 def multipool_run(cmd, runs, Multi_Num=2):
-    # cmd_pool = []
-    # for i in range(len(runs)):
-    #     cmd_pool.append([runs[i]])
+    cmd_pool = []
+    for i in range(len(runs)):
+        cmd_pool.append([runs[i]])
 
     pool = Pool(Multi_Num)
     pool.starmap(cmd, runs)

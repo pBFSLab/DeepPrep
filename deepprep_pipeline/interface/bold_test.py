@@ -123,6 +123,7 @@ def VxmRegistraion_test():
     VxmRegistraion_node.inputs.norm = subjects_dir / subject_id / 'mri' / 'norm.mgz'
     # VxmRegistraion_node.inputs.model_file = Path(__file__).parent.parent / 'model' / 'voxelmorph' / atlas_type / 'model.h5'
     VxmRegistraion_node.inputs.model_file = Path(__file__).parent.parent / 'deepprep_pipeline' / 'model' / 'voxelmorph' / atlas_type / 'model.h5'
+    VxmRegistraion_node.inputs.model_path = Path(__file__).parent.parent / 'model' / 'voxelmorph' / atlas_type
     VxmRegistraion_node.inputs.atlas_type = atlas_type
     VxmRegistraion_node.inputs.data_path = data_path
     VxmRegistraion_node.inputs.deepprep_subj_path = derivative_deepprep_path / subject_id
@@ -246,8 +247,20 @@ def Smooth_test():
     derivative_deepprep_path = data_path / 'derivatives' / 'deepprep'
     deepprep_subj_path = derivative_deepprep_path / f'sub-{subj}'
     subjects_dir = Path('/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
+
     preprocess_dir = deepprep_subj_path / 'tmp' / f'task-{task}'
+
+
+    data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')  # BIDS path
+    subjects_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep_wftest/Recon')
+    preprocess_dir = data_path / 'derivatives' / 'deepprep_wftest' / subject_id / 'tmp' / f'task-{task}'
+    derivative_deepprep_path = data_path / 'derivatives' / 'deepprep_wftest'
+    deepprep_subj_path = derivative_deepprep_path / f'sub-{subj}'
+
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+
+
+    # os.environ['SUBJECTS_DIR'] = str(subjects_dir)
     Smooth_node = Node(Smooth(), name='Smooth_node')
     Smooth_node.inputs.subject_id = subject_id
     Smooth_node.inputs.subj = subj
@@ -256,6 +269,9 @@ def Smooth_test():
     Smooth_node.inputs.data_path = data_path
     Smooth_node.inputs.deepprep_subj_path = deepprep_subj_path
     Smooth_node.inputs.preprocess_method = preprocess_method
+    Smooth_node.inputs.preprocess_dir = preprocess_dir
+    Smooth_node.inputs.MNI152_T1_2mm_brain_mask = '/usr/local/fsl/data/standard/MNI152_T1_2mm_brain_mask.nii.gz'
+
     Smooth_node.run()
 
 def MkTemplate_test():

@@ -1,3 +1,5 @@
+import os
+
 from nipype.interfaces.base import BaseInterface, \
     BaseInterfaceInputSpec, traits, File, TraitedSpec, Directory, Str
 from run import run_cmd_with_timing, get_freesurfer_threads, multipool
@@ -5,6 +7,7 @@ from pathlib import Path
 
 from threading import Thread
 import time
+
 
 class BrainmaskInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
@@ -1094,6 +1097,7 @@ class BalabelsMultOutputSpec(TraitedSpec):
     rh_entorhinal_exvivo = File(exists=True, desc="label/rh.entorhinal_exvivo.label")
     BA_exvivo_thresh = File(exists=True, desc="label/BA_exvivo.thresh.ctab")
 
+
 class BalabelsMult(BaseInterface):
     input_spec = BalabelsMultInputSpec
     output_spec = BalabelsMultOutputSpec
@@ -1120,7 +1124,7 @@ class BalabelsMult(BaseInterface):
 
         # file_names = []
 
-        def multi_process(file_names,Run):
+        def multi_process(file_names, Run):
             all_num = len(file_names)
             num_per_thread = all_num // threads
             thread_pool = []
@@ -1192,6 +1196,21 @@ class BalabelsMult(BaseInterface):
         run_cmd_with_timing(cmd)
 
     def _run_interface(self, runtime):
+        fsaverage_dir = Path(self.inputs.subjects_dir, "fsaverage")
+        fsaverage4_dir = Path(self.inputs.subjects_dir, "fsaverage4")
+        fsaverage5_dir = Path(self.inputs.subjects_dir, "fsaverage5")
+        fsaverage6_dir = Path(self.inputs.subjects_dir, "fsaverage6")
+
+        if not fsaverage_dir.exists():
+            os.system(f"ln -sf {Path(self.inputs.freesurfer_dir) / 'subjects/fsaverage'} {fsaverage_dir}")
+        if not fsaverage4_dir.exists():
+            os.system(f"ln -sf {Path(self.inputs.freesurfer_dir) / 'subjects/fsaverage4'} {fsaverage4_dir}")
+        if not fsaverage5_dir.exists():
+            os.system(f"ln -sf {Path(self.inputs.freesurfer_dir) / 'subjects/fsaverage5'} {fsaverage5_dir}")
+        if not fsaverage6_dir.exists():
+            os.system(f"ln -sf {Path(self.inputs.freesurfer_dir) / 'subjects/fsaverage6'} {fsaverage6_dir}")
+
+
         multipool(self.cmd, Multi_Num=2)
         return runtime
 
