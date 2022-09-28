@@ -57,7 +57,7 @@ class Brainmask(BaseInterface):
 
     def _list_outputs(self):
         outputs = self._outputs().get()
-        outputs["br ainmask_file"] = self.inputs.brainmask_file
+        outputs["brainmask_file"] = self.inputs.brainmask_file
         outputs["norm_file"] = self.inputs.norm_file
         outputs["T1_file"] = self.inputs.T1_file
 
