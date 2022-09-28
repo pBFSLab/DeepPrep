@@ -26,11 +26,11 @@ def BoldSkipReorient_test():
 def MotionCorrection_test():
     task = 'motor'
     subject_id = 'sub-MSC01'
-    data_path = Path(f'/mnt/DATA/lincong/temp/DeepPrep/MSC')
+    data_path = Path(f'/home/lincong/pack/temp/DeepPrep/MSC')
     preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
 
-    data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')  # BIDS path
-    preprocess_dir = data_path / 'derivatives' / 'deepprep_wftest' / subject_id / 'tmp' / f'task-{task}'
+    # data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')  # BIDS path
+    # preprocess_dir = data_path / 'derivatives' / 'deepprep_wftest' / subject_id / 'tmp' / f'task-{task}'
     # preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
 
     MotionCorrection_node = Node(MotionCorrection(), name='MotionCorrection_node')
@@ -42,15 +42,15 @@ def MotionCorrection_test():
 def Stc_test():
     task = 'motor'
     subject_id = 'sub-MSC01'
-    data_path = Path(f'/mnt/DATA/lincong/temp/DeepPrep/MSC')
-    # subjects_dir = Path('/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
+    data_path = Path(f'/home/lincong/pack/temp/DeepPrep/MSC')
+    subjects_dir = Path('/home/lincong/pack/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
     preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
 
 
-    data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')  # BIDS path
-    preprocess_dir = data_path / 'derivatives' / 'deepprep_wftest' / subject_id / 'tmp' / f'task-{task}'
-    # preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
-    subjects_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon')
+    # data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')  # BIDS path
+    # preprocess_dir = data_path / 'derivatives' / 'deepprep_wftest' / subject_id / 'tmp' / f'task-{task}'
+    # # preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
+    # subjects_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon')
 
 
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
@@ -123,6 +123,7 @@ def VxmRegistraion_test():
     VxmRegistraion_node.inputs.norm = subjects_dir / subject_id / 'mri' / 'norm.mgz'
     # VxmRegistraion_node.inputs.model_file = Path(__file__).parent.parent / 'model' / 'voxelmorph' / atlas_type / 'model.h5'
     VxmRegistraion_node.inputs.model_file = Path(__file__).parent.parent / 'deepprep_pipeline' / 'model' / 'voxelmorph' / atlas_type / 'model.h5'
+    VxmRegistraion_node.inputs.model_path = Path(__file__).parent.parent / 'model' / 'voxelmorph' / atlas_type
     VxmRegistraion_node.inputs.atlas_type = atlas_type
     VxmRegistraion_node.inputs.data_path = data_path
     VxmRegistraion_node.inputs.deepprep_subj_path = derivative_deepprep_path / subject_id
@@ -187,10 +188,10 @@ def RestRegression_test():
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
     preprocess_dir = data_path / 'derivatives' / 'deepprep' / subject_id / 'tmp' / f'task-{task}'
 
-    data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')  # BIDS path
-    subjects_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep_wftest/Recon')
-    preprocess_dir = data_path / 'derivatives' / 'deepprep_wftest' / subject_id / 'tmp' / f'task-{task}'
-    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+    # data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')  # BIDS path
+    # subjects_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep_wftest/Recon')
+    # preprocess_dir = data_path / 'derivatives' / 'deepprep_wftest' / subject_id / 'tmp' / f'task-{task}'
+    # os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
     bold_dir = preprocess_dir / subject_id / 'bold'
     fcmri_dir = preprocess_dir / subject_id / 'fcmri'
@@ -215,20 +216,20 @@ def VxmRegNormMNI152_test():
     derivative_deepprep_path = data_path / 'derivatives' / 'deepprep'
     deepprep_subj_path = derivative_deepprep_path / f'sub-{subj}'
     subjects_dir = Path('/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
-    workdir = deepprep_subj_path / 'tmp' / f'task-{task}'
+    preprocess_dir = deepprep_subj_path / 'tmp' / f'task-{task}'
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
-    data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')  # BIDS path
-    derivative_deepprep_path = data_path / 'derivatives' / 'deepprep_wftest'
-    deepprep_subj_path = derivative_deepprep_path / f'sub-{subj}'
-    subjects_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep_wftest/Recon')
-    workdir = deepprep_subj_path / 'tmp' / f'task-{task}'
-    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+    # data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')  # BIDS path
+    # derivative_deepprep_path = data_path / 'derivatives' / 'deepprep_wftest'
+    # deepprep_subj_path = derivative_deepprep_path / f'sub-{subj}'
+    # subjects_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep_wftest/Recon')
+    # preprocess_dir = deepprep_subj_path / 'tmp' / f'task-{task}'
+    # os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
 
     VxmRegNormMNI152_node = Node(VxmRegNormMNI152(), name='VxmRegNormMNI152_node')
     VxmRegNormMNI152_node.inputs.subject_id = subject_id
-    VxmRegNormMNI152_node.inputs.workdir = workdir
+    VxmRegNormMNI152_node.inputs.preprocess_dir = preprocess_dir
     VxmRegNormMNI152_node.inputs.subj = subj
     VxmRegNormMNI152_node.inputs.task = task
     VxmRegNormMNI152_node.inputs.data_path = data_path
@@ -247,11 +248,15 @@ def Smooth_test():
     deepprep_subj_path = derivative_deepprep_path / f'sub-{subj}'
     subjects_dir = Path('/mnt/DATA/lincong/temp/DeepPrep/MSC/derivatives/deepprep/Recon')
 
+    preprocess_dir = deepprep_subj_path / 'tmp' / f'task-{task}'
+
+
     data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')  # BIDS path
     subjects_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep_wftest/Recon')
     preprocess_dir = data_path / 'derivatives' / 'deepprep_wftest' / subject_id / 'tmp' / f'task-{task}'
     derivative_deepprep_path = data_path / 'derivatives' / 'deepprep_wftest'
     deepprep_subj_path = derivative_deepprep_path / f'sub-{subj}'
+
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
 
@@ -260,6 +265,7 @@ def Smooth_test():
     Smooth_node.inputs.subject_id = subject_id
     Smooth_node.inputs.subj = subj
     Smooth_node.inputs.task = task
+    Smooth_node.inputs.preprocess_dir = preprocess_dir
     Smooth_node.inputs.data_path = data_path
     Smooth_node.inputs.deepprep_subj_path = deepprep_subj_path
     Smooth_node.inputs.preprocess_method = preprocess_method
