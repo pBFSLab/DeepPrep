@@ -188,20 +188,35 @@ class MotionCorrection(BaseInterface):
             '-fmcstem', f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc',
             '-nolog']
         sh.mc_sess(*shargs, _out=sys.stdout)
+        ori_path = Path(self.inputs.preprocess_dir) / self.inputs.subject_id / 'bold' / run
+        try:
+            shutil.copy(link_dir / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz',
+                        ori_path / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz')
+            shutil.copy(link_dir / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.mat.aff12.1D',
+                        ori_path / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.mat.aff12.1D')
+            shutil.copy(link_dir / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz.mclog',
+                        ori_path / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz.mclog')
+            shutil.copy(link_dir / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.mcdat',
+                        ori_path / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln__mc.mcdat')
+            shutil.copy(link_dir / 'mcextreg', ori_path / 'mcextreg')
+            shutil.copy(link_dir / 'mcdat2extreg.log', ori_path / 'mcdat2extreg.log')
+        except:
+            print(())
+        shutil.rmtree(ori_path / self.inputs.subject_id)
     def _run_interface(self, runtime):
-        runs = sorted([d.name for d in (Path(self.inputs.preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if d.is_dir()])
+        # runs = sorted([d.name for d in (Path(self.inputs.preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if d.is_dir()])
         # runs = ['001', '002', '003', '004', '005', '006', '007', '008']
-        multipool_run(self.cmd ,runs, Multi_Num=8)
+        # multipool_run(self.cmd ,runs, Multi_Num=8)
 
-        # shargs = [
-        #     '-s', self.inputs.subject_id,
-        #     '-d', self.inputs.preprocess_dir,
-        #     '-per-session',
-        #     '-fsd', 'bold',
-        #     '-fstem', f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln',
-        #     '-fmcstem', f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc',
-        #     '-nolog']
-        # sh.mc_sess(*shargs, _out=sys.stdout)
+        shargs = [
+            '-s', self.inputs.subject_id,
+            '-d', self.inputs.preprocess_dir,
+            '-per-session',
+            '-fsd', 'bold',
+            '-fstem', f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln',
+            '-fmcstem', f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc',
+            '-nolog']
+        sh.mc_sess(*shargs, _out=sys.stdout)
         return runtime
 
     def _list_outputs(self):
@@ -257,27 +272,39 @@ class Stc(BaseInterface):
             '-o', output_fname,
             '-nolog']
         sh.stc_sess(*shargs, _out=sys.stdout)
+        ori_path = Path(self.inputs.preprocess_dir) / self.inputs.subject_id / 'bold' / run
+        try:
+            shutil.copy(link_dir / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln.nii.gz',
+                        ori_path / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln.nii.gz')
+            shutil.copy(link_dir / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln.nii.gz.log',
+                        ori_path / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln.nii.gz.log')
+            shutil.copy(link_dir / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln.nii.gz.log.bak',
+                        ori_path / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln.nii.gz.log.bak')
+        except:
+            print(())
+        shutil.rmtree(ori_path / self.inputs.subject_id)
+
     def _run_interface(self, runtime):
-        # runs = sorted([d.name for d in (Path(self.inputs.preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if
-        #                d.is_dir()])
+        runs = sorted([d.name for d in (Path(self.inputs.preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if
+                       d.is_dir()])
         # # runs = ['001', '002', '003', '004', '005', '006', '007', '008']
         # # # runs = ['001', '002', '003', '004']
         # # # runs = ['001', '002']
         # # runs = ['001']
-        # multipool_run(self.cmd, runs, Multi_Num=4)
+        multipool_run(self.cmd, runs, Multi_Num=8)
 
-        input_fname = f'{self.inputs.subject_id}_bld_rest_reorient_skip'
-        output_fname = f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln'
-        shargs = [
-            '-s', self.inputs.subject_id,
-            '-d', self.inputs.preprocess_dir,
-            '-fsd', 'bold',
-            '-so', 'odd',
-            '-ngroups', 1,
-            '-i', input_fname,
-            '-o', output_fname,
-            '-nolog']
-        sh.stc_sess(*shargs, _out=sys.stdout)
+        # input_fname = f'{self.inputs.subject_id}_bld_rest_reorient_skip'
+        # output_fname = f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln'
+        # shargs = [
+        #     '-s', self.inputs.subject_id,
+        #     '-d', self.inputs.preprocess_dir,
+        #     '-fsd', 'bold',
+        #     '-so', 'odd',
+        #     '-ngroups', 1,
+        #     '-i', input_fname,
+        #     '-o', output_fname,
+        #     '-nolog']
+        # sh.stc_sess(*shargs, _out=sys.stdout)
 
         return runtime
 
@@ -908,28 +935,7 @@ class VxmRegNormMNI152(BaseInterface):
             ants.image_write(warped_bold_img, warped_file)
         return warped_bold_img
 
-    def cmd(self, bids_entities, bids_path):
-        entities = dict(bids_entities)
-        file_prefix = Path(bids_path).name.replace('.nii.gz', '')
-        if 'session' in entities:
-            ses = entities['session']
-            subj_func_path = Path(self.inputs.deepprep_subj_path) / f'ses-{ses}' / 'func'
-        else:
-            subj_func_path = Path(self.inputs.deepprep_subj_path) / 'func'
-        if self.inputs.preprocess_method == 'rest':
-            bold_file = subj_func_path / f'{file_prefix}_resid.nii.gz'
-        else:
-            bold_file = subj_func_path / f'{file_prefix}_mc.nii.gz'
 
-        reg_file = subj_func_path / f'{file_prefix}_bbregister.register.dat'
-        bold_t1_file = subj_func_path / f'{self.inputs.subj}_native_t1_2mm.nii.gz'
-        bold_t1_out = self.native_bold_to_T1_2mm_ants(bold_file, self.inputs.subj, self.inputs.norm, reg_file,
-                                                      bold_t1_file, self.inputs.preprocess_dir, verbose=False)
-
-        warp_file = subj_func_path / f'sub-{self.inputs.subj}_warp.nii.gz'
-        affine_file = subj_func_path / f'sub-{self.inputs.subj}_affine.mat'
-        warped_file = subj_func_path / f'sub-{self.inputs.subj}_MNI2mm.nii.gz'
-        warped_img = self.vxm_warp_bold_2mm(bold_t1_out, affine_file, warp_file, warped_file, verbose=True)
     def _run_interface(self, runtime):
         layout = bids.BIDSLayout(str(self.inputs.data_path), derivatives=False)
         if self.inputs.task is None:
@@ -940,11 +946,27 @@ class VxmRegNormMNI152(BaseInterface):
         bids_entities = []
         bids_path = []
         for bids_bold in bids_bolds:
-            bids_entities.append(bids_bold.entities)
-            bids_path.append(bids_bold.path)
-        print(bids_entities)
-        print(bids_path)
-        multipool_BidsBolds_2(self.cmd, bids_entities, bids_path, Multi_Num=4)
+            entities = dict(bids_bold.entities)
+            file_prefix = Path(bids_bold.path).name.replace('.nii.gz', '')
+            if 'session' in entities:
+                ses = entities['session']
+                subj_func_path = Path(self.inputs.deepprep_subj_path) / f'ses-{ses}' / 'func'
+            else:
+                subj_func_path = Path(self.inputs.deepprep_subj_path) / 'func'
+            if self.inputs.preprocess_method == 'rest':
+                bold_file = subj_func_path / f'{file_prefix}_resid.nii.gz'
+            else:
+                bold_file = subj_func_path / f'{file_prefix}_mc.nii.gz'
+
+            reg_file = subj_func_path / f'{file_prefix}_bbregister.register.dat'
+            bold_t1_file = subj_func_path / f'{self.inputs.subj}_native_t1_2mm.nii.gz'
+            bold_t1_out = self.native_bold_to_T1_2mm_ants(bold_file, self.inputs.subj, self.inputs.norm, reg_file,
+                                                          bold_t1_file, self.inputs.preprocess_dir, verbose=False)
+
+            warp_file = subj_func_path / f'sub-{self.inputs.subj}_warp.nii.gz'
+            affine_file = subj_func_path / f'sub-{self.inputs.subj}_affine.mat'
+            warped_file = subj_func_path / f'sub-{self.inputs.subj}_MNI2mm.nii.gz'
+            warped_img = self.vxm_warp_bold_2mm(bold_t1_out, affine_file, warp_file, warped_file, verbose=True)
 
         return runtime
 
@@ -1057,7 +1079,7 @@ class Smooth(BaseInterface):
         for bids_bold in bids_bolds:
             bids_entities.append(bids_bold.entities)
             bids_path.append(bids_bold.path)
-        multipool_BidsBolds_2(self.cmd, bids_entities, bids_path, Multi_Num=6)
+        multipool_BidsBolds_2(self.cmd, bids_entities, bids_path, Multi_Num=8)
         return runtime
 
     def _list_outputs(self):
