@@ -204,19 +204,19 @@ class MotionCorrection(BaseInterface):
             print(())
         shutil.rmtree(ori_path / self.inputs.subject_id)
     def _run_interface(self, runtime):
-        # runs = sorted([d.name for d in (Path(self.inputs.preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if d.is_dir()])
+        runs = sorted([d.name for d in (Path(self.inputs.preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if d.is_dir()])
         # runs = ['001', '002', '003', '004', '005', '006', '007', '008']
-        # multipool_run(self.cmd ,runs, Multi_Num=8)
+        multipool_run(self.cmd ,runs, Multi_Num=8)
 
-        shargs = [
-            '-s', self.inputs.subject_id,
-            '-d', self.inputs.preprocess_dir,
-            '-per-session',
-            '-fsd', 'bold',
-            '-fstem', f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln',
-            '-fmcstem', f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc',
-            '-nolog']
-        sh.mc_sess(*shargs, _out=sys.stdout)
+        # shargs = [
+        #     '-s', self.inputs.subject_id,
+        #     '-d', self.inputs.preprocess_dir,
+        #     '-per-session',
+        #     '-fsd', 'bold',
+        #     '-fstem', f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln',
+        #     '-fmcstem', f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc',
+        #     '-nolog']
+        # sh.mc_sess(*shargs, _out=sys.stdout)
         return runtime
 
     def _list_outputs(self):
@@ -486,10 +486,10 @@ class VxmRegistraion(BaseInterface):
             vxm_atlas_npz_path = '../../data/atlas/MNI152_T1_1mm_brain_vxm.npz'
             vxm2atlas_trf = '../../data/atlas/MNI152_T1_1mm_vxm2atlas.mat'
         elif self.inputs.atlas_type == 'MNI152_T1_2mm':
-            atlas_path = self.inputs.model_path / 'MNI152_T1_2mm_brain.nii.gz'
-            vxm_atlas_path = self.inputs.model_path / 'MNI152_T1_2mm_brain_vxm.nii.gz'
-            vxm_atlas_npz_path = self.inputs.model_path / 'MNI152_T1_2mm_brain_vxm.npz'
-            vxm2atlas_trf = self.inputs.model_path / 'MNI152_T1_2mm_vxm2atlas.mat'
+            atlas_path = Path(self.inputs.model_path) / 'MNI152_T1_2mm_brain.nii.gz'
+            vxm_atlas_path = Path(self.inputs.model_path) / 'MNI152_T1_2mm_brain_vxm.nii.gz'
+            vxm_atlas_npz_path = Path(self.inputs.model_path) / 'MNI152_T1_2mm_brain_vxm.npz'
+            vxm2atlas_trf = Path(self.inputs.model_path) / 'MNI152_T1_2mm_vxm2atlas.mat'
         elif self.inputs.atlas_type == 'FS_T1_2mm':
             atlas_path = '../../data/atlas/FS_T1_2mm_brain.nii.gz'
             vxm_atlas_path = '../../data/atlas/FS_T1_2mm_brain_vxm.nii.gz'
