@@ -419,6 +419,7 @@ class MkBrainmask(BaseInterface):
 
     def _run_interface(self, runtime):
         runs = sorted([d.name for d in (Path(self.inputs.preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if d.is_dir()])
+
         multipool_run(self.cmd, runs , Multi_Num=8)
 
         return runtime
