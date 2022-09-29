@@ -81,17 +81,20 @@ class Segment(BaseInterface):
 
 
 class N4BiasCorrectInputSpec(BaseInterfaceInputSpec):
+    subjects_dir = Directory(exists=True, desc='subjects dir', mandatory=True)
+    subject_id = Str(desc='subject id', mandatory=True)
     python_interpret = File(exists=True, desc="default: python3", mandatory=True)
     correct_py = File(exists=True, desc="N4_bias_correct.py", mandatory=True)
     orig_file = File(exists=True, desc="mri/orig.mgz", mandatory=True)
     mask_file = File(exists=True, desc="mri/mask.mgz", mandatory=True)
 
-    orig_nu_file = File(desc="mri/orig_nu.mgz", mandatory=True)
+    # orig_nu_file = File(desc="mri/orig_nu.mgz", mandatory=True)
     threads = traits.Int(desc="threads")
 
 
 class N4BiasCorrectOutputSpec(TraitedSpec):
     orig_nu_file = File(exists=True, desc="mri/orig_nu.mgz")
+    subject_id = Str(desc='subject id')
 
 
 class N4BiasCorrect(BaseInterface):
@@ -103,38 +106,45 @@ class N4BiasCorrect(BaseInterface):
     gpu = 0
 
     def _run_interface(self, runtime):
+        subjects_dir = Path(self.inputs.subjects_dir)
+        subject_id = self.inputs.subject_id
+        orig_nu_file = subjects_dir / subject_id / "mri" / "orig_nu.mgz"
         # orig_nu nu correct
         if not traits_extension.isdefined(self.inputs.threads):
             self.inputs.threads = 1
 
         py = self.inputs.correct_py
-        cmd = f"{self.inputs.python_interpret} {py} --in {self.inputs.orig_file} --out {self.inputs.orig_nu_file} " \
+        cmd = f"{self.inputs.python_interpret} {py} --in {self.inputs.orig_file} --out {orig_nu_file} " \
               f"--mask {self.inputs.mask_file}  --threads {self.inputs.threads}"
         run_cmd_with_timing(cmd)
 
         return runtime
 
     def _list_outputs(self):
+        subjects_dir = Path(self.inputs.subjects_dir)
+        subject_id = self.inputs.subject_id
         outputs = self._outputs().get()
-        outputs['orig_nu_file'] = self.inputs.orig_nu_file
+        outputs['orig_nu_file'] = subjects_dir / subject_id / "mri" / "orig_nu.mgz"
+        outputs['subject_id'] = subject_id
         return outputs
 
 
 class TalairachAndNuInputSpec(BaseInterfaceInputSpec):
-    subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
+    subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
     threads = traits.Int(desc="threads")
     orig_nu_file = File(exists=True, desc="mri/orig_nu.mgz", mandatory=True)
     orig_file = File(exists=True, desc="mri/orig.mgz", mandatory=True)
     mni305 = File(exists=True, desc="FREESURFER/average/mni305.cor.mgz", mandatory=True)
 
-    talairach_lta = File(desc="mri/transforms/talairach.lta")
-    nu_file = File(desc="mri/nu.mgz", mandatory=True)
+    # talairach_lta = File(desc="mri/transforms/talairach.lta")
+    # nu_file = File(desc="mri/nu.mgz", mandatory=True)
 
 
 class TalairachAndNuOutputSpec(TraitedSpec):
     talairach_lta = File(exists=True, desc="mri/transforms/talairach.lta")
     nu_file = File(exists=True, desc="mri/nu.mgz")
+    subject_id = Str(desc='subject id')
 
 
 class TalairachAndNu(BaseInterface):
@@ -146,7 +156,12 @@ class TalairachAndNu(BaseInterface):
     gpu = 0
 
     def _run_interface(self, runtime):
-        sub_mri_dir = Path(self.inputs.subjects_dir) / self.inputs.subject_id / "mri"
+        subjects_dir = Path(self.inputs.subjects_dir)
+        subject_id = self.inputs.subject_id
+        sub_mri_dir = subjects_dir / subject_id / "mri"
+        talairach_lta = subjects_dir / subject_id / 'mri' / 'transforms' / 'talairach.lta'
+        nu_file = subjects_dir / subject_id / 'mri' / 'nu.mgz'
+
 
         if self.inputs.threads is None:
             self.inputs.threads = 1
@@ -171,39 +186,48 @@ class TalairachAndNu(BaseInterface):
         # Since we do not run mri_em_register we sym-link other talairach transform files here
         cmd = f"cp {talairach_xfm_lta} {talairach_skull_lta}"
         run_cmd_with_timing(cmd)
-        cmd = f"cp {talairach_xfm_lta} {self.inputs.talairach_lta}"
+        cmd = f"cp {talairach_xfm_lta} {talairach_lta}"
         run_cmd_with_timing(cmd)
 
         # Add xfm to nu
-        cmd = f'mri_add_xform_to_header -c {talairach_xfm} {self.inputs.orig_nu_file} {self.inputs.nu_file}'
+        cmd = f'mri_add_xform_to_header -c {talairach_xfm} {self.inputs.orig_nu_file} {nu_file}'
         run_cmd_with_timing(cmd)
 
         return runtime
 
     def _list_outputs(self):
+        subjects_dir = Path(self.inputs.subjects_dir)
+        subject_id = self.inputs.subject_id
         outputs = self._outputs().get()
-        outputs["talairach_lta"] = self.inputs.talairach_lta
-        outputs['nu_file'] = self.inputs.nu_file
-
+        outputs["talairach_lta"] = subjects_dir / subject_id / 'mri' / 'transforms' / 'talairach.lta'
+        outputs['nu_file'] = subjects_dir / subject_id / 'mri' / 'nu.mgz'
+        outputs['subject_id'] = subject_id
         return outputs
 
 
 class NoccsegThresholdInputSpec(BaseInterfaceInputSpec):
+    subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
+    subject_id = Str(desc="subject id", mandatory=True)
     python_interpret = File(exists=True, mandatory=True, desc='the python interpret to use')
     reduce_to_aseg_py = File(exists=True, mandatory=True, desc="reduce to aseg")
-    in_file = File(exists=True, mandatory=True, desc='name of file to process. Default: aparc.DKTatlas+aseg.orig.mgz')
+    # in_file = File(exists=True, mandatory=True, desc='name of file to process. Default: aparc.DKTatlas+aseg.orig.mgz')
 
-    mask_file = File(mandatory=True, desc='mri/mask.mgz')
-    aseg_noCCseg_file = File(mandatory=True,
-                             desc='Default: mri/aseg.auto_noCCseg.mgz'
-                                  'reduce labels to aseg, then create mask (dilate 5, erode 4, largest component), '
-                                  'also mask aseg to remove outliers'
-                                  'output will be uchar (else mri_cc will fail below)')  # Do not set exists=True !!
+    # mask_file = File(mandatory=True, desc='mri/mask.mgz')
+    # aseg_noCCseg_file = File(mandatory=True,
+    #                          desc='Default: mri/aseg.auto_noCCseg.mgz'
+    #                               'reduce labels to aseg, then create mask (dilate 5, erode 4, largest component), '
+    #                               'also mask aseg to remove outliers'
+    #                               'output will be uchar (else mri_cc will fail below)')  # Do not set exists=True !!
 
 
 class NoccsegThresholdOutputSpec(TraitedSpec):
     mask_file = File(exists=True, desc="mask.mgz")
     aseg_noCCseg_file = File(exists=True, desc="aseg.auto_noCCseg.mgz")
+
+    orig_file = File(exists=True, desc='mri/orig.mgz') # orig_and_rawavg_node outputs
+    aparc_DKTatlas_aseg_deep = File(exists=True, desc="mri/aparc.DKTatlas+aseg.deep.mgz") # segment_node
+
+    subject_id = Str(desc="subject id")
 
 
 class Noccseg(BaseInterface):
@@ -215,17 +239,29 @@ class Noccseg(BaseInterface):
     gpu = 0  # 最大gpu占用：MB
 
     def _run_interface(self, runtime):
+        subjects_dir = Path(self.inputs.subjects_dir)
+        subject_id = self.inputs.subject_id
+        mask_file = subjects_dir / subject_id / 'mri' / 'mask.mgz'
+        aseg_noCCseg_file = subjects_dir / subject_id / 'mri' / 'aseg.auto_noCCseg.mgz'
+        in_file = subjects_dir / subject_id / "mri" / "aparc.DKTatlas+aseg.deep.mgz"
         cmd = f'{self.inputs.python_interpret} {self.inputs.reduce_to_aseg_py} ' \
-              f'-i {self.inputs.in_file} ' \
-              f'-o {self.inputs.aseg_noCCseg_file} --outmask {self.inputs.mask_file} --fixwm'
+              f'-i {in_file} ' \
+              f'-o {aseg_noCCseg_file} --outmask {mask_file} --fixwm'
         run_cmd_with_timing(cmd)
 
         return runtime
 
     def _list_outputs(self):
         outputs = self._outputs().get()
-        outputs['mask_file'] = self.inputs.mask_file
-        outputs['aseg_noCCseg_file'] = self.inputs.aseg_noCCseg_file
+        subjects_dir = Path(self.inputs.subjects_dir)
+        subject_id = self.inputs.subject_id
+        outputs['mask_file'] = subjects_dir / subject_id / 'mri' / 'mask.mgz'
+        outputs['aseg_noCCseg_file'] = subjects_dir / subject_id / 'mri' / 'aseg.auto_noCCseg.mgz'
+
+        outputs["orig_file"] =subjects_dir / subject_id / "mri" / "orig.mgz" # orig_and_rawavg_node outputs
+        outputs["aparc_DKTatlas_aseg_deep"] = subjects_dir / subject_id / "mri" / "aparc.DKTatlas+aseg.deep.mgz" # segment_node
+
+        outputs["subject_id"] = subject_id
         return outputs
 
 
@@ -238,9 +274,9 @@ class UpdateAsegInputSpec(BaseInterfaceInputSpec):
     seg_file = File(exists=True, desc="mri/aparc.DKTatlas+aseg.deep.mgz", mandatory=True)
     norm_file = File(exists=True, desc="mri/norm.mgz", mandatory=True)
 
-    aseg_auto_file = File(exists=False, desc="mri/aseg.auto.mgz", mandatory=True)
-    cc_up_file = File(exists=False, desc="mri/transforms/cc_up.lta", mandatory=True)
-    aparc_aseg_file = File(exists=False, desc="mri/aparc.DKTatlas+aseg.deep.withCC.mgz", mandatory=True)
+    # aseg_auto_file = File(exists=False, desc="mri/aseg.auto.mgz", mandatory=True)
+    # cc_up_file = File(exists=False, desc="mri/transforms/cc_up.lta", mandatory=True)
+    # aparc_aseg_file = File(exists=False, desc="mri/aparc.DKTatlas+aseg.deep.withCC.mgz", mandatory=True)
 
 
 class UpdateAsegOutputSpec(TraitedSpec):
@@ -248,6 +284,7 @@ class UpdateAsegOutputSpec(TraitedSpec):
     cc_up_file = File(exists=False, desc="mri/transforms/cc_up.lta")
     aparc_aseg_file = File(exists=False, desc="mri/aparc.DKTatlas+aseg.deep.withCC.mgz")
 
+    subject_id = Str(desc='subject id')
 
 class UpdateAseg(BaseInterface):
     input_spec = UpdateAsegInputSpec
@@ -258,26 +295,34 @@ class UpdateAseg(BaseInterface):
     gpu = 0  # 最大gpu占用：MB
 
     def _run_interface(self, runtime):
+        subjects_dir = Path(self.inputs.subjects_dir)
+        subject_id = self.inputs.subject_id
+        aseg_auto_file = subjects_dir / subject_id / 'mri' / 'aseg.auto.mgz'
+        cc_up_file = subjects_dir / subject_id / 'mri' / 'transforms' / 'cc_up.lta'
+        aparc_aseg_file = subjects_dir / subject_id / 'mri' / 'aparc.DKTatlas+aseg.deep.withCC.mgz'
+
         # create aseg.auto including cc segmentation and add cc into aparc.DKTatlas+aseg.deep;
         # 46 sec: (not sure if this is needed), requires norm.mgz
         cmd = f'mri_cc -aseg aseg.auto_noCCseg.mgz -o aseg.auto.mgz ' \
-              f'-lta {self.inputs.cc_up_file} {self.inputs.subject_id}'
+              f'-lta {cc_up_file} {self.inputs.subject_id}'
         run_cmd_with_timing(cmd)
 
         # 0.8s
         cmd = f'{self.inputs.python_interpret} {self.inputs.paint_cc_file} ' \
-              f'-in_cc {self.inputs.aseg_auto_file} -in_pred {self.inputs.seg_file} ' \
-              f'-out {self.inputs.aparc_aseg_file}'
+              f'-in_cc {aseg_auto_file} -in_pred {self.inputs.seg_file} ' \
+              f'-out {aparc_aseg_file}'
         run_cmd_with_timing(cmd)
 
         return runtime
 
     def _list_outputs(self):
+        subjects_dir = Path(self.inputs.subjects_dir)
+        subject_id = self.inputs.subject_id
         outputs = self._outputs().get()
-        outputs["aseg_auto_file"] = self.inputs.aseg_auto_file
-        outputs["cc_up_file"] = self.inputs.cc_up_file
-        outputs["aparc_aseg_file"] = self.inputs.aparc_aseg_file
-
+        outputs["aseg_auto_file"] = subjects_dir / subject_id / 'mri' / 'aseg.auto.mgz'
+        outputs["cc_up_file"] = subjects_dir / subject_id / 'mri' / 'transforms' / 'cc_up.lta'
+        outputs["aparc_aseg_file"] = subjects_dir / subject_id / 'mri' / 'aparc.DKTatlas+aseg.deep.withCC.mgz'
+        outputs['subject_id'] = subject_id
         return outputs
 
 
