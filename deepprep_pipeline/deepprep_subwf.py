@@ -60,7 +60,7 @@ structure_part1_wf = init_structure_part1_wf(t1w_filess=[
     subjects_dir=subjects_dir,
     subject_ids=['sub-0025427', 'sub-0025428'])
 structure_part1_wf.base_dir = subjects_dir
-# structure_part1_wf_res = structure_part1_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
+# structure_part1_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
 # print()
 # exit()
 
@@ -297,9 +297,77 @@ structure_part4_wf = init_structure_part4_wf(subjects_dir=subjects_dir,
                                              python_interpret=python_interpret,
                                              fastcsr_home=fastcsr_home)
 structure_part4_wf.base_dir = str(subjects_dir)
-structure_part4_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
+# structure_part4_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
+# print()
+# exit()
+
+################## part 5 ##################
+
+def init_structure_part6_wf(subjects_dir: Path, subject_ids: list,
+                            python_interpret: Path,
+                            freesurfer_home: Path,
+                            featreg_home: Path):
+    structure_part6_wf = Workflow(name=f'structure_part6__wf')
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "subjects_dir",
+            ]
+        ),
+        name="inputnode",
+    )
+    inputnode.inputs.subjects_dir = subjects_dir
+    # FeatReg
+    featreg_node = Node(FeatReg(), f'featreg_node')
+    featreg_node.inputs.subjects_dir = subjects_dir
+    featreg_node.inputs.python_interpret = python_interpret
+    featreg_node.inputs.freesurfer_home = freesurfer_home
+    featreg_node.inputs.featreg_py = featreg_home / "featreg" / 'predict.py'
+    featreg_node.iterables = [("subject_id", subject_ids)]
+    featreg_node.synchronize = True
+
+    structure_part6_wf.connect([
+        (inputnode, featreg_node, [("subjects_dir", "subjects_dir"),
+                                   ]),
+    ])
+    return structure_part6_wf
+
+
+set_envrion()
+subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/HNU_1_subwf")
+os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+python_interpret = Path('/home/youjia/anaconda3/envs/3.8/bin/python3')
+pwd = Path.cwd()
+featreg_home = pwd.parent / "deepprep_pipeline/FeatReg"
+
+multi_subj_n_procs = 2
+
+structure_part6_wf = init_structure_part6_wf(subjects_dir=subjects_dir,
+                                             subject_ids=['sub-0025427', 'sub-0025428'],
+                                             python_interpret=python_interpret,
+                                             freesurfer_home=freesurfer_home,
+                                             featreg_home=featreg_home)
+structure_part6_wf.base_dir = str(subjects_dir)
+structure_part6_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
 print()
 exit()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def pipeline(t1w_files, subjects_dir, subject_id):
