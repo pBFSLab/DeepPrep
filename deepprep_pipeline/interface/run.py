@@ -28,7 +28,6 @@ def multipool(cmd, Multi_Num=2):
 
     pool = Pool(Multi_Num)
     pool.starmap(cmd, cmd_pool)
-    # pool.apply_async(cmd, cmd_pool)
     pool.close()
     pool.join()
 
@@ -87,7 +86,7 @@ def multipool_BidsBolds_2(cmd, bids_entities, bids_path, Multi_Num=2):
 
 def set_envrion(threads: int = 1):
     # FreeSurfer recon-all env
-    freesurfer_home = '/usr/local/freesurfer'
+    freesurfer_home = '/usr/local/freesurfer720'
     os.environ['FREESURFER_HOME'] = f'{freesurfer_home}'
     os.environ['FREESURFER'] = f'{freesurfer_home}'
     os.environ['SUBJECTS_DIR'] = f'{freesurfer_home}/subjects'
