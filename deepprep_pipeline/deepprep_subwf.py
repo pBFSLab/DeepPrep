@@ -17,8 +17,7 @@ import os
 
 
 # Part1 CPU
-def init_structure_part1_wf(t1w_filess: list, subjects_dir: Path, subject_ids: list,):
-
+def init_structure_part1_wf(t1w_filess: list, subjects_dir: Path, subject_ids: list, ):
     # structure_part1_wf = Workflow(name=f'structure_part1_{subject_id.replace("-", "_")}_wf')
     structure_part1_wf = Workflow(name=f'structure_part1__wf')
 
@@ -44,7 +43,7 @@ def init_structure_part1_wf(t1w_filess: list, subjects_dir: Path, subject_ids: l
     orig_and_rawavg_node.inputs.threads = 8
     structure_part1_wf.connect([
         (inputnode, orig_and_rawavg_node, [("subjects_dir", "subjects_dir"),
-                              ]),
+                                           ]),
     ])
     return structure_part1_wf
 
@@ -58,10 +57,9 @@ multi_subj_n_procs = 2
 structure_part1_wf = init_structure_part1_wf(t1w_filess=[
     ["/mnt/ngshare/Data_Orig/HNU_1/sub-0025427/ses-01/anat/sub-0025427_ses-01_T1w.nii.gz"],
     ["/mnt/ngshare/Data_Orig/HNU_1/sub-0025428/ses-01/anat/sub-0025428_ses-01_T1w.nii.gz"]],
-                                            subjects_dir=subjects_dir,
-                                            subject_ids=['sub-0025427', 'sub-0025428'])
-# structure_part1_wf.orig_and_rawavg_node.iterables
-structure_part1_wf.base_dir = '/mnt/ngshare/DeepPrep_flowtest/HNU_1_subwf'
+    subjects_dir=subjects_dir,
+    subject_ids=['sub-0025427', 'sub-0025428'])
+structure_part1_wf.base_dir = subjects_dir
 # structure_part1_wf_res = structure_part1_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
 # print()
 # exit()
@@ -102,7 +100,7 @@ def init_structure_part2_wf(subjects_dir: Path, subject_ids: list,
 
     structure_part2_wf.connect([
         (inputnode, segment_node, [("subjects_dir", "subjects_dir"),
-                                    ]),
+                                   ]),
     ])
     return structure_part2_wf
 
@@ -120,11 +118,10 @@ structure_part2_wf = init_structure_part2_wf(subjects_dir=subjects_dir,
                                              subject_ids=['sub-0025427', 'sub-0025428'],
                                              python_interpret=python_interpret,
                                              fastsurfer_home=fastsurfer_home)
-# structure_part1_wf.orig_and_rawavg_node.iterables
-structure_part2_wf.base_dir = '/mnt/ngshare/DeepPrep_flowtest/HNU_1_subwf'
-structure_part2_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
-print()
-exit()
+structure_part2_wf.base_dir = subjects_dir
+# structure_part2_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
+# print()
+# exit()
 
 
 # Part3 CPU
@@ -250,9 +247,57 @@ structure_part3_wf = init_structure_part3_wf(subjects_dir=subjects_dir,
                                              python_interpret=python_interpret,
                                              fastsurfer_home=fastsurfer_home,
                                              freesurfer_home=freesurfer_home)
-# structure_part1_wf.orig_and_rawavg_node.iterables
-structure_part3_wf.base_dir = '/mnt/ngshare/DeepPrep_flowtest/HNU_1_subwf'
-structure_part3_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
+structure_part3_wf.base_dir = subjects_dir
+# structure_part3_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
+# print()
+# exit()
+
+
+def init_structure_part4_wf(subjects_dir: Path, subject_ids: list,
+                            python_interpret: Path,
+                            fastcsr_home: Path):
+    structure_part4_wf = Workflow(name=f'structure_part4__wf')
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "subjects_dir",
+            ]
+        ),
+        name="inputnode",
+    )
+    inputnode.inputs.subjects_dir = subjects_dir
+    # FastCSR
+    fastcsr_node = Node(FastCSR(), name="fastcsr_node")
+    fastcsr_node.inputs.subjects_dir = subjects_dir
+    fastcsr_node.iterables = [("subject_id", subject_ids)]
+    fastcsr_node.synchronize = True
+
+    fastcsr_node.inputs.python_interpret = python_interpret
+    fastcsr_node.inputs.fastcsr_py = fastcsr_home / 'pipeline.py'
+
+    structure_part4_wf.connect([
+        (inputnode, fastcsr_node, [("subjects_dir", "subjects_dir"),
+                                   ]),
+    ])
+    return structure_part4_wf
+
+
+set_envrion()
+subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/HNU_1_subwf")
+os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+python_interpret = Path('/home/youjia/anaconda3/envs/3.8/bin/python3')
+pwd = Path.cwd()
+fastcsr_home = pwd / "FastCSR"
+
+multi_subj_n_procs = 2
+
+structure_part4_wf = init_structure_part4_wf(subjects_dir=subjects_dir,
+                                             subject_ids=['sub-0025427', 'sub-0025428'],
+                                             python_interpret=python_interpret,
+                                             fastcsr_home=fastcsr_home)
+structure_part4_wf.base_dir = str(subjects_dir)
+structure_part4_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
 print()
 exit()
 
@@ -279,7 +324,6 @@ def pipeline(t1w_files, subjects_dir, subject_id):
     logging.update_logging(config)
     wf.run()
 
-
     ##############################################################
     # t1w_files = [
     #     f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/sub-MSC01/ses-struct01/anat/sub-MSC01_ses-struct01_run-01_T1w.nii.gz',
@@ -304,16 +348,15 @@ def pipeline(t1w_files, subjects_dir, subject_id):
     wf.run()
 
 
-
-class myThread(threading.Thread):   #继承父类threading.Thread
+class myThread(threading.Thread):  # 继承父类threading.Thread
     def __init__(self, t1w_files, subjects_dir, subject_id):
         threading.Thread.__init__(self)
         self.t1w_files = t1w_files
         self.subjects_dir = subjects_dir
         self.subject_id = subject_id
-    def run(self): #把要执行的代码写到run函数里面 线程在创建后会直接运行run函数
-        pipeline(self.t1w_files, self.subjects_dir, self.subject_id)
 
+    def run(self):  # 把要执行的代码写到run函数里面 线程在创建后会直接运行run函数
+        pipeline(self.t1w_files, self.subjects_dir, self.subject_id)
 
 
 if __name__ == '__main__':
@@ -326,7 +369,6 @@ if __name__ == '__main__':
     layout = bids.BIDSLayout(str(data_path), derivatives=False)
     subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/HNU_1")
     os.environ['SUBJECTS_DIR'] = "/mnt/ngshare/DeepPrep_flowtest/HNU_1"
-
 
     Multi_num = 3
 
@@ -343,19 +385,16 @@ if __name__ == '__main__':
     thread_list = thread_list[200:]
     i = 0
     while i < len(thread_list):
-        if i > len(thread_list)-Multi_num:
+        if i > len(thread_list) - Multi_num:
             for thread in thread_list[i:]:
                 thread.start()
             for thread in thread_list[i:]:
                 thread.join()
             i = len(thread_list)
         else:
-            for thread in thread_list[i:i+Multi_num]:
+            for thread in thread_list[i:i + Multi_num]:
                 thread.start()
             for thread in thread_list[i:i + Multi_num]:
                 thread.join()
             i += Multi_num
             print()
-
-
-
