@@ -584,6 +584,7 @@ if __name__ == '__main__':
 
     data_path = Path("/run/user/1000/gvfs/sftp:host=30.30.30.66,user=zhenyu/mnt/ngshare/Data_Orig/HNU_1")
     layout = bids.BIDSLayout(str(data_path), derivatives=False)
+
     subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/HNU_1")
     Multi_num = 3
 
