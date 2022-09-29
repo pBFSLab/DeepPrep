@@ -27,8 +27,8 @@ def multipool(cmd, Multi_Num=2):
     cmd_pool = [['lh'], ['rh']]
 
     pool = Pool(Multi_Num)
-    # pool.starmap(cmd, cmd_pool)
-    pool.apply_async(cmd, cmd_pool)
+    pool.starmap(cmd, cmd_pool)
+    # pool.apply_async(cmd, cmd_pool)
     pool.close()
     pool.join()
 
@@ -72,6 +72,18 @@ def multipool_BidsBolds_2(cmd, bids_entities, bids_path, Multi_Num=2):
     pool.starmap(cmd, cmd_pool)
     pool.close()
     pool.join()
+
+
+# class myThread(threading.Thread):   #继承父类threading.Thread
+#     def __init__(self, t1w_files, subjects_dir, subject_id):
+#         threading.Thread.__init__(self)
+#         self.t1w_files = t1w_files
+#         self.subjects_dir = subjects_dir
+#         self.subject_id = subject_id
+#     def run(self): #把要执行的代码写到run函数里面 线程在创建后会直接运行run函数
+#         pipeline(self.t1w_files, self.subjects_dir, self.subject_id)
+
+
 
 def set_envrion(threads: int = 1):
     # FreeSurfer recon-all env
