@@ -16,15 +16,16 @@ class BrainmaskInputSpec(BaseInterfaceInputSpec):
     nu_file = File(exists=True, desc="mri/nu.mgz", mandatory=True)
     mask_file = File(exists=True, desc="mri/mask.mgz", mandatory=True)
 
-    T1_file = File(exists=False, desc="mri/T1.mgz", mandatory=True)
-    brainmask_file = File(exists=False, desc="mri/brainmask.mgz", mandatory=True)
-    norm_file = File(exists=False, desc="mri/norm.mgz", mandatory=True)
+    # T1_file = File(exists=False, desc="mri/T1.mgz", mandatory=True)
+    # brainmask_file = File(exists=False, desc="mri/brainmask.mgz", mandatory=True)
+    # norm_file = File(exists=False, desc="mri/norm.mgz", mandatory=True)
 
 
 class BrainmaskOutputSpec(TraitedSpec):
     brainmask_file = File(exists=True, desc="mri/brainmask.mgz")
     norm_file = File(exists=True, desc="mri/norm.mgz")
     T1_file = File(exists=False, desc="mri/T1.mgz")
+    subject_id = Str(desc='subject id')
 
 
 class Brainmask(BaseInterface):
@@ -36,31 +37,40 @@ class Brainmask(BaseInterface):
     gpu = 0  # 最大gpu占用：MB
 
     def _run_interface(self, runtime):
+        subjects_dir = Path(self.inputs.subjects_dir)
+        subject_id = self.inputs.subject_id
+        brainmask_file = subjects_dir / subject_id / 'mri' / 'brainmask.mgz'
+        norm_file = subjects_dir / subject_id / 'mri' / 'norm.mgz'
+        T1_file = subjects_dir / subject_id / 'mri' / 'T1.mgz'
+
+
         # create norm by masking nu 0.7s
         need_t1 = self.inputs.need_t1
-        cmd = f'mri_mask {self.inputs.nu_file} {self.inputs.mask_file} {self.inputs.norm_file}'
+        cmd = f'mri_mask {self.inputs.nu_file} {self.inputs.mask_file} {norm_file}'
         run_cmd_with_timing(cmd)
 
         if need_t1:  # T1.mgz 相比 orig.mgz 更平滑，对比度更高
             # create T1.mgz from nu 96.9s
-            cmd = f'mri_normalize -g 1 -mprage {self.inputs.nu_file} {self.inputs.T1_file}'
+            cmd = f'mri_normalize -g 1 -mprage {self.inputs.nu_file} {T1_file}'
             run_cmd_with_timing(cmd)
 
             # create brainmask by masking T1
-            cmd = f'mri_mask {self.inputs.T1_file} {self.inputs.mask_file} {self.inputs.brainmask_file}'
+            cmd = f'mri_mask {T1_file} {self.inputs.mask_file} {brainmask_file}'
             run_cmd_with_timing(cmd)
         else:
-            cmd = f'cp {self.inputs.norm_file} {self.inputs.brainmask_file}'
+            cmd = f'cp {norm_file} {brainmask_file}'
             run_cmd_with_timing(cmd)
 
         return runtime
 
     def _list_outputs(self):
+        subjects_dir = Path(self.inputs.subjects_dir)
+        subject_id = self.inputs.subject_id
         outputs = self._outputs().get()
-        outputs["brainmask_file"] = self.inputs.brainmask_file
-        outputs["norm_file"] = self.inputs.norm_file
-        outputs["T1_file"] = self.inputs.T1_file
-
+        outputs["brainmask_file"] = subjects_dir / subject_id / 'mri' / 'brainmask.mgz'
+        outputs["norm_file"] = subjects_dir / subject_id / 'mri' / 'norm.mgz'
+        outputs["T1_file"] = subjects_dir / subject_id / 'mri' / 'T1.mgz'
+        outputs['subject_id'] = subject_id
         return outputs
 
 
@@ -93,9 +103,11 @@ class OrigAndRawavg(BaseInterface):
         return runtime
 
     def _list_outputs(self):
+        subjects_dir = Path(self.inputs.subjects_dir)
+        subject_id = self.inputs.subject_id
         outputs = self._outputs().get()
-        outputs["orig_file"] = Path(f"{self.inputs.subjects_dir}/{self.inputs.subject_id}/mri/orig.mgz")
-        outputs['rawavg_file'] = Path(f"{self.inputs.subjects_dir}/{self.inputs.subject_id}/mri/rawavg.mgz")
+        outputs["orig_file"] = subjects_dir / subject_id / "mri" / "orig.mgz"
+        outputs['rawavg_file'] = subjects_dir / subject_id / "mri" / "rawavg.mgz"
         return outputs
 
 
@@ -116,6 +128,7 @@ class FilledOutputSpec(TraitedSpec):
     brain_finalsurfs_file = File(exists=True, desc='mri/brain.finalsurfs.mgz')
     wm_file = File(exists=True, desc='mri/wm.mgz')
     wm_filled = File(exists=True, desc='mri/filled.mgz')
+    subject_id = Str(desc='subject id')
 
 
 class Filled(BaseInterface):
@@ -146,13 +159,15 @@ class Filled(BaseInterface):
         return runtime
 
     def _list_outputs(self):
+        subjects_dir = Path(self.inputs.subjects_dir)
+        subject_id = self.inputs.subject_id
         outputs = self._outputs().get()
-        outputs["aseg_presurf_file"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, 'mri/aseg.presurf.mgz')
-        outputs["brain_file"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, 'mri/brain.mgz')
-        outputs["brain_finalsurfs_file"] = Path(self.inputs.subjects_dir, self.inputs.subject_id,
-                                                'mri/brain.finalsurfs.mgz')
-        outputs["wm_file"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, 'mri/wm.mgz')
-        outputs["wm_filled"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, 'mri/filled.mgz')
+        outputs["aseg_presurf_file"] = subjects_dir / subject_id / 'mri/aseg.presurf.mgz'
+        outputs["brain_file"] = subjects_dir / subject_id / 'mri/brain.mgz'
+        outputs["brain_finalsurfs_file"] = subjects_dir / subject_id / 'mri/brain.finalsurfs.mgz'
+        outputs["wm_file"] = subjects_dir / subject_id / 'mri/wm.mgz'
+        outputs["wm_filled"] = subjects_dir / subject_id / 'mri/filled.mgz'
+        outputs['subject_id'] = subject_id
         return outputs
 
 
@@ -208,17 +223,19 @@ class WhitePreaparc1(BaseInterface):
         return runtime
 
     def _list_outputs(self):
+        subjects_dir = Path(self.inputs.subjects_dir)
+        subject_id = self.inputs.subject_id
         outputs = self._outputs().get()
-        outputs["lh_white_preaparc"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f"surf/lh.white.preaparc")
-        outputs["rh_white_preaparc"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f"surf/rh.white.preaparc")
-        outputs["lh_curv"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f"surf/lh.curv")
-        outputs["rh_curv"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f"surf/rh.curv")
-        outputs["lh_area"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f"surf/lh.area")
-        outputs["rh_area"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f"surf/rh.area")
-        outputs["lh_cortex_label"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f"label/lh.cortex.label")
-        outputs["rh_cortex_label"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f"label/rh.cortex.label")
-        outputs["autodet_gw_stats_lh_dat"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, "surf/autodet.gw.stats.lh.dat")
-        outputs["autodet_gw_stats_rh_dat"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, "surf/autodet.gw.stats.rh.dat")
+        outputs["lh_white_preaparc"] = subjects_dir / subject_id / f"surf/lh.white.preaparc"
+        outputs["rh_white_preaparc"] = subjects_dir / subject_id / f"surf/rh.white.preaparc"
+        outputs["lh_curv"] = subjects_dir / subject_id / f"surf/lh.curv"
+        outputs["rh_curv"] = subjects_dir / subject_id / f"surf/rh.curv"
+        outputs["lh_area"] = subjects_dir / subject_id / f"surf/lh.area"
+        outputs["rh_area"] = subjects_dir / subject_id / f"surf/rh.area"
+        outputs["lh_cortex_label"] = subjects_dir / subject_id / f"label/lh.cortex.label"
+        outputs["rh_cortex_label"] = subjects_dir / subject_id / f"label/rh.cortex.label"
+        outputs["autodet_gw_stats_lh_dat"] = subjects_dir / subject_id / "surf/autodet.gw.stats.lh.dat"
+        outputs["autodet_gw_stats_rh_dat"] = subjects_dir / subject_id / "surf/autodet.gw.stats.rh.dat"
         return outputs
 
 
@@ -262,13 +279,13 @@ class WhitePreaparc2(BaseInterface):
         return runtime
 
     def _list_outputs(self):
+        subjects_dir = Path(self.inputs.subjects_dir)
+        subject_id = self.inputs.subject_id
         outputs = self._outputs().get()
-        outputs["hemi_white_preaparc"] = Path(self.inputs.subjects_dir, self.inputs.subject_id,
-                                              f"surf/{self.inputs.hemi}.white.preaparc")
-        outputs["hemi_curv"] = Path(self.inputs.subject_dir, self.inputs.subject_id, f"surf/{self.inputs.hemi}.curv")
-        outputs["hemi_area"] = Path(self.inputs.subject_dir, self.inputs.subject_id, f"surf/{self.inputs.hemi}.area")
-        outputs["hemi_cortex_label"] = Path(self.inputs.subject_dir, self.inputs.subject_id,
-                                            f"label/{self.inputs.hemi}.cortex.label")
+        outputs["hemi_white_preaparc"] = subjects_dir / subject_id / f"surf/{self.inputs.hemi}.white.preaparc"
+        outputs["hemi_curv"] = subjects_dir / subject_id / f"surf/{self.inputs.hemi}.curv"
+        outputs["hemi_area"] = subjects_dir / subject_id / f"surf/{self.inputs.hemi}.area"
+        outputs["hemi_cortex_label"] = subjects_dir / subject_id / f"label/{self.inputs.hemi}.cortex.label"
         return outputs
 
 
@@ -400,15 +417,17 @@ class InflatedSphere(BaseInterface):
         return runtime
 
     def _list_outputs(self):
+        subjects_dir = Path(self.inputs.subjects_dir)
+        subject_id = self.inputs.subject_id
         outputs = self._outputs().get()
-        outputs['lh_smoothwm'] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f'surf/lh.smoothwm')
-        outputs['rh_smoothwm'] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f'surf/rh.smoothwm')
-        outputs['lh_inflated'] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f'surf/lh.inflated')
-        outputs['rh_inflated'] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f'surf/rh.inflated')
-        outputs['lh_sulc'] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f'surf/lh.sulc')
-        outputs['rh_sulc'] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f'surf/rh.sulc')
-        outputs['lh_sphere'] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f'surf/lh.sphere')
-        outputs['rh_sphere'] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f'surf/rh.sphere')
+        outputs['lh_smoothwm'] = subjects_dir / subject_id / f'surf/lh.smoothwm'
+        outputs['rh_smoothwm'] = subjects_dir / subject_id / f'surf/rh.smoothwm'
+        outputs['lh_inflated'] = subjects_dir / subject_id / f'surf/lh.inflated'
+        outputs['rh_inflated'] = subjects_dir / subject_id / f'surf/rh.inflated'
+        outputs['lh_sulc'] = subjects_dir / subject_id / f'surf/lh.sulc'
+        outputs['rh_sulc'] = subjects_dir / subject_id / f'surf/rh.sulc'
+        outputs['lh_sphere'] = subjects_dir / subject_id / f'surf/lh.sphere'
+        outputs['rh_sphere'] = subjects_dir / subject_id / f'surf/rh.sphere'
 
         return outputs
 
@@ -495,121 +514,123 @@ class WhitePialThickness1(BaseInterface):
         return runtime
 
     def _list_outputs(self):
+        subjects_dir = Path(self.inputs.subjects_dir)
+        subject_id = self.inputs.subject_id
         outputs = self._outputs().get()
-        outputs["lh_white"] = Path(self.inputs.subjects_dir) / self.inputs.subject_id / f"surf/lh.white"
-        outputs["rh_white"] = Path(self.inputs.subjects_dir) / self.inputs.subject_id / f"surf/rh.white"
-        outputs["lh_pial_t1"] = Path(self.inputs.subjects_dir) / f"{self.inputs.subject_id}" / f"surf/lh.pial.T1"
-        outputs["rh_pial_t1"] = Path(self.inputs.subjects_dir) / f"{self.inputs.subject_id}" / f"surf/rh.pial.T1"
-        outputs["lh_pial"] = Path(self.inputs.subjects_dir) / f"{self.inputs.subject_id}" / f"surf/lh.pial"
-        outputs["rh_pial"] = Path(self.inputs.subjects_dir) / f"{self.inputs.subject_id}" / f"surf/rh.pial"
-        outputs["lh_curv"] = Path(self.inputs.subjects_dir) / f"{self.inputs.subject_id}" / f"surf/lh.curv"
-        outputs["rh_curv"] = Path(self.inputs.subjects_dir) / f"{self.inputs.subject_id}" / f"surf/rh.curv"
-        outputs["lh_area"] = Path(self.inputs.subjects_dir) / f"{self.inputs.subject_id}" / f"surf/lh.area"
-        outputs["rh_area"] = Path(self.inputs.subjects_dir) / f"{self.inputs.subject_id}" / f"surf/rh.area"
-        outputs["lh_curv_pial"] = Path(self.inputs.subjects_dir) / f"{self.inputs.subject_id}" / f"surf/lh.curv.pial"
-        outputs["rh_curv_pial"] = Path(self.inputs.subjects_dir) / f"{self.inputs.subject_id}" / f"surf/rh.curv.pial"
-        outputs["lh_area_pial"] = Path(self.inputs.subjects_dir) / f"{self.inputs.subject_id}" / f"surf/lh.area.pial"
-        outputs["rh_area_pial"] = Path(self.inputs.subjects_dir) / f"{self.inputs.subject_id}" / f"surf/rh.area.pial"
-        outputs["lh_thickness"] = Path(self.inputs.subjects_dir) / f"{self.inputs.subject_id}" / f"surf/lh.thickness"
-        outputs["rh_thickness"] = Path(self.inputs.subjects_dir) / f"{self.inputs.subject_id}" / f"surf/rh.thickness"
+        outputs["lh_white"] = subjects_dir / subject_id / f"surf/lh.white"
+        outputs["rh_white"] = subjects_dir / subject_id / f"surf/rh.white"
+        outputs["lh_pial_t1"] = subjects_dir / subject_id / f"surf/lh.pial.T1"
+        outputs["rh_pial_t1"] = subjects_dir / subject_id / f"surf/rh.pial.T1"
+        outputs["lh_pial"] = subjects_dir / subject_id / f"surf/lh.pial"
+        outputs["rh_pial"] = subjects_dir / subject_id / f"surf/rh.pial"
+        outputs["lh_curv"] = subjects_dir / subject_id / f"surf/lh.curv"
+        outputs["rh_curv"] = subjects_dir / subject_id / f"surf/rh.curv"
+        outputs["lh_area"] = subjects_dir / subject_id / f"surf/lh.area"
+        outputs["rh_area"] = subjects_dir / subject_id / f"surf/rh.area"
+        outputs["lh_curv_pial"] = subjects_dir / subject_id / f"surf/lh.curv.pial"
+        outputs["rh_curv_pial"] = subjects_dir / subject_id / f"surf/rh.curv.pial"
+        outputs["lh_area_pial"] = subjects_dir / subject_id / f"surf/lh.area.pial"
+        outputs["rh_area_pial"] = subjects_dir / subject_id / f"surf/rh.area.pial"
+        outputs["lh_thickness"] = subjects_dir / subject_id / f"surf/lh.thickness"
+        outputs["rh_thickness"] = subjects_dir / subject_id / f"surf/rh.thickness"
 
         return outputs
 
 
-class WhitePialThickness2InputSpec(BaseInterfaceInputSpec):
-    subject = traits.Str(desc="sub-xxx", mandatory=True)
-    hemi = traits.Str(desc="lh", mandatory=True)
-
-    autodet_gw_stats_hemi_dat = File(exists=True, desc="surf/autodet.gw.stats.?h.dat", mandatory=True)
-    aseg_presurf = File(exists=True, desc="mri/aseg.presurf.mgz", mandatory=True)
-    wm_file = File(exists=True, desc="mri/wm.mgz", mandatory=True)
-    brain_finalsurfs = File(exists=True, desc="mri/brain.finalsurfs.mgz", mandatory=True)
-    hemi_white_preaparc = File(exists=True, desc="surf/?h.white.preaparc", mandatory=True)
-    hemi_white = File(exists=True, desc="surf/?h.white", mandatory=True)
-    hemi_cortex_label = File(exists=True, desc="label/?h.cortex.label", mandatory=True)
-    hemi_aparc_DKTatlas_mapped_annot = File(exists=True, desc="label/?h.aparc.DKTatlas.mapped.annot", mandatory=True)
-
-    hemi_pial_t1 = File(exists=True, desc="surf/?h.pial.T1", mandatory=True)
-
-
-class WhitePialThickness2OutputSpec(TraitedSpec):
-    hemi_white = File(exists=True, desc="surf/?h.white")
-    hemi_pial_t1 = File(exists=True, desc="surf/?h.pial.T1")
-
-    hemi_pial = File(exists=True, desc="surf/?h.pial")
-
-    hemi_curv = File(exists=True, desc="surf/?h.curv")
-    hemi_area = File(exists=True, desc="surf/?h.area")
-    hemi_curv_pial = File(exists=True, desc="surf/?h.curv.pial")
-    hemi_area_pial = File(exists=True, desc="surf/?h.area.pial")
-    hemi_thickness = File(exists=True, desc="surf/?h.thickness")
-
-
-class WhitePialThickness2(BaseInterface):
-    # The two methods (WhitePialThickness1 and WhitePialThickness2) are exacly same.
-    input_spec = WhitePialThickness2InputSpec
-    output_spec = WhitePialThickness2OutputSpec
-
-    def __init__(self, output_dir: Path, threads: int):
-        super(WhitePialThickness2, self).__init__()
-        self.output_dir = output_dir
-        self.threads = threads
-        self.fsthreads = get_freesurfer_threads(threads)
-
-    def _run_interface(self, runtime):
-        # The two methods below are exacly same.
-        # 4 min compute white :
-        time = 330 / 60
-        cpu = 1
-        gpu = 0
-
-        cmd = f"mris_place_surface --adgws-in {self.inputs.autodet_gw_stats_hemi_dat} " \
-              f"--seg {self.inputs.aseg_presurf} --wm {self.inputs.wm_file} --invol {self.inputs.brain_finalsurfs} --{self.inputs.hemi} " \
-              f"--i {self.inputs.hemi_white_preaparc} --o {self.inputs.hemi_white} --white --nsmooth 0 " \
-              f"--rip-label {self.inputs.hemi_cortex_label} --rip-bg --rip-surf {self.inputs.hemi_white_preaparc} " \
-              f"--aparc {self.inputs.hemi_aparc_DKTatlas_mapped_annot}"
-        run_cmd_with_timing(cmd)
-        # 4 min compute pial :
-        cmd = f"mris_place_surface --adgws-in {self.inputs.autodet_gw_stats_hemi_dat} --seg {self.inputs.aseg_presurf} " \
-              f"--wm {self.inputs.wm_file} --invol {self.inputs.brain_finalsurfs} --{self.inputs.hemi} --i {self.inputs.hemi_white} " \
-              f"--o {self.inputs.hemi_pial_t1} --pial --nsmooth 0 --rip-label {self.inputs.hemi_cortexhipamyg_label} " \
-              f"--pin-medial-wall {self.inputs.hemi_cortex_label} --aparc {self.inputs.hemi_aparc_DKTatlas_mapped_annot} " \
-              f"--repulse-surf {self.inputs.hemi_white} --white-surf {self.inputs.hemi_white}"
-        run_cmd_with_timing(cmd)
-
-        # Here insert DoT2Pial  later --> if T2pial is not run, need to softlink pial.T1 to pial!
-
-        cmd = f"cp {self.inputs.hemi_pial_t1} {self.inputs.hemi_pial}"
-        run_cmd_with_timing(cmd)
-
-        # these are run automatically in fs7* recon-all and
-        # cannot be called directly without -pial flag (or other t2 flags)
-        cmd = f"mris_place_surface --curv-map {self.inputs.hemi_white} 2 10 {self.inputs.hemi_curv}"
-        run_cmd_with_timing(cmd)
-        cmd = f"mris_place_surface --area-map {self.inputs.hemi_white} {self.inputs.hemi_area}"
-        run_cmd_with_timing(cmd)
-        cmd = f"mris_place_surface --curv-map {self.inputs.hemi_pial} 2 10 {self.inputs.hemi_curv_pial}"
-        run_cmd_with_timing(cmd)
-        cmd = f"mris_place_surface --area-map {self.inputs.hemi_pial} {self.inputs.hemi_area_pial}"
-        run_cmd_with_timing(cmd)
-        cmd = f" mris_place_surface --thickness {self.inputs.hemi_white} {self.inputs.hemi_pial} " \
-              f"20 5 {self.inputs.hemi_thickness}"
-        run_cmd_with_timing(cmd)
-
-        return runtime
-
-    def _list_outputs(self):
-        outputs = self._outputs().get()
-        outputs["hemi_white"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.white"
-        outputs["hemi_pial_t1"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.pial.T1"
-        outputs["hemi_pial"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.pial"
-        outputs["hemi_curv"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.curv"
-        outputs["hemi_area"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.area"
-        outputs["hemi_curv_pial"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.curv.pial"
-        outputs["hemi_area_pial"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.area.pial"
-        outputs["hemi_thickness"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.thickness"
-
-        return outputs
+# class WhitePialThickness2InputSpec(BaseInterfaceInputSpec):
+#     subject = traits.Str(desc="sub-xxx", mandatory=True)
+#     hemi = traits.Str(desc="lh", mandatory=True)
+#
+#     autodet_gw_stats_hemi_dat = File(exists=True, desc="surf/autodet.gw.stats.?h.dat", mandatory=True)
+#     aseg_presurf = File(exists=True, desc="mri/aseg.presurf.mgz", mandatory=True)
+#     wm_file = File(exists=True, desc="mri/wm.mgz", mandatory=True)
+#     brain_finalsurfs = File(exists=True, desc="mri/brain.finalsurfs.mgz", mandatory=True)
+#     hemi_white_preaparc = File(exists=True, desc="surf/?h.white.preaparc", mandatory=True)
+#     hemi_white = File(exists=True, desc="surf/?h.white", mandatory=True)
+#     hemi_cortex_label = File(exists=True, desc="label/?h.cortex.label", mandatory=True)
+#     hemi_aparc_DKTatlas_mapped_annot = File(exists=True, desc="label/?h.aparc.DKTatlas.mapped.annot", mandatory=True)
+#
+#     hemi_pial_t1 = File(exists=True, desc="surf/?h.pial.T1", mandatory=True)
+#
+#
+# class WhitePialThickness2OutputSpec(TraitedSpec):
+#     hemi_white = File(exists=True, desc="surf/?h.white")
+#     hemi_pial_t1 = File(exists=True, desc="surf/?h.pial.T1")
+#
+#     hemi_pial = File(exists=True, desc="surf/?h.pial")
+#
+#     hemi_curv = File(exists=True, desc="surf/?h.curv")
+#     hemi_area = File(exists=True, desc="surf/?h.area")
+#     hemi_curv_pial = File(exists=True, desc="surf/?h.curv.pial")
+#     hemi_area_pial = File(exists=True, desc="surf/?h.area.pial")
+#     hemi_thickness = File(exists=True, desc="surf/?h.thickness")
+#
+#
+# class WhitePialThickness2(BaseInterface):
+#     # The two methods (WhitePialThickness1 and WhitePialThickness2) are exacly same.
+#     input_spec = WhitePialThickness2InputSpec
+#     output_spec = WhitePialThickness2OutputSpec
+#
+#     def __init__(self, output_dir: Path, threads: int):
+#         super(WhitePialThickness2, self).__init__()
+#         self.output_dir = output_dir
+#         self.threads = threads
+#         self.fsthreads = get_freesurfer_threads(threads)
+#
+#     def _run_interface(self, runtime):
+#         # The two methods below are exacly same.
+#         # 4 min compute white :
+#         time = 330 / 60
+#         cpu = 1
+#         gpu = 0
+#
+#         cmd = f"mris_place_surface --adgws-in {self.inputs.autodet_gw_stats_hemi_dat} " \
+#               f"--seg {self.inputs.aseg_presurf} --wm {self.inputs.wm_file} --invol {self.inputs.brain_finalsurfs} --{self.inputs.hemi} " \
+#               f"--i {self.inputs.hemi_white_preaparc} --o {self.inputs.hemi_white} --white --nsmooth 0 " \
+#               f"--rip-label {self.inputs.hemi_cortex_label} --rip-bg --rip-surf {self.inputs.hemi_white_preaparc} " \
+#               f"--aparc {self.inputs.hemi_aparc_DKTatlas_mapped_annot}"
+#         run_cmd_with_timing(cmd)
+#         # 4 min compute pial :
+#         cmd = f"mris_place_surface --adgws-in {self.inputs.autodet_gw_stats_hemi_dat} --seg {self.inputs.aseg_presurf} " \
+#               f"--wm {self.inputs.wm_file} --invol {self.inputs.brain_finalsurfs} --{self.inputs.hemi} --i {self.inputs.hemi_white} " \
+#               f"--o {self.inputs.hemi_pial_t1} --pial --nsmooth 0 --rip-label {self.inputs.hemi_cortexhipamyg_label} " \
+#               f"--pin-medial-wall {self.inputs.hemi_cortex_label} --aparc {self.inputs.hemi_aparc_DKTatlas_mapped_annot} " \
+#               f"--repulse-surf {self.inputs.hemi_white} --white-surf {self.inputs.hemi_white}"
+#         run_cmd_with_timing(cmd)
+#
+#         # Here insert DoT2Pial  later --> if T2pial is not run, need to softlink pial.T1 to pial!
+#
+#         cmd = f"cp {self.inputs.hemi_pial_t1} {self.inputs.hemi_pial}"
+#         run_cmd_with_timing(cmd)
+#
+#         # these are run automatically in fs7* recon-all and
+#         # cannot be called directly without -pial flag (or other t2 flags)
+#         cmd = f"mris_place_surface --curv-map {self.inputs.hemi_white} 2 10 {self.inputs.hemi_curv}"
+#         run_cmd_with_timing(cmd)
+#         cmd = f"mris_place_surface --area-map {self.inputs.hemi_white} {self.inputs.hemi_area}"
+#         run_cmd_with_timing(cmd)
+#         cmd = f"mris_place_surface --curv-map {self.inputs.hemi_pial} 2 10 {self.inputs.hemi_curv_pial}"
+#         run_cmd_with_timing(cmd)
+#         cmd = f"mris_place_surface --area-map {self.inputs.hemi_pial} {self.inputs.hemi_area_pial}"
+#         run_cmd_with_timing(cmd)
+#         cmd = f" mris_place_surface --thickness {self.inputs.hemi_white} {self.inputs.hemi_pial} " \
+#               f"20 5 {self.inputs.hemi_thickness}"
+#         run_cmd_with_timing(cmd)
+#
+#         return runtime
+#
+#     def _list_outputs(self):
+#         outputs = self._outputs().get()
+#         outputs["hemi_white"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.white"
+#         outputs["hemi_pial_t1"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.pial.T1"
+#         outputs["hemi_pial"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.pial"
+#         outputs["hemi_curv"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.curv"
+#         outputs["hemi_area"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.area"
+#         outputs["hemi_curv_pial"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.curv.pial"
+#         outputs["hemi_area_pial"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.area.pial"
+#         outputs["hemi_thickness"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.thickness"
+#
+#         return outputs
 
 
 class CurvstatsInputSpec(BaseInterfaceInputSpec):
@@ -653,9 +674,11 @@ class Curvstats(BaseInterface):
         return runtime
 
     def _list_outputs(self):
+        subjects_dir = Path(self.inputs.subjects_dir)
+        subject_id = self.inputs.subject_id
         outputs = self._outputs().get()
-        outputs["lh_curv_stats"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f'stats/lh.curv.stats')
-        outputs["rh_curv_stats"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f'stats/rh.curv.stats')
+        outputs["lh_curv_stats"] = subjects_dir / subject_id / 'stats/lh.curv.stats'
+        outputs["rh_curv_stats"] = subjects_dir / subject_id / 'stats/rh.curv.stats'
 
         return outputs
 
@@ -704,10 +727,12 @@ class Cortribbon(BaseInterface):
         return runtime
 
     def _list_outputs(self):
+        subjects_dir = Path(self.inputs.subjects_dir)
+        subject_id = self.inputs.subject_id
         outputs = self._outputs().get()
-        outputs["lh_ribbon"] = self.inputs.lh_ribbon
-        outputs["rh_ribbon"] = self.inputs.rh_ribbon
-        outputs["ribbon"] = self.inputs.ribbon
+        outputs["lh_ribbon"] = subjects_dir / subject_id / "mri" / 'lh.ribbon.mgz'
+        outputs["rh_ribbon"] = subjects_dir / subject_id / "mri" / 'rh.ribbon.mgz'
+        outputs["ribbon"] = subjects_dir / subject_id / "mri" / 'ribbon.mgz'
 
         return outputs
 
@@ -765,16 +790,18 @@ class Parcstats(BaseInterface):
         return runtime
 
     def _list_outputs(self):
+        subjects_dir = Path(self.inputs.subjects_dir)
+        subject_id = self.inputs.subject_id
         outputs = self._outputs().get()
-        outputs["aseg_file"] = Path(self.inputs.subjects_dir) / self.inputs.subject_id / "mri" / "aseg.mgz"
-        outputs["lh_aparc_stats"] = Path(self.inputs.subjects_dir) / self.inputs.subject_id / "stats" / "lh.aparc.stats"
-        outputs["rh_aparc_stats"] = Path(self.inputs.subjects_dir) / self.inputs.subject_id / "stats" / "rh.aparc.stats"
-        outputs["lh_aparc_pial_stats"] = Path(self.inputs.subjects_dir) / self.inputs.subject_id / "stats" / "lh.aparc.pial.stats"
-        outputs["rh_aparc_pial_stats"] = Path(self.inputs.subjects_dir) / self.inputs.subject_id / "stats" / "rh.aparc.pial.stats"
-        outputs["aparc_annot_ctab"] = Path(self.inputs.subjects_dir) / self.inputs.subject_id / "label" / "aparc.annot.ctab"
-        outputs["aseg_presurf_hypos"] = Path(self.inputs.subjects_dir) / self.inputs.subject_id / "mri" / "aseg.presurf.hypos.mgz"
-        outputs["lh_wg_pct_stats"] = Path(self.inputs.subjects_dir) / self.inputs.subject_id / "stats" / "lh.w-g.pct.stats"
-        outputs["rh_wg_pct_stats"] = Path(self.inputs.subjects_dir) / self.inputs.subject_id / "stats" / "rh.w-g.pct.stats"
+        outputs["aseg_file"] = subjects_dir / subject_id / "mri" / "aseg.mgz"
+        outputs["lh_aparc_stats"] = subjects_dir / subject_id / "stats" / "lh.aparc.stats"
+        outputs["rh_aparc_stats"] = subjects_dir / subject_id / "stats" / "rh.aparc.stats"
+        outputs["lh_aparc_pial_stats"] = subjects_dir / subject_id / "stats" / "lh.aparc.pial.stats"
+        outputs["rh_aparc_pial_stats"] = subjects_dir / subject_id / "stats" / "rh.aparc.pial.stats"
+        outputs["aparc_annot_ctab"] = subjects_dir / subject_id / "label" / "aparc.annot.ctab"
+        outputs["aseg_presurf_hypos"] = subjects_dir / subject_id / "mri" / "aseg.presurf.hypos.mgz"
+        outputs["lh_wg_pct_stats"] = subjects_dir / subject_id / "stats" / "lh.w-g.pct.stats"
+        outputs["rh_wg_pct_stats"] = subjects_dir / subject_id / "stats" / "rh.w-g.pct.stats"
 
         return outputs
 
@@ -821,11 +848,13 @@ class Pctsurfcon(BaseInterface):
         return runtime
 
     def _list_outputs(self):
+        subjects_dir = Path(self.inputs.subjects_dir)
+        subject_id = self.inputs.subject_id
         outputs = self._outputs().get()
-        outputs["lh_wg_pct_mgh"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, 'surf', f'lh.w-g.pct.mgh')
-        outputs["rh_wg_pct_mgh"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, 'surf', f'rh.w-g.pct.mgh')
-        outputs["lh_wg_pct_stats"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, 'stats', 'lh.w-g.pct.stats')
-        outputs["rh_wg_pct_stats"] = Path(self.inputs.subjects_dir, self.inputs.subject_id, 'stats', 'rh.w-g.pct.stats')
+        outputs["lh_wg_pct_mgh"] = subjects_dir / subject_id / 'surf' / 'lh.w-g.pct.mgh'
+        outputs["rh_wg_pct_mgh"] = subjects_dir / subject_id / 'surf' / 'rh.w-g.pct.mgh'
+        outputs["lh_wg_pct_stats"] = subjects_dir / subject_id / 'stats' / 'lh.w-g.pct.stats'
+        outputs["rh_wg_pct_stats"] = subjects_dir / subject_id / 'stats' / 'rh.w-g.pct.stats'
 
         return outputs
 
@@ -864,8 +893,10 @@ class Hyporelabel(BaseInterface):
         return runtime
 
     def _list_outputs(self):
+        subjects_dir = Path(self.inputs.subjects_dir)
+        subject_id = self.inputs.subject_id
         outputs = self._outputs().get()
-        outputs["aseg_presurf_hypos"] = self.inputs.aseg_presurf_hypos
+        outputs["aseg_presurf_hypos"] = subjects_dir / subject_id / "mri" / 'aseg.presurf.hypos.mgz'
 
         return outputs
 
@@ -920,13 +951,15 @@ class JacobianAvgcurvCortparc(BaseInterface):
         return runtime
 
     def _list_outputs(self):
+        subjects_dir = Path(self.inputs.subjects_dir)
+        subject_id = self.inputs.subject_id
         outputs = self._outputs().get()
-        outputs['lh_jacobian_white'] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f'surf/lh.jacobian_white')
-        outputs['rh_jacobian_white'] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f'surf/rh.jacobian_white')
-        outputs['lh_avg_curv'] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f'surf/lh.avg_curv')
-        outputs['rh_avg_curv'] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f'surf/rh.avg_curv')
-        outputs['lh_aparc_annot'] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f'label/lh.aparc.annot')
-        outputs['rh_aparc_annot'] = Path(self.inputs.subjects_dir, self.inputs.subject_id, f'label/rh.aparc.annot')
+        outputs['lh_jacobian_white'] = subjects_dir / subject_id / 'surf/lh.jacobian_white'
+        outputs['rh_jacobian_white'] = subjects_dir / subject_id / 'surf/rh.jacobian_white'
+        outputs['lh_avg_curv'] = subjects_dir / subject_id / 'surf/lh.avg_curv'
+        outputs['rh_avg_curv'] = subjects_dir / subject_id / 'surf/rh.avg_curv'
+        outputs['lh_aparc_annot'] = subjects_dir / subject_id / 'label/lh.aparc.annot'
+        outputs['rh_aparc_annot'] = subjects_dir / subject_id / 'label/rh.aparc.annot'
 
         return outputs
 
@@ -973,8 +1006,10 @@ class Segstats(BaseInterface):
         return runtime
 
     def _list_outputs(self):
+        subjects_dir = Path(self.inputs.subjects_dir)
+        subject_id = self.inputs.subject_id
         outputs = self._outputs().get()
-        outputs['aseg_stats'] = self.inputs.aseg_stats
+        outputs['aseg_stats'] = subjects_dir / subject_id / "stats" / 'aseg.stats'
 
         return outputs
 
@@ -1026,8 +1061,10 @@ class Aseg7(BaseInterface):
         return runtime
 
     def _list_outputs(self):
+        subjects_dir = Path(self.inputs.subjects_dir)
+        subject_id = self.inputs.subject_id
         outputs = self._outputs().get()
-        outputs["aparc_aseg"] = self.inputs.aparc_aseg
+        outputs["aparc_aseg"] = subjects_dir / subject_id / "mri" / 'aparc+aseg.mgz'
         return outputs
 
 
@@ -1070,8 +1107,10 @@ class Aseg7ToAseg(BaseInterface):
         return runtime
 
     def _list_outputs(self):
+        subjects_dir = Path(self.inputs.subjects_dir)
+        subject_id = self.inputs.subject_id
         outputs = self._outputs().get()
-        outputs["aseg_file"] = self.inputs.aseg_file
+        outputs["aseg_file"] = subjects_dir / subject_id / "mri" / 'aseg.mgz'
 
         return outputs
 
@@ -1215,8 +1254,10 @@ class BalabelsMult(BaseInterface):
         return runtime
 
     def _list_outputs(self):
+        subjects_dir = Path(self.inputs.subjects_dir)
+        subject_id = self.inputs.subject_id
         outputs = self._outputs().get()
-        sub_label_dir = Path(self.inputs.subjects_dir, self.inputs.subject_id, 'label')
+        sub_label_dir = subjects_dir / subject_id / 'label'
         outputs["lh_BA45_exvivo"] = sub_label_dir / f'lh.BA45_exvivo.label'
         outputs["rh_BA45_exvivo"] = sub_label_dir / f'rh.BA45_exvivo.label'
         outputs["lh_perirhinal_exvivo"] = sub_label_dir / f'lh.perirhinal_exvivo.label'
