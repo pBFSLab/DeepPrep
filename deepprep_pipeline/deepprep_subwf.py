@@ -12,6 +12,8 @@ from interface.featreg_interface import FeatReg
 from run import set_envrion
 from multiprocessing import Pool
 import threading
+import os
+
 
 
 # Part1 CPU
@@ -46,8 +48,6 @@ def init_structure_part1_wf(t1w_filess: list, subjects_dir: Path, subject_ids: l
     return structure_part1_wf
 
 
-import os
-
 set_envrion()
 subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/HNU_1_subwf")
 os.environ['SUBJECTS_DIR'] = str(subjects_dir)
@@ -59,8 +59,8 @@ structure_part1_wf = init_structure_part1_wf(t1w_filess=[
     ["/mnt/ngshare/Data_Orig/HNU_1/sub-0025428/ses-01/anat/sub-0025428_ses-01_T1w.nii.gz"]],
     subjects_dir=subjects_dir,
     subject_ids=['sub-0025427', 'sub-0025428'])
-structure_part1_wf.base_dir = '/mnt/ngshare/DeepPrep_flowtest/HNU_1_subwf'
-# structure_part1_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
+structure_part1_wf.base_dir = subjects_dir
+# structure_part1_wf_res = structure_part1_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
 # print()
 # exit()
 
@@ -105,8 +105,6 @@ def init_structure_part2_wf(subjects_dir: Path, subject_ids: list,
     return structure_part2_wf
 
 
-import os
-
 set_envrion()
 subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/HNU_1_subwf")
 os.environ['SUBJECTS_DIR'] = str(subjects_dir)
@@ -120,78 +118,139 @@ structure_part2_wf = init_structure_part2_wf(subjects_dir=subjects_dir,
                                              subject_ids=['sub-0025427', 'sub-0025428'],
                                              python_interpret=python_interpret,
                                              fastsurfer_home=fastsurfer_home)
-structure_part2_wf.base_dir = '/mnt/ngshare/DeepPrep_flowtest/HNU_1_subwf'
+structure_part2_wf.base_dir = subjects_dir
 # structure_part2_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
 # print()
 # exit()
 
 
 # Part3 CPU
-def init_structure_part3_wf(t1w_files: list, subjects_dir: Path, subject_id: str,
+def init_structure_part3_wf(subjects_dir: Path, subject_ids: list,
                             python_interpret: Path,
                             fastsurfer_home: Path,
-                            freesurfer_home: Path,
-                            fastcsr_home: Path,
-                            featreg_home: Path):
-    structure_part3_wf = Workflow(name=f'structure_part3_{subject_id.replace("-", "_")}_wf')
+                            freesurfer_home: Path):
+
+    structure_part3_wf = Workflow(name=f'structure_part3__wf')
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "subjects_dir",
+            ]
+        ),
+        name="inputnode",
+    )
+    inputnode.inputs.subjects_dir = subjects_dir
 
     # auto_noccseg_node
     fastsurfer_reduce_to_aseg_py = fastsurfer_home / 'recon_surf' / 'reduce_to_aseg.py'  # inference script
 
     auto_noccseg_node = Node(Noccseg(), name='auto_noccseg_node')
+    auto_noccseg_node.iterables = [("subject_id", subject_ids)]
+    auto_noccseg_node.synchronize = True
     auto_noccseg_node.inputs.python_interpret = python_interpret
     auto_noccseg_node.inputs.reduce_to_aseg_py = fastsurfer_reduce_to_aseg_py
 
-    auto_noccseg_node.inputs.mask_file = subjects_dir / subject_id / 'mri' / 'mask.mgz'
-    auto_noccseg_node.inputs.aseg_noCCseg_file = subjects_dir / subject_id / 'mri' / 'aseg.auto_noCCseg.mgz'
+    # auto_noccseg_node.inputs.mask_file = subjects_dir / subject_id / 'mri' / 'mask.mgz'
+    # auto_noccseg_node.inputs.aseg_noCCseg_file = subjects_dir / subject_id / 'mri' / 'aseg.auto_noCCseg.mgz'
 
     # N4_bias_correct_node
     correct_py = fastsurfer_home / "recon_surf" / "N4_bias_correct.py"
 
     N4_bias_correct_node = Node(N4BiasCorrect(), name="N4_bias_correct_node")
+    N4_bias_correct_node.inputs.subjects_dir = subjects_dir
     N4_bias_correct_node.inputs.threads = 8
     N4_bias_correct_node.inputs.python_interpret = python_interpret
     N4_bias_correct_node.inputs.correct_py = correct_py
-    N4_bias_correct_node.inputs.orig_nu_file = subjects_dir / subject_id / "mri" / "orig_nu.mgz"
+    # N4_bias_correct_node.inputs.orig_nu_file = subjects_dir / subject_id / "mri" / "orig_nu.mgz"
 
     # TalairachAndNu
     talairach_and_nu_node = Node(TalairachAndNu(), name="talairach_and_nu_node")
     talairach_and_nu_node.inputs.subjects_dir = subjects_dir
-    talairach_and_nu_node.inputs.subject_id = subject_id
+    # talairach_and_nu_node.inputs.subject_id = subject_id
     talairach_and_nu_node.inputs.threads = 8
 
     talairach_and_nu_node.inputs.mni305 = freesurfer_home / "average" / "mni305.cor.mgz"  # atlas
 
-    talairach_and_nu_node.inputs.talairach_lta = subjects_dir / subject_id / 'mri' / 'transforms' / 'talairach.lta'
-    talairach_and_nu_node.inputs.nu_file = subjects_dir / subject_id / 'mri' / 'nu.mgz'
+    # talairach_and_nu_node.inputs.talairach_lta = subjects_dir / subject_id / 'mri' / 'transforms' / 'talairach.lta'
+    # talairach_and_nu_node.inputs.nu_file = subjects_dir / subject_id / 'mri' / 'nu.mgz'
 
     # Brainmask
     brainmask_node = Node(Brainmask(), name='brainmask_node')
     brainmask_node.inputs.subjects_dir = subjects_dir
-    brainmask_node.inputs.subject_id = subject_id
+    # brainmask_node.inputs.subject_id = subject_id
     brainmask_node.inputs.need_t1 = True
-    # brainmask_node.inputs.mask_file = subjects_dir / subject_id / 'mri' / 'mask.mgz'
 
-    brainmask_node.inputs.T1_file = subjects_dir / subject_id / 'mri' / 'T1.mgz'
-    brainmask_node.inputs.brainmask_file = subjects_dir / subject_id / 'mri' / 'brainmask.mgz'
-    brainmask_node.inputs.norm_file = subjects_dir / subject_id / 'mri' / 'norm.mgz'
+    # brainmask_node.inputs.T1_file = subjects_dir / subject_id / 'mri' / 'T1.mgz'
+    # brainmask_node.inputs.brainmask_file = subjects_dir / subject_id / 'mri' / 'brainmask.mgz'
+    # brainmask_node.inputs.norm_file = subjects_dir / subject_id / 'mri' / 'norm.mgz'
 
     # UpdateAseg
     updateaseg_node = Node(UpdateAseg(), name='updateaseg_node')
     updateaseg_node.inputs.subjects_dir = subjects_dir
-    updateaseg_node.inputs.subject_id = subject_id
+    # updateaseg_node.inputs.subject_id = subject_id
     updateaseg_node.inputs.paint_cc_file = fastsurfer_home / 'recon_surf' / 'paint_cc_into_pred.py'
     updateaseg_node.inputs.python_interpret = python_interpret
 
-    updateaseg_node.inputs.aseg_auto_file = subjects_dir / subject_id / 'mri' / 'aseg.auto.mgz'
-    updateaseg_node.inputs.cc_up_file = subjects_dir / subject_id / 'mri' / 'transforms' / 'cc_up.lta'
-    updateaseg_node.inputs.aparc_aseg_file = subjects_dir / subject_id / 'mri' / 'aparc.DKTatlas+aseg.deep.withCC.mgz'
+    # updateaseg_node.inputs.aseg_auto_file = subjects_dir / subject_id / 'mri' / 'aseg.auto.mgz'
+    # updateaseg_node.inputs.cc_up_file = subjects_dir / subject_id / 'mri' / 'transforms' / 'cc_up.lta'
+    # updateaseg_node.inputs.aparc_aseg_file = subjects_dir / subject_id / 'mri' / 'aparc.DKTatlas+aseg.deep.withCC.mgz'
 
     # Filled
     filled_node = Node(Filled(), name='filled_node')
     filled_node.inputs.subjects_dir = subjects_dir
-    filled_node.inputs.subject_id = subject_id
+    # filled_node.inputs.subject_id = subject_id
     filled_node.inputs.threads = 8
+
+    structure_part3_wf.connect([
+        (inputnode, auto_noccseg_node, [("subjects_dir", "subjects_dir"),
+                                        ]),
+        (auto_noccseg_node, N4_bias_correct_node, [("orig_file", "orig_file"),
+                                                   ("mask_file", "mask_file"),
+                                                   ("subject_id", "subject_id"),
+                                                      ]),
+        (auto_noccseg_node, talairach_and_nu_node, [("orig_file", "orig_file"), ("subject_id", "subject_id"),
+                                                       ]),
+        (N4_bias_correct_node, talairach_and_nu_node, [("orig_nu_file", "orig_nu_file"),
+                                                       ]),
+        (talairach_and_nu_node, brainmask_node, [("nu_file", "nu_file"), ("subject_id", "subject_id"),
+                                                 ]),
+        (auto_noccseg_node, brainmask_node, [("mask_file", "mask_file")
+                                             ]),
+        (brainmask_node, updateaseg_node, [("norm_file", "norm_file"), ("subject_id", "subject_id"),
+                                           ]),
+        (auto_noccseg_node, updateaseg_node, [("aparc_DKTatlas_aseg_deep", "seg_file"),
+                                              ("aseg_noCCseg_file", "aseg_noCCseg_file"),
+                                         ]),
+        (updateaseg_node, filled_node, [("aseg_auto_file", "aseg_auto_file"), ("subject_id", "subject_id"),
+                                        ]),
+        (brainmask_node, filled_node, [("brainmask_file", "brainmask_file"), ("norm_file", "norm_file"),
+                                       ]),
+        (talairach_and_nu_node, filled_node, [("talairach_lta", "talairach_lta"),
+                                              ]),
+    ])
+    return structure_part3_wf
+
+
+set_envrion()
+subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/HNU_1_subwf")
+os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+python_interpret = Path('/home/youjia/anaconda3/envs/3.8/bin/python3')
+pwd = Path.cwd()
+fastsurfer_home = pwd / "FastSurfer"
+freesurfer_home = Path('/usr/local/freesurfer')
+
+multi_subj_n_procs = 2
+
+structure_part3_wf = init_structure_part3_wf(subjects_dir=subjects_dir,
+                                             subject_ids=['sub-0025427', 'sub-0025428'],
+                                             python_interpret=python_interpret,
+                                             fastsurfer_home=fastsurfer_home,
+                                             freesurfer_home=freesurfer_home)
+structure_part3_wf.base_dir = subjects_dir
+# structure_part3_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
+# print()
+# exit()
 
 
 def init_structure_part4_wf(subjects_dir: Path, subject_ids: list,
@@ -224,25 +283,23 @@ def init_structure_part4_wf(subjects_dir: Path, subject_ids: list,
     return structure_part4_wf
 
 
-import os
-
 set_envrion()
-subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/MSC_subwf")
+subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/HNU_1_subwf")
 os.environ['SUBJECTS_DIR'] = str(subjects_dir)
-python_interpret = Path('/home/lincong/miniconda3/envs/pytorch3.8/bin/python3')
+python_interpret = Path('/home/youjia/anaconda3/envs/3.8/bin/python3')
 pwd = Path.cwd()
 fastcsr_home = pwd / "FastCSR"
 
 multi_subj_n_procs = 2
 
 structure_part4_wf = init_structure_part4_wf(subjects_dir=subjects_dir,
-                                             subject_ids=['sub-MSC01', 'sub-MSC02'],
+                                             subject_ids=['sub-0025427', 'sub-0025428'],
                                              python_interpret=python_interpret,
                                              fastcsr_home=fastcsr_home)
 structure_part4_wf.base_dir = str(subjects_dir)
-# structure_part4_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
-# print()
-# exit()
+structure_part4_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
+print()
+exit()
 
 
 def init_structure_part5_wf(subjects_dir: Path, subject_ids: list,
