@@ -571,12 +571,12 @@ if __name__ == '__main__':
 
     data_path = Path("/run/user/1000/gvfs/sftp:host=30.30.30.66,user=zhenyu/mnt/ngshare/Data_Orig/HNU_1")
     layout = bids.BIDSLayout(str(data_path), derivatives=False)
-    subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/HNU_1")
+    subjects_dir = Path("/mnt/ngshare/DeepPrep_workflow/HNU_1")
 
     cmd_pool = []
-    Multi_num = 1
+    Multi_num = 6
 
-    for t1w_files in layout.get(return_type='filename', suffix="T1w"):
+    for t1w_files in layout.get(return_type='filename', suffix="T1w")[:12]:
         sub_info = layout.parse_file_entities(t1w_files)
         subject_id = f"sub-{sub_info['subject']}-ses-{sub_info['session']}"
         print(subject_id)
