@@ -197,7 +197,7 @@ class MotionCorrection(BaseInterface):
             shutil.copy(link_dir / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz.mclog',
                         ori_path / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz.mclog')
             shutil.copy(link_dir / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.mcdat',
-                        ori_path / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln__mc.mcdat')
+                        ori_path / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.mcdat')
             shutil.copy(link_dir / 'mcextreg', ori_path / 'mcextreg')
             shutil.copy(link_dir / 'mcdat2extreg.log', ori_path / 'mcdat2extreg.log')
         except:
@@ -1063,12 +1063,14 @@ class Smooth(BaseInterface):
             save_file = subj_func_path / f'{file_prefix}_mc_MIN2mm.nii.gz'
         if self.inputs.preprocess_method == 'rest':
             temp_file = Path(self.inputs.preprocess_dir) / f'{file_prefix}_MNI2mm_sm6_temp.nii.gz'
-            warped_img = subj_func_path / f'{self.inputs.subject_id}_MNI2mm.nii.gz'
-            self.bold_smooth_6_ants(str(warped_img), save_file, temp_file, bold_file, verbose=True)
+            warped_file = subj_func_path / f'{self.inputs.subject_id}_MNI2mm.nii.gz'
+            warped_img = ants.image_read(str(warped_file))
+            self.bold_smooth_6_ants(warped_img, save_file, temp_file, bold_file, verbose=True)
         else:
             temp_file = Path(self.inputs.preprocess_dir) / f'{file_prefix}_MNI2mm_temp.nii.gz'
-            warped_img = subj_func_path / f'{self.inputs.subject_id}_MNI2mm.nii.gz'
-            self.save_bold(str(warped_img), temp_file, bold_file, save_file)
+            warped_file = subj_func_path / f'{self.inputs.subject_id}_MNI2mm.nii.gz'
+            warped_img = ants.image_read(str(warped_file))
+            self.save_bold(warped_img, temp_file, bold_file, save_file)
     def _run_interface(self, runtime):
         layout = bids.BIDSLayout(str(self.inputs.data_path), derivatives=False)
         if self.inputs.task is None:
