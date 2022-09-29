@@ -27,8 +27,8 @@ def multipool(cmd, Multi_Num=2):
     cmd_pool = [['lh'], ['rh']]
 
     pool = Pool(Multi_Num)
-    # pool.starmap(cmd, cmd_pool)
-    pool.apply_async(cmd, cmd_pool)
+    pool.starmap(cmd, cmd_pool)
+    # pool.apply_async(cmd, cmd_pool)
     pool.close()
     pool.join()
 
