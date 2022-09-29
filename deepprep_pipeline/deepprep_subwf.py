@@ -2,12 +2,12 @@ from pathlib import Path
 from nipype import Node, Workflow, config, logging
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
-from interface.freesurfer import OrigAndRawavg, Brainmask, Filled, WhitePreaparc1, \
+from interface.freesurfer_interface import OrigAndRawavg, Brainmask, Filled, WhitePreaparc1, \
     InflatedSphere, JacobianAvgcurvCortparc, WhitePialThickness1, Curvstats, Cortribbon, \
     Parcstats, Pctsurfcon, Hyporelabel, Aseg7ToAseg, Aseg7, BalabelsMult, Segstats
-from interface.fastsurfer import Segment, Noccseg, N4BiasCorrect, TalairachAndNu, UpdateAseg, \
+from interface.fastsurfer_interface import Segment, Noccseg, N4BiasCorrect, TalairachAndNu, UpdateAseg, \
     SampleSegmentationToSurfave
-from interface.fastcsr import FastCSR
+from interface.fastcsr_interface import FastCSR
 from interface.featreg_interface import FeatReg
 from run import set_envrion
 from multiprocessing import Pool
@@ -98,9 +98,6 @@ def init_structure_part2_wf(subjects_dir: Path, subject_ids: list,
     segment_node.inputs.network_sagittal_path = network_sagittal_path
     segment_node.inputs.network_coronal_path = network_coronal_path
     segment_node.inputs.network_axial_path = network_axial_path
-
-    segment_node.inputs.aparc_DKTatlas_aseg_deep = subjects_dir / subject_id / 'mri' / 'aparc.DKTatlas+aseg.deep.mgz'
-    segment_node.inputs.aparc_DKTatlas_aseg_orig = subjects_dir / subject_id / 'mri' / 'aparc.DKTatlas+aseg.orig.mgz'
 
     structure_part2_wf.connect([
         (inputnode, segment_node, [("subjects_dir", "subjects_dir"),
