@@ -245,6 +245,81 @@ structure_part4_wf.base_dir = str(subjects_dir)
 # exit()
 
 
+def init_structure_part5_wf(subjects_dir: Path, subject_ids: list,
+                            python_interpret: Path,
+                            fastsurfer_home: Path,
+                            freesurfer_home: Path):
+    structure_part5_wf = Workflow(name=f'structure_part5__wf')
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "subjects_dir",
+            ]
+        ),
+        name="inputnode",
+    )
+    inputnode.inputs.subjects_dir = subjects_dir
+
+    # WhitePreaparc1
+    white_preaparc1_node = Node(WhitePreaparc1(), name="white_preaparc1_node")
+    white_preaparc1_node.inputs.subjects_dir = subjects_dir
+    white_preaparc1_node.iterables = [("subject_id", subject_ids)]
+    white_preaparc1_node.synchronize = True
+
+    # SampleSegmentationToSurfave
+    SampleSegmentationToSurfave_node = Node(SampleSegmentationToSurfave(), name='SampleSegmentationToSurfave_node')
+    SampleSegmentationToSurfave_node.inputs.subjects_dir = subjects_dir
+    SampleSegmentationToSurfave_node.inputs.subject_id = subject_id
+    SampleSegmentationToSurfave_node.inputs.python_interpret = python_interpret
+    SampleSegmentationToSurfave_node.inputs.freesurfer_home = freesurfer_home
+
+    lh_DKTatlaslookup_file = fastsurfer_home / 'recon_surf' / f'lh.DKTatlaslookup.txt'
+    rh_DKTatlaslookup_file = fastsurfer_home / 'recon_surf' / f'rh.DKTatlaslookup.txt'
+    smooth_aparc_file = fastsurfer_home / 'recon_surf' / 'smooth_aparc.py'
+    SampleSegmentationToSurfave_node.inputs.lh_DKTatlaslookup_file = lh_DKTatlaslookup_file
+    SampleSegmentationToSurfave_node.inputs.rh_DKTatlaslookup_file = rh_DKTatlaslookup_file
+    SampleSegmentationToSurfave_node.inputs.smooth_aparc_file = smooth_aparc_file
+    #
+    # SampleSegmentationToSurfave_node.inputs.lh_white_preaparc_file = subjects_dir / subject_id / "surf" / "lh.white.preaparc"
+    # SampleSegmentationToSurfave_node.inputs.rh_white_preaparc_file = subjects_dir / subject_id / "surf" / "rh.white.preaparc"
+    # SampleSegmentationToSurfave_node.inputs.lh_cortex_label_file = subjects_dir / subject_id / "label" / "lh.cortex.label"
+    # SampleSegmentationToSurfave_node.inputs.rh_cortex_label_file = subjects_dir / subject_id / "label" / "rh.cortex.label"
+
+    #
+    SampleSegmentationToSurfave_node.inputs.lh_aparc_DKTatlas_mapped_prefix_file = subjects_dir / subject_id / 'label' / 'lh.aparc.DKTatlas.mapped.prefix.annot'
+    SampleSegmentationToSurfave_node.inputs.rh_aparc_DKTatlas_mapped_prefix_file = subjects_dir / subject_id / 'label' / 'rh.aparc.DKTatlas.mapped.prefix.annot'
+    SampleSegmentationToSurfave_node.inputs.lh_aparc_DKTatlas_mapped_file = subjects_dir / subject_id / 'label' / 'lh.aparc.DKTatlas.mapped.annot'
+    SampleSegmentationToSurfave_node.inputs.rh_aparc_DKTatlas_mapped_file = subjects_dir / subject_id / 'label' / 'rh.aparc.DKTatlas.mapped.annot'
+
+    # InflatedSphere
+    inflated_sphere_node = Node(InflatedSphere(), name="inflate_sphere_node")
+    inflated_sphere_node.inputs.subjects_dir = subjects_dir
+    inflated_sphere_node.inputs.subject_id = subject_id
+    inflated_sphere_node.inputs.threads = 8
+
+    structure_part5_wf.connect([
+        (inputnode, fastcsr_node, [("subjects_dir", "subjects_dir"),
+                                   ]),
+        (filled_node, white_preaparc1_node, [("aseg_presurf_file", "aseg_presurf"),
+                                             ("brain_finalsurfs_file", "brain_finalsurfs"),
+                                             ("wm_file", "wm_file"), ("wm_filled", "filled_file"),
+                                             ]),
+        (fastcsr_node, white_preaparc1_node, [("lh_orig_file", "lh_orig"), ("rh_orig_file", "rh_orig"),
+                                              ]),
+        (updateaseg_node, SampleSegmentationToSurfave_node, [("aparc_aseg_file", "aparc_aseg_file"),
+                                                             ]),
+        (white_preaparc1_node, SampleSegmentationToSurfave_node, [("lh_white_preaparc", "lh_white_preaparc_file"),
+                                                                  ("rh_white_preaparc", "rh_white_preaparc_file"),
+                                                                  ("lh_cortex_label", "lh_cortex_label_file"),
+                                                                  ("rh_cortex_label", "rh_cortex_label_file"),
+                                                                  ]),
+        (white_preaparc1_node, inflated_sphere_node, [("lh_white_preaparc", "lh_white_preaparc_file"),
+                                                      ("rh_white_preaparc", "rh_white_preaparc_file"),
+                                                      ]),
+    ])
+    return structure_part5_wf
+
+
 def pipeline(t1w_files, subjects_dir, subject_id):
     pwd = Path.cwd()
     python_interpret = Path('/home/youjia/anaconda3/envs/3.8/bin/python3')
