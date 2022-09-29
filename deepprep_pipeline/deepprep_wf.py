@@ -1,5 +1,5 @@
 from pathlib import Path
-from nipype import Node, Workflow
+from nipype import Node, Workflow, config, logging
 from interface.freesurfer import OrigAndRawavg, Brainmask, Filled, WhitePreaparc1, \
     InflatedSphere, JacobianAvgcurvCortparc, WhitePialThickness1, Curvstats, Cortribbon, \
     Parcstats, Pctsurfcon, Hyporelabel, Aseg7ToAseg, Aseg7, BalabelsMult, Segstats
@@ -9,6 +9,7 @@ from interface.fastcsr import FastCSR
 from interface.featreg_interface import FeatReg
 from run import set_envrion
 from multiprocessing import Pool
+import threading
 
 
 def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: str,
@@ -517,26 +518,26 @@ def init_single_structure_wf(t1w_files: list, subjects_dir: Path, subject_id: st
 
 
 def pipeline(t1w_files, subjects_dir, subject_id):
-    # t1w_files = [
-    #     f'/mnt/ngshare/ProjData/SurfRecon/V001/sub-001/ses-01/anat/sub-001_ses-01_T1w.nii.gz',
-    # ]
-    # pwd = Path.cwd()
-    # python_interpret = Path('/home/youjia/anaconda3/envs/3.8/bin/python3')
-    # fastsurfer_home = pwd / "FastSurfer"
-    # freesurfer_home = Path('/usr/local/freesurfer')
-    # fastcsr_home = pwd.parent / "deepprep_pipeline/FastCSR"
-    # featreg_home = pwd.parent / "deepprep_pipeline/FeatReg"
-    #
-    # # subjects_dir = Path('/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon')
-    # # subject_id = 'sub-001'
-    #
-    # os.environ['SUBJECTS_DIR'] = str(subjects_dir)
-    #
-    # wf = init_single_structure_wf(t1w_files, subjects_dir, subject_id, python_interpret, fastsurfer_home,
-    #                               freesurfer_home, fastcsr_home, featreg_home)
-    # wf.base_dir = subjects_dir
-    # # wf.write_graph(graph2use='flat', simple_form=False)
-    # wf.run()
+    pwd = Path.cwd()
+    python_interpret = Path('/home/youjia/anaconda3/envs/3.8/bin/python3')
+    fastsurfer_home = pwd / "FastSurfer"
+    freesurfer_home = Path('/usr/local/freesurfer')
+    fastcsr_home = pwd.parent / "deepprep_pipeline/FastCSR"
+    featreg_home = pwd.parent / "deepprep_pipeline/FeatReg"
+
+    # subjects_dir = Path('/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon')
+    # subject_id = 'sub-001'
+
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+
+    wf = init_single_structure_wf(t1w_files, subjects_dir, subject_id, python_interpret, fastsurfer_home,
+                                  freesurfer_home, fastcsr_home, featreg_home)
+    wf.base_dir = subjects_dir
+    # wf.write_graph(graph2use='flat', simple_form=False)
+    config.update_config({'logging': {'log_directory': os.getcwd(),
+                                      'log_to_file': True}})
+    logging.update_logging(config)
+    wf.run()
 
 
     ##############################################################
@@ -563,6 +564,18 @@ def pipeline(t1w_files, subjects_dir, subject_id):
     wf.run()
 
 
+
+class myThread(threading.Thread):   #继承父类threading.Thread
+    def __init__(self, t1w_files, subjects_dir, subject_id):
+        threading.Thread.__init__(self)
+        self.t1w_files = t1w_files
+        self.subjects_dir = subjects_dir
+        self.subject_id = subject_id
+    def run(self): #把要执行的代码写到run函数里面 线程在创建后会直接运行run函数
+        pipeline(self.t1w_files, self.subjects_dir, self.subject_id)
+
+
+
 if __name__ == '__main__':
     import os
     import bids
@@ -571,22 +584,36 @@ if __name__ == '__main__':
 
     data_path = Path("/run/user/1000/gvfs/sftp:host=30.30.30.66,user=zhenyu/mnt/ngshare/Data_Orig/HNU_1")
     layout = bids.BIDSLayout(str(data_path), derivatives=False)
-    subjects_dir = Path("/mnt/ngshare/DeepPrep_workflow/HNU_1")
 
-    cmd_pool = []
-    Multi_num = 6
+    subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/HNU_1")
+    Multi_num = 3
 
-    for t1w_files in layout.get(return_type='filename', suffix="T1w")[:12]:
-        sub_info = layout.parse_file_entities(t1w_files)
+    thread_list = []
+
+    for t1w_file in layout.get(return_type='filename', suffix="T1w"):
+        sub_info = layout.parse_file_entities(t1w_file)
         subject_id = f"sub-{sub_info['subject']}-ses-{sub_info['session']}"
-        print(subject_id)
-        t1w = [t1w_files]
-        cmd_pool.append([t1w, subjects_dir, subject_id])
+        # print(subject_id)
+
+        thread_list.append(myThread([t1w_file], subjects_dir, subject_id))
         # pipeline(t1w, subjects_dir, subject_id)
 
-    pool = Pool(Multi_num)
-    pool.starmap(pipeline, cmd_pool)
-    pool.close()
-    pool.join()
+    thread_list = thread_list[200:]
+    i = 0
+    while i < len(thread_list):
+        if i > len(thread_list)-Multi_num:
+            for thread in thread_list[i:]:
+                thread.start()
+            for thread in thread_list[i:]:
+                thread.join()
+            i = len(thread_list)
+        else:
+            for thread in thread_list[i:i+Multi_num]:
+                thread.start()
+            for thread in thread_list[i:i + Multi_num]:
+                thread.join()
+            i += Multi_num
+            print()
+
 
 
