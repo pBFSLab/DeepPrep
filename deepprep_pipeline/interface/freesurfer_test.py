@@ -83,6 +83,9 @@ def white_preaparc1_test():
     subject_id = "sub-MSC01"
     threads = 8
 
+    # subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/HNU_1")
+    # subject_id = "sub-0025427-ses-01"
+
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
     white_preaparc1 = Node(WhitePreaparc1(), name="white_preaparc1_node")
@@ -96,6 +99,7 @@ def white_preaparc1_test():
     white_preaparc1.inputs.filled_file = subjects_dir / subject_id / 'mri' / 'filled.mgz'
     white_preaparc1.inputs.lh_orig = subjects_dir / subject_id / 'surf' / 'lh.orig'
     white_preaparc1.inputs.rh_orig = subjects_dir / subject_id / 'surf' / 'rh.orig'
+    white_preaparc1.base_dir = "/mnt/ngshare/Data_Mirror/pipeline_test/sub-MSC01"
 
     white_preaparc1.run()
 
@@ -151,8 +155,8 @@ def white_pial_thickness1_test():
     subject_id = "sub-002"
     threads = 8
 
-    subjects_dir = Path('/mnt/ngshare/Data_Mirror/pipeline_test')
-    subject_id = 'sub-MSC01'
+    subjects_dir = Path('/mnt/ngshare/DeepPrep_flowtest/HNU_1')
+    subject_id = 'sub-0025427-ses-01'
 
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
@@ -540,7 +544,7 @@ if __name__ == '__main__':
 
     # filled_test()
 
-    # white_preaparc1_test()
+    white_preaparc1_test()
 
     # InflatedSphere_test()
 
@@ -566,4 +570,4 @@ if __name__ == '__main__':
 
     # Segstats_test()
 
-    BalabelsMult_test()
+    # BalabelsMult_test()
