@@ -176,15 +176,17 @@ class WhitePreaparc1InputSpec(BaseInterfaceInputSpec):
     subject_id = Str(desc="sub-xxx", mandatory=True)
     threads = traits.Int(desc='threads')
 
-    aseg_presurf = File(exists=True, desc="mri/aseg.presurf.mgz", mandatory=True)
-    brain_finalsurfs = File(exists=True, desc="mri/brain.finalsurfs.mgz", mandatory=True)
-    wm_file = File(exists=True, desc="mri/wm.mgz", mandatory=True)
-    filled_file = File(exists=True, desc="mri/filled.mgz", mandatory=True)
-    lh_orig = File(exists=True, desc="surf/lh.orig", mandatory=True)
-    rh_orig = File(exists=True, desc="surf/rh.orig", mandatory=True)
+    # aseg_presurf = File(exists=True, desc="mri/aseg.presurf.mgz", mandatory=True)
+    # brain_finalsurfs = File(exists=True, desc="mri/brain.finalsurfs.mgz", mandatory=True)
+    # wm_file = File(exists=True, desc="mri/wm.mgz", mandatory=True)
+    # filled_file = File(exists=True, desc="mri/filled.mgz", mandatory=True)
+    # lh_orig = File(exists=True, desc="surf/lh.orig", mandatory=True)
+    # rh_orig = File(exists=True, desc="surf/rh.orig", mandatory=True)
 
 
 class WhitePreaparc1OutputSpec(TraitedSpec):
+    subject_id = Str(desc="subject id", mandatory=True)
+
     lh_white_preaparc = File(exists=True, desc="surf/lh.white.preaparc")
     rh_white_preaparc = File(exists=True, desc="surf/rh.white.preaparc")
     lh_curv = File(exists=True, desc="surf/lh.curv")
@@ -195,6 +197,9 @@ class WhitePreaparc1OutputSpec(TraitedSpec):
     rh_cortex_label = File(exists=True, desc="label/rh.cortex.label")
     autodet_gw_stats_lh_dat = File(exists=True, desc="surf/autodet.gw.stats.lh.dat")
     autodet_gw_stats_rh_dat = File(exists=True, desc="surf/autodet.gw.stats.rh.dat")
+
+    # pre wf result
+    aparc_aseg_file = File(exists=True, desc="mri/aparc.DKTatlas+aseg.deep.withCC.mgz", mandatory=True)
 
 
 class WhitePreaparc1(BaseInterface):
@@ -226,6 +231,8 @@ class WhitePreaparc1(BaseInterface):
         subjects_dir = Path(self.inputs.subjects_dir)
         subject_id = self.inputs.subject_id
         outputs = self._outputs().get()
+        outputs["subject_id"] = subject_id
+
         outputs["lh_white_preaparc"] = subjects_dir / subject_id / f"surf/lh.white.preaparc"
         outputs["rh_white_preaparc"] = subjects_dir / subject_id / f"surf/rh.white.preaparc"
         outputs["lh_curv"] = subjects_dir / subject_id / f"surf/lh.curv"
@@ -236,6 +243,9 @@ class WhitePreaparc1(BaseInterface):
         outputs["rh_cortex_label"] = subjects_dir / subject_id / f"label/rh.cortex.label"
         outputs["autodet_gw_stats_lh_dat"] = subjects_dir / subject_id / "surf/autodet.gw.stats.lh.dat"
         outputs["autodet_gw_stats_rh_dat"] = subjects_dir / subject_id / "surf/autodet.gw.stats.rh.dat"
+
+        # pre part wf result
+        outputs["aparc_aseg_file"] = subjects_dir / subject_id / "mri/aparc.DKTatlas+aseg.deep.withCC.mgz"
         return outputs
 
 
