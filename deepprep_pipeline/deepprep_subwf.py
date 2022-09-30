@@ -349,24 +349,173 @@ structure_part6_wf = init_structure_part6_wf(subjects_dir=subjects_dir,
                                              freesurfer_home=freesurfer_home,
                                              featreg_home=featreg_home)
 structure_part6_wf.base_dir = str(subjects_dir)
-structure_part6_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
+# structure_part6_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
+# print()
+# exit()
+
+
+
+
+def init_structure_part7_wf(subjects_dir: Path, subject_ids: list):
+    structure_part7_wf = Workflow(name=f'structure_part7__wf')
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "subjects_dir",
+            ]
+        ),
+        name="inputnode",
+    )
+    inputnode.inputs.subjects_dir = subjects_dir
+
+    # Jacobian
+    JacobianAvgcurvCortparc_node = Node(JacobianAvgcurvCortparc(), name='JacobianAvgcurvCortparc_node')
+    JacobianAvgcurvCortparc_node.inputs.subjects_dir = subjects_dir
+    JacobianAvgcurvCortparc_node.iterables = [("subject_id", subject_ids)]
+    JacobianAvgcurvCortparc_node.synchronize = True
+    # JacobianAvgcurvCortparc_node.inputs.subject_id = subject_id
+    JacobianAvgcurvCortparc_node.inputs.threads = 8
+
+
+    # JacobianAvgcurvCortparc_node.inputs.lh_white_preaparc = subjects_dir / subject_id / "surf" / "lh.white.preaparc"
+    # JacobianAvgcurvCortparc_node.inputs.rh_white_preaparc = subjects_dir / subject_id / "surf" / "rh.white.preaparc"
+    # JacobianAvgcurvCortparc_node.inputs.lh_sphere_reg = subjects_dir / subject_id / "surf" / "lh.sphere.reg"
+    # JacobianAvgcurvCortparc_node.inputs.rh_sphere_reg = subjects_dir / subject_id / "surf" / "rh.sphere.reg"
+    # JacobianAvgcurvCortparc_node.inputs.aseg_presurf_file = subjects_dir / subject_id / "mri" / "aseg.presurf.mgz"
+    # JacobianAvgcurvCortparc_node.inputs.lh_cortex_label = subjects_dir / subject_id / "label" / "lh.cortex.label"
+    # JacobianAvgcurvCortparc_node.inputs.rh_cortex_label = subjects_dir / subject_id / "label" / "rh.cortex.label"
+
+    # WhitePialThickness1
+    white_pial_thickness1_node = Node(WhitePialThickness1(), name='white_pial_thickness1_node')
+    white_pial_thickness1_node.inputs.subjects_dir = subjects_dir
+    # white_pial_thickness1_node.inputs.subject_id = subject_id
+    white_pial_thickness1_node.inputs.threads = 8
+
+    # white_pial_thickness1_node.inputs.lh_cortex_hipamyg_label = subjects_dir / subject_id / "label" / f"lh.cortex+hipamyg.label"  # TODO ## 测试用?
+    # white_pial_thickness1_node.inputs.rh_cortex_hipamyg_label = subjects_dir / subject_id / "label" / f"rh.cortex+hipamyg.label"  # TODO ## 测试用?
+    #
+    # white_pial_thickness1_node.inputs.lh_white = subjects_dir / subject_id / "surf" / f"lh.white"
+    # white_pial_thickness1_node.inputs.rh_white = subjects_dir / subject_id / "surf" / f"rh.white"
+
+    # # Curvstats
+    # Curvstats_node = Node(Curvstats(), name='Curvstats_node')
+    # Curvstats_node.inputs.subjects_dir = subjects_dir
+    # # Curvstats_node.inputs.subject_id = subject_id
+    #
+    # # Cortribbon
+    # Cortribbon_node = Node(Cortribbon(), name='Cortribbon_node')
+    # Cortribbon_node.inputs.subjects_dir = subjects_dir
+    # # Cortribbon_node.inputs.subject_id = subject_id
+    # Cortribbon_node.inputs.threads = 8
+    #
+    # # Cortribbon_node.inputs.lh_ribbon = subjects_dir / subject_id / f'mri/lh.ribbon.mgz'
+    # # Cortribbon_node.inputs.rh_ribbon = subjects_dir / subject_id / f'mri/rh.ribbon.mgz'
+    # # Cortribbon_node.inputs.ribbon = subjects_dir / subject_id / 'mri/ribbon.mgz'
+    #
+    # # Parcstats
+    # Parcstats_node = Node(Parcstats(), name='Parcstats_node')
+    # Parcstats_node.inputs.subjects_dir = subjects_dir
+    # # Parcstats_node.inputs.subject_id = subject_id
+    # Parcstats_node.inputs.threads = 8
+    #
+    # # Aseg7
+    # Aseg7_node = Node(Aseg7(), name='Aseg7_node')
+    # Aseg7_node.inputs.subjects_dir = subjects_dir
+    # # Aseg7_node.inputs.subject_id = subject_id
+    # Aseg7_node.inputs.threads = 8
+    #
+    # # Aseg7_node.inputs.aseg_presurf_hypos = subjects_dir / subject_id / 'mri' / 'aseg.presurf.hypos.mgz'
+    # # Aseg7_node.inputs.aparc_aseg = subjects_dir / subject_id / 'mri' / 'aparc+aseg.mgz'
+    #
+    # # Segstats
+    # Segstats_node = Node(Segstats(), name='Segstats_node')
+    # Segstats_node.inputs.subjects_dir = subjects_dir
+    # # Segstats_node.inputs.subject_id = subject_id
+    # Segstats_node.inputs.threads = 8
+    #
+    # # Balabels
+    # BalabelsMult_node = Node(BalabelsMult(), name='BalabelsMult_node')
+    # BalabelsMult_node.inputs.subjects_dir = subjects_dir
+    # # BalabelsMult_node.inputs.subject_id = subject_id
+    # BalabelsMult_node.inputs.threads = 8
+    #
+    # BalabelsMult_node.inputs.freesurfer_dir = os.environ['FREESURFER']
+    # BalabelsMult_node.inputs.fsaverage_label_dir = Path(
+    #     os.environ['FREESURFER_HOME']) / 'subjects' / 'fsaverage' / 'label'
+
+
+
+    structure_part7_wf.connect([
+        (JacobianAvgcurvCortparc_node, white_pial_thickness1_node, [("aseg_presurf_file", "aseg_presurf"),
+                                                                    ("brain_finalsurfs_file", "brain_finalsurfs"),
+                                                                    ("wm_file", "wm_file"),
+                                                                    ("lh_white_preaparc", "lh_white_preaparc"),
+                                                                    ("rh_white_preaparc", "rh_white_preaparc"),
+                                                                    ("lh_cortex_label", "lh_cortex_label"),
+                                                                    ("rh_cortex_label", "rh_cortex_label"),
+                                                                    ("lh_aparc_annot", "lh_aparc_annot"),
+                                                                    ("rh_aparc_annot", "rh_aparc_annot"),
+                                                                    ("subject_id", "subject_id")
+                                                                   ]),
+        # (JacobianAvgcurvCortparc_node, Curvstats_node, [("lh_smoothwm", "lh_smoothwm"), ("rh_smoothwm", "rh_smoothwm"),
+        #                                                 ("lh_sulc", "lh_sulc"), ("rh_sulc", "rh_sulc"),
+        #                                                 ]),
+        # (white_pial_thickness1_node, Curvstats_node, [("lh_curv", "lh_curv"), ("rh_curv", "rh_curv"),
+        #                                               ("subject_id", "subject_id")
+        #                                               ]),
+        # (JacobianAvgcurvCortparc_node, Cortribbon_node, [("aseg_presurf_file", "aseg_presurf_file"),
+        #                                 ]),
+        # (white_pial_thickness1_node, Cortribbon_node, [("lh_white", "lh_white"), ("rh_white", "rh_white"),
+        #                                                ("lh_pial", "lh_pial"), ("rh_pial", "rh_pial"),
+        #                                                ("subject_id", "subject_id")
+        #                                                ]),
+        #
+        # (Cortribbon_node, Parcstats_node, [("ribbon", "ribbon_file"),
+        #                                    ]),
+        # (JacobianAvgcurvCortparc_node, Parcstats_node, [("wm_file", "wm_file"),
+        #                                                 ("lh_aparc_annot", "lh_aparc_annot"),
+        #                                                 ("rh_aparc_annot", "rh_aparc_annot"),
+        #                                                 ]),
+        # (white_pial_thickness1_node, Parcstats_node, [("lh_white", "lh_white"), ("rh_white", "rh_white"),
+        #                                               ("lh_pial", "lh_pial"), ("rh_pial", "rh_pial"),
+        #                                               ("lh_thickness", "lh_thickness"),
+        #                                               ("rh_thickness", "rh_thickness"),
+        #                                               ("subject_id", "subject_id")
+        #                                               ]),
+        # (Parcstats_node, Aseg7_node, [("aseg_file", "aseg_file"),
+        #                               ]),
+        # (white_pial_thickness1_node, Aseg7_node, [("lh_white", "lh_white"), ("rh_white", "rh_white"),
+        #                                           ("lh_pial", "lh_pial"), ("rh_pial", "rh_pial"),
+        #                                           ]),
+        # (JacobianAvgcurvCortparc_node, Aseg7_node, [("lh_cortex_label", "lh_cortex_label"), ("rh_cortex_label", "rh_cortex_label"),
+        #                                             ("lh_aparc_annot", "lh_aparc_annot"), ("rh_aparc_annot", "rh_aparc_annot"),
+        #                                             ("subject_id", "subject_id")
+        #                                            ]),
+        # (JacobianAvgcurvCortparc_node, BalabelsMult_node, [("lh_sphere_reg", "lh_sphere_reg"), ("rh_sphere_reg", "rh_sphere_reg"),
+        #                                                     ]),
+        # (white_pial_thickness1_node, BalabelsMult_node, [("lh_white", "lh_white"), ("rh_white", "rh_white"),
+        #                                                  ("subject_id", "subject_id")
+        #                                                  ]),
+    ])
+    return structure_part7_wf
+
+
+set_envrion()
+subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/HNU_1_subwf")
+os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+# python_interpret = Path('/home/youjia/anaconda3/envs/3.8/bin/python3')
+# pwd = Path.cwd()
+# fastsurfer_home = pwd / "FastSurfer"
+
+multi_subj_n_procs = 2
+
+structure_part7_wf = init_structure_part7_wf(subjects_dir=subjects_dir,
+                                             subject_ids=['sub-0025427', 'sub-0025428'])
+structure_part7_wf.base_dir = subjects_dir
+structure_part7_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
 print()
 exit()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
