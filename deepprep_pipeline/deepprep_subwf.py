@@ -14,11 +14,17 @@ from multiprocessing import Pool
 import threading
 import os
 
+# python_interpret = Path('/home/youjia/anaconda3/envs/3.8/bin/python3')
+# subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/HNU_1_subwf")
+# subject_ids = ['sub-0025427', 'sub-0025428']
+
+python_interpret = Path('/home/lincong/miniconda3/envs/pytorch3.8/bin/python3')
+subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/MSC_subwf")
+subject_ids = ['sub-MSC01', 'sub-MSC02']
 
 
 # Part1 CPU
-def init_structure_part1_wf(t1w_filess: list, subjects_dir: Path, subject_ids: list, ):
-    # structure_part1_wf = Workflow(name=f'structure_part1_{subject_id.replace("-", "_")}_wf')
+def init_structure_part1_wf(t1w_filess: list, subjects_dir: Path, subject_ids: list):
     structure_part1_wf = Workflow(name=f'structure_part1__wf')
 
     inputnode = pe.Node(
@@ -49,7 +55,7 @@ def init_structure_part1_wf(t1w_filess: list, subjects_dir: Path, subject_ids: l
 
 
 set_envrion()
-subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/HNU_1_subwf")
+subjects_dir = subjects_dir
 os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
 multi_subj_n_procs = 2
@@ -58,9 +64,11 @@ structure_part1_wf = init_structure_part1_wf(t1w_filess=[
     ["/mnt/ngshare/Data_Orig/HNU_1/sub-0025427/ses-01/anat/sub-0025427_ses-01_T1w.nii.gz"],
     ["/mnt/ngshare/Data_Orig/HNU_1/sub-0025428/ses-01/anat/sub-0025428_ses-01_T1w.nii.gz"]],
     subjects_dir=subjects_dir,
-    subject_ids=['sub-0025427', 'sub-0025428'])
+    subject_ids=subject_ids)
 structure_part1_wf.base_dir = subjects_dir
-# structure_part1_wf_res = structure_part1_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
+
+
+# structure_part1_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
 # print()
 # exit()
 
@@ -106,19 +114,21 @@ def init_structure_part2_wf(subjects_dir: Path, subject_ids: list,
 
 
 set_envrion()
-subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/HNU_1_subwf")
+subjects_dir = subjects_dir
 os.environ['SUBJECTS_DIR'] = str(subjects_dir)
-python_interpret = Path('/home/youjia/anaconda3/envs/3.8/bin/python3')
+python_interpret = python_interpret
 pwd = Path.cwd()
 fastsurfer_home = pwd / "FastSurfer"
 
 multi_subj_n_procs = 2
 
 structure_part2_wf = init_structure_part2_wf(subjects_dir=subjects_dir,
-                                             subject_ids=['sub-0025427', 'sub-0025428'],
+                                             subject_ids=subject_ids,
                                              python_interpret=python_interpret,
                                              fastsurfer_home=fastsurfer_home)
 structure_part2_wf.base_dir = subjects_dir
+
+
 # structure_part2_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
 # print()
 # exit()
@@ -129,7 +139,6 @@ def init_structure_part3_wf(subjects_dir: Path, subject_ids: list,
                             python_interpret: Path,
                             fastsurfer_home: Path,
                             freesurfer_home: Path):
-
     structure_part3_wf = Workflow(name=f'structure_part3__wf')
 
     inputnode = pe.Node(
@@ -208,9 +217,9 @@ def init_structure_part3_wf(subjects_dir: Path, subject_ids: list,
         (auto_noccseg_node, N4_bias_correct_node, [("orig_file", "orig_file"),
                                                    ("mask_file", "mask_file"),
                                                    ("subject_id", "subject_id"),
-                                                      ]),
+                                                   ]),
         (auto_noccseg_node, talairach_and_nu_node, [("orig_file", "orig_file"), ("subject_id", "subject_id"),
-                                                       ]),
+                                                    ]),
         (N4_bias_correct_node, talairach_and_nu_node, [("orig_nu_file", "orig_nu_file"),
                                                        ]),
         (talairach_and_nu_node, brainmask_node, [("nu_file", "nu_file"), ("subject_id", "subject_id"),
@@ -221,7 +230,7 @@ def init_structure_part3_wf(subjects_dir: Path, subject_ids: list,
                                            ]),
         (auto_noccseg_node, updateaseg_node, [("aparc_DKTatlas_aseg_deep", "seg_file"),
                                               ("aseg_noCCseg_file", "aseg_noCCseg_file"),
-                                         ]),
+                                              ]),
         (updateaseg_node, filled_node, [("aseg_auto_file", "aseg_auto_file"), ("subject_id", "subject_id"),
                                         ]),
         (brainmask_node, filled_node, [("brainmask_file", "brainmask_file"), ("norm_file", "norm_file"),
@@ -233,9 +242,9 @@ def init_structure_part3_wf(subjects_dir: Path, subject_ids: list,
 
 
 set_envrion()
-subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/HNU_1_subwf")
+subjects_dir = subjects_dir
 os.environ['SUBJECTS_DIR'] = str(subjects_dir)
-python_interpret = Path('/home/youjia/anaconda3/envs/3.8/bin/python3')
+python_interpret = python_interpret
 pwd = Path.cwd()
 fastsurfer_home = pwd / "FastSurfer"
 freesurfer_home = Path('/usr/local/freesurfer')
@@ -243,11 +252,13 @@ freesurfer_home = Path('/usr/local/freesurfer')
 multi_subj_n_procs = 2
 
 structure_part3_wf = init_structure_part3_wf(subjects_dir=subjects_dir,
-                                             subject_ids=['sub-0025427', 'sub-0025428'],
+                                             subject_ids=subject_ids,
                                              python_interpret=python_interpret,
                                              fastsurfer_home=fastsurfer_home,
                                              freesurfer_home=freesurfer_home)
 structure_part3_wf.base_dir = subjects_dir
+
+
 # structure_part3_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
 # print()
 # exit()
@@ -284,24 +295,27 @@ def init_structure_part4_wf(subjects_dir: Path, subject_ids: list,
 
 
 set_envrion()
-subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/HNU_1_subwf")
+subjects_dir = subjects_dir
 os.environ['SUBJECTS_DIR'] = str(subjects_dir)
-python_interpret = Path('/home/youjia/anaconda3/envs/3.8/bin/python3')
+python_interpret = python_interpret
 pwd = Path.cwd()
 fastcsr_home = pwd / "FastCSR"
 
 multi_subj_n_procs = 2
 
 structure_part4_wf = init_structure_part4_wf(subjects_dir=subjects_dir,
-                                             subject_ids=['sub-0025427', 'sub-0025428'],
+                                             subject_ids=subject_ids,
                                              python_interpret=python_interpret,
                                              fastcsr_home=fastcsr_home)
 structure_part4_wf.base_dir = str(subjects_dir)
-structure_part4_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
-print()
-exit()
 
 
+# structure_part4_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
+# print()
+# exit()
+
+
+# ################# part 5 ##################
 def init_structure_part5_wf(subjects_dir: Path, subject_ids: list,
                             python_interpret: Path,
                             fastsurfer_home: Path,
@@ -326,7 +340,6 @@ def init_structure_part5_wf(subjects_dir: Path, subject_ids: list,
     # SampleSegmentationToSurfave
     SampleSegmentationToSurfave_node = Node(SampleSegmentationToSurfave(), name='SampleSegmentationToSurfave_node')
     SampleSegmentationToSurfave_node.inputs.subjects_dir = subjects_dir
-    SampleSegmentationToSurfave_node.inputs.subject_id = subject_id
     SampleSegmentationToSurfave_node.inputs.python_interpret = python_interpret
     SampleSegmentationToSurfave_node.inputs.freesurfer_home = freesurfer_home
 
@@ -336,45 +349,103 @@ def init_structure_part5_wf(subjects_dir: Path, subject_ids: list,
     SampleSegmentationToSurfave_node.inputs.lh_DKTatlaslookup_file = lh_DKTatlaslookup_file
     SampleSegmentationToSurfave_node.inputs.rh_DKTatlaslookup_file = rh_DKTatlaslookup_file
     SampleSegmentationToSurfave_node.inputs.smooth_aparc_file = smooth_aparc_file
-    #
-    # SampleSegmentationToSurfave_node.inputs.lh_white_preaparc_file = subjects_dir / subject_id / "surf" / "lh.white.preaparc"
-    # SampleSegmentationToSurfave_node.inputs.rh_white_preaparc_file = subjects_dir / subject_id / "surf" / "rh.white.preaparc"
-    # SampleSegmentationToSurfave_node.inputs.lh_cortex_label_file = subjects_dir / subject_id / "label" / "lh.cortex.label"
-    # SampleSegmentationToSurfave_node.inputs.rh_cortex_label_file = subjects_dir / subject_id / "label" / "rh.cortex.label"
-
-    #
-    SampleSegmentationToSurfave_node.inputs.lh_aparc_DKTatlas_mapped_prefix_file = subjects_dir / subject_id / 'label' / 'lh.aparc.DKTatlas.mapped.prefix.annot'
-    SampleSegmentationToSurfave_node.inputs.rh_aparc_DKTatlas_mapped_prefix_file = subjects_dir / subject_id / 'label' / 'rh.aparc.DKTatlas.mapped.prefix.annot'
-    SampleSegmentationToSurfave_node.inputs.lh_aparc_DKTatlas_mapped_file = subjects_dir / subject_id / 'label' / 'lh.aparc.DKTatlas.mapped.annot'
-    SampleSegmentationToSurfave_node.inputs.rh_aparc_DKTatlas_mapped_file = subjects_dir / subject_id / 'label' / 'rh.aparc.DKTatlas.mapped.annot'
 
     # InflatedSphere
     inflated_sphere_node = Node(InflatedSphere(), name="inflate_sphere_node")
     inflated_sphere_node.inputs.subjects_dir = subjects_dir
-    inflated_sphere_node.inputs.subject_id = subject_id
     inflated_sphere_node.inputs.threads = 8
 
     structure_part5_wf.connect([
-        (inputnode, fastcsr_node, [("subjects_dir", "subjects_dir"),
-                                   ]),
-        (filled_node, white_preaparc1_node, [("aseg_presurf_file", "aseg_presurf"),
-                                             ("brain_finalsurfs_file", "brain_finalsurfs"),
-                                             ("wm_file", "wm_file"), ("wm_filled", "filled_file"),
-                                             ]),
-        (fastcsr_node, white_preaparc1_node, [("lh_orig_file", "lh_orig"), ("rh_orig_file", "rh_orig"),
-                                              ]),
-        (updateaseg_node, SampleSegmentationToSurfave_node, [("aparc_aseg_file", "aparc_aseg_file"),
-                                                             ]),
+        (inputnode, white_preaparc1_node, [("subjects_dir", "subjects_dir"),
+                                           ]),
+        (white_preaparc1_node, SampleSegmentationToSurfave_node, [("aparc_aseg_file", "aparc_aseg_file"),
+                                                                  ]),
         (white_preaparc1_node, SampleSegmentationToSurfave_node, [("lh_white_preaparc", "lh_white_preaparc_file"),
                                                                   ("rh_white_preaparc", "rh_white_preaparc_file"),
                                                                   ("lh_cortex_label", "lh_cortex_label_file"),
                                                                   ("rh_cortex_label", "rh_cortex_label_file"),
+                                                                  ("subject_id", "subject_id"),
                                                                   ]),
         (white_preaparc1_node, inflated_sphere_node, [("lh_white_preaparc", "lh_white_preaparc_file"),
                                                       ("rh_white_preaparc", "rh_white_preaparc_file"),
+                                                      ("subject_id", "subject_id"),
                                                       ]),
     ])
     return structure_part5_wf
+
+
+set_envrion()
+subjects_dir = subjects_dir
+os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+python_interpret = python_interpret
+pwd = Path.cwd()
+fastcsr_home = pwd / "FastCSR"
+
+multi_subj_n_procs = 2
+
+structure_part5_wf = init_structure_part5_wf(subjects_dir=subjects_dir,
+                                             subject_ids=subject_ids,
+                                             python_interpret=python_interpret,
+                                             fastsurfer_home=fastsurfer_home,
+                                             freesurfer_home=freesurfer_home
+                                             )
+structure_part5_wf.base_dir = str(subjects_dir)
+
+
+structure_part5_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
+print()
+exit()
+
+
+def init_structure_part6_wf(subjects_dir: Path, subject_ids: list,
+                            python_interpret: Path,
+                            freesurfer_home: Path,
+                            featreg_home: Path):
+    structure_part6_wf = Workflow(name=f'structure_part6__wf')
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "subjects_dir",
+            ]
+        ),
+        name="inputnode",
+    )
+    inputnode.inputs.subjects_dir = subjects_dir
+    # FeatReg
+    featreg_node = Node(FeatReg(), f'featreg_node')
+    featreg_node.inputs.subjects_dir = subjects_dir
+    featreg_node.inputs.python_interpret = python_interpret
+    featreg_node.inputs.freesurfer_home = freesurfer_home
+    featreg_node.inputs.featreg_py = featreg_home / "featreg" / 'predict.py'
+    featreg_node.iterables = [("subject_id", subject_ids)]
+    featreg_node.synchronize = True
+
+    structure_part6_wf.connect([
+        (inputnode, featreg_node, [("subjects_dir", "subjects_dir"),
+                                   ]),
+    ])
+    return structure_part6_wf
+
+
+set_envrion()
+subjects_dir = subjects_dir
+os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+python_interpret = python_interpret
+pwd = Path.cwd()
+featreg_home = pwd.parent / "deepprep_pipeline/FeatReg"
+
+multi_subj_n_procs = 2
+
+structure_part6_wf = init_structure_part6_wf(subjects_dir=subjects_dir,
+                                             subject_ids=subject_ids,
+                                             python_interpret=python_interpret,
+                                             freesurfer_home=freesurfer_home,
+                                             featreg_home=featreg_home)
+structure_part6_wf.base_dir = str(subjects_dir)
+# structure_part6_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
+# print()
+# exit()
 
 
 def pipeline(t1w_files, subjects_dir, subject_id):
@@ -423,17 +494,6 @@ def pipeline(t1w_files, subjects_dir, subject_id):
     wf.run()
 
 
-class myThread(threading.Thread):  # 继承父类threading.Thread
-    def __init__(self, t1w_files, subjects_dir, subject_id):
-        threading.Thread.__init__(self)
-        self.t1w_files = t1w_files
-        self.subjects_dir = subjects_dir
-        self.subject_id = subject_id
-
-    def run(self):  # 把要执行的代码写到run函数里面 线程在创建后会直接运行run函数
-        pipeline(self.t1w_files, self.subjects_dir, self.subject_id)
-
-
 if __name__ == '__main__':
     import os
     import bids
@@ -452,24 +512,5 @@ if __name__ == '__main__':
     for t1w_file in layout.get(return_type='filename', suffix="T1w"):
         sub_info = layout.parse_file_entities(t1w_file)
         subject_id = f"sub-{sub_info['subject']}-ses-{sub_info['session']}"
-        # print(subject_id)
 
-        thread_list.append(myThread([t1w_file], subjects_dir, subject_id))
         # pipeline(t1w, subjects_dir, subject_id)
-
-    thread_list = thread_list[200:]
-    i = 0
-    while i < len(thread_list):
-        if i > len(thread_list) - Multi_num:
-            for thread in thread_list[i:]:
-                thread.start()
-            for thread in thread_list[i:]:
-                thread.join()
-            i = len(thread_list)
-        else:
-            for thread in thread_list[i:i + Multi_num]:
-                thread.start()
-            for thread in thread_list[i:i + Multi_num]:
-                thread.join()
-            i += Multi_num
-            print()
