@@ -485,17 +485,6 @@ class WhitePialThickness1(BaseInterface):
     def __init__(self):
         super(WhitePialThickness1, self).__init__()
 
-    def cmd(self, hemi):
-        subject_id = self.inputs.subject_id
-        threads = self.inputs.threads if self.inputs.threads else 0
-        fsthreads = get_freesurfer_threads(threads)
-
-        cmd = f"recon-all -subject {subject_id} -hemi {hemi} -white " \
-              f"-no-isrunning {fsthreads}"
-        run_cmd_with_timing(cmd)
-        cmd = f"recon-all -subject {subject_id} -hemi {hemi} -pial " \
-              f"-no-isrunning {fsthreads}"
-        run_cmd_with_timing(cmd)
 
     def _run_interface(self, runtime):
         # must run surfreg first
@@ -511,7 +500,14 @@ class WhitePialThickness1(BaseInterface):
         # FreeSurfer 6.0
         # time = (474 + 462) / 60
 
-        multipool(self.cmd, Multi_Num=2)
+        subject_id = self.inputs.subject_id
+        threads = self.inputs.threads if self.inputs.threads else 0
+        fsthreads = get_freesurfer_threads(threads)
+
+        cmd = f"recon-all -subject {subject_id} -white -no-isrunning {fsthreads}"
+        run_cmd_with_timing(cmd)
+        cmd = f"recon-all -subject {subject_id} -pial -no-isrunning {fsthreads}"
+        run_cmd_with_timing(cmd)
 
         return runtime
 
@@ -970,17 +966,15 @@ class JacobianAvgcurvCortparc(BaseInterface):
     # cpu = 3  # 最大cpu占用：个
     # gpu = 0  # 最大gpu占用：MB
 
-    def cmd(self, hemi):
+
+    def _run_interface(self, runtime):
         subject_id = self.inputs.subject_id
         threads = self.inputs.threads if self.inputs.threads else 0
         fsthreads = get_freesurfer_threads(threads)
         # create nicer inflated surface from topo fixed (not needed, just later for visualization)
-        cmd = f"recon-all -subject {subject_id} -hemi {hemi} -jacobian_white -avgcurv -cortparc " \
+        cmd = f"recon-all -subject {subject_id} -jacobian_white -avgcurv -cortparc " \
               f"-no-isrunning {fsthreads}"
         run_cmd_with_timing(cmd)
-
-    def _run_interface(self, runtime):
-        multipool(self.cmd, Multi_Num=2)
         return runtime
 
     def _list_outputs(self):
