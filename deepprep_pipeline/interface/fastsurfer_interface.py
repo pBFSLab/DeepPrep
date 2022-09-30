@@ -334,17 +334,17 @@ class SampleSegmentationToSurfaveInputSpec(BaseInterfaceInputSpec):
 
     lh_DKTatlaslookup_file = File(exists=True, desc="FastSurfer/recon_surf/lh.DKTatlaslookup.txt", mandatory=True)
     rh_DKTatlaslookup_file = File(exists=True, desc="FastSurfer/recon_surf/rh.DKTatlaslookup.txt", mandatory=True)
-    aparc_aseg_file = File(exists=True, desc="mri/aparc.DKTatlas+aseg.deep.withCC.mgz", mandatory=True)
     smooth_aparc_file = File(exists=True, desc="Fastsurfer/recon_surf/smooth_aparc.py", mandatory=True)
+    aparc_aseg_file = File(exists=True, desc="mri/aparc.DKTatlas+aseg.deep.withCC.mgz", mandatory=True)
     lh_white_preaparc_file = File(exists=True, desc="surf/lh.white.preaparc", mandatory=True)
     rh_white_preaparc_file = File(exists=True, desc="surf/rh.white.preaparc", mandatory=True)
     lh_cortex_label_file = File(exists=True, desc="label/lh.cortex.label", mandatory=True)
     rh_cortex_label_file = File(exists=True, desc="label/rh.cortex.label", mandatory=True)
 
-    lh_aparc_DKTatlas_mapped_prefix_file = File(desc="label/lh.aparc.DKTatlas.mapped.prefix.annot", mandatory=True)
-    rh_aparc_DKTatlas_mapped_prefix_file = File(desc="label/rh.aparc.DKTatlas.mapped.prefix.annot", mandatory=True)
-    lh_aparc_DKTatlas_mapped_file = File(desc="label/lh.aparc.DKTatlas.mapped.annot", mandatory=True)
-    rh_aparc_DKTatlas_mapped_file = File(desc="label/rh.aparc.DKTatlas.mapped.annot", mandatory=True)
+    # lh_aparc_DKTatlas_mapped_prefix_file = File(desc="label/lh.aparc.DKTatlas.mapped.prefix.annot", mandatory=True)
+    # rh_aparc_DKTatlas_mapped_prefix_file = File(desc="label/rh.aparc.DKTatlas.mapped.prefix.annot", mandatory=True)
+    # lh_aparc_DKTatlas_mapped_file = File(desc="label/lh.aparc.DKTatlas.mapped.annot", mandatory=True)
+    # rh_aparc_DKTatlas_mapped_file = File(desc="label/rh.aparc.DKTatlas.mapped.annot", mandatory=True)
 
 
 class SampleSegmentationToSurfaveOutputSpec(TraitedSpec):
@@ -364,19 +364,20 @@ class SampleSegmentationToSurfave(BaseInterface):
     gpu = 0  # 最大gpu占用：MB
 
     def cmd(self, hemi):
+        subjects_dir = Path(self.inputs.subjects_dir)
+        subject_id = self.inputs.subject_id
         if hemi == 'lh':
             hemi_DKTatlaslookup_file = self.inputs.lh_DKTatlaslookup_file
-            hemi_white_preaparc_file = self.inputs.lh_white_preaparc_file
-            hemi_aparc_DKTatlas_mapped_prefix_file = self.inputs.lh_aparc_DKTatlas_mapped_prefix_file
-            hemi_cortex_label_file = self.inputs.lh_cortex_label_file
-            hemi_aparc_DKTatlas_mapped_file = self.inputs.lh_aparc_DKTatlas_mapped_file
+            hemi_white_preaparc_file = subjects_dir / subject_id / "surf" / "lh.white.preaparc"
+            hemi_aparc_DKTatlas_mapped_prefix_file = subjects_dir / subject_id / 'label' / 'lh.aparc.DKTatlas.mapped.prefix.annot'
+            hemi_cortex_label_file = subjects_dir / subject_id / "label" / "lh.cortex.label"
+            hemi_aparc_DKTatlas_mapped_file = subjects_dir / subject_id / 'label' / 'lh.aparc.DKTatlas.mapped.annot'
         else:
             hemi_DKTatlaslookup_file = self.inputs.rh_DKTatlaslookup_file
-            hemi_white_preaparc_file = self.inputs.rh_white_preaparc_file
-            hemi_aparc_DKTatlas_mapped_prefix_file = self.inputs.rh_aparc_DKTatlas_mapped_prefix_file
-            hemi_cortex_label_file = self.inputs.rh_cortex_label_file
-            hemi_aparc_DKTatlas_mapped_file = self.inputs.rh_aparc_DKTatlas_mapped_file
-
+            hemi_white_preaparc_file = subjects_dir / subject_id / "surf" / "rh.white.preaparc"
+            hemi_aparc_DKTatlas_mapped_prefix_file = subjects_dir / subject_id / 'label' / 'rh.aparc.DKTatlas.mapped.prefix.annot'
+            hemi_cortex_label_file = subjects_dir / subject_id / "label" / "rh.cortex.label"
+            hemi_aparc_DKTatlas_mapped_file = subjects_dir / subject_id / 'label' / 'rh.aparc.DKTatlas.mapped.annot'
 
         cmd = f"mris_sample_parc -ct {self.inputs.freesurfer_home}/average/colortable_desikan_killiany.txt " \
               f"-file {hemi_DKTatlaslookup_file} -projmm 0.6 -f 5  " \
@@ -400,11 +401,14 @@ class SampleSegmentationToSurfave(BaseInterface):
         multipool(self.cmd, Multi_Num=2)
 
         return runtime
+
     def _list_outputs(self):
+        subjects_dir = Path(self.inputs.subjects_dir)
+        subject_id = self.inputs.subject_id
         outputs = self._outputs().get()
-        outputs["lh_aparc_DKTatlas_mapped_prefix_file"] = self.inputs.lh_aparc_DKTatlas_mapped_prefix_file
-        outputs["rh_aparc_DKTatlas_mapped_prefix_file"] = self.inputs.rh_aparc_DKTatlas_mapped_prefix_file
-        outputs["lh_aparc_DKTatlas_mapped_file"] = self.inputs.lh_aparc_DKTatlas_mapped_file
-        outputs["rh_aparc_DKTatlas_mapped_file"] = self.inputs.rh_aparc_DKTatlas_mapped_file
+        outputs["lh_aparc_DKTatlas_mapped_prefix_file"] = subjects_dir / subject_id / 'label' / 'lh.aparc.DKTatlas.mapped.prefix.annot'
+        outputs["rh_aparc_DKTatlas_mapped_prefix_file"] = subjects_dir / subject_id / 'label' / 'rh.aparc.DKTatlas.mapped.prefix.annot'
+        outputs["lh_aparc_DKTatlas_mapped_file"] = subjects_dir / subject_id / 'label' / 'lh.aparc.DKTatlas.mapped.annot'
+        outputs["rh_aparc_DKTatlas_mapped_file"] = subjects_dir / subject_id / 'label' / 'rh.aparc.DKTatlas.mapped.annot'
 
         return outputs
