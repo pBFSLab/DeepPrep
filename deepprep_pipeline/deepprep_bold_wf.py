@@ -182,9 +182,9 @@ def init_single_bold_projection_smooth_wf(subject_id: str, subj: str, task: str,
 
     return single_bold_projection_smooth_wf
 def pipeline():
-    subject_id = 'sub-MSC01'
-    subj = 'MSC01'
-    task = 'rest'   # 'motro' or 'rest'
+    subject_id = 'sub-0025427'
+    subj = '0025427'
+    task = 'rest'   # 'motor' or 'rest'
     preprocess_method = 'rest' # 'task' or 'rest'
 
     MNI152_target = '/usr/local/fsl/data/standard/MNI152_T1_2mm_brain_mask.nii.gz'  # Smooth target
@@ -199,11 +199,13 @@ def pipeline():
     #
     # preprocess_dir.mkdir(parents=True, exist_ok=True)
 
-    data_path = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/MSC_bold_test')  # BIDS path
+    data_path = Path(f'/mnt/ngshare/DeepPrep/HNU_1/derivatives/HNU_1_bold_test')  # BIDS path
     derivative_deepprep_path = data_path / 'derivatives' / 'deepprep_bold_test'  # bold result output dir path
     deepprep_subj_path = derivative_deepprep_path / subject_id
     preprocess_dir = deepprep_subj_path / 'tmp' / f'task-{task}'
-    subjects_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/MSC_bold_test/derivatives/deepprep_bold_test/Recon')
+    subjects_dir = Path('/mnt/ngshare/DeepPrep/HNU_1/derivatives/HNU_1_bold_test/derivatives/deepprep_bold_test/Recon')
+
+    preprocess_dir.mkdir(parents=True, exist_ok=True)
 
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
