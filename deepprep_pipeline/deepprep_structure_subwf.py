@@ -4,12 +4,19 @@ from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from interface.freesurfer_interface import OrigAndRawavg, Brainmask, Filled, WhitePreaparc1, \
     InflatedSphere, JacobianAvgcurvCortparc, WhitePialThickness1, Curvstats, Cortribbon, \
-    Parcstats, Pctsurfcon, Hyporelabel, Aseg7ToAseg, Aseg7, BalabelsMult, Segstats
+    Parcstats, Aseg7, BalabelsMult, Segstats
 from interface.fastsurfer_interface import Segment, Noccseg, N4BiasCorrect, TalairachAndNu, UpdateAseg, \
     SampleSegmentationToSurfave
-from interface.fastcsr_interface import FastCSR
+from interface.fastcsr_interface import FastCSR, FastCSRModel, FastCSRSurface
 from interface.featreg_interface import FeatReg
 from run import set_envrion
+
+
+def clear_is_running(subjects_dir: Path, subject_ids: list):
+    for subject_id in subject_ids:
+        is_running_file = subjects_dir / subject_id / 'scripts' / 'IsRunning.lh+rh'
+        if is_running_file.exists():
+            os.remove(is_running_file)
 
 
 # Part1 CPU
@@ -201,6 +208,66 @@ def init_structure_part4_wf(subjects_dir: Path, subject_ids: list,
                                    ]),
     ])
     return structure_part4_wf
+
+
+def init_structure_part4_1_wf(subjects_dir: Path, subject_ids: list,
+                              python_interpret: Path,
+                              fastcsr_home: Path):
+    structure_part4_1_wf = Workflow(name=f'structure_part4_1__wf')
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "subjects_dir",
+            ]
+        ),
+        name="inputnode",
+    )
+    inputnode.inputs.subjects_dir = subjects_dir
+    # FastCSR
+    fastcsr_node = Node(FastCSRModel(), name="fastcsrmodel_node")
+    fastcsr_node.inputs.subjects_dir = subjects_dir
+    fastcsr_node.iterables = [("subject_id", subject_ids)]
+    fastcsr_node.synchronize = True
+
+    fastcsr_node.inputs.python_interpret = python_interpret
+    fastcsr_node.inputs.fastcsr_py = fastcsr_home / 'pipeline.py'
+
+    structure_part4_1_wf.connect([
+        (inputnode, fastcsr_node, [("subjects_dir", "subjects_dir"),
+                                   ]),
+    ])
+    return structure_part4_1_wf
+
+
+def init_structure_part4_2_wf(subjects_dir: Path, subject_ids: list,
+                              python_interpret: Path,
+                              fastcsr_home: Path):
+    structure_part4_2_wf = Workflow(name=f'structure_part4_2_wf')
+
+    inputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "subjects_dir",
+            ]
+        ),
+        name="inputnode",
+    )
+    inputnode.inputs.subjects_dir = subjects_dir
+    # FastCSR
+    fastcsr_node = Node(FastCSRSurface(), name="fastcsrsurface_node")
+    fastcsr_node.inputs.subjects_dir = subjects_dir
+    fastcsr_node.iterables = [("subject_id", subject_ids)]
+    fastcsr_node.synchronize = True
+
+    fastcsr_node.inputs.python_interpret = python_interpret
+    fastcsr_node.inputs.fastcsr_py = fastcsr_home / 'pipeline.py'
+
+    structure_part4_2_wf.connect([
+        (inputnode, fastcsr_node, [("subjects_dir", "subjects_dir"),
+                                   ]),
+    ])
+    return structure_part4_2_wf
 
 
 # ################# part 5 ##################
@@ -428,53 +495,87 @@ def pipeline():
 
     # python_interpret = Path('/home/youjia/anaconda3/envs/3.8/bin/python3')
     python_interpret = Path('/home/lincong/miniconda3/envs/pytorch3.8/bin/python3')
-    subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/MSC_subwf")
-    subject_ids = ['sub-MSC01', 'sub-MSC02']
-    multi_subj_n_procs = 2
 
-    t1w_filess = [
-        [
-            '/mnt/ngshare/DeepPrep_flowtest/MSC_Data/sub-MSC01/ses-struct01/anat/sub-MSC01_ses-struct01_run-01_T1w.nii.gz'],
-        [
-            '/mnt/ngshare/DeepPrep_flowtest/MSC_Data/sub-MSC02/ses-struct01/anat/sub-MSC02_ses-struct01_run-01_T1w.nii.gz'],
-    ]
+    # t1w_filess = [
+    #     ['/mnt/ngshare/DeepPrep_flowtest/MSC_Data/sub-MSC01/ses-struct01/anat/sub-MSC01_ses-struct01_run-01_T1w.nii.gz'],
+    #     ['/mnt/ngshare/DeepPrep_flowtest/MSC_Data/sub-MSC02/ses-struct01/anat/sub-MSC02_ses-struct01_run-01_T1w.nii.gz'],
+    # ]
+    # subject_ids = ['sub-MSC01', 'sub-MSC02']
+
+    data_path = Path("/mnt/ngshare/Data_Orig/HNU_1")  # Raw Data BIDS dir
+    subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/HNU_1_Recon")  # Recon result dir
+    workflow_cache_dir = Path("/mnt/ngshare/DeepPrep_flowtest/HNU_1_Workflow")  # workflow tmp cache dir
+
+    layout = bids.BIDSLayout(str(data_path), derivatives=False)
+
+    t1w_filess = list()
+    subject_ids = list()
+    for t1w_file in layout.get(return_type='filename', suffix="T1w"):
+        sub_info = layout.parse_file_entities(t1w_file)
+        subject_id = f"sub-{sub_info['subject']}-ses-{sub_info['session']}"
+        t1w_filess.append([t1w_file])
+        subject_ids.append(subject_id)
 
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
+    # 设置tmp目录位置
+    # tmp_dir = subjects_dir / 'tmp'
+    # tmp_dir.mkdir(parents=True, exist_ok=True)
+
+    t1w_filess = t1w_filess[30:31]
+    subject_ids = subject_ids[30:31]
+
     # 设置log目录位置
-    log_dir = subjects_dir / 'log'
+    log_dir = workflow_cache_dir / 'log'
     log_dir.mkdir(parents=True, exist_ok=True)
     config.update_config({'logging': {'log_directory': log_dir,
                                       'log_to_file': True}})
     logging.update_logging(config)
 
+    clear_is_running(subjects_dir=subjects_dir,
+                     subject_ids=subject_ids)
+
     structure_part1_wf = init_structure_part1_wf(t1w_filess=t1w_filess,
                                                  subjects_dir=subjects_dir,
                                                  subject_ids=subject_ids)
-    structure_part1_wf.base_dir = subjects_dir
-    structure_part1_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
+    structure_part1_wf.base_dir = workflow_cache_dir
+    structure_part1_wf.run('MultiProc', plugin_args={'n_procs': 30})
 
     structure_part2_wf = init_structure_part2_wf(subjects_dir=subjects_dir,
                                                  subject_ids=subject_ids,
                                                  python_interpret=python_interpret,
                                                  fastsurfer_home=fastsurfer_home)
-    structure_part2_wf.base_dir = subjects_dir
-    structure_part2_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
+    structure_part2_wf.base_dir = workflow_cache_dir
+    structure_part2_wf.run('MultiProc', plugin_args={'n_procs': 3})
 
     structure_part3_wf = init_structure_part3_wf(subjects_dir=subjects_dir,
                                                  subject_ids=subject_ids,
                                                  python_interpret=python_interpret,
                                                  fastsurfer_home=fastsurfer_home,
                                                  freesurfer_home=freesurfer_home)
-    structure_part3_wf.base_dir = subjects_dir
-    structure_part3_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
+    structure_part3_wf.base_dir = workflow_cache_dir
+    structure_part3_wf.run('MultiProc', plugin_args={'n_procs': 30})
 
     structure_part4_wf = init_structure_part4_wf(subjects_dir=subjects_dir,
                                                  subject_ids=subject_ids,
                                                  python_interpret=python_interpret,
                                                  fastcsr_home=fastcsr_home)
-    structure_part4_wf.base_dir = str(subjects_dir)
-    structure_part4_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
+    structure_part4_wf.base_dir = workflow_cache_dir
+    structure_part4_wf.run('MultiProc', plugin_args={'n_procs': 3})
+
+    structure_part4_1_wf = init_structure_part4_1_wf(subjects_dir=subjects_dir,
+                                                     subject_ids=subject_ids,
+                                                     python_interpret=python_interpret,
+                                                     fastcsr_home=fastcsr_home)
+    structure_part4_1_wf.base_dir = workflow_cache_dir
+    structure_part4_1_wf.run('MultiProc', plugin_args={'n_procs': 3})
+
+    structure_part4_2_wf = init_structure_part4_2_wf(subjects_dir=subjects_dir,
+                                                     subject_ids=subject_ids,
+                                                     python_interpret=python_interpret,
+                                                     fastcsr_home=fastcsr_home)
+    structure_part4_2_wf.base_dir = workflow_cache_dir
+    structure_part4_2_wf.run('MultiProc', plugin_args={'n_procs': 10})
 
     structure_part5_wf = init_structure_part5_wf(subjects_dir=subjects_dir,
                                                  subject_ids=subject_ids,
@@ -482,21 +583,21 @@ def pipeline():
                                                  fastsurfer_home=fastsurfer_home,
                                                  freesurfer_home=freesurfer_home
                                                  )
-    structure_part5_wf.base_dir = str(subjects_dir)
-    structure_part5_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
+    structure_part5_wf.base_dir = workflow_cache_dir
+    structure_part5_wf.run('MultiProc', plugin_args={'n_procs': 18})
 
     structure_part6_wf = init_structure_part6_wf(subjects_dir=subjects_dir,
                                                  subject_ids=subject_ids,
                                                  python_interpret=python_interpret,
                                                  freesurfer_home=freesurfer_home,
                                                  featreg_home=featreg_home)
-    structure_part6_wf.base_dir = str(subjects_dir)
-    structure_part6_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
-
+    structure_part6_wf.base_dir = workflow_cache_dir
+    structure_part6_wf.run('MultiProc', plugin_args={'n_procs': 1})
+    #
     structure_part7_wf = init_structure_part7_wf(subjects_dir=subjects_dir,
                                                  subject_ids=subject_ids)
-    structure_part7_wf.base_dir = subjects_dir
-    structure_part7_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
+    structure_part7_wf.base_dir = workflow_cache_dir
+    structure_part7_wf.run('MultiProc', plugin_args={'n_procs': 10})
 
     # wf.write_graph(graph2use='flat', simple_form=False)
 
@@ -508,18 +609,3 @@ if __name__ == '__main__':
     set_envrion()
 
     pipeline()
-
-    # data_path = Path("/run/user/1000/gvfs/sftp:host=30.30.30.66,user=zhenyu/mnt/ngshare/Data_Orig/HNU_1")
-    # layout = bids.BIDSLayout(str(data_path), derivatives=False)
-    # subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/HNU_1")
-    # os.environ['SUBJECTS_DIR'] = "/mnt/ngshare/DeepPrep_flowtest/HNU_1"
-    #
-    # Multi_num = 3
-    #
-    # thread_list = []
-    #
-    # for t1w_file in layout.get(return_type='filename', suffix="T1w"):
-    #     sub_info = layout.parse_file_entities(t1w_file)
-    #     subject_id = f"sub-{sub_info['subject']}-ses-{sub_info['session']}"
-    #
-    #     # pipeline(t1w, subjects_dir, subject_id)
