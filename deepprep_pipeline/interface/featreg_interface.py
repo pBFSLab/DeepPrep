@@ -38,7 +38,6 @@ class FeatReg(BaseInterface):
               f'--fsd {self.inputs.freesurfer_home} --hemi {hemi}'
         run_cmd_with_timing(cmd)
 
-
     def _run_interface(self, runtime):
         multipool(self.cmd, Multi_Num=2)
 
