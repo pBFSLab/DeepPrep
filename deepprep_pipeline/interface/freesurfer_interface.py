@@ -43,7 +43,6 @@ class Brainmask(BaseInterface):
         norm_file = subjects_dir / subject_id / 'mri' / 'norm.mgz'
         T1_file = subjects_dir / subject_id / 'mri' / 'T1.mgz'
 
-
         # create norm by masking nu 0.7s
         need_t1 = self.inputs.need_t1
         cmd = f'mri_mask {self.inputs.nu_file} {self.inputs.mask_file} {norm_file}'
@@ -213,17 +212,17 @@ class WhitePreaparc1(BaseInterface):
 
     def cmd(self, hemi):
         threads = self.inputs.threads if self.inputs.threads else 0
-        fsthreads = get_freesurfer_threads(threads)
-
-        cmd = f"mris_make_surfaces -aseg aseg.presurf -white white.preaparc -whiteonly -noaparc -mgz -T1 brain.finalsurfs {self.inputs.subject_id} {hemi} threads {threads}"
-        run_cmd_with_timing(cmd)
-
-        cmd = f'recon-all -subject {self.inputs.subject_id} -hemi {hemi} -autodetgwstats -white-preaparc -cortex-label ' \
-              f'-no-isrunning {fsthreads}'
+        cmd = f"mris_make_surfaces -aseg aseg.presurf -white white.preaparc -whiteonly " \
+              f"-noaparc -mgz -T1 brain.finalsurfs {self.inputs.subject_id} {hemi} threads {threads}"
         run_cmd_with_timing(cmd)
 
     def _run_interface(self, runtime):
         multipool(self.cmd, Multi_Num=2)
+        threads = self.inputs.threads if self.inputs.threads else 0
+        fsthreads = get_freesurfer_threads(threads)
+        cmd = f'recon-all -subject {self.inputs.subject_id} -autodetgwstats -white-preaparc -cortex-label ' \
+              f'-no-isrunning {fsthreads}'
+        run_cmd_with_timing(cmd)
 
         return runtime
 
@@ -283,8 +282,8 @@ class WhitePreaparc2(BaseInterface):
     def _run_interface(self, runtime):
         threads = self.inputs.threads if self.inputs.threads else 0
         fsthreads = get_freesurfer_threads(threads)
-        cmd = f'recon-all -subject {self.inputs.subject_id} -hemi {self.inputs.hemi} -autodetgwstats -white-preaparc -cortex-label ' \
-              f'-no-isrunning {fsthreads}'
+        cmd = f'recon-all -subject {self.inputs.subject_id} -hemi {self.inputs.hemi} ' \
+              f'-autodetgwstats -white-preaparc -cortex-label -no-isrunning {fsthreads}'
         run_cmd_with_timing(cmd)
         return runtime
 
@@ -408,22 +407,21 @@ class InflatedSphere(BaseInterface):
     cpu = 6  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
 
-    def cmd(self, hemi):
+    def cmd(self):
         threads = self.inputs.threads if self.inputs.threads else 0
         fsthreads = get_freesurfer_threads(threads)
         # create nicer inflated surface from topo fixed (not needed, just later for visualization)
-        cmd = f"recon-all -subject {self.inputs.subject_id} -hemi {hemi} -smooth2 -no-isrunning {fsthreads}"
+        cmd = f"recon-all -subject {self.inputs.subject_id} -smooth2 -no-isrunning {fsthreads}"
         run_cmd_with_timing(cmd)
 
-        cmd = f"recon-all -subject {self.inputs.subject_id} -hemi {hemi} -inflate2 -no-isrunning {fsthreads}"
+        cmd = f"recon-all -subject {self.inputs.subject_id} -inflate2 -no-isrunning {fsthreads}"
         run_cmd_with_timing(cmd)
 
-        cmd = f"recon-all -subject {self.inputs.subject_id} -hemi {hemi} -sphere -no-isrunning {fsthreads}"
+        cmd = f"recon-all -subject {self.inputs.subject_id} -sphere -no-isrunning {fsthreads}"
         run_cmd_with_timing(cmd)
 
     def _run_interface(self, runtime):
-        multipool(self.cmd, Multi_Num=2)
-
+        self.cmd()
         return runtime
 
     def _list_outputs(self):
@@ -494,7 +492,6 @@ class WhitePialThickness1(BaseInterface):
 
     def __init__(self):
         super(WhitePialThickness1, self).__init__()
-
 
     def _run_interface(self, runtime):
         # must run surfreg first
@@ -670,17 +667,18 @@ class Curvstats(BaseInterface):
     cpu = 2.7  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
 
-    def cmd(self, hemi):
+    def cmd(self):
         subject_id = self.inputs.subject_id
         threads = self.inputs.threads if self.inputs.threads else 0
         fsthreads = get_freesurfer_threads(threads)
 
         # in FS7 curvstats moves here
-        cmd = f"recon-all -subject {subject_id} -hemi {hemi} -curvstats -no-isrunning {fsthreads}"
+        cmd = f"recon-all -subject {subject_id} -curvstats -no-isrunning {fsthreads}"
         run_cmd_with_timing(cmd)
 
     def _run_interface(self, runtime):
-        multipool(self.cmd, Multi_Num=2)
+        self.cmd()
+        # multipool(self.cmd, Multi_Num=2)
 
         return runtime
 
@@ -939,8 +937,6 @@ class JacobianAvgcurvCortparcThresholdInputSpec(BaseInterfaceInputSpec):
     # rh_aparc_annot = File(mandatory=True, desc="label/rh.aparc.annot")
 
 
-
-
 class JacobianAvgcurvCortparcThresholdOutputSpec(TraitedSpec):
     lh_jacobian_white = File(exists=True, desc='surf/lh.jacobian_white')
     rh_jacobian_white = File(exists=True, desc='surf/rh.jacobian_white')
@@ -975,7 +971,6 @@ class JacobianAvgcurvCortparc(BaseInterface):
     # time = 28 / 60  # 运行时间：分钟
     # cpu = 3  # 最大cpu占用：个
     # gpu = 0  # 最大gpu占用：MB
-
 
     def _run_interface(self, runtime):
         subject_id = self.inputs.subject_id
@@ -1209,7 +1204,6 @@ class BalabelsMult(BaseInterface):
     def __init__(self):
         super(BalabelsMult, self).__init__()
 
-
     def cmd(self, hemi):
         subjects_dir = Path(self.inputs.subjects_dir)
         subject_id = self.inputs.subject_id
@@ -1246,6 +1240,7 @@ class BalabelsMult(BaseInterface):
                 i.join()
             t2 = time.time()
             print("time:", t2 - t1)
+
         def Run_1(file_name):
             subject_id = self.inputs.subject_id
             for i in range(len(file_name)):
@@ -1276,7 +1271,7 @@ class BalabelsMult(BaseInterface):
                       f"--hemi {hemi} --regmethod surface"
                 run_cmd_with_timing(cmd)
 
-        multi_process(part_file_names,Run_2)
+        multi_process(part_file_names, Run_2)
         cmd = f'cd {sub_label_dir} && mris_label2annot --s {subject_id} --hemi {hemi} --ctab {self.inputs.freesurfer_dir}/average/colortable_BA.txt --l {hemi}.BA1_exvivo.label ' \
               f'--l {hemi}.BA2_exvivo.label --l {hemi}.BA3a_exvivo.label --l {hemi}.BA3b_exvivo.label --l {hemi}.BA4a_exvivo.label ' \
               f'--l {hemi}.BA4p_exvivo.label --l {hemi}.BA6_exvivo.label --l {hemi}.BA44_exvivo.label --l {hemi}.BA45_exvivo.label ' \
@@ -1314,7 +1309,6 @@ class BalabelsMult(BaseInterface):
             os.system(f"ln -sf {Path(self.inputs.freesurfer_dir) / 'subjects/fsaverage5'} {fsaverage5_dir}")
         if not fsaverage6_dir.exists():
             os.system(f"ln -sf {Path(self.inputs.freesurfer_dir) / 'subjects/fsaverage6'} {fsaverage6_dir}")
-
 
         multipool(self.cmd, Multi_Num=2)
         return runtime
