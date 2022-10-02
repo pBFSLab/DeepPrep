@@ -684,17 +684,26 @@ class RestRegression(BaseInterface):
         fsaverage6_dir = subjects_dir / 'fsaverage6'
         if not fsaverage6_dir.exists():
             src_fsaverage6_dir = Path(os.environ['FREESURFER_HOME']) / 'subjects' / 'fsaverage6'
-            os.symlink(src_fsaverage6_dir, fsaverage6_dir)
+            try:
+                os.symlink(src_fsaverage6_dir, fsaverage6_dir)
+            except FileExistsError:
+                pass
 
         fsaverage5_dir = subjects_dir / 'fsaverage5'
         if not fsaverage5_dir.exists():
             src_fsaverage5_dir = Path(os.environ['FREESURFER_HOME']) / 'subjects' / 'fsaverage5'
-            os.symlink(src_fsaverage5_dir, fsaverage5_dir)
+            try:
+                os.symlink(src_fsaverage5_dir, fsaverage5_dir)
+            except FileExistsError:
+                pass
 
         fsaverage4_dir = subjects_dir / 'fsaverage4'
         if not fsaverage4_dir.exists():
             src_fsaverage4_dir = Path(os.environ['FREESURFER_HOME']) / 'subjects' / 'fsaverage4'
-            os.symlink(src_fsaverage4_dir, fsaverage4_dir)
+            try:
+                os.symlink(src_fsaverage4_dir, fsaverage4_dir)
+            except FileExistsError:
+                pass
 
     # smooth_downsampling
     # def cmd(self, hemi, subj_surf_path, dst_resid_file, dst_reg_file):
