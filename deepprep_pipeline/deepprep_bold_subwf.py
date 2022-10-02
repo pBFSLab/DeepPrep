@@ -2,10 +2,10 @@ from pathlib import Path
 from nipype.pipeline import engine as pe
 from nipype.interfaces import utility as niu
 from nipype import Node, Workflow, config, logging
-from bold_interface import VxmRegistraion, BoldSkipReorient, Stc, MkTemplate, \
+from interface.bold_interface import VxmRegistraion, BoldSkipReorient, Stc, MkTemplate, \
     MotionCorrection, Register, MkBrainmask, VxmRegNormMNI152, RestGauss, \
     RestBandpass, RestRegression, Smooth
-from run import set_envrion
+from interface.run import set_envrion
 
 
 def init_bold_part1_wf(subject_ids: list,
