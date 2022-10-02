@@ -1,6 +1,6 @@
 from nipype.interfaces.base import BaseInterface, \
     BaseInterfaceInputSpec, File, TraitedSpec, Directory, Str, traits
-from run import multipool, multipool_run, multipool_BidsBolds, multipool_BidsBolds_2, multiregressionpool
+from interface.run import multipool, multipool_run, multipool_BidsBolds, multipool_BidsBolds_2, multiregressionpool
 import sys
 import sh
 import nibabel as nib
@@ -12,9 +12,9 @@ import shutil
 import tensorflow as tf
 import ants
 import shutil
-import deepprep_pipeline.voxelmorph as vxm
+import voxelmorph as vxm
 
-from deepprep_pipeline.app.filters.filters import bandpass_nifti
+from app.filters.filters import bandpass_nifti
 
 
 class BoldSkipReorientInputSpec(BaseInterfaceInputSpec):
@@ -579,7 +579,7 @@ class RestGauss(BaseInterface):
     gpu = 0  # 最大gpu占用：MB
 
     def cmd(self, run):
-        from deepprep_pipeline.app.filters.filters import gauss_nifti
+        from app.filters.filters import gauss_nifti
 
         preprocess_dir = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
         mc = Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
@@ -704,8 +704,8 @@ class RestRegression(BaseInterface):
     #     sm6_path = sp.smooth_fs6(fs6_path, hemi)
     #     sp.downsample_fs6_to_fs4(sm6_path, hemi)
     def _run_interface(self, runtime):
-        from deepprep_pipeline.app.regressors.regressors import compile_regressors, regression
-        from deepprep_pipeline.app.surface_projection import surface_projection as sp
+        from app.regressors.regressors import compile_regressors, regression
+        from app.surface_projection import surface_projection as sp
 
         preprocess_dir = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
 
@@ -840,7 +840,7 @@ class VxmRegNormMNI152(BaseInterface):
         return affined_bold_img
 
     def vxm_warp_bold_2mm(self, resid_t1, affine_file, warp_file, warped_file, verbose=True):
-        import deepprep_pipeline.voxelmorph as vxm
+        import voxelmorph as vxm
         import tensorflow as tf
         import time
 
