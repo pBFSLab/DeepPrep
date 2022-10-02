@@ -181,7 +181,7 @@ def RestGauss_test():
 
 
 def RestBandpass_test():
-    task = 'motor'
+    task = 'rest'
     subject_id = 'sub-MSC01'
     subj = 'MSC01'
     data_path = Path(f'/mnt/DATA/lincong/temp/DeepPrep/MSC')
@@ -197,6 +197,9 @@ def RestBandpass_test():
     preprocess_dir = data_path / 'derivatives' / 'deepprep_bold_test' / subject_id / 'tmp' / f'task-{task}'
     subjects_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/MSC_bold_test/derivatives/deepprep_bold_test/Recon')
 
+    data_path = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/MSC_bold_test')  # BIDS path
+    subjects_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/MSC_bold_test/derivatives/deepprep_bold_test/Recon')
+    preprocess_dir = data_path / 'derivatives' / 'deepprep_bold_test' / subject_id / 'tmp' / f'task-{task}'
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
     RestBandpass_node = Node(RestBandpass(), name='RestBandpass_node')
@@ -357,12 +360,12 @@ if __name__ == '__main__':
 
     # RestGauss_test()
 
-    # RestBandpass_test()
+    RestBandpass_test()
 
     # RestRegression_test()
 
     # VxmRegNormMNI152_test()
 
-    Smooth_test()
+    # Smooth_test()
 
 
