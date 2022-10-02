@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from multiprocessing import Pool, Process, Lock
 import logging
@@ -180,10 +181,10 @@ class FastCSRSurface(BaseInterface):
         surfix = 'orig'
 
         cmd_pool = list()
-        cmd = f"{self.inputs.python_interpret} {fastcsr_path / 'levelset2surf.py'} --fastcsr_subjects_dir {subjects_dir} --subj {subject_id} --hemi lh --suffix {surfix}".split()
-        cmd_pool.append(cmd)
-        cmd = f"{self.inputs.python_interpret} {fastcsr_path / 'levelset2surf.py'} --fastcsr_subjects_dir {subjects_dir} --subj {subject_id} --hemi rh --suffix {surfix}".split()
-        cmd_pool.append(cmd)
+        cmd = f"{self.inputs.python_interpret} {fastcsr_path / 'levelset2surf.py'} --fastcsr_subjects_dir {subjects_dir} --subj {subject_id} --hemi lh --suffix {surfix}"
+        cmd_pool.append(cmd.split())
+        cmd = f"{self.inputs.python_interpret} {fastcsr_path / 'levelset2surf.py'} --fastcsr_subjects_dir {subjects_dir} --subj {subject_id} --hemi rh --suffix {surfix}"
+        cmd_pool.append(cmd.split())
         lh_process = subprocess.Popen(cmd_pool[0], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
         rh_process = subprocess.Popen(cmd_pool[1], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
         lh_retcode = lh_process.wait()
