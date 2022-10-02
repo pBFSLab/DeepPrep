@@ -243,42 +243,6 @@ def init_bold_part4_wf(subject_ids: list,
                                             ])
     ])
     return bold_part4_wf
-# Part5 CPU
-
-
-# import os
-# set_envrion()
-#
-# task = 'rest'   # 'motor' or 'rest'
-# preprocess_method = 'rest' # 'task' or 'rest'
-#
-# MNI152_target = '/usr/local/fsl/data/standard/MNI152_T1_2mm_brain_mask.nii.gz'  # Smooth target
-#
-# # data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')  # BIDS path
-# # derivative_deepprep_path = data_path / 'derivatives' / 'deepprep_wftest'  # bold result output dir path
-# #
-# # deepprep_subj_path = derivative_deepprep_path / f'sub-{subj}'
-# # subjects_dir = derivative_deepprep_path / "Recon"  # ！！ structure 预处理结果所在的SUBJECTS_DIR路径
-# #
-# # preprocess_dir = deepprep_subj_path / 'tmp' / f'task-{task}'
-# #
-# # preprocess_dir.mkdir(parents=True, exist_ok=True)
-#
-# data_path = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/MSC_bold_test')  # BIDS path
-#
-# subjects_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/MSC_bold_test/derivatives/deepprep_bold_test/Recon')
-#
-# os.environ['SUBJECTS_DIR'] = str(subjects_dir)
-#
-# multi_subj_n_procs = 2
-# bold_part5_wf = init_bold_part5_wf(subject_ids = ['sub-MSC01', 'sub-MSC02'],
-#                                              task = task,
-#                                              data_path= data_path,
-#                                              preprocess_method = preprocess_method)
-# bold_part5_wf.base_dir = '/mnt/ngshare/DeepPrep/MSC/derivatives/MSC_bold_test'
-# bold_part5_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
-# print()
-# exit()
 
 
 def pipeline():
@@ -288,16 +252,20 @@ def pipeline():
     resource_dir = pwd / 'resource'
     atlas_type = 'MNI152_T1_2mm'
 
-    subject_ids = ['sub-MSC01', 'sub-MSC02']
+    # subject_ids = ['sub-MSC01', 'sub-MSC02']
     task = 'rest'  # 'motor' or 'rest'
     preprocess_method = 'rest'  # 'task' or 'rest'
-    data_path = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/MSC_bold_test')  # BIDS path
-    subjects_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/MSC_bold_test/derivatives/deepprep_bold_test/Recon')
-    derivative_deepprep_path = Path(
-        '/mnt/ngshare/DeepPrep/MSC/derivatives/MSC_bold_test/derivatives/deepprep_bold_test')
-
+    data_path = Path(f'/mnt/ngshare/DeepPrep/HNU_1')  # BIDS path
+    subjects_dir = Path('/mnt/ngshare/DeepPrep/HNU_1/derivatives/DeepPrep/Recon')
+    derivative_deepprep_path = Path('/mnt/ngshare/DeepPrep_flowtest/HNU_1_bold_test')
+    workflow_cache_dir = Path("/mnt/ngshare/DeepPrep_flowtest/HNU_1_Workflow")  # workflow tmp cache dir
     mni152_brain_mask = Path('/usr/local/fsl/data/standard/MNI152_T1_2mm_brain_mask.nii.gz')
-    multi_subj_n_procs = 2
+
+    subject_ids = os.listdir(data_path)
+    subject_ids.remove('derivatives')
+    subject_ids.remove('dataset_description.json')
+
+    # multi_subj_n_procs = 2
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
     # 设置log目录位置
@@ -313,24 +281,24 @@ def pipeline():
                                        atlas_type=atlas_type,
                                        subjects_dir=subjects_dir,
                                        derivative_deepprep_path=derivative_deepprep_path)
-    bold_part1_wf.base_dir = derivative_deepprep_path
-    bold_part1_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
+    bold_part1_wf.base_dir = workflow_cache_dir
+    bold_part1_wf.run('MultiProc', plugin_args={'n_procs': 8})
 
     bold_part2_wf = init_bold_part2_wf(subject_ids=subject_ids,
                                        task=task,
                                        data_path=data_path,
                                        subjects_dir=subjects_dir,
                                        derivative_deepprep_path=derivative_deepprep_path)
-    bold_part2_wf.base_dir = derivative_deepprep_path
-    bold_part2_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
-
+    bold_part2_wf.base_dir = workflow_cache_dir
+    bold_part2_wf.run('MultiProc', plugin_args={'n_procs': 8})
+    exit()
     if task == 'rest':
         bold_part3_wf = init_bold_part3_wf(subject_ids=subject_ids,
                                            task=task,
                                            data_path=data_path,
                                            subjects_dir=subjects_dir,
                                            derivative_deepprep_path=derivative_deepprep_path)
-        bold_part3_wf.base_dir = derivative_deepprep_path
+        bold_part3_wf.base_dir = workflow_cache_dir
         bold_part3_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
 
     bold_part4_wf = init_bold_part4_wf(subject_ids=subject_ids,
@@ -342,7 +310,7 @@ def pipeline():
                                        atlas_type=atlas_type,
                                        resource_dir=resource_dir,
                                        derivative_deepprep_path=derivative_deepprep_path)
-    bold_part4_wf.base_dir = derivative_deepprep_path
+    bold_part4_wf.base_dir = workflow_cache_dir
     bold_part4_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
 
     bold_part5_wf = init_bold_part5_wf(subject_ids=subject_ids,
@@ -351,7 +319,7 @@ def pipeline():
                                        preprocess_method=preprocess_method,
                                        mni152_brain_mask=mni152_brain_mask,
                                        derivative_deepprep_path=derivative_deepprep_path)
-    bold_part5_wf.base_dir = derivative_deepprep_path
+    bold_part5_wf.base_dir = workflow_cache_dir
     bold_part5_wf.run('MultiProc', plugin_args={'n_procs': multi_subj_n_procs})
 
 
