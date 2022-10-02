@@ -1,7 +1,7 @@
 from pathlib import Path
 from nipype.interfaces.base import BaseInterfaceInputSpec, BaseInterface, File, TraitedSpec, Directory, \
     traits, traits_extension, Str
-from run import run_cmd_with_timing, multipool
+from interface.run import run_cmd_with_timing, multipool
 from multiprocessing import Pool
 
 

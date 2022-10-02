@@ -4,7 +4,7 @@ import logging
 import subprocess
 from nipype.interfaces.base import BaseInterfaceInputSpec, BaseInterface, File, TraitedSpec, Directory, Str
 
-from run import run_cmd_with_timing
+from interface.run import run_cmd_with_timing
 
 
 def log_msg(msg, lock, level):

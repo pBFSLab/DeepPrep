@@ -9,7 +9,7 @@ from interface.fastsurfer_interface import Segment, Noccseg, N4BiasCorrect, Tala
     SampleSegmentationToSurfave
 from interface.fastcsr_interface import FastCSR, FastCSRModel, FastCSRSurface
 from interface.featreg_interface import FeatReg
-from run import set_envrion
+from interface.run import set_envrion
 
 
 def clear_is_running(subjects_dir: Path, subject_ids: list):
@@ -555,13 +555,6 @@ def pipeline():
                                                  freesurfer_home=freesurfer_home)
     structure_part3_wf.base_dir = workflow_cache_dir
     structure_part3_wf.run('MultiProc', plugin_args={'n_procs': 30})
-
-    structure_part4_wf = init_structure_part4_wf(subjects_dir=subjects_dir,
-                                                 subject_ids=subject_ids,
-                                                 python_interpret=python_interpret,
-                                                 fastcsr_home=fastcsr_home)
-    structure_part4_wf.base_dir = workflow_cache_dir
-    structure_part4_wf.run('MultiProc', plugin_args={'n_procs': 3})
 
     structure_part4_1_wf = init_structure_part4_1_wf(subjects_dir=subjects_dir,
                                                      subject_ids=subject_ids,
