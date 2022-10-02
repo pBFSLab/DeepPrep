@@ -100,6 +100,9 @@ def set_envrion(threads: int = 1):
     os.environ['FSF_OUTPUT_FORMAT'] = 'nii.gz'
     os.environ['FSLOUTPUTTYPE'] = 'NIFTI_GZ'
 
+    # FastCSR
+    os.environ['LD_LIBRARY_PATH'] = '/usr/lib/jvm/java-11-openjdk-amd64/lib:/usr/lib/jvm/java-11-openjdk-amd64/lib/server:'
+
     # FSL
     os.environ['PATH'] = '/usr/local/fsl/bin:' + os.environ['PATH']
 
