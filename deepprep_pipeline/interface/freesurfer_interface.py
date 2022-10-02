@@ -2,7 +2,7 @@ import os
 
 from nipype.interfaces.base import BaseInterface, \
     BaseInterfaceInputSpec, traits, File, TraitedSpec, Directory, Str
-from run import run_cmd_with_timing, get_freesurfer_threads, multipool
+from interface.run import run_cmd_with_timing, get_freesurfer_threads, multipool
 from pathlib import Path
 
 from threading import Thread
