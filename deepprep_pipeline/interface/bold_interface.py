@@ -961,6 +961,7 @@ class VxmRegNormMNI152(BaseInterface):
         else:
             bids_bolds = layout.get(subject=subj, task=self.inputs.task, suffix='bold', extension='.nii.gz')
 
+        subject_id = self.inputs.subject_id
         bids_entities = []
         bids_path = []
         for bids_bold in bids_bolds:
@@ -981,9 +982,9 @@ class VxmRegNormMNI152(BaseInterface):
             bold_t1_out = self.native_bold_to_T1_2mm_ants(bold_file, subj, norm_path, reg_file,
                                                           bold_t1_file, preprocess_dir, verbose=False)
 
-            warp_file = subj_func_path / f'sub-{subj}_warp.nii.gz'
-            affine_file = subj_func_path / f'sub-{subj}_affine.mat'
-            warped_file = subj_func_path / f'sub-{subj}_MNI2mm.nii.gz'
+            warp_file = subj_func_path / f'{subject_id}_warp.nii.gz'
+            affine_file = subj_func_path / f'{subject_id}_affine.mat'
+            warped_file = subj_func_path / f'{subject_id}_MNI2mm.nii.gz'
             warped_img = self.vxm_warp_bold_2mm(bold_t1_out, affine_file, warp_file, warped_file, verbose=True)
 
         return runtime

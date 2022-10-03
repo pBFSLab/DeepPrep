@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from nipype import Node, Workflow, config, logging
 from nipype.pipeline import engine as pe
@@ -383,7 +384,7 @@ def init_structure_part7_wf(subjects_dir: Path, subject_ids: list):
     # WhitePialThickness1
     white_pial_thickness1_node = Node(WhitePialThickness1(), name='white_pial_thickness1_node')
     white_pial_thickness1_node.inputs.subjects_dir = subjects_dir
-    white_pial_thickness1_node.inputs.threads = 8
+    white_pial_thickness1_node.inputs.threads = 2
 
     # Curvstats
     Curvstats_node = Node(Curvstats(), name='Curvstats_node')
