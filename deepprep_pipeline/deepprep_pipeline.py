@@ -56,7 +56,7 @@ def pipeline():
     # 设置tmp目录位置
     # tmp_dir = subjects_dir / 'tmp'
     # tmp_dir.mkdir(parents=True, exist_ok=True)
-    batch_size = 10
+    batch_size = 20
 
     for epoch in range(len(subject_ids_all) + 1):
         t1w_filess = t1w_filess_all[epoch * batch_size: (epoch + 1) * batch_size]
@@ -107,7 +107,7 @@ def pipeline():
                                                          python_interpret=python_interpret,
                                                          fastcsr_home=fastcsr_home)
         structure_part4_2_wf.base_dir = workflow_cache_dir
-        structure_part4_2_wf.run('MultiProc', plugin_args={'n_procs': 10})
+        structure_part4_2_wf.run('MultiProc', plugin_args={'n_procs': 30})
 
         structure_part5_wf = init_structure_part5_wf(subjects_dir=subjects_dir,
                                                      subject_ids=subject_ids,
@@ -116,7 +116,7 @@ def pipeline():
                                                      freesurfer_home=freesurfer_home
                                                      )
         structure_part5_wf.base_dir = workflow_cache_dir
-        structure_part5_wf.run('MultiProc', plugin_args={'n_procs': 18})
+        structure_part5_wf.run('MultiProc', plugin_args={'n_procs': 10})
 
         structure_part6_wf = init_structure_part6_wf(subjects_dir=subjects_dir,
                                                      subject_ids=subject_ids,
@@ -124,12 +124,12 @@ def pipeline():
                                                      freesurfer_home=freesurfer_home,
                                                      featreg_home=featreg_home)
         structure_part6_wf.base_dir = workflow_cache_dir
-        structure_part6_wf.run('MultiProc', plugin_args={'n_procs': 1})
+        structure_part6_wf.run('MultiProc', plugin_args={'n_procs': 3})
         #
         structure_part7_wf = init_structure_part7_wf(subjects_dir=subjects_dir,
                                                      subject_ids=subject_ids)
         structure_part7_wf.base_dir = workflow_cache_dir
-        structure_part7_wf.run('MultiProc', plugin_args={'n_procs': 10})
+        structure_part7_wf.run('MultiProc', plugin_args={'n_procs': 30})
 
         # ################################## BOLD ###############################
 
@@ -179,7 +179,6 @@ def pipeline():
                                            derivative_deepprep_path=derivative_deepprep_path)
         bold_part5_wf.base_dir = workflow_cache_dir
         bold_part5_wf.run('MultiProc', plugin_args={'n_procs': 10})
-
     # wf.write_graph(graph2use='flat', simple_form=False)
 
 
