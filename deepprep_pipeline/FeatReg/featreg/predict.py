@@ -23,7 +23,10 @@ MODEL = {
 def rigid_interp(surf_dir, tmp_dir, fsaverage_dir, sub_id, hemispheres=None, device='cuda'):
     surf_dir_interp = os.path.join(tmp_dir, sub_id, 'surf')
     if not os.path.exists(surf_dir_interp):
-        os.makedirs(surf_dir_interp)
+        try:
+            os.makedirs(surf_dir_interp)
+        except FileExistsError:
+            pass
 
     if hemispheres is None:
         hemispheres = ['lh', 'rh']
