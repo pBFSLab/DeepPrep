@@ -292,6 +292,7 @@ def init_structure_part5_wf(subjects_dir: Path, subject_ids: list,
     white_preaparc1_node.inputs.subjects_dir = subjects_dir
     white_preaparc1_node.iterables = [("subject_id", subject_ids)]
     white_preaparc1_node.synchronize = True
+    white_preaparc1_node.inputs.threads = 8
 
     # SampleSegmentationToSurfave
     SampleSegmentationToSurfave_node = Node(SampleSegmentationToSurfave(), name='SampleSegmentationToSurfave_node')
@@ -384,7 +385,7 @@ def init_structure_part7_wf(subjects_dir: Path, subject_ids: list):
     # WhitePialThickness1
     white_pial_thickness1_node = Node(WhitePialThickness1(), name='white_pial_thickness1_node')
     white_pial_thickness1_node.inputs.subjects_dir = subjects_dir
-    white_pial_thickness1_node.inputs.threads = 2
+    white_pial_thickness1_node.inputs.threads = 8
 
     # Curvstats
     Curvstats_node = Node(Curvstats(), name='Curvstats_node')
