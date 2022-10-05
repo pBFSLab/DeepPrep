@@ -2,8 +2,7 @@
 FROM nvidia/cuda:11.3.1-cudnn8-runtime-ubuntu20.04
 
 ## Install * in Docker image
-RUN apt-get upgrade && apt-get update && apt-get install -y git vim python3 python3-pip
-RUN ln -sf /usr/bin/python3 /usr/bin/python
+RUN apt-get upgrade && apt-get update && apt-get install -y git vim python3 python3-pip python2
 
 ## Install DeepPrep
 RUN cd /root
@@ -28,9 +27,9 @@ RUN pip install antspyx
 RUN pip install nnunet
 
 ## Install FeatReg
-RUN git clone https://github.com/facebookresearch/pytorch3d.git
+RUN pip install --no-index --no-cache-dir torch-scatter -f https://data.pyg.org/whl/torch-1.11.0+cu113.html
+RUN pip install --no-index --no-cache-dir pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/py38_cu113_pyt1110/download.html
 RUN pip install pyvista
-COPY ./whl .
 RUN pip install FeatReg
 
 ## Install FreeSurfer
