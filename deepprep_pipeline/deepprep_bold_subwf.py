@@ -8,6 +8,13 @@ from interface.bold_interface import VxmRegistraion, BoldSkipReorient, Stc, MkTe
 from interface.run import set_envrion
 
 
+def clear_subject_bold_tmp_dir(derivative_deepprep_path: Path, subject_ids: list, task: str):
+    for subject_id in subject_ids:
+        tmp_dir = derivative_deepprep_path / subject_id / f'task-{task}'
+        if tmp_dir.exists():
+            os.system(f'rm -r {tmp_dir}')
+
+
 def init_bold_part1_wf(subject_ids: list,
                        data_path: Path,
                        vxm_model_path: Path,
