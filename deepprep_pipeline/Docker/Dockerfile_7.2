@@ -15,7 +15,7 @@ RUN git clone https://github.com/Deep-MI/FastSurfer
 RUN cd FastSurfer
 RUN git checkout v1.1.0
 RUN git clone https://github.com/Deep-MI/LaPy.git
-RUN pip install LaPy
+RUN pip install ./LaPy
 RUN cd ..
 
 ## Install FastCSR
@@ -30,7 +30,7 @@ RUN pip install nnunet
 RUN pip install --no-index --no-cache-dir torch-scatter -f https://data.pyg.org/whl/torch-1.11.0+cu113.html
 RUN pip install --no-index --no-cache-dir pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/py38_cu113_pyt1110/download.html
 RUN pip install pyvista
-RUN pip install FeatReg
+RUN pip install ./FeatReg
 
 ## Install FreeSurfer
 RUN apt-get -y install bc binutils libgomp1 perl psmisc sudo tar tcsh unzip uuid-dev vim-common libjpeg62-dev libglu1-mesa
