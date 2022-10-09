@@ -74,6 +74,10 @@ class FastCSR(BaseInterface):
         outputs['rh_orig_premesh_file'] = subject_dir / 'surf' / 'rh.orig.premesh'
         return outputs
 
+    def create_sub_node(self):
+        from interface.create_node import create_WhitePreaparc1_node
+        node = create_WhitePreaparc1_node(self.inputs.subject_id)
+        return node
 
 class FastCSRModelInputSpec(BaseInterfaceInputSpec):
     python_interpret = File(exists=True, mandatory=True, desc='the python interpret to use')
