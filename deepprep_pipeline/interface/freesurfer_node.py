@@ -105,9 +105,8 @@ class OrigAndRawavg(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from create_node import create_Segment_node
-        node = create_Segment_node(self.inputs.subject_id,
-                                  )
+        from interface.create_node import create_Segment_node
+        node = create_Segment_node(self.inputs.subject_id)
         return node
 
 
