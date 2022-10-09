@@ -78,8 +78,6 @@ class OrigAndRawavgInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc='subjects dir', mandatory=True)
     subject_id = Str(desc='subject id', mandatory=True)
     threads = traits.Int(desc='threads')
-    python_interpret = Directory(exists=True, desc='python interpret', mandatory=True)
-    fastsurfer_home = Directory(exists=True, desc='fastsurfer home', mandatory=True)
 
 class OrigAndRawavgOutputSpec(TraitedSpec):
     orig_file = File(exists=True, desc='mri/orig.mgz')
@@ -112,11 +110,9 @@ class OrigAndRawavg(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from create_node import creat_Segment_node
-        node = creat_Segment_node(self.inputs.subject_id,
-                                  self.inputs.subjects_dir,
-                                  self.inputs.python_interpret,
-                                  self.inputs.fastsurfer_home,
+        from create_node import create_Segment_node
+        node = create_Segment_node(self.inputs.subject_id,
+                                  self.inputs.subjects_dir
                                   )
         return node
 
@@ -418,6 +414,10 @@ class InflatedSphere(BaseInterface):
     cpu = 6  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
 
+    def __init__(self):
+        super(InflatedSphere, self).__init__()
+        self.source = Source()  #
+
     def cmd(self):
         threads = self.inputs.threads if self.inputs.threads else 0
         fsthreads = get_freesurfer_threads(threads)
@@ -447,8 +447,13 @@ class InflatedSphere(BaseInterface):
         outputs['rh_sulc'] = subjects_dir / subject_id / f'surf/rh.sulc'
         outputs['lh_sphere'] = subjects_dir / subject_id / f'surf/lh.sphere'
         outputs['rh_sphere'] = subjects_dir / subject_id / f'surf/rh.sphere'
-
         return outputs
+
+    def create_sub_node(self):
+        from create_node import create_FeatReg_node
+        node = create_FeatReg_node(self.inputs.subject_id
+                                   )
+        return node
 
 
 class WhitePialThickness1InputSpec(BaseInterfaceInputSpec):
@@ -463,15 +468,9 @@ class WhitePialThickness1InputSpec(BaseInterfaceInputSpec):
     wm_file = File(exists=True, desc="mri/wm.mgz", mandatory=True)
     lh_aparc_annot = File(exists=True, desc="label/lh.aparc.annot", mandatory=True)
     rh_aparc_annot = File(exists=True, desc="label/rh.aparc.annot", mandatory=True)
-    # lh_cortex_hipamyg_label = File(exists=False, desc="label/lh.cortex+hipamyg.label", mandatory=True)
-    # rh_cortex_hipamyg_label = File(exists=False, desc="label/rh.cortex+hipamyg.label", mandatory=True)
     lh_cortex_label = File(exists=True, desc="label/lh.cortex.label", mandatory=True)
     rh_cortex_label = File(exists=True, desc="label/rh.cortex.label", mandatory=True)
 
-    # lh_aparc_DKTatlas_mapped_annot = File(exists=True, desc="label/lh.aparc.DKTatlas.mapped.annot", mandatory=True)
-    # rh_aparc_DKTatlas_mapped_annot = File(exists=True, desc="label/rh.aparc.DKTatlas.mapped.annot", mandatory=True)
-    # lh_white = File(exists=False, desc="surf/lh.white", mandatory=True)
-    # rh_white = File(exists=False, desc="surf/rh.white", mandatory=True)
 
 
 class WhitePialThickness1OutputSpec(TraitedSpec):
@@ -503,6 +502,7 @@ class WhitePialThickness1(BaseInterface):
 
     def __init__(self):
         super(WhitePialThickness1, self).__init__()
+        self.source = Source()  #
 
     def _run_interface(self, runtime):
         # must run surfreg first
@@ -552,6 +552,10 @@ class WhitePialThickness1(BaseInterface):
         outputs['subject_id'] = subject_id
 
         return outputs
+
+    def create_sub_node(self):
+
+        return node
 
 
 # class WhitePialThickness2InputSpec(BaseInterfaceInputSpec):
@@ -932,21 +936,6 @@ class JacobianAvgcurvCortparcThresholdInputSpec(BaseInterfaceInputSpec):
     subject_id = traits.Str(mandatory=True, desc='sub-xxx')
     threads = traits.Int(desc='threads')
 
-    # lh_white_preaparc = File(exists=True, mandatory=True, desc='surf/lh.white.preaparc') # output of white_preaparc1_node
-    # rh_white_preaparc = File(exists=True, mandatory=True, desc='surf/rh.white.preaparc') # output of white_preaparc1_node
-    # lh_sphere_reg = File(exists=True, mandatory=True, desc='surf/lh.sphere.reg') # output of featreg_node
-    # rh_sphere_reg = File(exists=True, mandatory=True, desc='surf/rh.sphere.reg') # output of featreg_node
-    # lh_jacobian_white = File(mandatory=True, desc='surf/lh.jacobian_white')
-    # rh_jacobian_white = File(mandatory=True, desc='surf/rh.jacobian_white')
-    # lh_avg_curv = File(mandatory=True, desc='surf/lh.avg_curv')
-    # rh_avg_curv = File(mandatory=True, desc='surf/rh.avg_curv')
-    # aseg_presurf_file = File(exists=True, mandatory=True, desc="mri/aseg.presurf.mgz") # output of filled_node
-    # lh_cortex_label = File(exists=True, mandatory=True, desc="label/lh.cortex.label") # output of white_preaparc1_node
-    # rh_cortex_label = File(exists=True, mandatory=True, desc="label/rh.cortex.label") # output of white_preaparc1_node
-
-    # lh_aparc_annot = File(mandatory=True, desc="label/lh.aparc.annot")
-    # rh_aparc_annot = File(mandatory=True, desc="label/rh.aparc.annot")
-
 
 class JacobianAvgcurvCortparcThresholdOutputSpec(TraitedSpec):
     lh_jacobian_white = File(exists=True, desc='surf/lh.jacobian_white')
@@ -982,6 +971,10 @@ class JacobianAvgcurvCortparc(BaseInterface):
     # time = 28 / 60  # 运行时间：分钟
     # cpu = 3  # 最大cpu占用：个
     # gpu = 0  # 最大gpu占用：MB
+
+    def __init__(self):
+        super(JacobianAvgcurvCortparc, self).__init__()
+        self.source = Source()  #
 
     def _run_interface(self, runtime):
         subject_id = self.inputs.subject_id
@@ -1021,6 +1014,12 @@ class JacobianAvgcurvCortparc(BaseInterface):
         outputs['subject_id'] = subject_id
 
         return outputs
+
+    def create_sub_node(self):
+        from create_node import create_WhitePialThickness1_node
+        node = create_WhitePialThickness1_node(self.inputs.subject_id
+                                               )
+        return node
 
 
 class SegstatsInputSpec(BaseInterfaceInputSpec):
