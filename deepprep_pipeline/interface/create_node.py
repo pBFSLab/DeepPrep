@@ -7,7 +7,7 @@ from interface.bold_node import *
 from interface.fastcsr_node import *
 from interface.fastsurfer_node import *
 from interface.featreg_node import *
-from interface.run import *
+# from interface.run import Source
 
 """环境变量
 subjects_dir = Path(os.environ['SUBJECTS_DIR'])
@@ -31,6 +31,7 @@ def create_origandrawavg_node(subject_id: str, t1w_files: list):
     origandrawavg_node.inputs.subject_id = subject_id
     origandrawavg_node.inputs.threads = 1
     origandrawavg_node.base_dir = workflow_cached_dir
+    # origandrawavg_node.source = Source(CPU_n=3)
     return origandrawavg_node
 
 
@@ -72,36 +73,40 @@ def create_Segment_node(subject_id: str):
     network_axial_path = weight_dir / "Axial_Weights_FastSurferCNN" / "ckpts" / "Epoch_30_training_state.pkl"
 
     segment_node = Node(Segment(), f'{subject_id}_segment_node')
+    segment_node.inputs.subjects_dir = subjects_dir
+    segment_node.inputs.subject_id = subject_id
     segment_node.inputs.python_interpret = python_interpret
-    segment_node.inputs.in_file = subjects_dir / subject_id / "mri" / "orig.mgz"
     segment_node.inputs.eval_py = fastsurfer_eval
     segment_node.inputs.network_sagittal_path = network_sagittal_path
     segment_node.inputs.network_coronal_path = network_coronal_path
     segment_node.inputs.network_axial_path = network_axial_path
 
-    segment_node.inputs.aparc_DKTatlas_aseg_deep = subjects_dir / subject_id / "mri" / "aparc.DKTatlas+aseg.deep.mgz"
-    segment_node.inputs.aparc_DKTatlas_aseg_orig = subjects_dir / subject_id / "mri" / "aparc.DKTatlas+aseg.orig.mgz"
-
-    segment_node.inputs.conformed_file = subjects_dir / subject_id / "mri" / "conformed.mgz"
-    segment_node.inputs.base_dir = workflow_cached_dir
     segment_node.inputs.fastsurfer_home = fastsurfer_home
+
+    segment_node.base_dir = workflow_cached_dir
+    # segment_node.source = Source(CPU_n=3)
     return segment_node
 
 
-def create_Noccseg_node(subject_id: str, subjects_dir: Path, base_dir: Path, python_interpret: Path,
-                        fastsurfer_home: Path):
+def create_Noccseg_node(subject_id: str):
+    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
+    fastsurfer_home = Path(os.environ['FASTSURFER_HOME'])
+    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
+    python_interpret = sys.executable
+
     reduce_to_aseg_py = fastsurfer_home / 'recon_surf' / 'reduce_to_aseg.py'
-    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
     noccseg_node = Node(Noccseg(), f'{subject_id}_noccseg_node')
+    noccseg_node.inputs.subjects_dir = subjects_dir
+    noccseg_node.inputs.subject_id = subject_id
     noccseg_node.inputs.python_interpret = python_interpret
     noccseg_node.inputs.reduce_to_aseg_py = reduce_to_aseg_py
-    noccseg_node.inputs.in_file = subjects_dir / subject_id / "mri" / "aparc.DKTatlas+aseg.deep.mgz"
+    # noccseg_node.inputs.in_file = subjects_dir / subject_id / "mri" / "aparc.DKTatlas+aseg.deep.mgz"
 
     noccseg_node.inputs.mask_file = subjects_dir / subject_id / 'mri/mask.mgz'
     noccseg_node.inputs.aseg_noCCseg_file = subjects_dir / subject_id / 'mri/aseg.auto_noCCseg.mgz'
 
-    noccseg_node.inputs.base_dir = base_dir
+    noccseg_node.inputs.base_dir = workflow_cached_dir
     return noccseg_node
 
 
