@@ -23,7 +23,8 @@ class SegmentInputSpec(BaseInterfaceInputSpec):
     network_sagittal_path = File(exists=True, mandatory=True, desc="path to pre-trained weights of sagittal network")
     network_coronal_path = File(exists=True, mandatory=True, desc="pre-trained weights of coronal network")
     network_axial_path = File(exists=True, mandatory=True, desc="pre-trained weights of axial network")
-
+    base_dir = Directory(exists=True, desc='base dir', mandatory=True)
+    fastsurfer_home = Directory(exists=True, desc='fastsurfer home', mandatory=True)
     # aparc_DKTatlas_aseg_deep = File(exists=False, desc="mri/aparc.DKTatlas+aseg.deep.mgz", mandatory=True)
     # aparc_DKTatlas_aseg_orig = File(exists=False, desc="mri/aparc.DKTatlas+aseg.orig.mgz", mandatory=True)
 
@@ -79,6 +80,15 @@ class Segment(BaseInterface):
 
         return outputs
 
+    def create_sub_node(self):
+        from create_node import creat_Noccseg_node
+        node = creat_Noccseg_node(self.inputs.subject_id,
+                                  self.inputs.subjects_dir,
+                                  self.inputs.base_dir,
+                                  self.inputs.python_interpret,
+                                  self.inputs.fastsurfer_home,
+                                  )
+        return node
 
 class N4BiasCorrectInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc='subjects dir', mandatory=True)
@@ -208,6 +218,7 @@ class TalairachAndNu(BaseInterface):
 class NoccsegThresholdInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
+    base_dir = Directory(exists=True, desc='base dir', mandatory=True)
     python_interpret = File(exists=True, mandatory=True, desc='the python interpret to use')
     reduce_to_aseg_py = File(exists=True, mandatory=True, desc="reduce to aseg")
     # in_file = File(exists=True, mandatory=True, desc='name of file to process. Default: aparc.DKTatlas+aseg.orig.mgz')
