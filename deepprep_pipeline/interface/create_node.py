@@ -6,8 +6,8 @@ from interface.fastcsr_node import *
 from interface.fastsurfer_node import *
 
 
-def create_origandrawavg_node(subject_id: str, subjects_dir: Path, bold_result_dir: Path, base_dir: Path,
-                              bids_dir: Path, t1w_files: list):
+def create_origandrawavg_node(subject_id: str, subjects_dir: Path, python_interpret: Path, base_dir: Path,
+                              fastsurfer_home: Path, t1w_files: list):
 
     subject_id = subject_id
     # t1w_files = [
@@ -18,37 +18,40 @@ def create_origandrawavg_node(subject_id: str, subjects_dir: Path, bold_result_d
     origandrawavg_node.inputs.subjects_dir = subjects_dir
     origandrawavg_node.inputs.subject_id = subject_id
     origandrawavg_node.inputs.threads = 1
-    origandrawavg_node.base_dir = base_dir
+    origandrawavg_node.inputs.base_dir = base_dir
+    origandrawavg_node.inputs.python_interpret = python_interpret
+    origandrawavg_node.inputs.fastsurfer_home = fastsurfer_home
     return origandrawavg_node
 
 
-def create_fastcsr_node(subject_id: str, subjects_dir: Path, bold_result_dir: Path, base_dir: Path,
-                        python_interpret: Path,
-                        fastcsr_home: Path):
-    # fastcsr_home = pwd.parent / "FastCSR"
-    fastcsr_py = fastcsr_home / 'pipeline.py'  # inference script
+# def create_fastcsr_node(subject_id: str, subjects_dir: Path, bold_result_dir: Path, base_dir: Path,
+#                         python_interpret: Path,
+#                         fastcsr_home: Path):
+#     # fastcsr_home = pwd.parent / "FastCSR"
+#     fastcsr_py = fastcsr_home / 'pipeline.py'  # inference script
+#
+#     fastcsr_node = Node(FastCSR(), f'{subject_id}_fastcsr_node')
+#     fastcsr_node.inputs.python_interpret = python_interpret
+#     fastcsr_node.inputs.fastcsr_py = fastcsr_py
+#
+#     subjects_dir = '/mnt/ngshare/Data_Mirror/pipeline_test'
+#     subject_id = 'sub-MSC01'
+#
+#     os.environ['SUBJECTS_DIR'] = subjects_dir
+#
+#     fastcsr_node.inputs.subjects_dir = subjects_dir
+#     fastcsr_node.inputs.subject_id = subject_id
+#     fastcsr_node.inputs.orig_file = Path(subjects_dir) / subject_id / 'mri/orig.mgz'
+#     fastcsr_node.inputs.filled_file = Path(subjects_dir) / subject_id / 'mri/filled.mgz'
+#     fastcsr_node.inputs.aseg_presurf_file = Path(subjects_dir) / subject_id / 'mri/aseg.presurf.mgz'
+#     fastcsr_node.inputs.brainmask_file = Path(subjects_dir) / subject_id / 'mri/brainmask.mgz'
+#     fastcsr_node.inputs.wm_file = Path(subjects_dir) / subject_id / 'mri/wm.mgz'
+#     fastcsr_node.inputs.brain_finalsurfs_file = Path(subjects_dir) / subject_id / 'mri/brain.finalsurfs.mgz'
+#     return fastcsr_node
+#
 
-    fastcsr_node = Node(FastCSR(), f'{subject_id}_fastcsr_node')
-    fastcsr_node.inputs.python_interpret = python_interpret
-    fastcsr_node.inputs.fastcsr_py = fastcsr_py
-
-    subjects_dir = '/mnt/ngshare/Data_Mirror/pipeline_test'
-    subject_id = 'sub-MSC01'
-
-    os.environ['SUBJECTS_DIR'] = subjects_dir
-
-    fastcsr_node.inputs.subjects_dir = subjects_dir
-    fastcsr_node.inputs.subject_id = subject_id
-    fastcsr_node.inputs.orig_file = Path(subjects_dir) / subject_id / 'mri/orig.mgz'
-    fastcsr_node.inputs.filled_file = Path(subjects_dir) / subject_id / 'mri/filled.mgz'
-    fastcsr_node.inputs.aseg_presurf_file = Path(subjects_dir) / subject_id / 'mri/aseg.presurf.mgz'
-    fastcsr_node.inputs.brainmask_file = Path(subjects_dir) / subject_id / 'mri/brainmask.mgz'
-    fastcsr_node.inputs.wm_file = Path(subjects_dir) / subject_id / 'mri/wm.mgz'
-    fastcsr_node.inputs.brain_finalsurfs_file = Path(subjects_dir) / subject_id / 'mri/brain.finalsurfs.mgz'
-    return fastcsr_node
-
-
-def creat_Segment_node(subject_id: str, subjects_dir: Path, python_interpret: Path, fastsurfer_home: Path):
+def creat_Segment_node(subject_id: str, subjects_dir: Path, base_dir: Path, python_interpret: Path,
+                       fastsurfer_home: Path):
 
     fastsurfer_eval = fastsurfer_home / 'FastSurferCNN' / 'eval.py'  # inference script
     weight_dir = fastsurfer_home / 'checkpoints'  # model checkpoints dir
@@ -72,7 +75,25 @@ def creat_Segment_node(subject_id: str, subjects_dir: Path, python_interpret: Pa
     segment_node.inputs.aparc_DKTatlas_aseg_orig = subjects_dir / subject_id / "mri" / "aparc.DKTatlas+aseg.orig.mgz"
 
     segment_node.inputs.conformed_file = subjects_dir / subject_id / "mri" / "conformed.mgz"
+    segment_node.inputs.base_dir = base_dir
+    segment_node.inputs.fastsurfer_home = fastsurfer_home
     return segment_node
 
 
-def creat
+def creat_Noccseg_node(subject_id: str, subjects_dir: Path, base_dir: Path, python_interpret: Path,
+                       fastsurfer_home: Path):
+
+    reduce_to_aseg_py = fastsurfer_home / 'recon_surf' / 'reduce_to_aseg.py'
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+
+    noccseg_node = Node(Noccseg(), f'noccseg_node')
+    noccseg_node.inputs.python_interpret = python_interpret
+    noccseg_node.inputs.reduce_to_aseg_py = reduce_to_aseg_py
+    noccseg_node.inputs.in_file = subjects_dir / subject_id / "mri" / "aparc.DKTatlas+aseg.deep.mgz"
+
+    noccseg_node.inputs.mask_file = subjects_dir / subject_id / 'mri/mask.mgz'
+    noccseg_node.inputs.aseg_noCCseg_file = subjects_dir / subject_id / 'mri/aseg.auto_noCCseg.mgz'
+
+    noccseg_node.inputs.base_dir = base_dir
+    return noccseg_node
+
