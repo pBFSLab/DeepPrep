@@ -58,7 +58,7 @@ def create_fastcsr_node(subject_id: str):
     return fastcsr_node
 
 
-def creat_Segment_node(subject_id: str):
+def create_Segment_node(subject_id: str):
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     fastsurfer_home = Path(os.environ['FASTSURFER_HOME'])
     workflow_cached_dir = os.environ['WORKFLOW_CACHED_DIR']
@@ -93,7 +93,7 @@ def create_Noccseg_node(subject_id: str, subjects_dir: Path, base_dir: Path, pyt
     reduce_to_aseg_py = fastsurfer_home / 'recon_surf' / 'reduce_to_aseg.py'
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
-    noccseg_node = Node(Noccseg(), f'noccseg_node')
+    noccseg_node = Node(Noccseg(), f'{subject_id}_noccseg_node')
     noccseg_node.inputs.python_interpret = python_interpret
     noccseg_node.inputs.reduce_to_aseg_py = reduce_to_aseg_py
     noccseg_node.inputs.in_file = subjects_dir / subject_id / "mri" / "aparc.DKTatlas+aseg.deep.mgz"
@@ -113,7 +113,7 @@ def create_InflatedSphere_node(subject_id: str):
     lh_white_preaparc_file = subjects_dir / subject_id / "surf" / "lh.white.preaparc"
     rh_white_preaparc_file = subjects_dir / subject_id / "surf" / "rh.white.preaparc"
 
-    Inflated_Sphere_node = Node(InflatedSphere(), f'Inflated_Sphere_node')
+    Inflated_Sphere_node = Node(InflatedSphere(), f'{subject_id}_Inflated_Sphere_node')
     Inflated_Sphere_node.inputs.threads = 8
     Inflated_Sphere_node.inputs.subjects_dir = subjects_dir
     Inflated_Sphere_node.inputs.subject_id = subject_id
@@ -134,7 +134,7 @@ def create_FeatReg_node(subject_id: str):
     python_interpret = sys.executable
     featreg_py = featreg_home / "featreg" / 'predict.py'  # inference script
 
-    featreg_node = Node(FeatReg(), f'featreg_node')
+    featreg_node = Node(FeatReg(), f'{subject_id}_featreg_node')
     featreg_node.inputs.featreg_py = featreg_py
     featreg_node.inputs.python_interpret = python_interpret
 
@@ -173,7 +173,7 @@ def create_JacobianAvgcurvCortparc_node(subject_id: str):
     lh_aparc_annot = subjects_dir / subject_id / "label" / f"lh.aparc.annot"
     rh_aparc_annot = subjects_dir / subject_id / "label" / f"rh.aparc.annot"
 
-    JacobianAvgcurvCortparc_node = Node(JacobianAvgcurvCortparc(), f'JacobianAvgcurvCortparc_node')
+    JacobianAvgcurvCortparc_node = Node(JacobianAvgcurvCortparc(), f'{subject_id}_JacobianAvgcurvCortparc_node')
     JacobianAvgcurvCortparc_node.inputs.subjects_dir = subjects_dir
     JacobianAvgcurvCortparc_node.inputs.subject_id = subject_id
     JacobianAvgcurvCortparc_node.inputs.lh_white_preaparc = lh_white_preaparc
@@ -201,7 +201,7 @@ def create_WhitePialThickness1_node(subject_id: str):
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
     threads = 8
 
-    white_pial_thickness1 = Node(WhitePialThickness1(), name="white_pial_thickness1")
+    white_pial_thickness1 = Node(WhitePialThickness1(), name=f"{subject_id}_white_pial_thickness1")
     white_pial_thickness1.inputs.subjects_dir = subjects_dir
     white_pial_thickness1.inputs.subject_id = subject_id
     white_pial_thickness1.inputs.threads = threads
@@ -231,7 +231,7 @@ def create_Curvstats_node(subject_id: str):
     subject_surf_dir = subjects_dir / "surf"
     threads = 8
 
-    Curvstats_node = Node(Curvstats(), name='Curvstats_node')
+    Curvstats_node = Node(Curvstats(), name=f'{subject_id}_Curvstats_node')
     Curvstats_node.inputs.subjects_dir = subjects_dir
     Curvstats_node.inputs.subject_id = subject_id
 
@@ -253,7 +253,7 @@ def create_BalabelsMult_node(subject_id: str):
     subject_surf_dir = subjects_dir / subject_id / 'surf'
     threads = 10
 
-    BalabelsMult_node = Node(BalabelsMult(), name='BalabelsMult_node')
+    BalabelsMult_node = Node(BalabelsMult(), name=f'{subject_id}_BalabelsMult_node')
     BalabelsMult_node.inputs.subjects_dir = subjects_dir
     BalabelsMult_node.inputs.subject_id = subject_id
     BalabelsMult_node.inputs.threads = threads
@@ -276,7 +276,7 @@ def create_Cortribbon_node(subject_id: str):
     subject_surf_dir = subjects_dir / subject_id / 'surf'
     threads = 8
 
-    Cortribbon_node = Node(Cortribbon(), name='Cortribbon_node')
+    Cortribbon_node = Node(Cortribbon(), name=f'{subject_id}_Cortribbon_node')
     Cortribbon_node.inputs.subjects_dir = subjects_dir
     Cortribbon_node.inputs.subject_id = subject_id
     Cortribbon_node.inputs.threads = threads
@@ -304,7 +304,7 @@ def create_Parcstats_node(subject_id: str):
     subject_label_dir = subjects_dir / subject_id / 'label'
     threads = 8
 
-    Parcstats_node = Node(Parcstats(), name='Parcstats_node')
+    Parcstats_node = Node(Parcstats(), name=f'{subject_id}_Parcstats_node')
     Parcstats_node.inputs.subjects_dir = subjects_dir
     Parcstats_node.inputs.subject_id = subject_id
     Parcstats_node.inputs.threads = threads
@@ -333,7 +333,7 @@ def create_Aseg7_node(subject_id: str):
     subject_label_dir = subjects_dir / subject_id / 'label'
     threads = 8
 
-    Aseg7_node = Node(Aseg7(), name='Aseg7_node')
+    Aseg7_node = Node(Aseg7(), name=f'{subject_id}_Aseg7_node')
     Aseg7_node.inputs.subjects_dir = subjects_dir
     Aseg7_node.inputs.subject_id = subject_id
     Aseg7_node.inputs.threads = threads
