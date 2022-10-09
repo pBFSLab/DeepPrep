@@ -107,7 +107,6 @@ class OrigAndRawavg(BaseInterface):
     def create_sub_node(self):
         from create_node import create_Segment_node
         node = create_Segment_node(self.inputs.subject_id,
-                                  self.inputs.subjects_dir
                                   )
         return node
 
