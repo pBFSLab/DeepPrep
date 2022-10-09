@@ -90,7 +90,6 @@ class OrigAndRawavg(BaseInterface):
 
     def __init__(self):
         super(OrigAndRawavg, self).__init__()
-        self.source = Source()  #
 
     def _run_interface(self, runtime):
         threads = self.inputs.threads if self.inputs.threads else 0
@@ -110,10 +109,8 @@ class OrigAndRawavg(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from create_node import create_Segment_node
-        node = create_Segment_node(self.inputs.subject_id,
-                                  self.inputs.subjects_dir
-                                  )
+        from interface.create_node import create_Segment_node
+        node = create_Segment_node(self.inputs.subject_id)
         return node
 
 
