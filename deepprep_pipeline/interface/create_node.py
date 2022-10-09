@@ -105,6 +105,8 @@ def create_InflatedSphere_node(subject_id: str):
 def create_FeatReg_node(subject_id: str):
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     featreg_home = Path(os.environ["FEATREG_HOME"])
+    freesurfer_home = Path(os.environ['FREESURFER_HOME'])
+
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
 
     python_interpret = sys.executable
@@ -116,7 +118,7 @@ def create_FeatReg_node(subject_id: str):
 
     featreg_node.inputs.subjects_dir = subjects_dir
     featreg_node.inputs.subject_id = subject_id
-    featreg_node.inputs.freesurfer_home = '/usr/local/freesurfer'
+    featreg_node.inputs.freesurfer_home = freesurfer_home
     featreg_node.inputs.lh_sulc = Path(subjects_dir) / subject_id / f'surf/lh.sulc'
     featreg_node.inputs.rh_sulc = Path(subjects_dir) / subject_id / f'surf/rh.sulc'
     featreg_node.inputs.lh_curv = Path(subjects_dir) / subject_id / f'surf/lh.curv'
@@ -406,7 +408,6 @@ def create_UpdateAseg_node(subject_id: str):
     fastsurfer_home = Path(os.environ['FASTSURFER_HOME'])
     python_interpret = sys.executable
     subject_mri_dir = subjects_dir / subject_id / 'mri'
-    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
     paint_cc_file = fastsurfer_home / 'recon_surf' / 'paint_cc_into_pred.py'
     updateaseg_node = Node(UpdateAseg(), name=f'{subject_id}_updateaseg_node')
@@ -491,12 +492,14 @@ def create_SampleSegmentationToSurfave_node(subject_id: str):
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
     python_interpret = sys.executable
     freesurfer_home = Path(os.environ['FREESURFER_HOME'])
+    fastsurfer_home = Path(os.environ['FASTSURFER_HOME'])
+
     subject_mri_dir = subjects_dir / subject_id / 'mri'
     subject_surf_dir = subjects_dir / subject_id / 'surf'
     subject_label_dir = subjects_dir / subject_id / 'label'
-    smooth_aparc_file = Path.cwd().parent / 'FastSurfer' / 'recon_surf' / 'smooth_aparc.py'
-    lh_DKTatlaslookup_file = Path.cwd().parent / 'FastSurfer' / 'recon_surf' / f'lh.DKTatlaslookup.txt'
-    rh_DKTatlaslookup_file = Path.cwd().parent / 'FastSurfer' / 'recon_surf' / f'rh.DKTatlaslookup.txt'
+    smooth_aparc_file = fastsurfer_home / 'recon_surf' / 'smooth_aparc.py'
+    lh_DKTatlaslookup_file = fastsurfer_home / 'recon_surf' / f'lh.DKTatlaslookup.txt'
+    rh_DKTatlaslookup_file = fastsurfer_home / 'recon_surf' / f'rh.DKTatlaslookup.txt'
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
     SampleSegmentationToSurfave_node = Node(SampleSegmentationToSurfave(), name=f'{subject_id}_SampleSegmentationToSurfave_node')
