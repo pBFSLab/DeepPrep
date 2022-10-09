@@ -31,6 +31,7 @@ def multipool(cmd, Multi_Num=2):
     pool.close()
     pool.join()
 
+
 def multiregressionpool(cmd, hemi, subj_surf_path, dst_resid_file, dst_reg_file, Multi_Num=2):
     cmd_pool = []
     for i in range(len(hemi)):
@@ -52,6 +53,7 @@ def multipool_run(cmd, runs, Multi_Num=2):
     pool.close()
     pool.join()
 
+
 def multipool_BidsBolds(cmd, idx, bids_entities, bids_path, Multi_Num=2):
     cmd_pool = []
     for i in range(len(idx)):
@@ -62,6 +64,7 @@ def multipool_BidsBolds(cmd, idx, bids_entities, bids_path, Multi_Num=2):
     pool.close()
     pool.join()
 
+
 def multipool_BidsBolds_2(cmd, bids_entities, bids_path, Multi_Num=2):
     cmd_pool = []
     for i in range(len(bids_entities)):
@@ -71,17 +74,6 @@ def multipool_BidsBolds_2(cmd, bids_entities, bids_path, Multi_Num=2):
     pool.starmap(cmd, cmd_pool)
     pool.close()
     pool.join()
-
-
-# class myThread(threading.Thread):   #继承父类threading.Thread
-#     def __init__(self, t1w_files, subjects_dir, subject_id):
-#         threading.Thread.__init__(self)
-#         self.t1w_files = t1w_files
-#         self.subjects_dir = subjects_dir
-#         self.subject_id = subject_id
-#     def run(self): #把要执行的代码写到run函数里面 线程在创建后会直接运行run函数
-#         pipeline(self.t1w_files, self.subjects_dir, self.subject_id)
-
 
 
 def set_envrion(threads: int = 1):
@@ -101,7 +93,8 @@ def set_envrion(threads: int = 1):
     os.environ['FSLOUTPUTTYPE'] = 'NIFTI_GZ'
 
     # FastCSR
-    os.environ['LD_LIBRARY_PATH'] = '/usr/lib/jvm/java-11-openjdk-amd64/lib:/usr/lib/jvm/java-11-openjdk-amd64/lib/server:'
+    os.environ[
+        'LD_LIBRARY_PATH'] = '/usr/lib/jvm/java-11-openjdk-amd64/lib:/usr/lib/jvm/java-11-openjdk-amd64/lib/server:'
 
     # FSL
     os.environ['PATH'] = '/usr/local/fsl/bin:' + os.environ['PATH']
