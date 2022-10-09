@@ -105,7 +105,7 @@ def creat_Noccseg_node(subject_id: str, subjects_dir: Path, base_dir: Path, pyth
 
 def creat_VxmRegistraion_node(subject_id: str, vxm_model_path: Path, atlas_type: str):
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
-    derivative_deepprep_path = Path(os.environ['BOLD_PROPROCESS_DIR'])
+    derivative_deepprep_path = os.environ['BOLD_PREPROCESS_DIR']
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
     data_path = Path(os.environ['BIDS_DIR'])
 
@@ -126,7 +126,7 @@ def creat_VxmRegistraion_node(subject_id: str, vxm_model_path: Path, atlas_type:
 
 def creat_BoldSkipReorient_node(subject_id: str, task: str):
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-    derivative_deepprep_path = Path(os.environ['BOLD_PROPROCESS_DIR'])
+    derivative_deepprep_path = Path(os.environ['BOLD_PREPROCESS_DIR'])
     data_path = Path(os.environ['BIDS_DIR'])
 
     BoldSkipReorient_node = Node(BoldSkipReorient(), name=f'{subject_id}_BoldSkipReorient_node')
@@ -143,7 +143,7 @@ def creat_BoldSkipReorient_node(subject_id: str, task: str):
 
 def creat_Stc_node(subject_id: str, task: str):
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-    derivative_deepprep_path = Path(os.environ['BOLD_PROPROCESS_DIR'])
+    derivative_deepprep_path = Path(os.environ['BOLD_PREPROCESS_DIR'])
     data_path = Path(os.environ['BIDS_DIR'])
 
     Stc_node = Node(Stc(), name=f'{subject_id}_stc_node')
@@ -160,7 +160,7 @@ def creat_Stc_node(subject_id: str, task: str):
 
 def creat_MkTemplate_node(subject_id: str, task: str):
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-    derivative_deepprep_path = Path(os.environ['BOLD_PROPROCESS_DIR'])
+    derivative_deepprep_path = Path(os.environ['BOLD_PREPROCESS_DIR'])
     data_path = Path(os.environ['BIDS_DIR'])
 
     MkTemplate_node = Node(MkTemplate(), name=f'{subject_id}_MkTemplate_node')
@@ -177,7 +177,7 @@ def creat_MkTemplate_node(subject_id: str, task: str):
 
 def creat_MotionCorrection_node(subject_id: str, task: str):
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-    derivative_deepprep_path = Path(os.environ['BOLD_PROPROCESS_DIR'])
+    derivative_deepprep_path = Path(os.environ['BOLD_PREPROCESS_DIR'])
     data_path = Path(os.environ['BIDS_DIR'])
 
     MotionCorrection_node = Node(MotionCorrection(), name=f'{subject_id}_MotionCorrection_node')
@@ -194,7 +194,7 @@ def creat_MotionCorrection_node(subject_id: str, task: str):
 
 def creat_Register_node(subject_id: str, task: str):
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-    derivative_deepprep_path = Path(os.environ['BOLD_PROPROCESS_DIR'])
+    derivative_deepprep_path = Path(os.environ['BOLD_PREPROCESS_DIR'])
     data_path = Path(os.environ['BIDS_DIR'])
 
     Register_node = Node(Register(), name=f'{subject_id}_register_node')
@@ -211,7 +211,7 @@ def creat_Register_node(subject_id: str, task: str):
 
 def creat_Mkbrainmask_node(subject_id: str, task: str):
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-    derivative_deepprep_path = Path(os.environ['BOLD_PROPROCESS_DIR'])
+    derivative_deepprep_path = Path(os.environ['BOLD_PREPROCESS_DIR'])
     data_path = Path(os.environ['BIDS_DIR'])
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
 
@@ -230,7 +230,7 @@ def creat_Mkbrainmask_node(subject_id: str, task: str):
 
 def creat_RestGauss_node(subject_id: str, task: str):
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-    derivative_deepprep_path = Path(os.environ['BOLD_PROPROCESS_DIR'])
+    derivative_deepprep_path = Path(os.environ['BOLD_PREPROCESS_DIR'])
     data_path = Path(os.environ['BIDS_DIR'])
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
 
@@ -249,7 +249,7 @@ def creat_RestGauss_node(subject_id: str, task: str):
 
 def creat_RestBandpass_node(subject_id: str, task: str):
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-    derivative_deepprep_path = Path(os.environ['BOLD_PROPROCESS_DIR'])
+    derivative_deepprep_path = Path(os.environ['BOLD_PREPROCESS_DIR'])
     data_path = Path(os.environ['BIDS_DIR'])
 
     RestBandpass_node = Node(RestBandpass(), name=f'{subject_id}_RestBandpass_node')
@@ -266,7 +266,7 @@ def creat_RestBandpass_node(subject_id: str, task: str):
 
 def creat_RestRegression_node(subject_id: str, task: str):
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-    derivative_deepprep_path = Path(os.environ['BOLD_PROPROCESS_DIR'])
+    derivative_deepprep_path = Path(os.environ['BOLD_PREPROCESS_DIR'])
     data_path = Path(os.environ['BIDS_DIR'])
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
 
@@ -285,7 +285,7 @@ def creat_RestRegression_node(subject_id: str, task: str):
 
 def creat_Smooth_node(subject_id: str, task: str, preprocess_method: str, mni152_brain_mask: Path):
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-    derivative_deepprep_path = Path(os.environ['BOLD_PROPROCESS_DIR'])
+    derivative_deepprep_path = Path(os.environ['BOLD_PREPROCESS_DIR'])
     data_path = Path(os.environ['BIDS_DIR'])
 
     Smooth_node = Node(Smooth(), name=f'{subject_id}_Smooth_node')
@@ -305,7 +305,7 @@ def creat_Smooth_node(subject_id: str, task: str, preprocess_method: str, mni152
 def creat_VxmRegNormMNI152_node(subject_id: str, task: str, preprocess_method: str, atlas_type: str,
                                 vxm_model_path: Path, resource_dir: Path):
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-    derivative_deepprep_path = Path(os.environ['BOLD_PROPROCESS_DIR'])
+    derivative_deepprep_path = Path(os.environ['BOLD_PREPROCESS_DIR'])
     data_path = Path(os.environ['BIDS_DIR'])
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
 
@@ -342,7 +342,7 @@ def create_node_t():
     bold_preprocess_dir_test = '/mnt/ngshare/DeepPrep_workflow_test/UKB_BoldPreprocess'
     workflow_cached_dir_test = '/mnt/ngshare/DeepPrep_workflow_test/UKB_Workflow'
 
-    subject_id_test = 'sub-1000037-ses-02'
+    subject_id_test = 'sub-1000896'
     t1w_files = ['/mnt/ngshare/DeepPrep_workflow_test/UKB_BIDS/sub-1000037/ses-02/anat/sub-1000037_ses-02_T1w.nii.gz']
 
     os.environ['SUBJECTS_DIR'] = str(subjects_dir_test)
@@ -352,19 +352,17 @@ def create_node_t():
     os.environ['FREESURFER_HOME'] = str(freesurfer_home)
     os.environ['FASTCSR_HOME'] = str(fastcsr_home)
     os.environ['FEATREG_HOME'] = str(featreg_home)
+    os.environ['BIDS_DIR'] = bids_data_dir_test
 
     # 测试
-    node = create_origandrawavg_node(subject_id=subject_id_test, t1w_files=t1w_files)
-    node.run()
-    sub_node = node.interface.create_sub_node()
-    sub_node.run()
-    sub_node.interface.create_sub_node()
+    vxm_model_path_test = Path('/home/zhenyu/workspace/DeepPrep/deepprep_pipeline/model/voxelmorph')
+    atlas_type_test = 'MNI152_T1_2mm'
 
-    node = create_Segment_node(subject_id=subject_id_test)
+
+    node = creat_VxmRegistraion_node(subject_id=subject_id_test, vxm_model_path=vxm_model_path_test, atlas_type=atlas_type_test)
     node.run()
     sub_node = node.interface.create_sub_node()
     sub_node.run()
-    sub_node.interface.create_sub_node()
 
 
 if __name__ == '__main__':
