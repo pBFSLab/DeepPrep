@@ -6,6 +6,7 @@ from interface.run import run_cmd_with_timing, multipool
 class FeatRegInputSpec(BaseInterfaceInputSpec):
     python_interpret = File(exists=True, mandatory=True, desc='the python interpret to use')
     featreg_py = File(exists=True, mandatory=True, desc="FeatReg script")
+    base_dir = Directory(exists=True, desc="workflow cached dir", mandatory=True)
 
     subjects_dir = Directory(exists=True, desc='subject dir path', mandatory=True)
     subject_id = Str(desc='subject id', mandatory=True)
