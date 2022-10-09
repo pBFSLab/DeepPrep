@@ -78,6 +78,7 @@ class OrigAndRawavgInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc='subjects dir', mandatory=True)
     subject_id = Str(desc='subject id', mandatory=True)
     threads = traits.Int(desc='threads')
+    base_dir = Directory(exists=True, desc='base dir', mandatory=True)
     python_interpret = Directory(exists=True, desc='python interpret', mandatory=True)
     fastsurfer_home = Directory(exists=True, desc='fastsurfer home', mandatory=True)
 
@@ -115,6 +116,7 @@ class OrigAndRawavg(BaseInterface):
         from create_node import creat_Segment_node
         node = creat_Segment_node(self.inputs.subject_id,
                                   self.inputs.subjects_dir,
+                                  self.inputs.base_dir,
                                   self.inputs.python_interpret,
                                   self.inputs.fastsurfer_home,
                                   )
