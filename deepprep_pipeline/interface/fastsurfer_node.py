@@ -2,7 +2,6 @@ from pathlib import Path
 from nipype.interfaces.base import BaseInterfaceInputSpec, BaseInterface, File, TraitedSpec, Directory, \
     traits, traits_extension, Str
 from interface.run import run_cmd_with_timing, multipool
-from multiprocessing import Pool
 
 
 class SegmentInputSpec(BaseInterfaceInputSpec):
@@ -23,8 +22,7 @@ class SegmentInputSpec(BaseInterfaceInputSpec):
     network_sagittal_path = File(exists=True, mandatory=True, desc="path to pre-trained weights of sagittal network")
     network_coronal_path = File(exists=True, mandatory=True, desc="pre-trained weights of coronal network")
     network_axial_path = File(exists=True, mandatory=True, desc="pre-trained weights of axial network")
-    base_dir = Directory(exists=True, desc='base dir', mandatory=True)
-    fastsurfer_home = Directory(exists=True, desc='fastsurfer home', mandatory=True)
+
     # aparc_DKTatlas_aseg_deep = File(exists=False, desc="mri/aparc.DKTatlas+aseg.deep.mgz", mandatory=True)
     # aparc_DKTatlas_aseg_orig = File(exists=False, desc="mri/aparc.DKTatlas+aseg.orig.mgz", mandatory=True)
 
@@ -81,14 +79,10 @@ class Segment(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from create_node import creat_Noccseg_node
-        node = creat_Noccseg_node(self.inputs.subject_id,
-                                  self.inputs.subjects_dir,
-                                  self.inputs.base_dir,
-                                  self.inputs.python_interpret,
-                                  self.inputs.fastsurfer_home,
-                                  )
+        from interface.create_node import create_Noccseg_node
+        node = create_Noccseg_node(self.inputs.subject_id)
         return node
+
 
 class N4BiasCorrectInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc='subjects dir', mandatory=True)
@@ -97,7 +91,6 @@ class N4BiasCorrectInputSpec(BaseInterfaceInputSpec):
     correct_py = File(exists=True, desc="N4_bias_correct.py", mandatory=True)
     orig_file = File(exists=True, desc="mri/orig.mgz", mandatory=True)
     mask_file = File(exists=True, desc="mri/mask.mgz", mandatory=True)
-
     # orig_nu_file = File(desc="mri/orig_nu.mgz", mandatory=True)
     threads = traits.Int(desc="threads")
 
@@ -138,6 +131,11 @@ class N4BiasCorrect(BaseInterface):
         outputs['subject_id'] = subject_id
         return outputs
 
+    def create_sub_node(self):
+        from interface.create_node import create_TalairachAndNu_node
+        node = create_TalairachAndNu_node(self.inputs.subject_id)
+        return node
+
 
 class TalairachAndNuInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
@@ -171,7 +169,6 @@ class TalairachAndNu(BaseInterface):
         sub_mri_dir = subjects_dir / subject_id / "mri"
         talairach_lta = subjects_dir / subject_id / 'mri' / 'transforms' / 'talairach.lta'
         nu_file = subjects_dir / subject_id / 'mri' / 'nu.mgz'
-
 
         if self.inputs.threads is None:
             self.inputs.threads = 1
@@ -214,11 +211,15 @@ class TalairachAndNu(BaseInterface):
         outputs['subject_id'] = subject_id
         return outputs
 
+    def create_sub_node(self):
+        from interface.create_node import create_Brainmask_node
+        node = create_Brainmask_node(self.inputs.subject_id)
+        return node
+
 
 class NoccsegThresholdInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
-    base_dir = Directory(exists=True, desc='base dir', mandatory=True)
     python_interpret = File(exists=True, mandatory=True, desc='the python interpret to use')
     reduce_to_aseg_py = File(exists=True, mandatory=True, desc="reduce to aseg")
     # in_file = File(exists=True, mandatory=True, desc='name of file to process. Default: aparc.DKTatlas+aseg.orig.mgz')
@@ -235,8 +236,8 @@ class NoccsegThresholdOutputSpec(TraitedSpec):
     mask_file = File(exists=True, desc="mask.mgz")
     aseg_noCCseg_file = File(exists=True, desc="aseg.auto_noCCseg.mgz")
 
-    orig_file = File(exists=True, desc='mri/orig.mgz') # orig_and_rawavg_node outputs
-    aparc_DKTatlas_aseg_deep = File(exists=True, desc="mri/aparc.DKTatlas+aseg.deep.mgz") # segment_node
+    orig_file = File(exists=True, desc='mri/orig.mgz')  # orig_and_rawavg_node outputs
+    aparc_DKTatlas_aseg_deep = File(exists=True, desc="mri/aparc.DKTatlas+aseg.deep.mgz")  # segment_node
 
     subject_id = Str(desc="subject id")
 
@@ -269,11 +270,16 @@ class Noccseg(BaseInterface):
         outputs['mask_file'] = subjects_dir / subject_id / 'mri' / 'mask.mgz'
         outputs['aseg_noCCseg_file'] = subjects_dir / subject_id / 'mri' / 'aseg.auto_noCCseg.mgz'
 
-        outputs["orig_file"] =subjects_dir / subject_id / "mri" / "orig.mgz" # orig_and_rawavg_node outputs
-        outputs["aparc_DKTatlas_aseg_deep"] = subjects_dir / subject_id / "mri" / "aparc.DKTatlas+aseg.deep.mgz" # segment_node
+        outputs["orig_file"] = subjects_dir / subject_id / "mri" / "orig.mgz"  # orig_and_rawavg_node outputs
+        outputs["aparc_DKTatlas_aseg_deep"] = subjects_dir / subject_id / "mri" / "aparc.DKTatlas+aseg.deep.mgz"  # segment_node
 
         outputs["subject_id"] = subject_id
         return outputs
+
+    def create_sub_node(self):
+        from interface.create_node import create_N4BiasCorrect_node
+        node = create_N4BiasCorrect_node(self.inputs.subject_id)
+        return node
 
 
 class UpdateAsegInputSpec(BaseInterfaceInputSpec):
@@ -283,7 +289,6 @@ class UpdateAsegInputSpec(BaseInterfaceInputSpec):
     paint_cc_file = File(exists=True, desc="FastSurfer/recon_surf/paint_cc_into_pred.py", mandatory=True)
     aseg_noCCseg_file = File(exists=True, desc="mri/aseg.auto_noCCseg.mgz", mandatory=True)
     seg_file = File(exists=True, desc="mri/aparc.DKTatlas+aseg.deep.mgz", mandatory=True)
-    norm_file = File(exists=True, desc="mri/norm.mgz", mandatory=True)
 
     # aseg_auto_file = File(exists=False, desc="mri/aseg.auto.mgz", mandatory=True)
     # cc_up_file = File(exists=False, desc="mri/transforms/cc_up.lta", mandatory=True)
@@ -296,6 +301,7 @@ class UpdateAsegOutputSpec(TraitedSpec):
     aparc_aseg_file = File(exists=False, desc="mri/aparc.DKTatlas+aseg.deep.withCC.mgz")
 
     subject_id = Str(desc='subject id')
+
 
 class UpdateAseg(BaseInterface):
     input_spec = UpdateAsegInputSpec
@@ -335,6 +341,11 @@ class UpdateAseg(BaseInterface):
         outputs["aparc_aseg_file"] = subjects_dir / subject_id / 'mri' / 'aparc.DKTatlas+aseg.deep.withCC.mgz'
         outputs['subject_id'] = subject_id
         return outputs
+
+    def create_sub_node(self):
+        from interface.create_node import create_Filled_node
+        node = create_Filled_node(self.inputs.subject_id)
+        return node
 
 
 class SampleSegmentationToSurfaveInputSpec(BaseInterfaceInputSpec):
