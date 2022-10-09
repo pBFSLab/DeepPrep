@@ -5,6 +5,7 @@ from interface.bold_node import *
 from interface.fastcsr_node import *
 from interface.fastsurfer_node import *
 from interface.featreg_node import *
+from interface.node_source import Source
 
 """环境变量
 subjects_dir = Path(os.environ['SUBJECTS_DIR'])
@@ -28,6 +29,7 @@ def create_origandrawavg_node(subject_id: str, t1w_files: list):
     origandrawavg_node.inputs.subject_id = subject_id
     origandrawavg_node.inputs.threads = 1
     origandrawavg_node.base_dir = workflow_cached_dir
+    origandrawavg_node.source = Source(CPU_n=1)
     return origandrawavg_node
 
 
@@ -55,7 +57,7 @@ def create_fastcsr_node(subject_id: str):
     return fastcsr_node
 
 
-def creat_Segment_node(subject_id: str):
+def create_Segment_node(subject_id: str):
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     fastsurfer_home = Path(os.environ['FASTSURFER_HOME'])
     workflow_cached_dir = os.environ['WORKFLOW_CACHED_DIR']
@@ -69,19 +71,18 @@ def creat_Segment_node(subject_id: str):
     network_axial_path = weight_dir / "Axial_Weights_FastSurferCNN" / "ckpts" / "Epoch_30_training_state.pkl"
 
     segment_node = Node(Segment(), f'{subject_id}_segment_node')
+    segment_node.inputs.subjects_dir = subjects_dir
+    segment_node.inputs.subject_id = subject_id
     segment_node.inputs.python_interpret = python_interpret
-    segment_node.inputs.in_file = subjects_dir / subject_id / "mri" / "orig.mgz"
     segment_node.inputs.eval_py = fastsurfer_eval
     segment_node.inputs.network_sagittal_path = network_sagittal_path
     segment_node.inputs.network_coronal_path = network_coronal_path
     segment_node.inputs.network_axial_path = network_axial_path
 
-    segment_node.inputs.aparc_DKTatlas_aseg_deep = subjects_dir / subject_id / "mri" / "aparc.DKTatlas+aseg.deep.mgz"
-    segment_node.inputs.aparc_DKTatlas_aseg_orig = subjects_dir / subject_id / "mri" / "aparc.DKTatlas+aseg.orig.mgz"
-
-    segment_node.inputs.conformed_file = subjects_dir / subject_id / "mri" / "conformed.mgz"
     segment_node.inputs.base_dir = workflow_cached_dir
     segment_node.inputs.fastsurfer_home = fastsurfer_home
+
+    segment_node.source = Source(CPU_n=1, GPU_MB=8000)
     return segment_node
 
 
@@ -208,3 +209,47 @@ def create_WhitePialThickness1_node(subject_id: str):
 
     return white_pial_thickness1
 
+
+def create_node_t():
+    from interface.run import set_envrion
+    set_envrion()
+
+    pwd = Path.cwd()
+    pwd = pwd.parent
+    fastsurfer_home = pwd / "FastSurfer"
+    freesurfer_home = Path('/usr/local/freesurfer720')
+    fastcsr_home = pwd / "FastCSR"
+    featreg_home = pwd / "FeatReg"
+
+    bids_data_dir_test = '/mnt/ngshare/DeepPrep_workflow_test/UKB_BIDS'
+    subjects_dir_test = '/mnt/ngshare/DeepPrep_workflow_test/UKB_Recon'
+    bold_preprocess_dir_test = '/mnt/ngshare/DeepPrep_workflow_test/UKB_BoldPreprocess'
+    workflow_cached_dir_test = '/mnt/ngshare/DeepPrep_workflow_test/UKB_Workflow'
+
+    subject_id_test = 'sub-1000037-ses-02'
+    t1w_files = ['/mnt/ngshare/DeepPrep_workflow_test/UKB_BIDS/sub-1000037/ses-02/anat/sub-1000037_ses-02_T1w.nii.gz']
+
+    os.environ['SUBJECTS_DIR'] = str(subjects_dir_test)
+    os.environ['BOLD_PREPROCESS_DIR'] = str(bold_preprocess_dir_test)
+    os.environ['WORKFLOW_CACHED_DIR'] = str(workflow_cached_dir_test)
+    os.environ['FASTSURFER_HOME'] = str(fastsurfer_home)
+    os.environ['FREESURFER_HOME'] = str(freesurfer_home)
+    os.environ['FASTCSR_HOME'] = str(fastcsr_home)
+    os.environ['FEATREG_HOME'] = str(featreg_home)
+
+    # 测试
+    node = create_origandrawavg_node(subject_id=subject_id_test, t1w_files=t1w_files)
+    node.run()
+    sub_node = node.interface.create_sub_node()
+    sub_node.run()
+    sub_node.interface.create_sub_node()
+
+    node = create_Segment_node(subject_id=subject_id_test)
+    node.run()
+    sub_node = node.interface.create_sub_node()
+    sub_node.run()
+    sub_node.interface.create_sub_node()
+
+
+if __name__ == '__main__':
+    create_node_t()  # 测试
