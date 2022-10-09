@@ -5,37 +5,41 @@ from interface.bold_node import *
 from interface.fastcsr_node import *
 from interface.fastsurfer_node import *
 
+"""环境变量
+subjects_dir = Path(os.environ['SUBJECTS_DIR'])
+bold_preprocess_dir = Path(os.environ['BOLD_PREPROCESS_DIR'])
+workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
+fastsurfer_home = Path(os.environ['FASTSURFER_HOME'])
+freesurfer_home = Path(os.environ['FREESURFER_HOME'])
+fastcsr_home = Path(os.environ['FASTCSR_HOME'])
+featreg_home = Path(os.environ['FEATREG_HOME'])
+python_interpret = sys.executable
+"""
 
-def create_origandrawavg_node(subject_id: str, subjects_dir: Path, bold_result_dir: Path, base_dir: Path,
-                              bids_dir: Path, t1w_files: list):
 
-    subject_id = subject_id
-    # t1w_files = [
-    #     f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/sub-MSC01/ses-struct01/anat/sub-MSC01_ses-struct01_run-01_T1w.nii.gz',
-    # ]
+def create_origandrawavg_node(subject_id: str, t1w_files: list):
+    subjects_dir = os.environ['SUBJECTS_DIR']
+    workflow_cached_dir = os.environ['WORKFLOW_CACHED_DIR']
+
     origandrawavg_node = Node(OrigAndRawavg(), f'{subject_id}_origandrawavg_node')
     origandrawavg_node.inputs.t1w_files = t1w_files
     origandrawavg_node.inputs.subjects_dir = subjects_dir
     origandrawavg_node.inputs.subject_id = subject_id
     origandrawavg_node.inputs.threads = 1
-    origandrawavg_node.base_dir = base_dir
+    origandrawavg_node.base_dir = workflow_cached_dir
     return origandrawavg_node
 
 
-def create_fastcsr_node(subject_id: str, subjects_dir: Path, bold_result_dir: Path, base_dir: Path,
-                        python_interpret: Path,
-                        fastcsr_home: Path):
-    # fastcsr_home = pwd.parent / "FastCSR"
+def create_fastcsr_node(subject_id: str):
+    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
+    fastcsr_home = Path(os.environ['FASTCSR_HOME'])
+    python_interpret = sys.executable
+
     fastcsr_py = fastcsr_home / 'pipeline.py'  # inference script
 
     fastcsr_node = Node(FastCSR(), f'{subject_id}_fastcsr_node')
     fastcsr_node.inputs.python_interpret = python_interpret
     fastcsr_node.inputs.fastcsr_py = fastcsr_py
-
-    subjects_dir = '/mnt/ngshare/Data_Mirror/pipeline_test'
-    subject_id = 'sub-MSC01'
-
-    os.environ['SUBJECTS_DIR'] = subjects_dir
 
     fastcsr_node.inputs.subjects_dir = subjects_dir
     fastcsr_node.inputs.subject_id = subject_id
@@ -48,13 +52,13 @@ def create_fastcsr_node(subject_id: str, subjects_dir: Path, bold_result_dir: Pa
     return fastcsr_node
 
 
-def creat_Segment_node(subject_id: str, subjects_dir: Path, python_interpret: Path, fastsurfer_home: Path):
+def creat_Segment_node(subject_id: str):
+    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
+    fastsurfer_home = Path(os.environ['FASTSURFER_HOME'])
+    python_interpret = sys.executable
 
     fastsurfer_eval = fastsurfer_home / 'FastSurferCNN' / 'eval.py'  # inference script
     weight_dir = fastsurfer_home / 'checkpoints'  # model checkpoints dir
-
-
-    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
     network_sagittal_path = weight_dir / "Sagittal_Weights_FastSurferCNN" / "ckpts" / "Epoch_30_training_state.pkl"
     network_coronal_path = weight_dir / "Coronal_Weights_FastSurferCNN" / "ckpts" / "Epoch_30_training_state.pkl"
@@ -73,6 +77,3 @@ def creat_Segment_node(subject_id: str, subjects_dir: Path, python_interpret: Pa
 
     segment_node.inputs.conformed_file = subjects_dir / subject_id / "mri" / "conformed.mgz"
     return segment_node
-
-
-def creat
