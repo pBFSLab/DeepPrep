@@ -16,10 +16,6 @@ class BrainmaskInputSpec(BaseInterfaceInputSpec):
     nu_file = File(exists=True, desc="mri/nu.mgz", mandatory=True)
     mask_file = File(exists=True, desc="mri/mask.mgz", mandatory=True)
 
-    # T1_file = File(exists=False, desc="mri/T1.mgz", mandatory=True)
-    # brainmask_file = File(exists=False, desc="mri/brainmask.mgz", mandatory=True)
-    # norm_file = File(exists=False, desc="mri/norm.mgz", mandatory=True)
-
 
 class BrainmaskOutputSpec(TraitedSpec):
     brainmask_file = File(exists=True, desc="mri/brainmask.mgz")
@@ -90,7 +86,6 @@ class OrigAndRawavg(BaseInterface):
 
     def __init__(self):
         super(OrigAndRawavg, self).__init__()
-        self.source = Source()  #
 
     def _run_interface(self, runtime):
         threads = self.inputs.threads if self.inputs.threads else 0
@@ -390,7 +385,6 @@ class InflatedSphereThresholdInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     subject_id = traits.String(mandatory=True, desc='sub-xxx')
     threads = traits.Int(desc='threads')
-    base_dir = Directory(exists=True, desc="workflow cached dir", mandatory=True)
     lh_white_preaparc_file = File(exists=True, desc='surf/lh.white.preaparc')
     rh_white_preaparc_file = File(exists=True, desc='surf/rh.white.preaparc')
 
@@ -417,7 +411,6 @@ class InflatedSphere(BaseInterface):
 
     def __init__(self):
         super(InflatedSphere, self).__init__()
-        self.source = Source()  #
 
     def cmd(self):
         threads = self.inputs.threads if self.inputs.threads else 0
@@ -461,7 +454,6 @@ class WhitePialThickness1InputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc='subjects dir', mandatory=True)
     subject_id = traits.Str(desc="sub-xxx", mandatory=True)
     threads = traits.Int(desc='threads')
-    base_dir = Directory(exists=True, desc="workflow cached dir", mandatory=True)
 
     lh_white_preaparc = File(exists=True, desc="surf/lh.white.preaparc", mandatory=True)
     rh_white_preaparc = File(exists=True, desc="surf/rh.white.preaparc", mandatory=True)
@@ -504,7 +496,6 @@ class WhitePialThickness1(BaseInterface):
 
     def __init__(self):
         super(WhitePialThickness1, self).__init__()
-        self.source = Source()  #
 
     def _run_interface(self, runtime):
         # must run surfreg first
@@ -567,7 +558,6 @@ class WhitePialThickness1(BaseInterface):
 class CurvstatsInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     subject_id = Str(desc="sub-xxx", mandatory=True)
-    base_dir = Directory(exists=True, desc="workflow cached dir", mandatory=True)
 
     lh_smoothwm = File(exists=True, desc="surf/lh.smoothwm", mandatory=True)
     rh_smoothwm = File(exists=True, desc="surf/rh.smoothwm", mandatory=True)
@@ -595,7 +585,6 @@ class Curvstats(BaseInterface):
 
     def __init__(self):
         super(Curvstats, self).__init__()
-        self.source = Source()  #
 
     def cmd(self):
         subject_id = self.inputs.subject_id
@@ -627,17 +616,12 @@ class CortribbonInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     subject_id = Str(desc="sub-xxx", mandatory=True)
     threads = traits.Int(desc='threads')
-    base_dir = Directory(exists=True, desc="workflow cached dir", mandatory=True)
 
     aseg_presurf_file = File(exists=True, desc="mri/aseg.presurf.mgz", mandatory=True)
     lh_white = File(exists=True, desc="surf/lh.white", mandatory=True)
     rh_white = File(exists=True, desc="surf/rh.white", mandatory=True)
     lh_pial = File(exists=True, desc="surf/lh.pial", mandatory=True)
     rh_pial = File(exists=True, desc="surf/rh.pial", mandatory=True)
-
-    # lh_ribbon = File(exists=False, desc="mri/lh.ribbon.mgz", mandatory=True)
-    # rh_ribbon = File(exists=False, desc="mri/rh.ribbon.mgz", mandatory=True)
-    # ribbon = File(exists=False, desc="mri/ribbon.mgz", mandatory=True)
 
 
 class CortribbonOutputSpec(TraitedSpec):
@@ -657,7 +641,6 @@ class Cortribbon(BaseInterface):
 
     def __init__(self):
         super(Cortribbon, self).__init__()
-        self.source = Source()  #
 
     def _run_interface(self, runtime):
         subject_id = self.inputs.subject_id
@@ -694,7 +677,6 @@ class ParcstatsInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     subject_id = Str(desc="sub-xxx", mandatory=True)
     threads = traits.Int(desc='threads')
-    base_dir = Directory(exists=True, desc="workflow cached dir", mandatory=True)
 
     lh_aparc_annot = File(exists=True, desc="label/lh.aparc.annot", mandatory=True)
     rh_aparc_annot = File(exists=True, desc="label/rh.aparc.annot", mandatory=True)
@@ -706,12 +688,6 @@ class ParcstatsInputSpec(BaseInterfaceInputSpec):
     rh_pial = File(exists=True, desc="surf/rh.pial", mandatory=True)
     lh_thickness = File(exists=True, desc="surf/lh.thickness", mandatory=True)
     rh_thickness = File(exists=True, desc="surf/rh.thickness", mandatory=True)
-
-    # lh_aparc_stats = File(exists=False, desc="stats/lh.aparc.stats", mandatory=True)
-    # rh_aparc_stats = File(exists=False, desc="stats/rh.aparc.stats", mandatory=True)
-    # lh_aparc_pial_stats = File(exists=False, desc="stats/lh.aparc.pial.stats", mandatory=True)
-    # rh_aparc_pial_stats = File(exists=False, desc="stats/rh.aparc.pial.stats", mandatory=True)
-    # aparc_annot_ctab = File(exists=False, desc="label/aparc.annot.ctab", mandatory=True)
 
 
 class ParcstatsOutputSpec(TraitedSpec):
@@ -737,7 +713,6 @@ class Parcstats(BaseInterface):
 
     def __init__(self):
         super(Parcstats, self).__init__()
-        self.source = Source()  #
 
 
     def _run_interface(self, runtime):
@@ -872,8 +847,6 @@ class JacobianAvgcurvCortparcThresholdInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     subject_id = traits.Str(mandatory=True, desc='sub-xxx')
     threads = traits.Int(desc='threads')
-    base_dir = Directory(exists=True, desc="workflow cached dir", mandatory=True)
-
 
 
 class JacobianAvgcurvCortparcThresholdOutputSpec(TraitedSpec):
@@ -913,7 +886,6 @@ class JacobianAvgcurvCortparc(BaseInterface):
 
     def __init__(self):
         super(JacobianAvgcurvCortparc, self).__init__()
-        self.source = Source()  #
 
     def _run_interface(self, runtime):
         subject_id = self.inputs.subject_id
@@ -1017,7 +989,6 @@ class Aseg7InputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     subject_id = Str(desc="sub-xxx", mandatory=True)
     threads = traits.Int(desc='threads')
-    base_dir = Directory(exists=True, desc="workflow cached dir", mandatory=True)
 
     aseg_file = File(exists=True, desc="mri/aseg.mgz", mandatory=True)
     lh_cortex_label = File(exists=True, desc="label/lh.cortex.label", mandatory=True)
@@ -1046,7 +1017,6 @@ class Aseg7(BaseInterface):
 
     def __init__(self):
         super(Aseg7, self).__init__()
-        self.source = Source()  #
 
     def _run_interface(self, runtime):
         subjects_dir = Path(self.inputs.subjects_dir)
@@ -1123,7 +1093,6 @@ class BalabelsMultInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
     threads = traits.Int(desc='threads')
-    base_dir = Directory(exists=True, desc="workflow cached dir", mandatory=True)
 
     lh_sphere_reg = File(exists=True, desc="surf/lh.sphere.reg", mandatory=True)
     rh_sphere_reg = File(exists=True, desc="surf/rh.sphere.reg", mandatory=True)
@@ -1154,7 +1123,6 @@ class BalabelsMult(BaseInterface):
 
     def __init__(self):
         super(BalabelsMult, self).__init__()
-        self.source = Source()  #
 
     def cmd(self, hemi):
         subjects_dir = Path(self.inputs.subjects_dir)

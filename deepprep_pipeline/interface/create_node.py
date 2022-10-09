@@ -7,6 +7,7 @@ from interface.bold_node import *
 from interface.fastcsr_node import *
 from interface.fastsurfer_node import *
 from interface.featreg_node import *
+from interface.run import *
 
 """环境变量
 subjects_dir = Path(os.environ['SUBJECTS_DIR'])
@@ -119,6 +120,7 @@ def create_InflatedSphere_node(subject_id: str):
     Inflated_Sphere_node.inputs.lh_white_preaparc_file = lh_white_preaparc_file
     Inflated_Sphere_node.inputs.rh_white_preaparc_file = rh_white_preaparc_file
     Inflated_Sphere_node.base_dir = workflow_cached_dir
+    Inflated_Sphere_node.source = Source()
 
     return Inflated_Sphere_node
 
@@ -147,7 +149,7 @@ def create_FeatReg_node(subject_id: str):
     featreg_node.inputs.lh_sphere = Path(subjects_dir) / subject_id / f'surf/lh.sphere'
     featreg_node.inputs.rh_sphere = Path(subjects_dir) / subject_id / f'surf/rh.sphere'
     featreg_node.base_dir = workflow_cached_dir
-
+    featreg_node.source = Source()
 
     return featreg_node
 
@@ -190,7 +192,7 @@ def create_JacobianAvgcurvCortparc_node(subject_id: str):
     JacobianAvgcurvCortparc_node.inputs.rh_aparc_annot = rh_aparc_annot
     JacobianAvgcurvCortparc_node.inputs.threads = 8
     JacobianAvgcurvCortparc_node.base_dir = workflow_cached_dir
-
+    JacobianAvgcurvCortparc_node.source = Source()
 
     return JacobianAvgcurvCortparc_node
 
@@ -219,6 +221,7 @@ def create_WhitePialThickness1_node(subject_id: str):
     white_pial_thickness1.inputs.lh_white = subjects_dir / subject_id / "surf" / "lh.white"
     white_pial_thickness1.inputs.rh_white = subjects_dir / subject_id / "surf" / "rh.white"
     white_pial_thickness1.base_dir = workflow_cached_dir
+    white_pial_thickness1.source = Source()
 
     return white_pial_thickness1
 
@@ -240,6 +243,7 @@ def create_Curvstats_node(subject_id: str):
     Curvstats_node.inputs.rh_sulc = subject_surf_dir / f'rh.sulc'
     Curvstats_node.inputs.threads = threads
     Curvstats_node.base_dir = workflow_cached_dir
+    Curvstats_node.source = Source()
 
     return Curvstats_node
 
@@ -261,6 +265,7 @@ def create_BalabelsMult_node(subject_id: str):
     BalabelsMult_node.inputs.rh_white = subject_surf_dir / f'rh.white'
     BalabelsMult_node.inputs.fsaverage_label_dir = Path(os.environ['FREESURFER_HOME']) / "subjects/fsaverage/label"
     BalabelsMult_node.base_dir = workflow_cached_dir
+    BalabelsMult_node.source = Source()
 
     return BalabelsMult_node
 
@@ -286,6 +291,7 @@ def create_Cortribbon_node(subject_id: str):
     Cortribbon_node.inputs.rh_ribbon = subject_mri_dir / f'rh.ribbon.mgz'
     Cortribbon_node.inputs.ribbon = subject_mri_dir / 'ribbon.mgz'
     Cortribbon_node.base_dir = workflow_cached_dir
+    Cortribbon_node.source = Source()
 
     return Cortribbon_node
 
@@ -314,6 +320,7 @@ def create_Parcstats_node(subject_id: str):
     Parcstats_node.inputs.lh_thickness = subject_surf_dir / f'lh.thickness'
     Parcstats_node.inputs.rh_thickness = subject_surf_dir / f'rh.thickness'
     Parcstats_node.base_dir = workflow_cached_dir
+    Parcstats_node.source = Source()
 
     return Parcstats_node
 
@@ -342,6 +349,6 @@ def create_Aseg7_node(subject_id: str):
     Aseg7_node.inputs.rh_aparc_annot = subject_label_dir / 'rh.aparc.annot'
     Aseg7_node.inputs.aparc_aseg = subject_mri_dir / 'aparc+aseg.mgz'
     Aseg7_node.base_dir = workflow_cached_dir
-
+    Aseg7_node.source = Source()
 
     return Aseg7_node
