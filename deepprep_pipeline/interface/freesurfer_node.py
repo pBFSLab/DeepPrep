@@ -1,5 +1,5 @@
 import os
-
+from interface.create_node import *
 from nipype.interfaces.base import BaseInterface, \
     BaseInterfaceInputSpec, traits, File, TraitedSpec, Directory, Str
 from interface.run import run_cmd_with_timing, get_freesurfer_threads, multipool
@@ -68,12 +68,18 @@ class Brainmask(BaseInterface):
         outputs['subject_id'] = subject_id
         return outputs
 
+    def create_sub_node(self):
+        from interface.create_node import create_UpdateAseg_node
+        node = create_UpdateAseg_node(self.inputs.subject_id)
+        return node
+
 
 class OrigAndRawavgInputSpec(BaseInterfaceInputSpec):
     t1w_files = traits.List(desc='t1w path or t1w paths', mandatory=True)
     subjects_dir = Directory(exists=True, desc='subjects dir', mandatory=True)
     subject_id = Str(desc='subject id', mandatory=True)
     threads = traits.Int(desc='threads')
+
 
 class OrigAndRawavgOutputSpec(TraitedSpec):
     orig_file = File(exists=True, desc='mri/orig.mgz')
@@ -83,9 +89,6 @@ class OrigAndRawavgOutputSpec(TraitedSpec):
 class OrigAndRawavg(BaseInterface):
     input_spec = OrigAndRawavgInputSpec
     output_spec = OrigAndRawavgOutputSpec
-
-    def __init__(self):
-        super(OrigAndRawavg, self).__init__()
 
     def _run_interface(self, runtime):
         threads = self.inputs.threads if self.inputs.threads else 0
@@ -138,9 +141,6 @@ class Filled(BaseInterface):
     cpu = 3.3
     gpu = 0
 
-    def __init__(self):
-        super(Filled, self).__init__()
-
     def _run_interface(self, runtime):
         threads = self.inputs.threads if self.inputs.threads else 0
         fsthreads = get_freesurfer_threads(threads)
@@ -168,6 +168,11 @@ class Filled(BaseInterface):
         outputs["wm_filled"] = subjects_dir / subject_id / 'mri/filled.mgz'
         outputs['subject_id'] = subject_id
         return outputs
+
+    def create_sub_node(self):
+        from interface.create_node import create_FastCSR_node
+        node = create_FastCSR_node(self.inputs.subject_id)
+        return node
 
 
 class WhitePreaparc1InputSpec(BaseInterfaceInputSpec):
@@ -298,87 +303,6 @@ class WhitePreaparc2(BaseInterface):
         return outputs
 
 
-# class WhitePreaparcInputSpec(BaseInterfaceInputSpec):
-#     fswhitepreaparc = traits.Bool(desc="True: mris_make_surfaces; \
-#     False: recon-all -autodetgwstats -white-preaparc -cortex-label", mandatory=True)
-#     subject = traits.Str(desc="sub-xxx", mandatory=True)
-#     hemi = traits.Str(desc="?h", mandatory=True)
-#
-#     # input files of <mris_make_surfaces>
-#     aseg_presurf = File(exists=True, desc="mri/aseg.presurf.mgz")
-#     brain_finalsurfs = File(exists=True, desc="mri/brain.finalsurfs.mgz")
-#     wm_file = File(exists=True, desc="mri/wm.mgz")
-#     filled_file = File(exists=True, desc="mri/filled.mgz")
-#     hemi_orig = File(exists=True, desc="surf/?h.orig")
-#
-#     # input files of <recon-all -autodetgwstats>
-#     hemi_orig_premesh = File(exists=True, desc="surf/?h.orig.premesh")
-#
-#     # input files of <recon-all -white-paraparc>
-#     autodet_gw_stats_hemi_dat = File(exists=True, desc="surf/autodet.gw.stats.?h.dat")
-#
-#     # input files of <recon-all -cortex-label>
-#     hemi_white_preaparc = File(exists=True, desc="surf/?h.white.preaparc")
-#
-#
-# class WhitePreaparcOutputSpec(TraitedSpec):
-#     # output files of mris_make_surfaces
-#     hemi_white_preaparc = File(exists=True, desc="surf/?h.white.preaparc")
-#     hemi_curv = File(exists=True, desc="surf/?h.curv")
-#     hemi_area = File(exists=True, desc="surf/?h.area")
-#     hemi_cortex_label = File(exists=True, desc="label/?h.cortex.label")
-#
-#
-# class WhitePreaparc(BaseInterface):
-#     input_spec = WhitePreaparcInputSpec
-#     output_spec = WhitePreaparcOutputSpec
-#
-#     def __init__(self, output_dir: Path, threads: int):
-#         super(WhitePreaparc, self).__init__()
-#         self.output_dir = output_dir
-#         self.threads = threads
-#         self.fsthreads = get_freesurfer_threads(threads)
-#
-#     def _run_interface(self, runtime):
-#         if not traits_extension.isdefined(self.inputs.brain_finalsurfs):
-#             self.inputs.brain_finalsurfs = self.output_dir / f"{self.inputs.subject}" / "mri/brain.finalsurfs.mgz"
-#         if not traits_extension.isdefined(self.inputs.wm_file):
-#             self.inputs.wm_file = self.output_dir / f"{self.inputs.subject}" / "mri/wm.mgz"
-#
-#         if self.inputs.fswhitepreaparc:
-#
-#
-#             if not traits_extension.isdefined(self.inputs.aseg_presurf):
-#                 self.inputs.aseg_presurf = self.output_dir / f"{self.inputs.subject}" / "mri/aseg.presurf.mgz"
-#             if not traits_extension.isdefined(self.inputs.filled_file):
-#                 self.inputs.filled_file = self.output_dir / f"{self.inputs.subject}" / "mri/filled.mgz"
-#             if not traits_extension.isdefined(self.inputs.hemi_orig):
-#                 self.inputs.hemi_orig = self.output_dir / f"{self.inputs.subject}" / "surf" / f"{self.inputs.hemi}.orig"
-#
-#             cmd = f'mris_make_surfaces -aseg aseg.presurf -white white.preaparc -whiteonly -noaparc -mgz ' \
-#                   f'-T1 brain.finalsurfs {self.inputs.subject} {self.inputs.hemi} threads {self.threads}'
-#             run_cmd_with_timing(cmd)
-#         else:
-#
-#
-#             if not traits_extension.isdefined(self.inputs.hemi_orig_premesh):
-#                 self.inputs.hemi_orig_premesh = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.orig.premesh"
-#
-#             cmd = f'recon-all -subject {self.inputs.subject} -hemi {self.inputs.hemi} -autodetgwstats -white-preaparc -cortex-label ' \
-#                   f'-no-isrunning {self.fsthreads}'
-#             run_cmd_with_timing(cmd)
-#
-#         return runtime
-#
-#     def _list_outputs(self):
-#         outputs = self._outputs().get()
-#         outputs["hemi_white_preaparc"] = self.inputs.hemi_white_preaparc
-#         outputs["hemi_curv"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.curv"
-#         outputs["hemi_area"] = self.output_dir / f"{self.inputs.subject}" / f"surf/{self.inputs.hemi}.area"
-#         outputs[
-#             "hemi_cortex_label"] = self.output_dir / f"{self.inputs.subject}" / f"label/{self.inputs.hemi}.cortex.label"
-#         return outputs
-
 class InflatedSphereThresholdInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     subject_id = traits.String(mandatory=True, desc='sub-xxx')
@@ -406,9 +330,6 @@ class InflatedSphere(BaseInterface):
     time = 150 / 60  # 运行时间：分钟
     cpu = 6  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
-
-    def __init__(self):
-        super(InflatedSphere, self).__init__()
 
     def cmd(self):
         threads = self.inputs.threads if self.inputs.threads else 0
@@ -442,9 +363,7 @@ class InflatedSphere(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from create_node import create_FeatReg_node
-        node = create_FeatReg_node(self.inputs.subject_id
-                                   )
+        node = create_FeatReg_node(self.inputs.subject_id)
         return node
 
 
@@ -462,7 +381,6 @@ class WhitePialThickness1InputSpec(BaseInterfaceInputSpec):
     rh_aparc_annot = File(exists=True, desc="label/rh.aparc.annot", mandatory=True)
     lh_cortex_label = File(exists=True, desc="label/lh.cortex.label", mandatory=True)
     rh_cortex_label = File(exists=True, desc="label/rh.cortex.label", mandatory=True)
-
 
 
 class WhitePialThickness1OutputSpec(TraitedSpec):
@@ -491,9 +409,6 @@ class WhitePialThickness1(BaseInterface):
     # The two methods (WhitePialThickness1 and WhitePialThickness2) are exacly the same.
     input_spec = WhitePialThickness1InputSpec
     output_spec = WhitePialThickness1OutputSpec
-
-    def __init__(self):
-        super(WhitePialThickness1, self).__init__()
 
     def _run_interface(self, runtime):
         # must run surfreg first
@@ -545,7 +460,6 @@ class WhitePialThickness1(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from create_node import create_Curvstats_node, create_BalabelsMult_node, create_Cortribbon_node
         node = [create_Curvstats_node(self.inputs.subject_id),
                 create_BalabelsMult_node(self.inputs.subject_id),
                 create_Cortribbon_node(self.inputs.subject_id)]
@@ -580,9 +494,6 @@ class Curvstats(BaseInterface):
     time = 2.7 / 60  # 运行时间：分钟 / 单脑测试时间
     cpu = 2.7  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
-
-    def __init__(self):
-        super(Curvstats, self).__init__()
 
     def cmd(self):
         subject_id = self.inputs.subject_id
@@ -637,9 +548,6 @@ class Cortribbon(BaseInterface):
     cpu = 3.5  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
 
-    def __init__(self):
-        super(Cortribbon, self).__init__()
-
     def _run_interface(self, runtime):
         subject_id = self.inputs.subject_id
         threads = self.inputs.threads if self.inputs.threads else 0
@@ -666,7 +574,6 @@ class Cortribbon(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from create_node import create_Parcstats_node
         node = create_Parcstats_node(self.inputs.subject_id)
         return node
 
@@ -709,10 +616,6 @@ class Parcstats(BaseInterface):
     cpu = 3  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
 
-    def __init__(self):
-        super(Parcstats, self).__init__()
-
-
     def _run_interface(self, runtime):
         subject_id = self.inputs.subject_id
         threads = self.inputs.threads if self.inputs.threads else 0
@@ -740,10 +643,8 @@ class Parcstats(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from create_node import create_Aseg7_node
         node = create_Aseg7_node(self.inputs.subject_id)
         return node
-
 
 
 class PctsurfconInputSpec(BaseInterfaceInputSpec):
@@ -882,9 +783,6 @@ class JacobianAvgcurvCortparc(BaseInterface):
     # cpu = 3  # 最大cpu占用：个
     # gpu = 0  # 最大gpu占用：MB
 
-    def __init__(self):
-        super(JacobianAvgcurvCortparc, self).__init__()
-
     def _run_interface(self, runtime):
         subject_id = self.inputs.subject_id
         threads = self.inputs.threads if self.inputs.threads else 0
@@ -925,9 +823,7 @@ class JacobianAvgcurvCortparc(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from create_node import create_WhitePialThickness1_node
-        node = create_WhitePialThickness1_node(self.inputs.subject_id
-                                               )
+        node = create_WhitePialThickness1_node(self.inputs.subject_id)
         return node
 
 
@@ -999,7 +895,6 @@ class Aseg7InputSpec(BaseInterfaceInputSpec):
     rh_aparc_annot = File(exists=True, desc="surf/rh.aparc.annot", mandatory=True)
 
 
-
 class Aseg7OutputSpec(TraitedSpec):
     aparc_aseg = File(exists=True, desc="mri/aparc+aseg.mgz")
     subject_id = Str(desc='subject id')
@@ -1012,9 +907,6 @@ class Aseg7(BaseInterface):
     time = 45 / 60  # 运行时间：分钟 / 单脑测试时间
     cpu = 5.6  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
-
-    def __init__(self):
-        super(Aseg7, self).__init__()
 
     def _run_interface(self, runtime):
         subjects_dir = Path(self.inputs.subjects_dir)
