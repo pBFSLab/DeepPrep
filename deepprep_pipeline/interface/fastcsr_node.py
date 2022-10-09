@@ -1,6 +1,5 @@
-import os
 from pathlib import Path
-from multiprocessing import Pool, Process, Lock
+from multiprocessing import Pool
 import logging
 import subprocess
 from nipype.interfaces.base import BaseInterfaceInputSpec, BaseInterface, File, TraitedSpec, Directory, Str
@@ -78,6 +77,7 @@ class FastCSR(BaseInterface):
         from interface.create_node import create_WhitePreaparc1_node
         node = create_WhitePreaparc1_node(self.inputs.subject_id)
         return node
+
 
 class FastCSRModelInputSpec(BaseInterfaceInputSpec):
     python_interpret = File(exists=True, mandatory=True, desc='the python interpret to use')

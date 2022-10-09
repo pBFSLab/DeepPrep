@@ -7,6 +7,7 @@ from pathlib import Path
 
 from threading import Thread
 import time
+from interface.fastsurfer_interface import Segment
 
 
 class BrainmaskInputSpec(BaseInterfaceInputSpec):
@@ -74,6 +75,35 @@ class OrigAndRawavgInputSpec(BaseInterfaceInputSpec):
 class OrigAndRawavgOutputSpec(TraitedSpec):
     orig_file = File(exists=True, desc='mri/orig.mgz')
     rawavg_file = File(exists=True, desc='mri/rawavg.mgz')
+
+
+class BaseInterface(BaseInterface):
+    def __init__(self, from_file=None, resource_monitor=None, ignore_exception=False, **inputs):
+        super(BaseInterface, self).__init__(from_file=from_file, resource_monitor=resource_monitor,
+                                            ignore_exception=ignore_exception, **inputs)
+        self.source = Source()
+
+    def postprocess(self, subject: SubjectQueue):
+        if self.node_run_success:
+            self.create_sub_node(subject.node_ready)
+        else:
+            self.interp(subject.node_error)
+
+    def node_run_success(self):
+        """
+        在执行node.run()以后，判断node是否完整运行
+        """
+        return True or False
+
+    def create_sub_node(self):
+        return node
+
+    def last_node(self):
+        """
+        在Queue中删除自己的subject
+        # TODO 这个逻辑放到哪不清楚
+        """
+        pass
 
 
 class OrigAndRawavg(BaseInterface):
