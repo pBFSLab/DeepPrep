@@ -1,6 +1,5 @@
-import os
 from pathlib import Path
-from multiprocessing import Pool, Process, Lock
+from multiprocessing import Pool
 import logging
 import subprocess
 from nipype.interfaces.base import BaseInterfaceInputSpec, BaseInterface, File, TraitedSpec, Directory, Str
@@ -73,6 +72,11 @@ class FastCSR(BaseInterface):
         outputs['lh_orig_premesh_file'] = subject_dir / 'surf' / 'lh.orig.premesh'
         outputs['rh_orig_premesh_file'] = subject_dir / 'surf' / 'rh.orig.premesh'
         return outputs
+
+    def create_sub_node(self):
+        from interface.create_node import create_WhitePreaparc1_node
+        node = create_WhitePreaparc1_node(self.inputs.subject_id)
+        return node
 
 
 class FastCSRModelInputSpec(BaseInterfaceInputSpec):
