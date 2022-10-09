@@ -37,6 +37,9 @@ class BoldSkipReorient(BaseInterface):
     cpu = 2.5  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
 
+    def __init__(self):
+        super(BoldSkipReorient, self).__init__()
+
     def dimstr2dimno(self, dimstr):
         if 'x' in dimstr:
             return 0
@@ -76,22 +79,27 @@ class BoldSkipReorient(BaseInterface):
         nib.save(newimg, outfile)
 
     def cmd(self, run):
-        preprocess_dir = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
+        preprocess_dir = Path(
+            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
         subj_bold_dir = preprocess_dir / f'{self.inputs.subject_id}' / 'bold'
 
-        bold = Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld{run}_rest.nii.gz'
-        skip_bold = Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld{run}_rest_skip.nii.gz'
-        reorient_skip_bold = Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld{run}_rest_reorient_skip.nii.gz'
+        bold = Path(
+            preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld{run}_rest.nii.gz'
+        skip_bold = Path(
+            preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld{run}_rest_skip.nii.gz'
+        reorient_skip_bold = Path(
+            preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld{run}_rest_reorient_skip.nii.gz'
         # skip 0 frame
         sh.mri_convert('-i', bold, '-o', skip_bold, _out=sys.stdout)
 
         # reorient
         self.swapdim(str(skip_bold), 'x', '-y', 'z', str(reorient_skip_bold))
         shutil.copy(subj_bold_dir / run / f'{self.inputs.subject_id}_bld{run}_rest_reorient_skip.nii.gz',
-                  subj_bold_dir / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip.nii.gz')
+                    subj_bold_dir / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip.nii.gz')
 
     def _run_interface(self, runtime):
-        preprocess_dir = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
+        preprocess_dir = Path(
+            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
         deepprep_subj_path = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id
         subj = self.inputs.subject_id.split('-')[1]
         layout = bids.BIDSLayout(str(self.inputs.data_path), derivatives=False)
@@ -131,7 +139,8 @@ class BoldSkipReorient(BaseInterface):
             run = f'{idx + 1:03}'
             (subj_bold_dir / run).mkdir(exist_ok=True)
             shutil.copy(bids_file, subj_bold_dir / run / f'{self.inputs.subject_id}_bld{run}_rest.nii.gz')
-        runs = sorted([d.name for d in (Path(preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if d.is_dir()])
+        runs = sorted(
+            [d.name for d in (Path(preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if d.is_dir()])
         multipool_run(self.cmd, runs, Multi_Num=8)
 
         return runtime
@@ -142,6 +151,13 @@ class BoldSkipReorient(BaseInterface):
         outputs["subject_id"] = self.inputs.subject_id
 
         return outputs
+
+    def create_sub_node(self):
+        from create_node import creat_Stc_node
+        node = creat_Stc_node(self.inputs.subject_id,
+                              self.inputs.task, )
+
+        return node
 
 
 class MotionCorrectionInputSpec(BaseInterfaceInputSpec):
@@ -164,11 +180,15 @@ class MotionCorrection(BaseInterface):
     cpu = 0  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
 
+    def __init__(self):
+        super(MotionCorrection, self).__init__()
+
     def cmd(self, run):
         # ln create 001
         # run mc
         # mv result file
-        preprocess_dir = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
+        preprocess_dir = Path(
+            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
         link_dir = preprocess_dir / self.inputs.subject_id / 'bold' / run / self.inputs.subject_id / 'bold' / run
         if not link_dir.exists():
             link_dir.mkdir(parents=True, exist_ok=True)
@@ -176,12 +196,14 @@ class MotionCorrection(BaseInterface):
         link_files.remove(self.inputs.subject_id)
         try:
             os.symlink(Path(preprocess_dir) / self.inputs.subject_id / 'bold' / 'template.nii.gz',
-                       Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / self.inputs.subject_id / 'bold' / 'template.nii.gz')
+                       Path(
+                           preprocess_dir) / self.inputs.subject_id / 'bold' / run / self.inputs.subject_id / 'bold' / 'template.nii.gz')
         except:
             print()
         for link_file in link_files:
             try:
-                os.symlink(Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / link_file, link_dir / link_file)
+                os.symlink(Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / link_file,
+                           link_dir / link_file)
             except:
                 continue
         shargs = [
@@ -210,8 +232,10 @@ class MotionCorrection(BaseInterface):
         shutil.rmtree(ori_path / self.inputs.subject_id)
 
     def _run_interface(self, runtime):
-        preprocess_dir = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
-        runs = sorted([d.name for d in (Path(preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if d.is_dir()])
+        preprocess_dir = Path(
+            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
+        runs = sorted(
+            [d.name for d in (Path(preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if d.is_dir()])
         # runs = ['001', '002', '003', '004', '005', '006', '007', '008']
         multipool_run(self.cmd, runs, Multi_Num=8)
 
@@ -231,6 +255,13 @@ class MotionCorrection(BaseInterface):
         outputs["data_path"] = self.inputs.data_path
         outputs["subject_id"] = self.inputs.subject_id
         return outputs
+
+    def create_sub_node(self):
+        from create_node import creat_Register_node
+        node = creat_Register_node(self.inputs.subject_id,
+                                   self.inputs.task, )
+
+        return node
 
 
 class StcInputSpec(BaseInterfaceInputSpec):
@@ -253,8 +284,12 @@ class Stc(BaseInterface):
     cpu = 6  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
 
+    def __init__(self):
+        super(Stc, self).__init__()
+
     def cmd(self, run):
-        preprocess_dir = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
+        preprocess_dir = Path(
+            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
         link_dir = Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / self.inputs.subject_id / 'bold' / run
         if not link_dir.exists():
             link_dir.mkdir(parents=True, exist_ok=True)
@@ -262,12 +297,14 @@ class Stc(BaseInterface):
         link_files.remove(self.inputs.subject_id)
         try:
             os.symlink(Path(preprocess_dir) / self.inputs.subject_id / 'bold' / 'template.nii.gz',
-                       Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / self.inputs.subject_id / 'bold' / 'template.nii.gz')
+                       Path(
+                           preprocess_dir) / self.inputs.subject_id / 'bold' / run / self.inputs.subject_id / 'bold' / 'template.nii.gz')
         except:
             print()
         for link_file in link_files:
             try:
-                os.symlink(Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / link_file, link_dir / link_file)
+                os.symlink(Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / link_file,
+                           link_dir / link_file)
             except:
                 continue
         input_fname = f'{self.inputs.subject_id}_bld_rest_reorient_skip'
@@ -295,7 +332,8 @@ class Stc(BaseInterface):
         shutil.rmtree(ori_path / self.inputs.subject_id)
 
     def _run_interface(self, runtime):
-        preprocess_dir = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
+        preprocess_dir = Path(
+            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
         runs = sorted([d.name for d in (Path(preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if
                        d.is_dir()])
         # # runs = ['001', '002', '003', '004', '005', '006', '007', '008']
@@ -325,6 +363,13 @@ class Stc(BaseInterface):
         outputs["subject_id"] = self.inputs.subject_id
         return outputs
 
+    def create_sub_node(self):
+        from create_node import creat_MkTemplate_node
+        node = creat_MkTemplate_node(self.inputs.subject_id,
+                                     self.inputs.task, )
+
+        return node
+
 
 class RegisterInputSpec(BaseInterfaceInputSpec):
     subject_id = Str(exists=True, desc='subject_id', mandatory=True)
@@ -346,10 +391,16 @@ class Register(BaseInterface):
     cpu = 1  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
 
+    def __init__(self):
+        super(Register, self).__init__()
+
     def cmd(self, run):
-        preprocess_dir = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
-        mov = Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
-        reg = Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.register.dat'
+        preprocess_dir = Path(
+            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
+        mov = Path(
+            preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
+        reg = Path(
+            preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.register.dat'
         shargs = [
             '--bold',
             '--s', self.inputs.subject_id,
@@ -358,8 +409,10 @@ class Register(BaseInterface):
         sh.bbregister(*shargs, _out=sys.stdout)
 
     def _run_interface(self, runtime):
-        preprocess_dir = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
-        runs = sorted([d.name for d in (Path(preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if d.is_dir()])
+        preprocess_dir = Path(
+            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
+        runs = sorted(
+            [d.name for d in (Path(preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if d.is_dir()])
         multipool_run(self.cmd, runs, Multi_Num=8)
 
         return runtime
@@ -369,6 +422,13 @@ class Register(BaseInterface):
         outputs["data_path"] = self.inputs.data_path
         outputs["subject_id"] = self.inputs.subject_id
         return outputs
+
+    def create_sub_node(self):
+        from create_node import creat_Mkbrainmask_node
+        node = creat_Mkbrainmask_node(self.inputs.subject_id,
+                                      self.inputs.task, )
+
+        return node
 
 
 class MkBrainmaskInputSpec(BaseInterfaceInputSpec):
@@ -392,17 +452,28 @@ class MkBrainmask(BaseInterface):
     cpu = 2.7  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
 
+    def __init__(self):
+        super(MkBrainmask, self).__init__()
+
     def cmd(self, run):
-        preprocess_dir = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
-        seg = Path(self.inputs.subjects_dir) / self.inputs.subject_id / 'mri/aparc+aseg.mgz'  # TODO 这个应该由structure_workflow传进来
-        mov = Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
-        reg = Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.register.dat'
+        preprocess_dir = Path(
+            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
+        seg = Path(
+            self.inputs.subjects_dir) / self.inputs.subject_id / 'mri/aparc+aseg.mgz'  # TODO 这个应该由structure_workflow传进来
+        mov = Path(
+            preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
+        reg = Path(
+            preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.register.dat'
         func = Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}.func.aseg.nii'
         wm = Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}.func.wm.nii.gz'
-        vent = Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}.func.ventricles.nii.gz'
-        targ = Path(self.inputs.subjects_dir) / self.inputs.subject_id / 'mri/brainmask.mgz'  # TODO 这个应该由structure_workflow传进来
-        mask = Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}.brainmask.nii.gz'
-        binmask = Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}.brainmask.bin.nii.gz'
+        vent = Path(
+            preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}.func.ventricles.nii.gz'
+        targ = Path(
+            self.inputs.subjects_dir) / self.inputs.subject_id / 'mri/brainmask.mgz'  # TODO 这个应该由structure_workflow传进来
+        mask = Path(
+            preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}.brainmask.nii.gz'
+        binmask = Path(
+            preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}.brainmask.bin.nii.gz'
         shargs = [
             '--seg', seg,
             '--temp', mov,
@@ -438,8 +509,10 @@ class MkBrainmask(BaseInterface):
         sh.mri_binarize(*shargs, _out=sys.stdout)
 
     def _run_interface(self, runtime):
-        preprocess_dir = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
-        runs = sorted([d.name for d in (Path(preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if d.is_dir()])
+        preprocess_dir = Path(
+            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
+        runs = sorted(
+            [d.name for d in (Path(preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if d.is_dir()])
 
         multipool_run(self.cmd, runs, Multi_Num=8)
 
@@ -450,6 +523,13 @@ class MkBrainmask(BaseInterface):
         outputs["data_path"] = self.inputs.data_path
         outputs["subject_id"] = self.inputs.subject_id
         return outputs
+
+    def create_sub_node(self):
+        from create_node import creat_RestGauss_node
+        node = creat_RestGauss_node(self.inputs.subject_id,
+                                    self.inputs.task, )
+
+        return node
 
 
 class VxmRegistraionInputSpec(BaseInterfaceInputSpec):
@@ -463,7 +543,6 @@ class VxmRegistraionInputSpec(BaseInterfaceInputSpec):
 
 
 class VxmRegistraionOutputSpec(TraitedSpec):
-
     subjects_dir = Directory(exists=True, desc='subjects_dir')
 
 
@@ -474,6 +553,9 @@ class VxmRegistraion(BaseInterface):
     time = 15 / 60  # 运行时间：分钟 / 单run测试时间
     cpu = 14  # 最大cpu占用：个
     gpu = 2703  # 最大gpu占用：MB
+
+    def __init__(self):
+        super(VxmRegistraion, self).__init__()
 
     def _run_interface(self, runtime):
         # import tensorflow as tf
@@ -557,6 +639,13 @@ class VxmRegistraion(BaseInterface):
         outputs["subjects_dir"] = self.inputs.subjects_dir
         return outputs
 
+    def create_sub_node(self):
+        from create_node import creat_BoldSkipReorient_node
+        node = creat_BoldSkipReorient_node(self.inputs.subject_id,
+                                           self.inputs.task, )
+
+        return node
+
 
 class RestGaussInputSpec(BaseInterfaceInputSpec):
     subject_id = Str(exists=True, desc="subject id", mandatory=True)
@@ -578,18 +667,25 @@ class RestGauss(BaseInterface):
     cpu = 0  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
 
+    def __init__(self):
+        super(RestGauss, self).__init__()
+
     def cmd(self, run):
         from app.filters.filters import gauss_nifti
 
-        preprocess_dir = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
-        mc = Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
+        preprocess_dir = Path(
+            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
+        mc = Path(
+            preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
         fcmri_dir = Path(preprocess_dir) / self.inputs.subject_id / 'fcmri'
         Path(fcmri_dir).mkdir(parents=True, exist_ok=True)
         gauss_nifti(str(mc), 1000000000)
 
     def _run_interface(self, runtime):
-        preprocess_dir = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
-        runs = sorted([d.name for d in (Path(preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if d.is_dir()])
+        preprocess_dir = Path(
+            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
+        runs = sorted(
+            [d.name for d in (Path(preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if d.is_dir()])
         multipool_run(self.cmd, runs, Multi_Num=8)
         return runtime
 
@@ -597,6 +693,13 @@ class RestGauss(BaseInterface):
         outputs = self._outputs().get()
         outputs["subject_id"] = self.inputs.subject_id
         return outputs
+
+    def create_sub_node(self):
+        from create_node import creat_RestBandpass_node
+        node = creat_RestBandpass_node(self.inputs.subject_id,
+                                       self.inputs.task, )
+
+        return node
 
 
 class RestBandpassInputSpec(BaseInterfaceInputSpec):
@@ -619,8 +722,12 @@ class RestBandpass(BaseInterface):
     cpu = 2  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
 
+    def __init__(self):
+        super(RestBandpass, self).__init__()
+
     def cmd(self, idx, bids_entities, bids_path):
-        preprocess_dir = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
+        preprocess_dir = Path(
+            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
         entities = dict(bids_entities)
         print(entities)
         if 'RepetitionTime' in entities:
@@ -657,6 +764,13 @@ class RestBandpass(BaseInterface):
 
         return outputs
 
+    def create_sub_node(self):
+        from create_node import creat_RestRegression_node
+        node = creat_RestRegression_node(self.inputs.subject_id,
+                                         self.inputs.task, )
+
+        return node
+
 
 class RestRegressionInputSpec(BaseInterfaceInputSpec):
     subject_id = Str(exists=True, desc='subject', mandatory=True)
@@ -678,6 +792,8 @@ class RestRegression(BaseInterface):
     # time = 120 / 60  # 运行时间：分钟
     # cpu = 2  # 最大cpu占用：个
     # gpu = 0  # 最大gpu占用：MB
+    def __init__(self):
+        super(RestRegression, self).__init__()
 
     def setenv_smooth_downsampling(self):
         subjects_dir = Path(self.inputs.subjects_dir)
@@ -716,7 +832,8 @@ class RestRegression(BaseInterface):
         from app.regressors.regressors import compile_regressors, regression
         from app.surface_projection import surface_projection as sp
 
-        preprocess_dir = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
+        preprocess_dir = Path(
+            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
 
         deepprep_subj_path = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id
         fcmri_dir = preprocess_dir / self.inputs.subject_id / 'fcmri'
@@ -763,8 +880,9 @@ class RestRegression(BaseInterface):
 
             # hemi = ['lh','rh']
             # multiregressionpool(self.cmd, hemi, subj_surf_path, dst_resid_file, dst_reg_file, Multi_Num=2)
-            for hemi in ['lh','rh']:
-                fs6_path = sp.indi_to_fs6(subj_surf_path, f'{self.inputs.subject_id}', dst_resid_file, dst_reg_file,hemi)
+            for hemi in ['lh', 'rh']:
+                fs6_path = sp.indi_to_fs6(subj_surf_path, f'{self.inputs.subject_id}', dst_resid_file, dst_reg_file,
+                                          hemi)
                 sm6_path = sp.smooth_fs6(fs6_path, hemi)
                 sp.downsample_fs6_to_fs4(sm6_path, hemi)
 
@@ -776,6 +894,16 @@ class RestRegression(BaseInterface):
         outputs["data_path"] = self.inputs.data_path
 
         return outputs
+
+    def create_sub_node(self):
+        from create_node import creat_Smooth_node
+        node = creat_Smooth_node(self.inputs.subject_id,
+                                 self.inputs.task,
+                                 self.inputs.preprocess_method,
+                                 self.inputs.mni152_brain_mask
+                                 )
+
+        return node
 
 
 class VxmRegNormMNI152InputSpec(BaseInterfaceInputSpec):
@@ -802,6 +930,9 @@ class VxmRegNormMNI152(BaseInterface):
     time = 503 / 60  # 运行时间：分钟
     cpu = 2  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
+
+    def __init__(self):
+        super(VxmRegNormMNI152, self).__init__()
 
     def register_dat_to_fslmat(self, mov_file, ref_file, reg_file, fslmat_file):
         sh.tkregister2('--mov', mov_file,
@@ -1019,6 +1150,9 @@ class Smooth(BaseInterface):
     cpu = 1  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
 
+    def __init__(self):
+        super(Smooth, self).__init__()
+
     def save_bold(self, warped_img, temp_file, bold_file, save_file):
         ants.image_write(warped_img, str(temp_file))
         bold_info = nib.load(bold_file)
@@ -1067,7 +1201,8 @@ class Smooth(BaseInterface):
     def cmd(self, bids_entities, bids_path):
         entities = dict(bids_entities)
         file_prefix = Path(bids_path).name.replace('.nii.gz', '')
-        preprocess_dir = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
+        preprocess_dir = Path(
+            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
         derivative_deepprep_path = Path(self.inputs.derivative_deepprep_path)
         deepprep_subj_path = derivative_deepprep_path / self.inputs.subject_id
         if 'session' in entities:
@@ -1114,6 +1249,17 @@ class Smooth(BaseInterface):
 
         return outputs
 
+    def create_sub_node(self):
+        from create_node import creat_VxmRegNormMNI152_node
+        node = creat_VxmRegNormMNI152_node(self.inputs.subject_id,
+                                           self.inputs.task,
+                                           self.inputs.preprocess_method,
+                                           self.inputs.atlas_type,
+                                           self.inputs.vxm_model_path,
+                                           self.inputs.resource_dir)
+
+        return node
+
 
 class MkTemplateInputSpec(BaseInterfaceInputSpec):
     subject_id = Str(exists=True, desc='subject', mandatory=True)
@@ -1134,8 +1280,13 @@ class MkTemplate(BaseInterface):
     # time = 120 / 60  # 运行时间：分钟
     # cpu = 2  # 最大cpu占用：个
     # gpu = 0  # 最大gpu占用：MB
+
+    def __init__(self):
+        super(MkTemplate, self).__init__()
+
     def _run_interface(self, runtime):
-        preprocess_dir = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
+        preprocess_dir = Path(
+            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
         shargs = [
             '-s', self.inputs.subject_id,
             '-d', preprocess_dir,
@@ -1151,3 +1302,9 @@ class MkTemplate(BaseInterface):
         outputs["subject_id"] = self.inputs.subject_id
         return outputs
 
+    def create_sub_node(self):
+        from create_node import creat_MotionCorrection_node
+        node = creat_MotionCorrection_node(self.inputs.subject_id,
+                                           self.inputs.task, )
+
+        return node
