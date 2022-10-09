@@ -72,15 +72,17 @@ class Brainmask(BaseInterface):
         outputs['subject_id'] = subject_id
         return outputs
 
+    def create_sub_node(self):
+        from interface.create_node import create_UpdateAseg_node
+        node = create_UpdateAseg_node(self.inputs.subject_id)
+        return node
 
 class OrigAndRawavgInputSpec(BaseInterfaceInputSpec):
     t1w_files = traits.List(desc='t1w path or t1w paths', mandatory=True)
     subjects_dir = Directory(exists=True, desc='subjects dir', mandatory=True)
     subject_id = Str(desc='subject id', mandatory=True)
     threads = traits.Int(desc='threads')
-    base_dir = Directory(exists=True, desc='base dir', mandatory=True)
-    python_interpret = Directory(exists=True, desc='python interpret', mandatory=True)
-    fastsurfer_home = Directory(exists=True, desc='fastsurfer home', mandatory=True)
+
 
 class OrigAndRawavgOutputSpec(TraitedSpec):
     orig_file = File(exists=True, desc='mri/orig.mgz')
@@ -90,10 +92,6 @@ class OrigAndRawavgOutputSpec(TraitedSpec):
 class OrigAndRawavg(BaseInterface):
     input_spec = OrigAndRawavgInputSpec
     output_spec = OrigAndRawavgOutputSpec
-
-    def __init__(self):
-        super(OrigAndRawavg, self).__init__()
-        self.source = Source()  #
 
     def _run_interface(self, runtime):
         threads = self.inputs.threads if self.inputs.threads else 0
@@ -113,13 +111,8 @@ class OrigAndRawavg(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from create_node import creat_Segment_node
-        node = creat_Segment_node(self.inputs.subject_id,
-                                  self.inputs.subjects_dir,
-                                  self.inputs.base_dir,
-                                  self.inputs.python_interpret,
-                                  self.inputs.fastsurfer_home,
-                                  )
+        from interface.create_node import create_Segment_node
+        node = create_Segment_node(self.inputs.subject_id)
         return node
 
 
@@ -151,9 +144,6 @@ class Filled(BaseInterface):
     cpu = 3.3
     gpu = 0
 
-    def __init__(self):
-        super(Filled, self).__init__()
-
     def _run_interface(self, runtime):
         threads = self.inputs.threads if self.inputs.threads else 0
         fsthreads = get_freesurfer_threads(threads)
@@ -182,6 +172,10 @@ class Filled(BaseInterface):
         outputs['subject_id'] = subject_id
         return outputs
 
+    def create_sub_node(self):
+        from interface.create_node import create_FastCSR_node
+        node = create_FastCSR_node(self.inputs.subject_id)
+        return node
 
 class WhitePreaparc1InputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc='subjects_dir', mandatory=True)
