@@ -33,7 +33,6 @@ class FeatReg(BaseInterface):
 
     def __init__(self):
         super(FeatReg, self).__init__()
-        self.source = Source()  #
 
     def cmd(self, hemi):
         subjects_dir = self.inputs.subjects_dir
