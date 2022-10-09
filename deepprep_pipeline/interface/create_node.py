@@ -1,4 +1,6 @@
 from nipype import Node
+import os
+from pathlib import Path
 
 from interface.freesurfer_node import *
 from interface.bold_node import *
@@ -105,6 +107,8 @@ def create_Noccseg_node(subject_id: str, subjects_dir: Path, base_dir: Path, pyt
 ######################## Second Half ######################
 def create_InflatedSphere_node(subject_id: str):
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
+    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
+
     lh_white_preaparc_file = subjects_dir / subject_id / "surf" / "lh.white.preaparc"
     rh_white_preaparc_file = subjects_dir / subject_id / "surf" / "rh.white.preaparc"
 
@@ -114,6 +118,7 @@ def create_InflatedSphere_node(subject_id: str):
     Inflated_Sphere_node.inputs.subject_id = subject_id
     Inflated_Sphere_node.inputs.lh_white_preaparc_file = lh_white_preaparc_file
     Inflated_Sphere_node.inputs.rh_white_preaparc_file = rh_white_preaparc_file
+    Inflated_Sphere_node.base_dir = workflow_cached_dir
 
     return Inflated_Sphere_node
 
@@ -121,6 +126,8 @@ def create_InflatedSphere_node(subject_id: str):
 def create_FeatReg_node(subject_id: str):
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     featreg_home = Path(os.environ["FEATREG_HOME"])
+    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
+
 
     python_interpret = sys.executable
     featreg_py = featreg_home / "featreg" / 'predict.py'  # inference script
@@ -139,12 +146,16 @@ def create_FeatReg_node(subject_id: str):
     featreg_node.inputs.rh_curv = Path(subjects_dir) / subject_id / f'surf/rh.curv'
     featreg_node.inputs.lh_sphere = Path(subjects_dir) / subject_id / f'surf/lh.sphere'
     featreg_node.inputs.rh_sphere = Path(subjects_dir) / subject_id / f'surf/rh.sphere'
+    featreg_node.base_dir = workflow_cached_dir
+
 
     return featreg_node
 
 
 def create_JacobianAvgcurvCortparc_node(subject_id: str):
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
+    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
+
 
     lh_white_preaparc = subjects_dir / subject_id / "surf" / f"lh.white.preaparc"
     rh_white_preaparc = subjects_dir / subject_id / "surf" / f"rh.white.preaparc"
@@ -178,13 +189,15 @@ def create_JacobianAvgcurvCortparc_node(subject_id: str):
     JacobianAvgcurvCortparc_node.inputs.lh_aparc_annot = lh_aparc_annot
     JacobianAvgcurvCortparc_node.inputs.rh_aparc_annot = rh_aparc_annot
     JacobianAvgcurvCortparc_node.inputs.threads = 8
+    JacobianAvgcurvCortparc_node.base_dir = workflow_cached_dir
+
 
     return JacobianAvgcurvCortparc_node
 
 def create_WhitePialThickness1_node(subject_id: str):
-
-    threads = 8
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
+    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
+    threads = 8
 
     white_pial_thickness1 = Node(WhitePialThickness1(), name="white_pial_thickness1")
     white_pial_thickness1.inputs.subjects_dir = subjects_dir
@@ -205,6 +218,130 @@ def create_WhitePialThickness1_node(subject_id: str):
 
     white_pial_thickness1.inputs.lh_white = subjects_dir / subject_id / "surf" / "lh.white"
     white_pial_thickness1.inputs.rh_white = subjects_dir / subject_id / "surf" / "rh.white"
+    white_pial_thickness1.base_dir = workflow_cached_dir
 
     return white_pial_thickness1
 
+def create_Curvstats_node(subject_id: str):
+    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
+    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
+    subject_surf_dir = subjects_dir / "surf"
+    threads = 8
+
+    Curvstats_node = Node(Curvstats(), name='Curvstats_node')
+    Curvstats_node.inputs.subjects_dir = subjects_dir
+    Curvstats_node.inputs.subject_id = subject_id
+
+    Curvstats_node.inputs.lh_smoothwm = subject_surf_dir / f'lh.smoothwm'
+    Curvstats_node.inputs.rh_smoothwm = subject_surf_dir / f'rh.smoothwm'
+    Curvstats_node.inputs.lh_curv = subject_surf_dir / f'lh.curv'
+    Curvstats_node.inputs.rh_curv = subject_surf_dir / f'rh.curv'
+    Curvstats_node.inputs.lh_sulc = subject_surf_dir / f'lh.sulc'
+    Curvstats_node.inputs.rh_sulc = subject_surf_dir / f'rh.sulc'
+    Curvstats_node.inputs.threads = threads
+    Curvstats_node.base_dir = workflow_cached_dir
+
+    return Curvstats_node
+
+def create_BalabelsMult_node(subject_id: str):
+    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
+    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
+    subject_surf_dir = subjects_dir / subject_id / 'surf'
+    threads = 10
+
+    BalabelsMult_node = Node(BalabelsMult(), name='BalabelsMult_node')
+    BalabelsMult_node.inputs.subjects_dir = subjects_dir
+    BalabelsMult_node.inputs.subject_id = subject_id
+    BalabelsMult_node.inputs.threads = threads
+    BalabelsMult_node.inputs.freesurfer_dir = os.environ['FREESURFER_HOME']
+
+    BalabelsMult_node.inputs.lh_sphere_reg = subject_surf_dir / f'lh.sphere.reg'
+    BalabelsMult_node.inputs.rh_sphere_reg = subject_surf_dir / f'rh.sphere.reg'
+    BalabelsMult_node.inputs.lh_white = subject_surf_dir / f'lh.white'
+    BalabelsMult_node.inputs.rh_white = subject_surf_dir / f'rh.white'
+    BalabelsMult_node.inputs.fsaverage_label_dir = Path(os.environ['FREESURFER_HOME']) / "subjects/fsaverage/label"
+    BalabelsMult_node.base_dir = workflow_cached_dir
+
+    return BalabelsMult_node
+
+def create_Cortribbon_node(subject_id: str):
+    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
+    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
+    subject_mri_dir = subjects_dir / subject_id / 'mri'
+    subject_surf_dir = subjects_dir / subject_id / 'surf'
+    threads = 8
+
+    Cortribbon_node = Node(Cortribbon(), name='Cortribbon_node')
+    Cortribbon_node.inputs.subjects_dir = subjects_dir
+    Cortribbon_node.inputs.subject_id = subject_id
+    Cortribbon_node.inputs.threads = threads
+
+    Cortribbon_node.inputs.aseg_presurf_file = subject_mri_dir / 'aseg.presurf.mgz'
+    Cortribbon_node.inputs.lh_white = subject_surf_dir / f'lh.white'
+    Cortribbon_node.inputs.rh_white = subject_surf_dir / f'rh.white'
+    Cortribbon_node.inputs.lh_pial = subject_surf_dir / f'lh.pial'
+    Cortribbon_node.inputs.rh_pial = subject_surf_dir / f'rh.pial'
+
+    Cortribbon_node.inputs.lh_ribbon = subject_mri_dir / f'lh.ribbon.mgz'
+    Cortribbon_node.inputs.rh_ribbon = subject_mri_dir / f'rh.ribbon.mgz'
+    Cortribbon_node.inputs.ribbon = subject_mri_dir / 'ribbon.mgz'
+    Cortribbon_node.base_dir = workflow_cached_dir
+
+    return Cortribbon_node
+
+def create_Parcstats_node(subject_id: str):
+    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
+    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
+
+    subject_mri_dir = subjects_dir / subject_id / 'mri'
+    subject_surf_dir = subjects_dir / subject_id / 'surf'
+    subject_label_dir = subjects_dir / subject_id / 'label'
+    threads = 8
+
+    Parcstats_node = Node(Parcstats(), name='Parcstats_node')
+    Parcstats_node.inputs.subjects_dir = subjects_dir
+    Parcstats_node.inputs.subject_id = subject_id
+    Parcstats_node.inputs.threads = threads
+
+    Parcstats_node.inputs.lh_aparc_annot = subject_label_dir / f'lh.aparc.annot'
+    Parcstats_node.inputs.rh_aparc_annot = subject_label_dir / f'rh.aparc.annot'
+    Parcstats_node.inputs.wm_file = subject_mri_dir / 'wm.mgz'
+    Parcstats_node.inputs.ribbon_file = subject_mri_dir / 'ribbon.mgz'
+    Parcstats_node.inputs.lh_white = subject_surf_dir / f'lh.white'
+    Parcstats_node.inputs.rh_white = subject_surf_dir / f'rh.white'
+    Parcstats_node.inputs.lh_pial = subject_surf_dir / f'lh.pial'
+    Parcstats_node.inputs.rh_pial = subject_surf_dir / f'rh.pial'
+    Parcstats_node.inputs.lh_thickness = subject_surf_dir / f'lh.thickness'
+    Parcstats_node.inputs.rh_thickness = subject_surf_dir / f'rh.thickness'
+    Parcstats_node.base_dir = workflow_cached_dir
+
+    return Parcstats_node
+
+def create_Aseg7_node(subject_id: str):
+    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
+    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
+
+    subject_mri_dir = subjects_dir / subject_id / 'mri'
+    subject_surf_dir = subjects_dir / subject_id / 'surf'
+    subject_label_dir = subjects_dir / subject_id / 'label'
+    threads = 8
+
+    Aseg7_node = Node(Aseg7(), name='Aseg7_node')
+    Aseg7_node.inputs.subjects_dir = subjects_dir
+    Aseg7_node.inputs.subject_id = subject_id
+    Aseg7_node.inputs.threads = threads
+    Aseg7_node.inputs.aseg_presurf_hypos = subject_mri_dir / 'aseg.presurf.hypos.mgz'
+    Aseg7_node.inputs.aseg_file = subject_mri_dir / 'aseg.mgz'
+    Aseg7_node.inputs.lh_cortex_label = subject_label_dir / 'lh.cortex.label'
+    Aseg7_node.inputs.lh_white = subject_surf_dir / 'lh.white'
+    Aseg7_node.inputs.lh_pial = subject_surf_dir / 'lh.pial'
+    Aseg7_node.inputs.lh_aparc_annot = subject_label_dir / 'lh.aparc.annot'
+    Aseg7_node.inputs.rh_cortex_label = subject_label_dir / 'rh.cortex.label'
+    Aseg7_node.inputs.rh_white = subject_surf_dir / 'rh.white'
+    Aseg7_node.inputs.rh_pial = subject_surf_dir / 'rh.pial'
+    Aseg7_node.inputs.rh_aparc_annot = subject_label_dir / 'rh.aparc.annot'
+    Aseg7_node.inputs.aparc_aseg = subject_mri_dir / 'aparc+aseg.mgz'
+    Aseg7_node.base_dir = workflow_cached_dir
+
+
+    return Aseg7_node
