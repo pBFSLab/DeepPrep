@@ -30,7 +30,7 @@ def create_origandrawavg_node(subject_id: str, t1w_files: list):
     origandrawavg_node.inputs.threads = 1
 
     origandrawavg_node.base_dir = workflow_cached_dir
-    origandrawavg_node.source = Source(CPU_n=1)
+    origandrawavg_node.source = Source(CPU_n=3, GPU_MB=0, RAM_MB=2790)
 
     return origandrawavg_node
 
@@ -59,7 +59,7 @@ def create_Segment_node(subject_id: str):
     segment_node.inputs.network_axial_path = network_axial_path
 
     segment_node.base_dir = workflow_cached_dir
-    segment_node.source = Source(CPU_n=1, GPU_MB=8000)
+    segment_node.source = Source(CPU_n=3, GPU_MB=8363, RAM_MB=5729)
 
     return segment_node
 
@@ -79,7 +79,7 @@ def create_Noccseg_node(subject_id: str):
     noccseg_node.inputs.subjects_dir = subjects_dir
 
     noccseg_node.base_dir = workflow_cached_dir
-    noccseg_node.source = Source()
+    noccseg_node.source = Source(CPU_n=3, GPU_MB=0, RAM_MB=650)
     return noccseg_node
 
 
@@ -91,13 +91,13 @@ def create_InflatedSphere_node(subject_id: str):
     rh_white_preaparc_file = subjects_dir / subject_id / "surf" / "rh.white.preaparc"
 
     Inflated_Sphere_node = Node(InflatedSphere(), f'{subject_id}_Inflated_Sphere_node')
-    Inflated_Sphere_node.inputs.threads = 8
+    Inflated_Sphere_node.inputs.threads = 4
     Inflated_Sphere_node.inputs.subjects_dir = subjects_dir
     Inflated_Sphere_node.inputs.subject_id = subject_id
     Inflated_Sphere_node.inputs.lh_white_preaparc_file = lh_white_preaparc_file
     Inflated_Sphere_node.inputs.rh_white_preaparc_file = rh_white_preaparc_file
     Inflated_Sphere_node.base_dir = workflow_cached_dir
-    Inflated_Sphere_node.source = Source()
+    Inflated_Sphere_node.source = Source(CPU_n=8, GPU_MB=0, RAM_MB=1750)
 
     return Inflated_Sphere_node
 
@@ -124,7 +124,7 @@ def create_FeatReg_node(subject_id: str):
     featreg_node.inputs.lh_sphere = Path(subjects_dir) / subject_id / f'surf/lh.sphere'
     featreg_node.inputs.rh_sphere = Path(subjects_dir) / subject_id / f'surf/rh.sphere'
     featreg_node.base_dir = workflow_cached_dir
-    featreg_node.source = Source()
+    featreg_node.source = Source(CPU_n=0, GPU_MB=6000, RAM_MB=8000)
 
     return featreg_node
 
@@ -133,40 +133,13 @@ def create_JacobianAvgcurvCortparc_node(subject_id: str):
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
 
-    lh_white_preaparc = subjects_dir / subject_id / "surf" / f"lh.white.preaparc"
-    rh_white_preaparc = subjects_dir / subject_id / "surf" / f"rh.white.preaparc"
-    lh_sphere_reg = subjects_dir / subject_id / "surf" / f"lh.sphere.reg"
-    rh_sphere_reg = subjects_dir / subject_id / "surf" / f"rh.sphere.reg"
-    lh_jacobian_white = subjects_dir / subject_id / "surf" / f"lh.jacobian_white"
-    rh_jacobian_white = subjects_dir / subject_id / "surf" / f"rh.jacobian_white"
-    lh_avg_curv = subjects_dir / subject_id / "surf" / f"lh.avg_curv"
-    rh_avg_curv = subjects_dir / subject_id / "surf" / f"rh.avg_curv"
-    aseg_presurf_dir = subjects_dir / subject_id / "mri" / "aseg.presurf.mgz"
-    lh_cortex_label = subjects_dir / subject_id / "label" / f"lh.cortex.label"
-    rh_cortex_label = subjects_dir / subject_id / "label" / f"rh.cortex.label"
-    lh_aparc_annot = subjects_dir / subject_id / "label" / f"lh.aparc.annot"
-    rh_aparc_annot = subjects_dir / subject_id / "label" / f"rh.aparc.annot"
-
     JacobianAvgcurvCortparc_node = Node(JacobianAvgcurvCortparc(), f'{subject_id}_JacobianAvgcurvCortparc_node')
     JacobianAvgcurvCortparc_node.inputs.subjects_dir = subjects_dir
     JacobianAvgcurvCortparc_node.inputs.subject_id = subject_id
-    JacobianAvgcurvCortparc_node.inputs.lh_white_preaparc = lh_white_preaparc
-    JacobianAvgcurvCortparc_node.inputs.rh_white_preaparc = rh_white_preaparc
-    JacobianAvgcurvCortparc_node.inputs.lh_sphere_reg = lh_sphere_reg
-    JacobianAvgcurvCortparc_node.inputs.rh_sphere_reg = rh_sphere_reg
-    JacobianAvgcurvCortparc_node.inputs.lh_jacobian_white = lh_jacobian_white
-    JacobianAvgcurvCortparc_node.inputs.rh_jacobian_white = rh_jacobian_white
-    JacobianAvgcurvCortparc_node.inputs.lh_avg_curv = lh_avg_curv
-    JacobianAvgcurvCortparc_node.inputs.rh_avg_curv = rh_avg_curv
-    JacobianAvgcurvCortparc_node.inputs.aseg_presurf_file = aseg_presurf_dir
-    JacobianAvgcurvCortparc_node.inputs.lh_cortex_label = lh_cortex_label
-    JacobianAvgcurvCortparc_node.inputs.rh_cortex_label = rh_cortex_label
-
-    JacobianAvgcurvCortparc_node.inputs.lh_aparc_annot = lh_aparc_annot
-    JacobianAvgcurvCortparc_node.inputs.rh_aparc_annot = rh_aparc_annot
     JacobianAvgcurvCortparc_node.inputs.threads = 8
+
     JacobianAvgcurvCortparc_node.base_dir = workflow_cached_dir
-    JacobianAvgcurvCortparc_node.source = Source()
+    JacobianAvgcurvCortparc_node.source = Source(CPU_n=2, GPU_MB=0, RAM_MB=1000)
 
     return JacobianAvgcurvCortparc_node
 
@@ -180,7 +153,6 @@ def create_WhitePialThickness1_node(subject_id: str):
     white_pial_thickness1.inputs.subjects_dir = subjects_dir
     white_pial_thickness1.inputs.subject_id = subject_id
     white_pial_thickness1.inputs.threads = threads
-
     white_pial_thickness1.inputs.lh_white_preaparc = subjects_dir / subject_id / "surf" / "lh.white.preaparc"
     white_pial_thickness1.inputs.rh_white_preaparc = subjects_dir / subject_id / "surf" / "rh.white.preaparc"
     white_pial_thickness1.inputs.aseg_presurf = subjects_dir / subject_id / "mri" / "aseg.presurf.mgz"
@@ -188,15 +160,11 @@ def create_WhitePialThickness1_node(subject_id: str):
     white_pial_thickness1.inputs.wm_file = subjects_dir / subject_id / "mri" / "wm.mgz"
     white_pial_thickness1.inputs.lh_aparc_annot = subjects_dir / subject_id / "label" / "lh.aparc.annot"
     white_pial_thickness1.inputs.rh_aparc_annot = subjects_dir / subject_id / "label" / "rh.aparc.annot"
-    white_pial_thickness1.inputs.lh_cortex_hipamyg_label = subjects_dir / subject_id / "label" / "lh.cortex+hipamyg.label"
-    white_pial_thickness1.inputs.rh_cortex_hipamyg_label = subjects_dir / subject_id / "label" / "rh.cortex+hipamyg.label"
     white_pial_thickness1.inputs.lh_cortex_label = subjects_dir / subject_id / "label" / "lh.cortex.label"
     white_pial_thickness1.inputs.rh_cortex_label = subjects_dir / subject_id / "label" / "rh.cortex.label"
 
-    white_pial_thickness1.inputs.lh_white = subjects_dir / subject_id / "surf" / "lh.white"
-    white_pial_thickness1.inputs.rh_white = subjects_dir / subject_id / "surf" / "rh.white"
     white_pial_thickness1.base_dir = workflow_cached_dir
-    white_pial_thickness1.source = Source()
+    white_pial_thickness1.source = Source(CPU_n=6, GPU_MB=0, RAM_MB=1500)
 
     return white_pial_thickness1
 
@@ -204,12 +172,12 @@ def create_WhitePialThickness1_node(subject_id: str):
 def create_Curvstats_node(subject_id: str):
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-    subject_surf_dir = subjects_dir / "surf"
     threads = 8
 
     Curvstats_node = Node(Curvstats(), name=f'{subject_id}_Curvstats_node')
     Curvstats_node.inputs.subjects_dir = subjects_dir
     Curvstats_node.inputs.subject_id = subject_id
+    subject_surf_dir = subjects_dir / subject_id / "surf"
 
     Curvstats_node.inputs.lh_smoothwm = subject_surf_dir / f'lh.smoothwm'
     Curvstats_node.inputs.rh_smoothwm = subject_surf_dir / f'rh.smoothwm'
@@ -219,7 +187,7 @@ def create_Curvstats_node(subject_id: str):
     Curvstats_node.inputs.rh_sulc = subject_surf_dir / f'rh.sulc'
     Curvstats_node.inputs.threads = threads
     Curvstats_node.base_dir = workflow_cached_dir
-    Curvstats_node.source = Source()
+    Curvstats_node.source = Source(CPU_n=2, GPU_MB=0, RAM_MB=600)
 
     return Curvstats_node
 
@@ -242,7 +210,7 @@ def create_BalabelsMult_node(subject_id: str):
     BalabelsMult_node.inputs.rh_white = subject_surf_dir / f'rh.white'
     BalabelsMult_node.inputs.fsaverage_label_dir = Path(os.environ['FREESURFER_HOME']) / "subjects/fsaverage/label"
     BalabelsMult_node.base_dir = workflow_cached_dir
-    BalabelsMult_node.source = Source()
+    BalabelsMult_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=8000) # TODO CPU_n bu hui suan
 
     return BalabelsMult_node
 
@@ -265,11 +233,8 @@ def create_Cortribbon_node(subject_id: str):
     Cortribbon_node.inputs.lh_pial = subject_surf_dir / f'lh.pial'
     Cortribbon_node.inputs.rh_pial = subject_surf_dir / f'rh.pial'
 
-    Cortribbon_node.inputs.lh_ribbon = subject_mri_dir / f'lh.ribbon.mgz'
-    Cortribbon_node.inputs.rh_ribbon = subject_mri_dir / f'rh.ribbon.mgz'
-    Cortribbon_node.inputs.ribbon = subject_mri_dir / 'ribbon.mgz'
     Cortribbon_node.base_dir = workflow_cached_dir
-    Cortribbon_node.source = Source()
+    Cortribbon_node.source = Source(CPU_n=3, GPU_MB=0, RAM_MB=1500)
 
     return Cortribbon_node
 
@@ -299,7 +264,7 @@ def create_Parcstats_node(subject_id: str):
     Parcstats_node.inputs.lh_thickness = subject_surf_dir / f'lh.thickness'
     Parcstats_node.inputs.rh_thickness = subject_surf_dir / f'rh.thickness'
     Parcstats_node.base_dir = workflow_cached_dir
-    Parcstats_node.source = Source()
+    Parcstats_node.source = Source(CPU_n=3, GPU_MB=0, RAM_MB=1100)
 
     return Parcstats_node
 
@@ -317,7 +282,6 @@ def create_Aseg7_node(subject_id: str):
     Aseg7_node.inputs.subjects_dir = subjects_dir
     Aseg7_node.inputs.subject_id = subject_id
     Aseg7_node.inputs.threads = threads
-    Aseg7_node.inputs.aseg_presurf_hypos = subject_mri_dir / 'aseg.presurf.hypos.mgz'
     Aseg7_node.inputs.aseg_file = subject_mri_dir / 'aseg.mgz'
     Aseg7_node.inputs.lh_cortex_label = subject_label_dir / 'lh.cortex.label'
     Aseg7_node.inputs.lh_white = subject_surf_dir / 'lh.white'
@@ -327,9 +291,8 @@ def create_Aseg7_node(subject_id: str):
     Aseg7_node.inputs.rh_white = subject_surf_dir / 'rh.white'
     Aseg7_node.inputs.rh_pial = subject_surf_dir / 'rh.pial'
     Aseg7_node.inputs.rh_aparc_annot = subject_label_dir / 'rh.aparc.annot'
-    Aseg7_node.inputs.aparc_aseg = subject_mri_dir / 'aparc+aseg.mgz'
     Aseg7_node.base_dir = workflow_cached_dir
-    Aseg7_node.source = Source()
+    Aseg7_node.source = Source(CPU_n=5, GPU_MB=0, RAM_MB=1500) # TODO CPU_n=5?
 
     return Aseg7_node
 
@@ -355,7 +318,7 @@ def create_N4BiasCorrect_node(subject_id: str):
     N4_bias_correct_node.inputs.threads = 8
 
     N4_bias_correct_node.base_dir = workflow_cached_dir
-    N4_bias_correct_node.source = Source()
+    N4_bias_correct_node.source = Source(CPU_n=5, GPU_MB=0, RAM_MB=1182)
 
     return N4_bias_correct_node
 
@@ -378,7 +341,7 @@ def create_TalairachAndNu_node(subject_id: str):
     talairach_and_nu_node.inputs.orig_file = orig_file
 
     talairach_and_nu_node.base_dir = workflow_cached_dir
-    talairach_and_nu_node.source = Source()
+    talairach_and_nu_node.source = Source(CPU_n=3, GPU_MB=0, RAM_MB=2252)
 
     return talairach_and_nu_node
 
@@ -395,7 +358,7 @@ def create_Brainmask_node(subject_id: str):
     brainmask_node.inputs.mask_file = subjects_dir / subject_id / 'mri' / 'mask.mgz'
 
     brainmask_node.base_dir = workflow_cached_dir
-    brainmask_node.source = Source()
+    brainmask_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=570)
 
     return brainmask_node
 
@@ -417,7 +380,7 @@ def create_UpdateAseg_node(subject_id: str):
     updateaseg_node.inputs.aseg_noCCseg_file = subject_mri_dir / 'aseg.auto_noCCseg.mgz'
 
     updateaseg_node.base_dir = workflow_cached_dir
-    updateaseg_node.source = Source()
+    updateaseg_node.source = Source(CPU_n=3, GPU_MB=0, RAM_MB=1149)
 
     return updateaseg_node
 
@@ -438,7 +401,7 @@ def create_Filled_node(subject_id: str):
     filled_node.inputs.talairach_lta = subjects_dir / subject_id / 'mri/transforms/talairach.lta'
 
     filled_node.base_dir = workflow_cached_dir
-    filled_node.source = Source()
+    filled_node.source = Source(CPU_n=4, GPU_MB=0, RAM_MB=2232)
 
     return filled_node
 
@@ -464,7 +427,7 @@ def create_FastCSR_node(subject_id: str):
     fastcsr_node.inputs.brain_finalsurfs_file = Path(subjects_dir) / subject_id / 'mri/brain.finalsurfs.mgz'
 
     fastcsr_node.base_dir = workflow_cached_dir
-    fastcsr_node.source = Source()
+    fastcsr_node.source = Source(CPU_n=4, GPU_MB=6700, RAM_MB=4000)
 
     return fastcsr_node
 
@@ -480,7 +443,7 @@ def create_WhitePreaparc1_node(subject_id: str):
     white_preaparc1.inputs.threads = 8
 
     white_preaparc1.base_dir = workflow_cached_dir
-    white_preaparc1.source = Source()
+    white_preaparc1.source = Source(CPU_n=8, GPU_MB=0, RAM_MB=12600)
 
     return white_preaparc1
 
@@ -513,7 +476,7 @@ def create_SampleSegmentationToSurfave_node(subject_id: str):
     SampleSegmentationToSurfave_node.inputs.rh_cortex_label_file = subject_label_dir / f'rh.cortex.label'
 
     SampleSegmentationToSurfave_node.base_dir = workflow_cached_dir
-    SampleSegmentationToSurfave_node.source = Source()
+    SampleSegmentationToSurfave_node.source = Source(CPU_n=2, GPU_MB=0, RAM_MB=25750)
 
     return SampleSegmentationToSurfave_node
 
@@ -534,7 +497,7 @@ def creat_VxmRegistraion_node(subject_id: str, vxm_model_path: Path, atlas_type:
     VxmRegistraion_node.inputs.atlas_type = atlas_type
 
     VxmRegistraion_node.base_dir = workflow_cached_dir
-    VxmRegistraion_node.source = Source()
+    VxmRegistraion_node.source = Source(CPU_n=2, GPU_MB=0, RAM_MB=0, IO_write_MB=0, IO_read_MB=0)
 
     return VxmRegistraion_node
 
@@ -769,14 +732,16 @@ def create_node_t():
     os.environ['FEATREG_HOME'] = str(featreg_home)
 
     # 测试
-    node = create_origandrawavg_node(subject_id=subject_id_test, t1w_files=t1w_files)
-    node.run()
-    sub_node = node.interface.create_sub_node()
-    sub_node.run()
-    sub_node.interface.create_sub_node()
+    # node = create_origandrawavg_node(subject_id=subject_id_test, t1w_files=t1w_files)
+    # node.run()
+    #
+    # sub_node = node.interface.create_sub_node()
+    # sub_node.run()
+    # sub_node.interface.create_sub_node()
 
-    node = create_Segment_node(subject_id=subject_id_test)
+    node = create_Aseg7_node(subject_id=subject_id_test)
     node.run()
+    exit()
     sub_node = node.interface.create_sub_node()
     sub_node.run()
     sub_node.interface.create_sub_node()
