@@ -1,6 +1,8 @@
 import os
 import argparse
 import sys
+import time
+
 import bids
 from pathlib import Path
 from multiprocessing import Pool
@@ -11,12 +13,16 @@ from interface.create_node import create_origandrawavg_node
 from interface.node_source import Source
 
 
+logging_wf = logging.getLogger("nipype.workflow")
+
+
 class SubjectQueue:
     def __init__(self, subject_id: str, t1w_files: list):
         self.subject_id = subject_id
         self.t1w_files = t1w_files
 
         self.nodes_ready = []  # 待执行的Node
+        self.nodes_running = []  # 待执行的Node
         self.nodes_error = []  # 执行错误的Node
 
     def init_first_node(self):
@@ -24,34 +30,33 @@ class SubjectQueue:
         self.nodes_ready.append(node)
 
 
-class SubjectNode:
-    """
-    这个Node是Interface的Node
-    """
-    def __init__(self):
-        self.source = Source()
-
-    def postprocess(self, subject: SubjectQueue):
-        if self.node_run_success:
-            self.create_sub_node(subject.node_ready)
-        else:
-            self.interp(subject.node_error)
-
-    def node_run_success(self):
-        """
-        在执行node.run()以后，判断node是否完整运行
-        """
-        return True or False
-
-    def create_sub_node(self):
-        return node
-
-    def last_node(self):
-        """
-        在Queue中删除自己的subject
-        # TODO 这个逻辑放到哪不清楚
-        """
-        pass
+# class SubjectNode:
+#     """
+#     这个Node是Interface的Node
+#     """
+#     def __init__(self):
+#         self.source = Source()
+#
+#     def postprocess(self, subject: SubjectQueue):
+#         if self.node_run_success:
+#             self.create_sub_node(subject.node_ready)
+#         else:
+#             self.interp(subject.node_error)
+#
+#     def node_run_success(self):
+#         """
+#         在执行node.run()以后，判断node是否完整运行
+#         """
+#         return True or False
+#
+#     def create_sub_node(self):
+#         return node
+#
+#     def last_node(self):
+#         """
+#         在Queue中删除自己的subject
+#         """
+#         pass
 
 
 class Queue:
@@ -73,6 +78,9 @@ class Scheduler:
 
         self.pool = Pool()
 
+        self.subjects_success = []
+        self.subjects_error = []
+
     def check_node_source(self, source: Source):
         source_result = self.source_res - source
         for i in source_result:
@@ -80,35 +88,67 @@ class Scheduler:
                 return False
         return True
 
-    def run_node(self):
+    def run_node(self, subject_queue: SubjectQueue, node):
+        try:
+            subject_queue.nodes_running.append(node)
+            node.run()
+        except Exception as why:
+            logging_wf.error(f'Run_Node_Error : {why}')
+            subject_queue.nodes_running.remove(node)
+            subject_queue.nodes_error.append(node)
+        else:
+            try:
+                sub_nodes = node.interface.create_sub_node()
+                if isinstance(sub_nodes, list):
+                    subject_queue.nodes_ready.extend(sub_nodes)
+                else:
+                    subject_queue.nodes_ready.append(sub_nodes)
+            except Exception as why:
+                logging_wf.error(f'Run_Node_Error : {why}')
+        finally:
+            self.source_res += node.source  # 回收资源
+            logging_wf.info(f'ADD    {node.name}    {self.source_res}')
+            # 判断是否为最后一个node
+            if 'Smooth_node' in node.name:
+                self.queue.subjects.pop(subject_queue.subject_id)
+            # 判断subject_queue是否运行完成
+            elif len(subject_queue.nodes_running) == 0 and len(subject_queue.nodes_ready) == 0:
+                self.queue.subjects.pop(subject_queue.subject_id)
+
+    def run_queue(self):
         """
         1. node执行完毕
         2. 有新的node进入队列
         """
         queue = self.queue
 
-        node_run_success = False
+        run_new_node = False
         for subject_id, subject_queue in queue.subjects.items():
             for node in subject_queue.nodes_ready:
                 if self.check_node_source(node.source):
                     subject_queue.nodes_ready.remove(node)
                     self.source_res -= node.source
-                    # self.pool.apply_async(node)  # 子进程 run
-                    node.run()  # 子进程 run
-                    sub_nodes = node.interface.create_sub_node()
-                    if isinstance(sub_nodes, list):
-                        subject_queue.nodes_ready.extend(sub_nodes)
-                    else:
-                        subject_queue.nodes_ready.append(sub_nodes)
-                    node_run_success = True
-                if node_run_success:
+                    logging_wf.info(f'SUB    {node.name}    {self.source_res}')
+                    self.pool.apply_async(node)  # 子进程 run
+                    self.run_node(subject_queue, node)
+                    # node.run()  # 子进程 run
+                    # sub_nodes = node.interface.create_sub_node()
+                    # if isinstance(sub_nodes, list):
+                    #     subject_queue.nodes_ready.extend(sub_nodes)
+                    # else:
+                    #     subject_queue.nodes_ready.append(sub_nodes)
+                    run_new_node = True
+                if run_new_node:
                     break
-            if node_run_success:
+            if run_new_node:
                 break
+        return run_new_node
 
     def run(self):
         while True:
-            self.run_node()
+            run_new_node = self.run_queue()
+            if not run_new_node:
+                time.sleep(5)
 
 
 def parse_args():
@@ -129,7 +169,7 @@ python3 deepprep_pipeline.py
     )
 
     parser.add_argument("--bids_dir", help="directory of BIDS type: /mnt/ngshare2/UKB/BIDS", required=True)
-    parser.add_argument("--recon_output_dir", help="structure data Recon output directory: /mnt/ngshare2/DeepPrep_UKB/UKB_Recon" , required=True)
+    parser.add_argument("--recon_output_dir", help="structure data Recon output directory: /mnt/ngshare2/DeepPrep_UKB/UKB_Recon", required=True)
     parser.add_argument("--bold_output_dir", help="BOLD data Preprocess output directory: /mnt/ngshare2/DeepPrep_UKB/UKB_BoldPreprocess", required=True)
     parser.add_argument("--cache_dir", help="workflow cache dir: /mnt/ngshare2/DeepPrep_UKB/UKB_Workflow", required=True)
     args = parser.parse_args()
@@ -209,4 +249,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
