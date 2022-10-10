@@ -22,6 +22,8 @@ class BoldSkipReorientInputSpec(BaseInterfaceInputSpec):
     data_path = Directory(exists=True, desc="data path", mandatory=True)
     derivative_deepprep_path = Directory(exists=True, desc="derivative_deepprep_path", mandatory=True)
     task = Str(exists=True, desc="task", mandatory=True)
+    preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
+    atlas_type = Str(exists=True, desc='MNI152_T1_2mm', mandatory=True)
 
 
 class BoldSkipReorientOutputSpec(TraitedSpec):
@@ -153,9 +155,11 @@ class BoldSkipReorient(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from create_node import creat_Stc_node
-        node = creat_Stc_node(self.inputs.subject_id,
-                              self.inputs.task, )
+        from create_node import create_Stc_node
+        node = create_Stc_node(self.inputs.subject_id,
+                               self.inputs.task,
+                               self.inputs.atlas_type,
+                               self.inputs.preprocess_method)
 
         return node
 
@@ -165,6 +169,8 @@ class MotionCorrectionInputSpec(BaseInterfaceInputSpec):
     task = Str(exists=True, desc="task", mandatory=True)
     data_path = Directory(exists=True, desc="data path", mandatory=True)
     derivative_deepprep_path = Directory(exists=True, desc="derivative_deepprep_path", mandatory=True)
+    preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
+    atlas_type = Str(exists=True, desc='MNI152_T1_2mm', mandatory=True)
 
 
 class MotionCorrectionOutputSpec(TraitedSpec):
@@ -257,9 +263,11 @@ class MotionCorrection(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from create_node import creat_Register_node
-        node = creat_Register_node(self.inputs.subject_id,
-                                   self.inputs.task, )
+        from create_node import create_Register_node
+        node = create_Register_node(self.inputs.subject_id,
+                                    self.inputs.task,
+                                    self.inputs.atlas_type,
+                                    self.inputs.preprocess_method)
 
         return node
 
@@ -269,6 +277,8 @@ class StcInputSpec(BaseInterfaceInputSpec):
     task = Str(exists=True, desc="task", mandatory=True)
     data_path = Directory(exists=True, desc="data path", mandatory=True)
     derivative_deepprep_path = Directory(exists=True, desc="derivative_deepprep_path", mandatory=True)
+    preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
+    atlas_type = Str(exists=True, desc='MNI152_T1_2mm', mandatory=True)
 
 
 class StcOutputSpec(TraitedSpec):
@@ -364,9 +374,11 @@ class Stc(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from create_node import creat_MkTemplate_node
-        node = creat_MkTemplate_node(self.inputs.subject_id,
-                                     self.inputs.task, )
+        from create_node import create_MkTemplate_node
+        node = create_MkTemplate_node(self.inputs.subject_id,
+                                      self.inputs.task,
+                                      self.inputs.atlas_type,
+                                      self.inputs.preprocess_method)
 
         return node
 
@@ -376,6 +388,8 @@ class RegisterInputSpec(BaseInterfaceInputSpec):
     task = Str(exists=True, desc="task", mandatory=True)
     data_path = Directory(exists=True, desc="data path", mandatory=True)
     derivative_deepprep_path = Directory(exists=True, desc="derivative_deepprep_path", mandatory=True)
+    preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
+    atlas_type = Str(exists=True, desc='MNI152_T1_2mm', mandatory=True)
 
 
 class RegisterOutputSpec(TraitedSpec):
@@ -424,9 +438,11 @@ class Register(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from create_node import creat_Mkbrainmask_node
-        node = creat_Mkbrainmask_node(self.inputs.subject_id,
-                                      self.inputs.task, )
+        from create_node import create_Mkbrainmask_node
+        node = create_Mkbrainmask_node(self.inputs.subject_id,
+                                       self.inputs.task,
+                                       self.inputs.atlas_type,
+                                       self.inputs.preprocess_method)
 
         return node
 
@@ -437,6 +453,8 @@ class MkBrainmaskInputSpec(BaseInterfaceInputSpec):
     data_path = Directory(exists=True, desc="data path", mandatory=True)
     subjects_dir = Directory(exists=True, desc='subjects_dir', mandatory=True)
     derivative_deepprep_path = Directory(exists=True, desc="derivative_deepprep_path", mandatory=True)
+    preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
+    atlas_type = Str(exists=True, desc='MNI152_T1_2mm', mandatory=True)
 
 
 class MkBrainmaskOutputSpec(TraitedSpec):
@@ -525,9 +543,11 @@ class MkBrainmask(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from create_node import creat_RestGauss_node
-        node = creat_RestGauss_node(self.inputs.subject_id,
-                                    self.inputs.task, )
+        from create_node import create_RestGauss_node
+        node = create_RestGauss_node(self.inputs.subject_id,
+                                     self.inputs.task,
+                                     self.inputs.atlas_type,
+                                     self.inputs.preprocess_method)
 
         return node
 
@@ -540,6 +560,8 @@ class VxmRegistraionInputSpec(BaseInterfaceInputSpec):
     model_file = File(exists=True, desc="atlas_type/model.h5", mandatory=True)
     vxm_model_path = Directory(exists=True, desc="model/voxelmorph", mandatory=True)
     atlas_type = Str(desc="atlas_type", mandatory=True)
+    task = Str(exists=True, desc="task", mandatory=True)
+    preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
 
 
 class VxmRegistraionOutputSpec(TraitedSpec):
@@ -640,9 +662,11 @@ class VxmRegistraion(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from create_node import creat_BoldSkipReorient_node
-        node = creat_BoldSkipReorient_node(self.inputs.subject_id,
-                                           self.inputs.task, )
+        from create_node import create_BoldSkipReorient_node
+        node = create_BoldSkipReorient_node(self.inputs.subject_id,
+                                            self.inputs.task,
+                                            self.inputs.atlas_type,
+                                            self.inputs.preprocess_method)
 
         return node
 
@@ -653,6 +677,8 @@ class RestGaussInputSpec(BaseInterfaceInputSpec):
     data_path = Directory(exists=True, desc='data path', mandatory=True)
     task = Str(exists=True, desc="task", mandatory=True)
     derivative_deepprep_path = Directory(exists=True, desc='derivative_deepprep_path', mandatory=True)
+    preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
+    atlas_type = Str(exists=True, desc='MNI152_T1_2mm', mandatory=True)
 
 
 class RestGaussOutputSpec(TraitedSpec):
@@ -695,9 +721,11 @@ class RestGauss(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from create_node import creat_RestBandpass_node
-        node = creat_RestBandpass_node(self.inputs.subject_id,
-                                       self.inputs.task, )
+        from create_node import create_RestBandpass_node
+        node = create_RestBandpass_node(self.inputs.subject_id,
+                                        self.inputs.task,
+                                        self.inputs.atlas_type,
+                                        self.inputs.preprocess_method)
 
         return node
 
@@ -707,6 +735,8 @@ class RestBandpassInputSpec(BaseInterfaceInputSpec):
     task = Str(exists=True, desc='task', mandatory=True)
     data_path = Directory(exists=True, desc='data path', mandatory=True)
     derivative_deepprep_path = Directory(exists=True, desc='derivative_deepprep_path', mandatory=True)
+    preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
+    atlas_type = Str(exists=True, desc='MNI152_T1_2mm', mandatory=True)
 
 
 class RestBandpassOutputSpec(TraitedSpec):
@@ -765,9 +795,11 @@ class RestBandpass(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from create_node import creat_RestRegression_node
-        node = creat_RestRegression_node(self.inputs.subject_id,
-                                         self.inputs.task, )
+        from create_node import create_RestRegression_node
+        node = create_RestRegression_node(self.inputs.subject_id,
+                                          self.inputs.task,
+                                          self.inputs.atlas_type,
+                                          self.inputs.preprocess_method)
 
         return node
 
@@ -778,6 +810,8 @@ class RestRegressionInputSpec(BaseInterfaceInputSpec):
     data_path = Directory(exists=True, desc='data_path', mandatory=True)
     task = Str(exists=True, desc='task', mandatory=True)
     derivative_deepprep_path = Directory(exists=True, desc='derivative_deepprep_path', mandatory=True)
+    preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
+    atlas_type = Str(exists=True, desc='MNI152_T1_2mm', mandatory=True)
 
 
 class RestRegressionOutputSpec(TraitedSpec):
@@ -896,12 +930,11 @@ class RestRegression(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from create_node import creat_Smooth_node
-        node = creat_Smooth_node(self.inputs.subject_id,
-                                 self.inputs.task,
-                                 self.inputs.preprocess_method,
-                                 self.inputs.mni152_brain_mask
-                                 )
+        from create_node import create_VxmRegNormMNI152_node
+        node = create_VxmRegNormMNI152_node(self.inputs.subject_id,
+                                            self.inputs.task,
+                                            self.inputs.atlas_type,
+                                            self.inputs.preprocess_method)
 
         return node
 
@@ -1127,6 +1160,15 @@ class VxmRegNormMNI152(BaseInterface):
 
         return outputs
 
+    def create_sub_node(self):
+        from create_node import create_Smooth_node
+        node = create_Smooth_node(self.inputs.subject_id,
+                                  self.inputs.task,
+                                  self.inputs.atlas_type,
+                                  self.inputs.preprocess_method)
+
+        return node
+
 
 class SmoothInputSpec(BaseInterfaceInputSpec):
     subject_id = Str(exists=True, desc='subject', mandatory=True)
@@ -1135,6 +1177,7 @@ class SmoothInputSpec(BaseInterfaceInputSpec):
     preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
     MNI152_T1_2mm_brain_mask = File(exists=True, desc='MNI152 brain mask path', mandatory=True)
     derivative_deepprep_path = Directory(exists=True, desc='derivative_deepprep_path', mandatory=True)
+    atlas_type = Str(exists=True, desc='MNI152_T1_2mm', mandatory=True)
 
 
 class SmoothOutputSpec(TraitedSpec):
@@ -1249,23 +1292,14 @@ class Smooth(BaseInterface):
 
         return outputs
 
-    def create_sub_node(self):
-        from create_node import creat_VxmRegNormMNI152_node
-        node = creat_VxmRegNormMNI152_node(self.inputs.subject_id,
-                                           self.inputs.task,
-                                           self.inputs.preprocess_method,
-                                           self.inputs.atlas_type,
-                                           self.inputs.vxm_model_path,
-                                           self.inputs.resource_dir)
-
-        return node
-
 
 class MkTemplateInputSpec(BaseInterfaceInputSpec):
     subject_id = Str(exists=True, desc='subject', mandatory=True)
     data_path = Directory(exists=True, desc="data path", mandatory=True)
     task = Str(exists=True, desc='task', mandatory=True)
     derivative_deepprep_path = Directory(exists=True, desc="derivative_deepprep_path", mandatory=True)
+    preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
+    atlas_type = Str(exists=True, desc='MNI152_T1_2mm', mandatory=True)
 
 
 class MkTemplateOutputSpec(TraitedSpec):
@@ -1303,8 +1337,10 @@ class MkTemplate(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from create_node import creat_MotionCorrection_node
-        node = creat_MotionCorrection_node(self.inputs.subject_id,
-                                           self.inputs.task, )
+        from create_node import create_MotionCorrection_node
+        node = create_MotionCorrection_node(self.inputs.subject_id,
+                                            self.inputs.task,
+                                            self.inputs.atlas_type,
+                                            self.inputs.preprocess_method)
 
         return node
