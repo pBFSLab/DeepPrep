@@ -376,6 +376,7 @@ class InflatedSphere(BaseInterface):
         return outputs
 
     def create_sub_node(self):
+        from interface.create_node import create_FeatReg_node
         node = create_FeatReg_node(self.inputs.subject_id)
         return node
 
