@@ -252,6 +252,11 @@ class WhitePreaparc1(BaseInterface):
         outputs["aparc_aseg_file"] = subjects_dir / subject_id / "mri/aparc.DKTatlas+aseg.deep.withCC.mgz"
         return outputs
 
+    def create_sub_node(self):
+        from interface.create_node import create_SampleSegmentationToSurfave_node, create_InflatedSphere_node
+        node = [create_SampleSegmentationToSurfave_node(self.inputs.subject_id),
+                create_InflatedSphere_node(self.inputs.subject_id)]
+        return node
 
 class WhitePreaparc2InputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc='subjects dir', mandatory=True)
@@ -363,6 +368,7 @@ class InflatedSphere(BaseInterface):
         return outputs
 
     def create_sub_node(self):
+        from interface.create_node import create_FeatReg_node
         node = create_FeatReg_node(self.inputs.subject_id)
         return node
 
