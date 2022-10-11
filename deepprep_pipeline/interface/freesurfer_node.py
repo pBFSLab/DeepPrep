@@ -2,6 +2,8 @@ import os
 from interface.create_node import *
 from nipype.interfaces.base import BaseInterface, \
     BaseInterfaceInputSpec, traits, File, TraitedSpec, Directory, Str
+
+from interface.create_node import create_VxmRegistraion_node
 from interface.run import run_cmd_with_timing, get_freesurfer_threads, multipool
 from pathlib import Path
 
@@ -69,7 +71,6 @@ class Brainmask(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node import create_UpdateAseg_node
         node = create_UpdateAseg_node(self.inputs.subject_id)
         return node
 
@@ -108,7 +109,6 @@ class OrigAndRawavg(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node import create_Segment_node
         node = create_Segment_node(self.inputs.subject_id)
         return node
 
@@ -170,7 +170,6 @@ class Filled(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node import create_FastCSR_node
         node = create_FastCSR_node(self.inputs.subject_id)
         return node
 
@@ -253,7 +252,6 @@ class WhitePreaparc1(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node import create_SampleSegmentationToSurfave_node, create_InflatedSphere_node
         node = [create_SampleSegmentationToSurfave_node(self.inputs.subject_id),
                 create_InflatedSphere_node(self.inputs.subject_id)]
         return node
@@ -376,7 +374,6 @@ class InflatedSphere(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node import create_FeatReg_node
         node = create_FeatReg_node(self.inputs.subject_id)
         return node
 
@@ -944,6 +941,10 @@ class Aseg7(BaseInterface):
         outputs["aparc_aseg"] = subjects_dir / subject_id / "mri" / 'aparc+aseg.mgz'
         outputs['subject_id'] = subject_id
         return outputs
+
+    def create_sub_node(self):
+        node = create_VxmRegistraion_node(self.inputs.subject_id, self.task, self.atlas_type, self.preprocess_method)
+        return node
 
 
 class Aseg7ToAsegInputSpec(BaseInterfaceInputSpec):
