@@ -55,6 +55,5 @@ class FeatReg(BaseInterface):
 
     def create_sub_node(self):
         from create_node import create_JacobianAvgcurvCortparc_node
-        node = create_JacobianAvgcurvCortparc_node(self.inputs.subject_id
-                                                   )
+        node = create_JacobianAvgcurvCortparc_node(self.inputs.subject_id)
         return node

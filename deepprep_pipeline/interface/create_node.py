@@ -82,9 +82,6 @@ def create_Noccseg_node(subject_id: str):
     return noccseg_node
 
 
-
-
-
 def create_N4BiasCorrect_node(subject_id: str):
     fastsurfer_home = Path(os.environ['FASTSURFER_HOME'])
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
@@ -270,6 +267,7 @@ def create_SampleSegmentationToSurfave_node(subject_id: str):
     SampleSegmentationToSurfave_node.source = Source(CPU_n=2, GPU_MB=0, RAM_MB=25750)
 
     return SampleSegmentationToSurfave_node
+
 
 def create_InflatedSphere_node(subject_id: str):
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
@@ -771,7 +769,7 @@ def create_node_t():
     os.environ['RESOURCE_DIR'] = str(resource_dir_test)
 
     # 测试
-    node = create_FeatReg_node(subject_id=subject_id_test)
+    node = create_BalabelsMult_node(subject_id=subject_id_test)
     node.run()
     exit()
     # sub_node = node.interface.create_sub_node()
