@@ -1,10 +1,9 @@
+from interface.run import run_cmd_with_timing
 from pathlib import Path
 from multiprocessing import Pool
 import logging
 import subprocess
 from nipype.interfaces.base import BaseInterfaceInputSpec, BaseInterface, File, TraitedSpec, Directory, Str
-
-from interface.run import run_cmd_with_timing
 
 
 def log_msg(msg, lock, level):
@@ -74,7 +73,7 @@ class FastCSR(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node import create_WhitePreaparc1_node
+        from interface.create_node_structure import create_WhitePreaparc1_node
         node = create_WhitePreaparc1_node(self.inputs.subject_id)
         return node
 
