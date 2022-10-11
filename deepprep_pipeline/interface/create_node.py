@@ -460,6 +460,9 @@ def create_Parcstats_node(subject_id: str):
 def create_Aseg7_node(subject_id: str):
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
+    atlas_type = os.environ['DEEPPREP_ATLAS_TYPE']
+    task = os.environ['DEEPPREP_TASK']
+    preprocess_method = os.environ['DEEPPREP_PREPROCESS_METHOD']
 
     subject_mri_dir = subjects_dir / subject_id / 'mri'
     subject_surf_dir = subjects_dir / subject_id / 'surf'
@@ -481,6 +484,10 @@ def create_Aseg7_node(subject_id: str):
     Aseg7_node.inputs.rh_aparc_annot = subject_label_dir / 'rh.aparc.annot'
     Aseg7_node.base_dir = workflow_cached_dir
     Aseg7_node.source = Source(CPU_n=4, GPU_MB=0, RAM_MB=1500)
+
+    Aseg7_node.interface.atlas_type = atlas_type
+    Aseg7_node.interface.task = task
+    Aseg7_node.interface.preprocess_method = preprocess_method
 
     return Aseg7_node
 
@@ -745,7 +752,7 @@ def create_node_t():
     fastcsr_home = pwd / "FastCSR"
     featreg_home = pwd / "FeatReg"
 
-    bids_data_dir_test = '/mnt/ngshare/DeepPrep_workflow_test/BIDS'
+    bids_data_dir_test = '/mnt/ngshare/DeepPrep_workflow_test/UKB_BIDS'
     subjects_dir_test = '/mnt/ngshare/DeepPrep_workflow_test/UKB_Recon'
     bold_preprocess_dir_test = '/mnt/ngshare/DeepPrep_workflow_test/UKB_BoldPreprocess'
     workflow_cached_dir_test = '/mnt/ngshare/DeepPrep_workflow_test/UKB_Workflow'
@@ -769,9 +776,8 @@ def create_node_t():
     os.environ['RESOURCE_DIR'] = str(resource_dir_test)
 
     # 测试
-    node = create_BalabelsMult_node(subject_id=subject_id_test)
-    node.run()
-    exit()
+    # node = create_BalabelsMult_node(subject_id=subject_id_test)
+    # node.run()
     # sub_node = node.interface.create_sub_node()
     # sub_node.run()
     # sub_node.interface.create_sub_node()
@@ -779,6 +785,16 @@ def create_node_t():
     atlas_type_test = 'MNI152_T1_2mm'
     task_test = 'rest'
     preprocess_method_test = 'rest'
+
+    os.environ['DEEPPREP_ATLAS_TYPE'] = atlas_type_test
+    os.environ['DEEPPREP_TASK'] = task_test
+    os.environ['DEEPPREP_PREPROCESS_METHOD'] = preprocess_method_test
+
+    node = create_Aseg7_node(subject_id=subject_id_test)
+    node.run()
+    sub_node = node.interface.create_sub_node()
+    sub_node.run()
+    exit()
 
     node = create_VxmRegistraion_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
                                       preprocess_method=preprocess_method_test)
