@@ -1,3 +1,4 @@
+from interface.create_node import *
 from pathlib import Path
 from nipype.interfaces.base import BaseInterfaceInputSpec, BaseInterface, File, TraitedSpec, Directory, \
     traits, traits_extension, Str
@@ -79,7 +80,6 @@ class Segment(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node import create_Noccseg_node
         node = create_Noccseg_node(self.inputs.subject_id)
         return node
 
@@ -132,7 +132,6 @@ class N4BiasCorrect(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node import create_TalairachAndNu_node
         node = create_TalairachAndNu_node(self.inputs.subject_id)
         return node
 
@@ -212,7 +211,6 @@ class TalairachAndNu(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node import create_Brainmask_node
         node = create_Brainmask_node(self.inputs.subject_id)
         return node
 
@@ -277,7 +275,6 @@ class Noccseg(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node import create_N4BiasCorrect_node
         node = create_N4BiasCorrect_node(self.inputs.subject_id)
         return node
 
@@ -343,7 +340,6 @@ class UpdateAseg(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node import create_Filled_node
         node = create_Filled_node(self.inputs.subject_id)
         return node
 
