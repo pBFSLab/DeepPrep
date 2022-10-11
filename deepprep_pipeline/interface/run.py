@@ -99,8 +99,9 @@ def set_envrion(threads: int = 1):
     # FSL
     os.environ['PATH'] = '/usr/local/fsl/bin:' + os.environ['PATH']
 
-    # set threads
+    # set FreeSurfer threads
     os.environ['OMP_NUM_THREADS'] = str(threads)
+    os.environ['FS_OMP_NUM_THREADS'] = str(threads)
     os.environ['ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS'] = str(threads)
 
 
