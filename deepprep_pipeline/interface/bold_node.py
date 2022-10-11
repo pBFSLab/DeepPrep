@@ -1,6 +1,6 @@
 from nipype.interfaces.base import BaseInterface, \
-    BaseInterfaceInputSpec, File, TraitedSpec, Directory, Str, traits
-from interface.run import multipool, multipool_run, multipool_BidsBolds, multipool_BidsBolds_2, multiregressionpool
+    BaseInterfaceInputSpec, File, TraitedSpec, Directory, Str
+from interface.run import multipool_run, multipool_BidsBolds, multipool_BidsBolds_2
 import sys
 import sh
 import nibabel as nib
@@ -8,7 +8,6 @@ import numpy as np
 from pathlib import Path
 import bids
 import os
-import shutil
 import tensorflow as tf
 import ants
 import shutil
@@ -155,7 +154,7 @@ class BoldSkipReorient(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from create_node import create_Stc_node
+        from interface.create_node_bold import create_Stc_node
         node = create_Stc_node(self.inputs.subject_id,
                                self.inputs.task,
                                self.inputs.atlas_type,
@@ -263,7 +262,7 @@ class MotionCorrection(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from create_node import create_Register_node
+        from interface.create_node_bold import create_Register_node
         node = create_Register_node(self.inputs.subject_id,
                                     self.inputs.task,
                                     self.inputs.atlas_type,
@@ -374,7 +373,7 @@ class Stc(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from create_node import create_MkTemplate_node
+        from interface.create_node_bold import create_MkTemplate_node
         node = create_MkTemplate_node(self.inputs.subject_id,
                                       self.inputs.task,
                                       self.inputs.atlas_type,
@@ -438,7 +437,7 @@ class Register(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from create_node import create_Mkbrainmask_node
+        from interface.create_node_bold import create_Mkbrainmask_node
         node = create_Mkbrainmask_node(self.inputs.subject_id,
                                        self.inputs.task,
                                        self.inputs.atlas_type,
@@ -543,7 +542,7 @@ class MkBrainmask(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from create_node import create_RestGauss_node
+        from interface.create_node_bold import create_RestGauss_node
         node = create_RestGauss_node(self.inputs.subject_id,
                                      self.inputs.task,
                                      self.inputs.atlas_type,
@@ -662,7 +661,7 @@ class VxmRegistraion(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from create_node import create_BoldSkipReorient_node
+        from interface.create_node_bold import create_BoldSkipReorient_node
         node = create_BoldSkipReorient_node(self.inputs.subject_id,
                                             self.inputs.task,
                                             self.inputs.atlas_type,
@@ -721,7 +720,7 @@ class RestGauss(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from create_node import create_RestBandpass_node
+        from interface.create_node_bold import create_RestBandpass_node
         node = create_RestBandpass_node(self.inputs.subject_id,
                                         self.inputs.task,
                                         self.inputs.atlas_type,
@@ -795,7 +794,7 @@ class RestBandpass(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from create_node import create_RestRegression_node
+        from interface.create_node_bold import create_RestRegression_node
         node = create_RestRegression_node(self.inputs.subject_id,
                                           self.inputs.task,
                                           self.inputs.atlas_type,
@@ -930,7 +929,7 @@ class RestRegression(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from create_node import create_VxmRegNormMNI152_node
+        from interface.create_node_bold import create_VxmRegNormMNI152_node
         node = create_VxmRegNormMNI152_node(self.inputs.subject_id,
                                             self.inputs.task,
                                             self.inputs.atlas_type,
@@ -1161,7 +1160,7 @@ class VxmRegNormMNI152(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from create_node import create_Smooth_node
+        from interface.create_node_bold import create_Smooth_node
         node = create_Smooth_node(self.inputs.subject_id,
                                   self.inputs.task,
                                   self.inputs.atlas_type,
@@ -1337,7 +1336,7 @@ class MkTemplate(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from create_node import create_MotionCorrection_node
+        from interface.create_node_bold import create_MotionCorrection_node
         node = create_MotionCorrection_node(self.inputs.subject_id,
                                             self.inputs.task,
                                             self.inputs.atlas_type,

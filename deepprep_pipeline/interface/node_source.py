@@ -24,3 +24,7 @@ class Source:
 
     def __iter__(self):
         return iter(self.source.values())
+
+    def __str__(self):
+        s = [f'{i}:{j:5d}' for i, j in self.source.items()]
+        return f"   ".join(s)
