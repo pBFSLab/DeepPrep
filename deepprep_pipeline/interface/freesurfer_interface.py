@@ -407,7 +407,19 @@ class InflatedSphere(BaseInterface):
     cpu = 6  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
 
-    def cmd(self):
+    def cmd(self, hemi):
+        # set threads
+        threads = self.inputs.threads if self.inputs.threads else 0
+        os.environ['OMP_NUM_THREADS'] = str(threads)
+        os.environ['FS_OMP_NUM_THREADS'] = str(threads)
+        os.environ['ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS'] = str(threads)
+
+        hemi_inflate = Path(self.inputs.subjects_dir) / self.inputs.subject_id / 'surf' / f'{hemi}.inflated'
+        hemi_sphere = Path(self.inputs.subjects_dir) / self.inputs.subject_id / 'surf' / f'{hemi}.sphere'
+        _cmd = f'mris_sphere -seed 1234 {hemi_inflate} {hemi_sphere}'
+        run_cmd_with_timing(_cmd)
+
+    def _run_interface(self, runtime):
         threads = self.inputs.threads if self.inputs.threads else 0
         fsthreads = get_freesurfer_threads(threads)
         # create nicer inflated surface from topo fixed (not needed, just later for visualization)
@@ -417,11 +429,7 @@ class InflatedSphere(BaseInterface):
         cmd = f"recon-all -subject {self.inputs.subject_id} -inflate2 -no-isrunning {fsthreads}"
         run_cmd_with_timing(cmd)
 
-        cmd = f"recon-all -subject {self.inputs.subject_id} -sphere -no-isrunning {fsthreads}"
-        run_cmd_with_timing(cmd)
-
-    def _run_interface(self, runtime):
-        self.cmd()
+        multipool(self.cmd, Multi_Num=2)
         return runtime
 
     def _list_outputs(self):
