@@ -44,78 +44,74 @@ if __name__ == '__main__':
     subject_id = "sub-1002026-ses-02"
     t1w_files = ["/mnt/ngshare2/UKB/BIDS/sub-1002026/ses-02/anat/sub-1002026_ses-02_T1w.nii.gz"]
 
-    # ########## origandrawavg_node & segment_node ##########
+    ######### origandrawavg_node & segment_node ##########
     # node = create_origandrawavg_node(subject_id, t1w_files)
     # node.run()
     # sub_node = node.interface.create_sub_node()
     # sub_node.run()
 
-    # ########## segment_node & noccseg_node ##########
+    ########## segment_node & noccseg_node ##########
     # node = create_Segment_node(subject_id)
     # node.run()
     # sub_node = node.interface.create_sub_node()
     # sub_node.run()
 
-    # ########## noccseg_node & N4BiasCorrect_node ##########
+    ########## noccseg_node & N4BiasCorrect_node ##########
     # node = create_Noccseg_node(subject_id)
     # node.run()
     # sub_node = node.interface.create_sub_node()
     # sub_node.run()
 
-    # ########## N4BiasCorrect_node & TalairachAndNu_node ##########
+    ########## N4BiasCorrect_node & TalairachAndNu_node ##########
     # node = create_N4BiasCorrect_node(subject_id)
     # node.run()
     # sub_node = node.interface.create_sub_node()
     # sub_node.run()
     #
-    # ########## TalairachAndNu_node & Brainmask_node ##########
+    ########## TalairachAndNu_node & Brainmask_node ##########
     # node = create_TalairachAndNu_node(subject_id)
     # node.run()
     # sub_node = node.interface.create_sub_node()
     # sub_node.run()
     #
-    # ########## Brainmask_node & UpdateAseg_node ##########
+    ########## Brainmask_node & UpdateAseg_node ##########
     # node = create_Brainmask_node(subject_id)
     # node.run()
     # sub_node = node.interface.create_sub_node()
     # sub_node.run()
 
-    # ########## UpdateAseg_node & Filled_node ##########
+    ########## UpdateAseg_node & Filled_node ##########
     # node = create_UpdateAseg_node(subject_id)
     # node.run()
     # sub_node = node.interface.create_sub_node()
     # sub_node.run()
     #
-    # ########## Filled_node & FastCSR_node ##########
+    ########## Filled_node & FastCSR_node ##########
     # node = create_Filled_node(subject_id)
     # node.run()
     # sub_node = node.interface.create_sub_node()
     # sub_node.run()
 
-    # ######### Filled_node & FastCSR_node ##########
-    # node = create_Filled_node(subject_id)
-    # node.run()
-    # sub_node = node.interface.create_sub_node()
-    # sub_node.run()
-    #
-    # ######### FastCSR_node & WhitePreaparc1_node ##########
+    ######### FastCSR_node & WhitePreaparc1_node ##########
     # node = create_FastCSR_node(subject_id)
     # node.run()
     # sub_node = node.interface.create_sub_node()
     # sub_node.run()
 
-    # ######### WhitePreaparc1_node & SampleSegmentationToSurfave_node & InflatedSphere_node ##########
+    ######### WhitePreaparc1_node & SampleSegmentationToSurfave_node & InflatedSphere_node ##########
     # node = create_WhitePreaparc1_node(subject_id)
     # node.run()
     # sub_node = node.interface.create_sub_node()
     # for n in sub_node:
     #     n.run()
 
-    ######### InflatedSphere_node & FeatReg_node ##########
-    node = create_InflatedSphere_node(subject_id)
-    node.run()
-    sub_node = node.interface.create_sub_node()
-    sub_node.run()
+    create_SampleSegmentationToSurfave_node(subject_id).run()
+    exit()
+    # ######### InflatedSphere_node & FeatReg_node ##########
+    # node = create_InflatedSphere_node(subject_id)
+    # node.run()
+    # sub_node = node.interface.create_sub_node()
+    # sub_node.run()
 
     # ######### FeatReg_node & JacobianAvgcurvCortparc_node ##########
     # node = create_FeatReg_node(subject_id)
