@@ -20,9 +20,18 @@ def clear_is_running(subjects_dir: Path, subject_ids: list):
             os.remove(is_running_file)
 
 
+def clear_subject_bold_tmp_dir(bold_preprocess_dir: Path, subject_ids: list, task: str):
+    for subject_id in subject_ids:
+        tmp_dir = bold_preprocess_dir / subject_id / f'task-{task}'
+        if tmp_dir.exists():
+            os.system(f'rm -r {tmp_dir}')
+
+
 class Scheduler:
-    def __init__(self, share_manager: Manager, subject_ids: list):
+    def __init__(self, share_manager: Manager, subject_ids: list, last_node_name=None, auto_schedule=True):
         self.source_res = Source(36, 24000, 60000, 150, 450)
+        self.last_node_name = last_node_name
+        self.auto_schedule = auto_schedule  # 是否开启自动调度
 
         # Queue
         self.queue_subject = share_manager.list()  # 队列中的subject
@@ -84,7 +93,25 @@ class Scheduler:
         return True
 
     @staticmethod
-    def run_node(node, node_error: list, node_success: list, node_running: list, node_done: list, lock: Lock):
+    def run_node_single(node, node_error: list, node_success: list, node_running: list, node_done: list,
+                        subject_error: list):
+        try:
+            print(f'run start {node.name}')
+            node.run()
+            print(f'run over {node.name}')
+        except Exception as why:
+            logging_wf.error(f'Run_Node_Error : {why}')
+            node_error.append(node.name)
+            subject_error.append(node.inputs.subject_id)
+        else:
+            node_success.append(node.name)
+        finally:
+            node_done.append(node.name)
+            node_running.remove(node.name)
+
+    @staticmethod
+    def run_node(node, node_error: list, node_success: list, node_running: list, node_done: list, subject_error: list,
+                 lock: Lock):
         try:
             print(f'run start {node.name}')
             node.run()
@@ -93,6 +120,7 @@ class Scheduler:
             logging_wf.error(f'Run_Node_Error : {why}')
             if lock.acquire():
                 node_error.append(node.name)
+                subject_error.append(node.inputs.subject_id)
                 lock.release()
         else:
             if lock.acquire():
@@ -128,16 +156,12 @@ class Scheduler:
             self.s_nodes_done.remove(node_name)
             print(f'Source ADD +    {node.name} :   {self.source_res}')
             if node_name in self.s_nodes_success:
-                try:
-                    last_node = getattr(node, 'last_name')
-                except AttributeError:
-                    last_node = False
-                if last_node:
-                    self.queue_subject.remove(node.subject_id)
-                    if self.check_run_success(node.subject_id):
-                        self.subject_success.append(node.subject_id)
+                if self.last_node_name is not None and self.last_node_name in node_name:
+                    self.queue_subject.remove(node.inputs.subject_id)
+                    if self.check_run_success(node.inputs.subject_id):
+                        self.subject_success.append(node.inputs.subject_id)
                     else:
-                        self.subject_error.append(node.subject_id)
+                        self.subject_error.append(node.inputs.subject_id)
                 else:
                     try:
                         sub_nodes = node.interface.create_sub_node()
@@ -166,8 +190,13 @@ class Scheduler:
                     # 不能用pool
                     # self.pool.apply_async(run_node, (node, self.s_nodes_error, self.s_nodes_success,
                     #                                  self.s_nodes_done, lock))  # 子进程 run
-                    Process(target=self.run_node, args=(node, self.s_nodes_error, self.s_nodes_success,
-                                                        self.s_nodes_running, self.s_nodes_done, lock)).start()
+                    if self.auto_schedule:
+                        Process(target=self.run_node, args=(node, self.s_nodes_error, self.s_nodes_success,
+                                                            self.s_nodes_running, self.s_nodes_done, self.subject_error,
+                                                            lock)).start()
+                    else:
+                        self.run_node_single(node, self.s_nodes_error, self.s_nodes_success,
+                                             self.s_nodes_running, self.s_nodes_done, self.subject_error)
                     run_new_node = True
                 if run_new_node:
                     break
@@ -181,7 +210,12 @@ class Scheduler:
         while True:
             run_new_node = self.run_queue(lock)
             if not run_new_node:
-                print('no new node, sleep 3s')
+                lock.acquire()
+                if len(self.s_nodes_running) == 0 and len(self.s_nodes_done) == 0:
+                    logging_wf.info('All task node Done!')
+                    break
+                lock.release()
+                print('No new node, sleep 3s')
                 time.sleep(3)
 
 
@@ -211,6 +245,9 @@ python3 deepprep_pipeline.py
                         required=True)
     parser.add_argument("--cache_dir", help="workflow cache dir: /mnt/ngshare2/DeepPrep_UKB/UKB_Workflow",
                         required=True)
+    parser.add_argument("--subject_nums", help="最多跑多少个数据", default=0,
+                        required=False)
+
     args = parser.parse_args()
 
     return args
@@ -223,6 +260,7 @@ def main():
     subjects_dir = Path(args.recon_output_dir)
     bold_preprocess_dir = Path(args.bold_output_dir)
     workflow_cached_dir = Path(args.cache_dir)
+    max_batch_size = int(args.subject_nums)
 
     # ############### Structure
     pwd = Path.cwd()  # deepprep_pipeline/
@@ -241,7 +279,11 @@ def main():
 
     # ############### Common
     # python_interpret = Path(sys.executable)  # 获取当前的Python解析器地址
+    last_node_name = 'Smooth_node'  # workflow的最后一个node的名字
+    auto_schedule = True  # 是否开启自动调度
+    clear_bold_tmp_dir = True
 
+    # ############### ENV
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
     os.environ['BOLD_PREPROCESS_DIR'] = str(bold_preprocess_dir)
     os.environ['WORKFLOW_CACHED_DIR'] = str(workflow_cached_dir)
@@ -274,34 +316,46 @@ def main():
         t1w_filess_all.append([t1w_file])
         subject_ids_all.append(subject_id)
 
-    batch_size = 20
+    if max_batch_size > 0:
+        batch_size = max_batch_size
+    else:
+        batch_size = len(subject_ids_all)
 
-    for epoch in range(len(subject_ids_all) + 1):
+    # for epoch in range(len(subject_ids_all) + 1):
         # try:
-        t1w_filess = t1w_filess_all[epoch * batch_size: (epoch + 1) * batch_size]
-        subject_ids = subject_ids_all[epoch * batch_size: (epoch + 1) * batch_size]
+    t1w_filess = t1w_filess_all[:batch_size]
+    subject_ids = subject_ids_all[:batch_size]
 
-        # 设置log目录位置
-        log_dir = workflow_cached_dir / 'log' / f'batchsize_{batch_size:03d}_epoch_{epoch:03d}'
-        log_dir.mkdir(parents=True, exist_ok=True)
-        config.update_config({'logging': {'log_directory': log_dir,
-                                          'log_to_file': True}})
-        logging.update_logging(config)
+    if len(t1w_filess) <= 0 or len(subject_ids) <= 0:
+        logging_wf.warning(f'len(subject_ids == 0)')
+        return
 
-        clear_is_running(subjects_dir=subjects_dir,
-                         subject_ids=subject_ids)
+    # 设置log目录位置
+    log_dir = workflow_cached_dir / 'log' / f'batchsize_{batch_size:03d}'
+    log_dir.mkdir(parents=True, exist_ok=True)
+    config.update_config({'logging': {'log_directory': log_dir,
+                                      'log_to_file': True}})
+    logging.update_logging(config)
 
-        lock = Lock()
-        with Manager() as share_manager:
-            scheduler = Scheduler(share_manager, subject_ids)
-            for subject_id, t1w_files in zip(subject_ids, t1w_filess):
-                node = create_origandrawavg_node(subject_id=subject_id, t1w_files=t1w_files)
-                scheduler.node_all[node.name] = node
-                scheduler.nodes_ready.append(node.name)
-            scheduler.run(lock)
-            logging_wf.info(f'subject_success: {scheduler.subject_success}')
-            logging_wf.info(f'nodes_error: {scheduler.s_nodes_error}')
-            logging_wf.info(f'subject_error: {scheduler.subject_error}')
+    clear_is_running(subjects_dir=subjects_dir,
+                     subject_ids=subject_ids)
+
+    lock = Lock()
+    with Manager() as share_manager:
+        scheduler = Scheduler(share_manager, subject_ids,
+                              last_node_name=last_node_name,
+                              auto_schedule=auto_schedule)
+        for subject_id, t1w_files in zip(subject_ids, t1w_filess):
+            node = create_origandrawavg_node(subject_id=subject_id, t1w_files=t1w_files)
+            scheduler.node_all[node.name] = node
+            scheduler.nodes_ready.append(node.name)
+        scheduler.run(lock)
+        logging_wf.info(f'subject_success: {scheduler.subject_success}')
+        logging_wf.error(f'nodes_error: {scheduler.s_nodes_error}')
+        logging_wf.error(f'subject_error: {scheduler.subject_error}')
+        if clear_bold_tmp_dir:
+            clear_subject_bold_tmp_dir(bold_preprocess_dir, subject_ids, task)
+
         # except Exception as why:
         #     print(f'Exception : {why}')
 
