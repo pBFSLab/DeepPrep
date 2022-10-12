@@ -53,7 +53,7 @@ def create_BoldSkipReorient_node(subject_id: str, task: str, atlas_type: str, pr
     BoldSkipReorient_node.inputs.preprocess_method = preprocess_method
 
     BoldSkipReorient_node.base_dir = workflow_cached_dir
-    BoldSkipReorient_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=1700, IO_write_MB=30, IO_read_MB=0)
+    BoldSkipReorient_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=1700, IO_write_MB=30, IO_read_MB=60)
 
     return BoldSkipReorient_node
 
@@ -72,7 +72,7 @@ def create_Stc_node(subject_id: str, task: str, atlas_type: str, preprocess_meth
     Stc_node.inputs.preprocess_method = preprocess_method
 
     Stc_node.base_dir = workflow_cached_dir
-    Stc_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=1700, IO_write_MB=40, IO_read_MB=0)
+    Stc_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=1700, IO_write_MB=40, IO_read_MB=60)
 
     return Stc_node
 
@@ -110,7 +110,7 @@ def create_MotionCorrection_node(subject_id: str, task: str, atlas_type: str, pr
     MotionCorrection_node.inputs.preprocess_method = preprocess_method
 
     MotionCorrection_node.base_dir = workflow_cached_dir
-    MotionCorrection_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=1600, IO_write_MB=30, IO_read_MB=0)
+    MotionCorrection_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=1600, IO_write_MB=30, IO_read_MB=60)
 
     return MotionCorrection_node
 
@@ -129,7 +129,7 @@ def create_Register_node(subject_id: str, task: str, atlas_type: str, preprocess
     Register_node.inputs.preprocess_method = preprocess_method
 
     Register_node.base_dir = workflow_cached_dir
-    Register_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=2100, IO_write_MB=30, IO_read_MB=0)
+    Register_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=2100, IO_write_MB=30, IO_read_MB=60)
 
     return Register_node
 
@@ -211,7 +211,7 @@ def create_RestRegression_node(subject_id: str, task: str, atlas_type: str, prep
     RestRegression_node.inputs.preprocess_method = preprocess_method
 
     RestRegression_node.base_dir = workflow_cached_dir
-    RestRegression_node.source = Source(CPU_n=33, GPU_MB=0, RAM_MB=6600, IO_write_MB=30, IO_read_MB=0)
+    RestRegression_node.source = Source(CPU_n=33, GPU_MB=0, RAM_MB=6600, IO_write_MB=30, IO_read_MB=60)
 
     return RestRegression_node
 
@@ -236,7 +236,7 @@ def create_VxmRegNormMNI152_node(subject_id: str, task: str, atlas_type: str, pr
     VxmRegNormMNI152_node.inputs.derivative_deepprep_path = derivative_deepprep_path
 
     VxmRegNormMNI152_node.base_dir = workflow_cached_dir
-    VxmRegNormMNI152_node.source = Source(CPU_n=10, GPU_MB=4529, RAM_MB=23000, IO_write_MB=30, IO_read_MB=0)
+    VxmRegNormMNI152_node.source = Source(CPU_n=10, GPU_MB=4529, RAM_MB=23000, IO_write_MB=30, IO_read_MB=60)
 
     return VxmRegNormMNI152_node
 
