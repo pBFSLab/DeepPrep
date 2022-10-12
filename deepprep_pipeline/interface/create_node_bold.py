@@ -53,7 +53,7 @@ def create_BoldSkipReorient_node(subject_id: str, task: str, atlas_type: str, pr
     BoldSkipReorient_node.inputs.preprocess_method = preprocess_method
 
     BoldSkipReorient_node.base_dir = workflow_cached_dir
-    BoldSkipReorient_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=1700, IO_write_MB=30, IO_read_MB=60)
+    BoldSkipReorient_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=1700, IO_write_MB=30, IO_read_MB=60)
 
     return BoldSkipReorient_node
 
@@ -72,7 +72,7 @@ def create_Stc_node(subject_id: str, task: str, atlas_type: str, preprocess_meth
     Stc_node.inputs.preprocess_method = preprocess_method
 
     Stc_node.base_dir = workflow_cached_dir
-    Stc_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=1700, IO_write_MB=40, IO_read_MB=60)
+    Stc_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=1700, IO_write_MB=40, IO_read_MB=60)
 
     return Stc_node
 
