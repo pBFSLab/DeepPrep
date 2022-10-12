@@ -250,9 +250,9 @@ python3 deepprep_pipeline.py
     parser.add_argument("--cache_dir", help="workflow cache dir: /mnt/ngshare2/DeepPrep_UKB/UKB_Workflow",
                         required=True)
     parser.add_argument("--subject_nums", help="最多跑多少个数据", default=0, required=False)
-    parser.add_argument("--bold_atlas_type", help="最多跑多少个数据", default='MNI152_T1_2mm', required=False)
-    parser.add_argument("--bold_task_type", help="最多跑多少个数据", default='rest', required=False)
-    parser.add_argument("--bold_preprocess_method", help='rest', default=None, required=False)
+    parser.add_argument("--bold_atlas_type", help="bold使用的MNI模板类型", default='MNI152_T1_2mm', required=False)
+    parser.add_argument("--bold_task_type", help="跑的task类型example:motor、rest", default='rest', required=False)
+    parser.add_argument("--bold_preprocess_method", help='使用的bold处理方法 rest or task', default=None, required=False)
 
     args = parser.parse_args()
 
