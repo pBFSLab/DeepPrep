@@ -185,7 +185,7 @@ def create_Filled_node(subject_id: str):
     filled_node.inputs.talairach_lta = subjects_dir / subject_id / 'mri/transforms/talairach.lta'
 
     filled_node.base_dir = workflow_cached_dir
-    filled_node.source = Source(CPU_n=3, GPU_MB=0, RAM_MB=1900)
+    filled_node.source = Source(CPU_n=2, GPU_MB=0, RAM_MB=1900)
 
     return filled_node
 
@@ -383,7 +383,7 @@ def create_BalabelsMult_node(subject_id: str):
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
     subject_surf_dir = subjects_dir / subject_id / 'surf'
-    threads = 10
+    threads = 6
 
     BalabelsMult_node = Node(BalabelsMult(), name=f'{subject_id}_BalabelsMult_node')
     BalabelsMult_node.inputs.subjects_dir = subjects_dir
@@ -397,7 +397,7 @@ def create_BalabelsMult_node(subject_id: str):
     BalabelsMult_node.inputs.rh_white = subject_surf_dir / f'rh.white'
     BalabelsMult_node.inputs.fsaverage_label_dir = Path(os.environ['FREESURFER_HOME']) / "subjects/fsaverage/label"
     BalabelsMult_node.base_dir = workflow_cached_dir
-    BalabelsMult_node.source = Source(CPU_n=10, GPU_MB=0, RAM_MB=8000)  # TODO CPU_n bu hui suan
+    BalabelsMult_node.source = Source(CPU_n=6, GPU_MB=0, RAM_MB=8000)  # TODO CPU_n bu hui suan
 
     return BalabelsMult_node
 
