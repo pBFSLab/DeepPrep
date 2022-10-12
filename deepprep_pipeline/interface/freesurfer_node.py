@@ -200,6 +200,8 @@ class WhitePreaparc1OutputSpec(TraitedSpec):
     rh_area = File(exists=True, desc="surf/rh.area")
     lh_cortex_label = File(exists=True, desc="label/lh.cortex.label")
     rh_cortex_label = File(exists=True, desc="label/rh.cortex.label")
+    lh_cortex_hipamyglabel = File(exists=True, desc="label/lh.cortex+hipamyg.label")
+    rh_cortex_hipamyglabel = File(exists=True, desc="label/rh.cortex+hipamyg.label")
     autodet_gw_stats_lh_dat = File(exists=True, desc="surf/autodet.gw.stats.lh.dat")
     autodet_gw_stats_rh_dat = File(exists=True, desc="surf/autodet.gw.stats.rh.dat")
 
@@ -246,6 +248,8 @@ class WhitePreaparc1(BaseInterface):
         outputs["rh_area"] = subjects_dir / subject_id / f"surf/rh.area"
         outputs["lh_cortex_label"] = subjects_dir / subject_id / f"label/lh.cortex.label"
         outputs["rh_cortex_label"] = subjects_dir / subject_id / f"label/rh.cortex.label"
+        outputs["lh_cortex_hipamyglabel"] = subjects_dir / subject_id / f"label/lh.cortex+hipamyg.label"
+        outputs["rh_cortex_hipamyglabel"] = subjects_dir / subject_id / f"label/rh.cortex+hipamyg.label"
         outputs["autodet_gw_stats_lh_dat"] = subjects_dir / subject_id / "surf/autodet.gw.stats.lh.dat"
         outputs["autodet_gw_stats_rh_dat"] = subjects_dir / subject_id / "surf/autodet.gw.stats.rh.dat"
 
