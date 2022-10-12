@@ -204,7 +204,7 @@ class MotionCorrection(BaseInterface):
                        Path(
                            preprocess_dir) / self.inputs.subject_id / 'bold' / run / self.inputs.subject_id / 'bold' / 'template.nii.gz')
         except:
-            print()
+            pass
         for link_file in link_files:
             try:
                 os.symlink(Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / link_file,
@@ -233,7 +233,7 @@ class MotionCorrection(BaseInterface):
             shutil.copy(link_dir / 'mcextreg', ori_path / 'mcextreg')
             shutil.copy(link_dir / 'mcdat2extreg.log', ori_path / 'mcdat2extreg.log')
         except:
-            print(())
+            pass
         shutil.rmtree(ori_path / self.inputs.subject_id)
 
     def _run_interface(self, runtime):
@@ -309,7 +309,7 @@ class Stc(BaseInterface):
                        Path(
                            preprocess_dir) / self.inputs.subject_id / 'bold' / run / self.inputs.subject_id / 'bold' / 'template.nii.gz')
         except:
-            print()
+            pass
         for link_file in link_files:
             try:
                 os.symlink(Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / link_file,
@@ -337,7 +337,7 @@ class Stc(BaseInterface):
             shutil.copy(link_dir / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln.nii.gz.log.bak',
                         ori_path / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln.nii.gz.log.bak')
         except:
-            print(())
+            pass
         shutil.rmtree(ori_path / self.inputs.subject_id)
 
     def _run_interface(self, runtime):
@@ -758,7 +758,6 @@ class RestBandpass(BaseInterface):
         preprocess_dir = Path(
             self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
         entities = dict(bids_entities)
-        print(entities)
         if 'RepetitionTime' in entities:
             TR = entities['RepetitionTime']
         else:
@@ -1047,8 +1046,8 @@ class VxmRegNormMNI152(BaseInterface):
         affined_np = ants.apply_transforms(atlas, bold_img, fwdtrf_MNI152_2mm, imagetype=3).numpy()
         # print(sys.getrefcount(affined_img))
         # del affined_img
-        toc = time.time()
-        print(toc - tic)
+        # toc = time.time()
+        # print(toc - tic)
         # gc.collect()
         # voxelmorph warp
         tic = time.time()
@@ -1076,16 +1075,16 @@ class VxmRegNormMNI152(BaseInterface):
                 else:
                     moved_data = moved[:, :, :, np.newaxis]
                 warped_np[:, :, :, idx * batch_size:(idx + 1) * batch_size] = moved_data
-                print(f'batch: {idx}')
+                # print(f'batch: {idx}')
             del transform
             del tf_dataset
             del moved
             del moved_data
-        toc = time.time()
-        print(toc - tic)
+        # toc = time.time()
+        # print(toc - tic)
 
         # affine to MNI152
-        tic = time.time()
+        # tic = time.time()
         origin = (*atlas.origin, bold_origin[3])
         spacing = (*atlas.spacing, bold_spacing[3])
         direction = bold_direction.copy()
@@ -1097,8 +1096,8 @@ class VxmRegNormMNI152(BaseInterface):
         del warped_img
         moved_np = moved_img.numpy()
         del moved_img
-        toc = time.time()
-        print(toc - tic)
+        # toc = time.time()
+        # print(toc - tic)
 
         # save
         origin = (*MNI152_2mm.origin, bold_origin[3])
