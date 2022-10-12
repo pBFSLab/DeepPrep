@@ -249,8 +249,10 @@ python3 deepprep_pipeline.py
                         required=True)
     parser.add_argument("--cache_dir", help="workflow cache dir: /mnt/ngshare2/DeepPrep_UKB/UKB_Workflow",
                         required=True)
-    parser.add_argument("--subject_nums", help="最多跑多少个数据", default=0,
-                        required=False)
+    parser.add_argument("--subject_nums", help="最多跑多少个数据", default=0, required=False)
+    parser.add_argument("--bold_atlas_type", help="最多跑多少个数据", default='MNI152_T1_2mm', required=False)
+    parser.add_argument("--bold_task_type", help="最多跑多少个数据", default='rest', required=False)
+    parser.add_argument("--bold_preprocess_method", help='rest', default=None, required=False)
 
     args = parser.parse_args()
 
@@ -277,9 +279,15 @@ def main():
     mni152_brain_mask = Path('/usr/local/fsl/data/standard/MNI152_T1_2mm_brain_mask.nii.gz')
     vxm_model_path = pwd / 'model' / 'voxelmorph'
     resource_dir = pwd / 'resource'
-    atlas_type = 'MNI152_T1_2mm'
-    task = 'rest'  # 'motor' or 'rest'
-    preprocess_method = 'rest'  # 'task' or 'rest'
+    atlas_type = args.bold_atlas_type
+    task = args.bold_task_type  # 'motor' or 'rest' or '...'
+    if args.bold_preprocess_method is None:
+        if task == 'rest':
+            preprocess_method = 'rest'
+        else:
+            preprocess_method = 'task'
+    else:
+        preprocess_method = args.bold_preprocess_method  # 'task' or 'rest'
 
     # ############### Common
     # python_interpret = Path(sys.executable)  # 获取当前的Python解析器地址
