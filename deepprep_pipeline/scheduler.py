@@ -142,7 +142,10 @@ class Scheduler:
         print('Start run queue =================== ==================')
         lock.acquire()
         print(f'nodes_ready    : {len(self.nodes_ready):3d}', self.nodes_ready)
-        print(f'nodes_success  : {len(self.s_nodes_success):3d}', self.s_nodes_success)
+        if len(self.s_nodes_success) > 100:
+            print(f'nodes_success  : {len(self.s_nodes_success):3d}', self.s_nodes_success[-100:])
+        else:
+            print(f'nodes_success  : {len(self.s_nodes_success):3d}', self.s_nodes_success)
         print(f'nodes_error    : {len(self.s_nodes_error):3d}', self.s_nodes_error)
         print(f'nodes_running  : {len(self.s_nodes_running):3d}', self.s_nodes_running)
         print(f'nodes_done     : {len(self.s_nodes_done):3d}', self.s_nodes_done)
