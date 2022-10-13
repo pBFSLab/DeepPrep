@@ -6,6 +6,7 @@ from interface.run import run_cmd_with_timing, multipool
 class FeatRegInputSpec(BaseInterfaceInputSpec):
     python_interpret = File(exists=True, mandatory=True, desc='the python interpret to use')
     featreg_py = File(exists=True, mandatory=True, desc="FeatReg script")
+    device = Str(exists=True, desc='device set', mandatory=True)
 
     subjects_dir = Directory(exists=True, desc='subject dir path', mandatory=True)
     subject_id = Str(desc='subject id', mandatory=True)
@@ -38,7 +39,7 @@ class FeatReg(BaseInterface):
         subjects_dir = self.inputs.subjects_dir
         subject_id = self.inputs.subject_id
         cmd = f'{self.inputs.python_interpret} {self.inputs.featreg_py} --sd {subjects_dir} --sid {subject_id} ' \
-              f'--fsd {self.inputs.freesurfer_home} --hemi {hemi}'
+              f'--fsd {self.inputs.freesurfer_home} --hemi {hemi} --device {self.inputs.device}'
         run_cmd_with_timing(cmd)
 
     def _run_interface(self, runtime):
