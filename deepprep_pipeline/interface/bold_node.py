@@ -261,15 +261,6 @@ class MotionCorrection(BaseInterface):
         outputs["subject_id"] = self.inputs.subject_id
         return outputs
 
-    def create_sub_node(self):
-        from interface.create_node_bold import create_Register_node
-        node = create_Register_node(self.inputs.subject_id,
-                                    self.inputs.task,
-                                    self.inputs.atlas_type,
-                                    self.inputs.preprocess_method)
-
-        return node
-
 
 class StcInputSpec(BaseInterfaceInputSpec):
     subject_id = Str(exists=True, desc='subject_id', mandatory=True)
@@ -436,14 +427,14 @@ class Register(BaseInterface):
         outputs["subject_id"] = self.inputs.subject_id
         return outputs
 
-    def create_sub_node(self):
-        from interface.create_node_bold import create_Mkbrainmask_node
-        node = create_Mkbrainmask_node(self.inputs.subject_id,
-                                       self.inputs.task,
-                                       self.inputs.atlas_type,
-                                       self.inputs.preprocess_method)
-
-        return node
+    # def create_sub_node(self):
+    #     from interface.create_node_bold import create_Mkbrainmask_node
+    #     node = create_Mkbrainmask_node(self.inputs.subject_id,
+    #                                    self.inputs.task,
+    #                                    self.inputs.atlas_type,
+    #                                    self.inputs.preprocess_method)
+    #
+    #     return node
 
 
 class MkBrainmaskInputSpec(BaseInterfaceInputSpec):
