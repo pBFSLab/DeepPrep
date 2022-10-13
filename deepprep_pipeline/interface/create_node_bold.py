@@ -304,70 +304,62 @@ def create_node_t():
     os.environ['DEEPPREP_TASK'] = task_test
     os.environ['DEEPPREP_PREPROCESS_METHOD'] = preprocess_method_test
 
-    ################################################################################
-    node = create_RestRegression_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
+    node = create_VxmRegistraion_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
                                       preprocess_method=preprocess_method_test)
     node.run()
-    exit()
-    ################################################################################
+    sub_node = node.interface.create_sub_node()
+    sub_node.run()
 
+    print('#####################################################1#####################################################')
 
-    # node = create_VxmRegistraion_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
-    #                                   preprocess_method=preprocess_method_test)
-    # node.run()
-    # sub_node = node.interface.create_sub_node()
-    # sub_node.run()
-
-    # print('#####################################################1#####################################################')
-    #
-    # node = create_BoldSkipReorient_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
-    #                                     preprocess_method=preprocess_method_test)
-    # node.run()
-    # sub_node = node.interface.create_sub_node()
-    # sub_node.run()
-    # print('#####################################################2#####################################################')
-    # node = create_Stc_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
-    #                        preprocess_method=preprocess_method_test)
-    # node.run()
-    # sub_node = node.interface.create_sub_node()
-    # sub_node.run()
-    # print('#####################################################3#####################################################')
-    # node = create_MkTemplate_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
-    #                               preprocess_method=preprocess_method_test)
-    # node.run()
-    # sub_node = node.interface.create_sub_node()
-    # sub_node.run()
-    # print('#####################################################4#####################################################')
-    # node = create_MotionCorrection_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
-    #                                     preprocess_method=preprocess_method_test)
-    # node.run()
-    # sub_node = node.interface.create_sub_node()
-    # sub_node.run()
-    # print('#####################################################5#####################################################')
-    # node = create_Register_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
-    #                             preprocess_method=preprocess_method_test)
-    # node.run()
-    # sub_node = node.interface.create_sub_node()
-    # sub_node.run()
-    # print('#####################################################6#####################################################')
-    # node = create_Mkbrainmask_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
-    #                                preprocess_method=preprocess_method_test)
-    # node.run()
-    # sub_node = node.interface.create_sub_node()
-    # sub_node.run()
-    # print('#####################################################7#####################################################')
-    # node = create_RestGauss_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
-    #                              preprocess_method=preprocess_method_test)
-    # node.run()
-    # sub_node = node.interface.create_sub_node()
-    # sub_node.run()
-    # print('#####################################################8#####################################################')
-    # node = create_RestBandpass_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
-    #                                 preprocess_method=preprocess_method_test)
-    # node.run()
-    # sub_node = node.interface.create_sub_node()
-    # sub_node.run()
-    # print('#####################################################9#####################################################')
+    node = create_BoldSkipReorient_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
+                                        preprocess_method=preprocess_method_test)
+    node.run()
+    sub_node = node.interface.create_sub_node()
+    sub_node.run()
+    print('#####################################################2#####################################################')
+    node = create_Stc_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
+                           preprocess_method=preprocess_method_test)
+    node.run()
+    sub_node = node.interface.create_sub_node()
+    sub_node.run()
+    print('#####################################################3#####################################################')
+    node = create_MkTemplate_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
+                                  preprocess_method=preprocess_method_test)
+    node.run()
+    sub_node = node.interface.create_sub_node()
+    sub_node.run()
+    print('#####################################################4#####################################################')
+    node = create_MotionCorrection_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
+                                        preprocess_method=preprocess_method_test)
+    node.run()
+    sub_node = node.interface.create_sub_node()
+    sub_node.run()
+    print('#####################################################5#####################################################')
+    node = create_Register_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
+                                preprocess_method=preprocess_method_test)
+    node.run()
+    sub_node = node.interface.create_sub_node()
+    sub_node.run()
+    print('#####################################################6#####################################################')
+    node = create_Mkbrainmask_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
+                                   preprocess_method=preprocess_method_test)
+    node.run()
+    sub_node = node.interface.create_sub_node()
+    sub_node.run()
+    print('#####################################################7#####################################################')
+    node = create_RestGauss_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
+                                 preprocess_method=preprocess_method_test)
+    node.run()
+    sub_node = node.interface.create_sub_node()
+    sub_node.run()
+    print('#####################################################8#####################################################')
+    node = create_RestBandpass_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
+                                    preprocess_method=preprocess_method_test)
+    node.run()
+    sub_node = node.interface.create_sub_node()
+    sub_node.run()
+    print('#####################################################9#####################################################')
     node = create_RestRegression_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
                                       preprocess_method=preprocess_method_test)
     node.run()
