@@ -320,13 +320,18 @@ def main():
 
     t1w_filess_all = list()
     subject_ids_all = list()
+    subject_dict = {}
     for t1w_file in layout.get(return_type='filename', suffix="T1w"):
         sub_info = layout.parse_file_entities(t1w_file)
         subject_id = f"sub-{sub_info['subject']}"
-        if 'session' in sub_info:
-            subject_id = subject_id + f"-ses-{sub_info['session']}"
-        t1w_filess_all.append([t1w_file])
-        subject_ids_all.append(subject_id)
+        # if 'session' in sub_info:
+        #     subject_id = subject_id + f"-ses-{sub_info['session']}"
+        # t1w_filess_all.append([t1w_file])
+        # subject_ids_all.append(subject_id)
+        ##################### 合并多个T1跑Recon #####################
+        subject_dict.setdefault(subject_id, []).append(t1w_file)
+        subject_ids_all = list(subject_dict.keys())
+        t1w_filess_all = list(subject_dict.values())
 
     if max_batch_size > 0:
         batch_size = max_batch_size
