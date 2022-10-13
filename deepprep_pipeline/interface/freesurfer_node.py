@@ -2,7 +2,7 @@ import os
 from nipype.interfaces.base import BaseInterface, \
     BaseInterfaceInputSpec, traits, File, TraitedSpec, Directory, Str
 
-from interface.create_node_bold import create_VxmRegistraion_node
+from interface.create_node_bold import MkBrainmaskInputSpec
 from interface.run import run_cmd_with_timing, get_freesurfer_threads, multipool
 from pathlib import Path
 
@@ -71,7 +71,9 @@ class Brainmask(BaseInterface):
 
     def create_sub_node(self):
         from interface.create_node_structure import create_UpdateAseg_node
-        node = create_UpdateAseg_node(self.inputs.subject_id)
+        from interface.create_node_bold import create_VxmRegistraion_node
+        node = [create_UpdateAseg_node(self.inputs.subject_id),
+                create_VxmRegistraion_node(self.inputs.subject_id, self.task, self.atlas_type, self.preprocess_method)]
         return node
 
 
@@ -481,12 +483,16 @@ class WhitePialThickness1(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node_structure import create_Curvstats_node
-        from interface.create_node_structure import create_BalabelsMult_node
-        from interface.create_node_structure import create_Cortribbon_node
+        from interface.create_node_structure import create_Curvstats_node, create_BalabelsMult_node, create_Cortribbon_node
+        from interface.create_node_bold import create_Register_node
         node = [create_Curvstats_node(self.inputs.subject_id),
                 create_BalabelsMult_node(self.inputs.subject_id),
-                create_Cortribbon_node(self.inputs.subject_id)]
+                create_Cortribbon_node(self.inputs.subject_id),
+                create_Register_node(self.inputs.subject_id,
+                                     self.inputs.task,
+                                     self.inputs.atlas_type,
+                                     self.inputs.preprocess_method)
+                ]
 
         return node  # node list
 
@@ -964,7 +970,7 @@ class Aseg7(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        node = create_VxmRegistraion_node(self.inputs.subject_id, self.task, self.atlas_type, self.preprocess_method)
+        node = MkBrainmaskInputSpec(self.inputs.subject_id, self.task, self.atlas_type, self.preprocess_method)
         return node
 
 
