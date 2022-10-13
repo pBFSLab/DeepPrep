@@ -21,6 +21,9 @@ python_interpret = sys.executable
 def create_origandrawavg_node(subject_id: str, t1w_files: list):
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     workflow_cached_dir = os.environ['WORKFLOW_CACHED_DIR']
+    atlas_type = os.environ['DEEPPREP_ATLAS_TYPE']
+    task = os.environ['DEEPPREP_TASK']
+    preprocess_method = os.environ['DEEPPREP_PREPROCESS_METHOD']
 
     origandrawavg_node = Node(OrigAndRawavg(), f'{subject_id}_origandrawavg_node')
     origandrawavg_node.inputs.t1w_files = t1w_files
@@ -30,6 +33,10 @@ def create_origandrawavg_node(subject_id: str, t1w_files: list):
 
     origandrawavg_node.base_dir = workflow_cached_dir
     origandrawavg_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=600)
+
+    origandrawavg_node.interface.atlas_type = atlas_type
+    origandrawavg_node.interface.task = task
+    origandrawavg_node.interface.preprocess_method = preprocess_method
 
     return origandrawavg_node
 
