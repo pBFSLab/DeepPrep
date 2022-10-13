@@ -227,7 +227,7 @@ def create_WhitePreaparc1_node(subject_id: str):
     white_preaparc1.inputs.threads = 8
 
     white_preaparc1.base_dir = workflow_cached_dir
-    white_preaparc1.source = Source(CPU_n=6, GPU_MB=0, RAM_MB=4000)
+    white_preaparc1.source = Source(CPU_n=3, GPU_MB=0, RAM_MB=4000)
 
     return white_preaparc1
 
@@ -282,7 +282,7 @@ def create_InflatedSphere_node(subject_id: str):
     Inflated_Sphere_node.inputs.lh_white_preaparc_file = lh_white_preaparc_file
     Inflated_Sphere_node.inputs.rh_white_preaparc_file = rh_white_preaparc_file
     Inflated_Sphere_node.base_dir = workflow_cached_dir
-    Inflated_Sphere_node.source = Source(CPU_n=6, GPU_MB=0, RAM_MB=1750)
+    Inflated_Sphere_node.source = Source(CPU_n=3, GPU_MB=0, RAM_MB=1750)
 
     return Inflated_Sphere_node
 
@@ -351,7 +351,7 @@ def create_WhitePialThickness1_node(subject_id: str):
     white_pial_thickness1.inputs.rh_cortex_label = subjects_dir / subject_id / "label" / "rh.cortex.label"
 
     white_pial_thickness1.base_dir = workflow_cached_dir
-    white_pial_thickness1.source = Source(CPU_n=6, GPU_MB=0, RAM_MB=1500)
+    white_pial_thickness1.source = Source(CPU_n=3, GPU_MB=0, RAM_MB=1500)
 
     return white_pial_thickness1
 
@@ -397,7 +397,7 @@ def create_BalabelsMult_node(subject_id: str):
     BalabelsMult_node.inputs.rh_white = subject_surf_dir / f'rh.white'
     BalabelsMult_node.inputs.fsaverage_label_dir = Path(os.environ['FREESURFER_HOME']) / "subjects/fsaverage/label"
     BalabelsMult_node.base_dir = workflow_cached_dir
-    BalabelsMult_node.source = Source(CPU_n=6, GPU_MB=0, RAM_MB=8000)  # TODO CPU_n bu hui suan
+    BalabelsMult_node.source = Source(CPU_n=6, GPU_MB=0, RAM_MB=8000)
 
     return BalabelsMult_node
 
