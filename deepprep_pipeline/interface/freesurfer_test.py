@@ -27,18 +27,6 @@ def OrigAndRawavg_test():
 
     origandrawavg_node.run()
 
-    # subject_id = 'OrigAndRawavg_test2'
-    # t1w_files = [
-    #     f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/sub-MSC01/ses-struct01/anat/sub-MSC01_ses-struct01_run-01_T1w.nii.gz',
-    #     f'/mnt/ngshare/Data_Mirror/SDCFlows_test/MSC1/sub-MSC01/ses-struct01/anat/sub-MSC01_ses-struct01_run-01_T1w.nii.gz',
-    # ]
-    # origandrawavg_node = Node(OrigAndRawavg(), f'origandrawavg_node')
-    # origandrawavg_node.inputs.t1w_files = t1w_files
-    # origandrawavg_node.inputs.subjects_dir = subjects_dir
-    # origandrawavg_node.inputs.subject_id = subject_id
-    # origandrawavg_node.inputs.threads = 1
-    # origandrawavg_node.run()
-
 
 def Brainmask_test():
     set_envrion()
@@ -155,8 +143,8 @@ def white_pial_thickness1_test():
     subject_id = "sub-002"
     threads = 8
 
-    subjects_dir = Path('/mnt/ngshare/DeepPrep_flowtest/HNU_1')
-    subject_id = 'sub-0025427-ses-01'
+    subjects_dir = Path('/mnt/ngshare/DeepPrep_flowtest/HNU_1_subwf')
+    subject_id = 'sub-0025428'
 
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
@@ -355,9 +343,14 @@ def Hyporelabel_test():
 
 
 def JacobianAvgcurvCortparc_test():
-    subjects_dir = Path("/mnt/ngshare/Data_Mirror/pipeline_test")
-    subject_id = "sub-MSC01"
+    # subjects_dir = Path("/mnt/ngshare/Data_Mirror/pipeline_test")
+    # subject_id = "sub-MSC01"
+    # os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+
+    subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/HNU_1_subwf")
+    subject_id = "sub-0025428"
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+
 
     lh_white_preaparc = subjects_dir / subject_id / "surf" / f"lh.white.preaparc"
     rh_white_preaparc = subjects_dir / subject_id / "surf" / f"rh.white.preaparc"
@@ -544,13 +537,13 @@ if __name__ == '__main__':
 
     # filled_test()
 
-    white_preaparc1_test()
+    # white_preaparc1_test()
 
     # InflatedSphere_test()
 
     # JacobianAvgcurvCortparc_test()
 
-    # white_pial_thickness1_test()
+    white_pial_thickness1_test()
 
     # Curvstats_test()
 
@@ -571,3 +564,11 @@ if __name__ == '__main__':
     # Segstats_test()
 
     # BalabelsMult_test()
+
+    # subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/HNU_1_subwf")
+    # subject_id = "sub-0025428"
+    # os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+    #
+    # # os.system('recon-all -subject sub-0025428 -jacobian_white -avgcurv -cortparc -no-isrunning -threads 8 -itkthreads 8')
+    # os.system('recon-all -subject "sub-0025428" -white -no-isrunning -threads 8 -itkthreads 8')
+    # os.system("recon-all -subject sub-0025428 -pial -no-isrunning -threads 8 -itkthreads 8")
