@@ -273,108 +273,115 @@ def create_node_t():
     fastcsr_home = pwd / "FastCSR"
     featreg_home = pwd / "FeatReg"
 
-    bids_data_dir_test = '/mnt/ngshare2/UKB/BIDS'
-    subjects_dir_test = '/mnt/ngshare2/DeepPrep_UKB/UKB_Recon_forBOLD'
-    bold_preprocess_dir_test = '/mnt/ngshare2/DeepPrep_UKB/UKB_BOLD_test'
-    workflow_cached_dir_test = '/mnt/ngshare2/DeepPrep_UKB/UKB_Workflow_test'
+    bids_data_dir_test = '/mnt/ngshare/DeepPrep_Data/glioma_ChineseAcadem_bids'
+    subjects_dir_test = '/mnt/ngshare/DeepPrep/glioma_ChineseAcadem/Recon'
+    bold_preprocess_dir_test = '/mnt/ngshare/DeepPrep/glioma_ChineseAcadem/BoldPreprocess'
+    workflow_cached_dir_test = '/mnt/ngshare/DeepPrep/glioma_ChineseAcadem/Workflow'
     vxm_model_path_test = '/home/youjia/workspace/DeepPrep/deepprep_pipeline/model/voxelmorph'
     mni152_brain_mask_test = '/usr/local/fsl/data/standard/MNI152_T1_2mm_brain_mask.nii.gz'
     resource_dir_test = '/home/youjia/workspace/DeepPrep/deepprep_pipeline/resource'
 
-    subject_id_test = 'sub-1018404-ses-02'
+    subject_id_tests = ['sub-L02-ses-01', 'sub-L03-ses-01', 'sub-L04-ses-01', 'sub-L04-ses-02',
+                        'sub-L05-ses-01', 'sub-L06-ses-01', 'sub-L07-ses-01', 'sub-L07-ses-02',
+                        'sub-L14-ses-01', 'sub-L15-ses-01', 'sub-L16-ses-01',
+                        'sub-R01-ses-01', 'sub-R02-ses-01', 'sub-R03-ses-01', 'sub-R04-ses-01',
+                        'sub-R05-ses-01', 'sub-R06-ses-01', 'sub-R08-ses-01', 'sub-R09-ses-01',
+                        'sub-R10-ses-01', 'sub-R11-ses-01', 'sub-R14-ses-01', 'sub-R15-ses-01',
+                        'sub-R16-ses-01', 'sub-ZHANGYAN-ses-01']
     # t1w_files = ['/mnt/ngshare/DeepPrep_workflow_test/UKB_BIDS/sub-1000037/ses-02/anat/sub-1000037_ses-02_T1w.nii.gz']
 
-    os.environ['SUBJECTS_DIR'] = str(subjects_dir_test)
-    os.environ['BOLD_PREPROCESS_DIR'] = str(bold_preprocess_dir_test)
-    os.environ['WORKFLOW_CACHED_DIR'] = str(workflow_cached_dir_test)
-    os.environ['FASTSURFER_HOME'] = str(fastsurfer_home)
-    os.environ['FREESURFER_HOME'] = str(freesurfer_home)
-    os.environ['FASTCSR_HOME'] = str(fastcsr_home)
-    os.environ['FEATREG_HOME'] = str(featreg_home)
-    os.environ['BIDS_DIR'] = bids_data_dir_test
-    os.environ['VXM_MODEL_PATH'] = str(vxm_model_path_test)
-    os.environ['MNI152_BRAIN_MASK'] = str(mni152_brain_mask_test)
-    os.environ['RESOURCE_DIR'] = str(resource_dir_test)
+    for subject_id_test in subject_id_tests:
+        os.environ['SUBJECTS_DIR'] = str(subjects_dir_test)
+        os.environ['BOLD_PREPROCESS_DIR'] = str(bold_preprocess_dir_test)
+        os.environ['WORKFLOW_CACHED_DIR'] = str(workflow_cached_dir_test)
+        os.environ['FASTSURFER_HOME'] = str(fastsurfer_home)
+        os.environ['FREESURFER_HOME'] = str(freesurfer_home)
+        os.environ['FASTCSR_HOME'] = str(fastcsr_home)
+        os.environ['FEATREG_HOME'] = str(featreg_home)
+        os.environ['BIDS_DIR'] = bids_data_dir_test
+        os.environ['VXM_MODEL_PATH'] = str(vxm_model_path_test)
+        os.environ['MNI152_BRAIN_MASK'] = str(mni152_brain_mask_test)
+        os.environ['RESOURCE_DIR'] = str(resource_dir_test)
 
-    atlas_type_test = 'MNI152_T1_2mm'
-    task_test = 'rest'
-    preprocess_method_test = 'rest'
+        atlas_type_test = 'MNI152_T1_2mm'
+        task_test = 'rest'
+        preprocess_method_test = 'rest'
 
-    os.environ['DEEPPREP_ATLAS_TYPE'] = atlas_type_test
-    os.environ['DEEPPREP_TASK'] = task_test
-    os.environ['DEEPPREP_PREPROCESS_METHOD'] = preprocess_method_test
+        os.environ['DEEPPREP_ATLAS_TYPE'] = atlas_type_test
+        os.environ['DEEPPREP_TASK'] = task_test
+        os.environ['DEEPPREP_PREPROCESS_METHOD'] = preprocess_method_test
 
-    node = create_VxmRegistraion_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
+        node = create_VxmRegistraion_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
+                                          preprocess_method=preprocess_method_test)
+        node.run()
+        # sub_node = node.interface.create_sub_node()
+        # sub_node.run()
+
+        print('#####################################################1#####################################################')
+
+        node = create_BoldSkipReorient_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
+                                            preprocess_method=preprocess_method_test)
+        node.run()
+        # sub_node = node.interface.create_sub_node()
+        # sub_node.run()
+        print('#####################################################2#####################################################')
+        node = create_Stc_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
+                               preprocess_method=preprocess_method_test)
+        node.run()
+        # sub_node = node.interface.create_sub_node()
+        # sub_node.run()
+        print('#####################################################3#####################################################')
+        node = create_MkTemplate_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
                                       preprocess_method=preprocess_method_test)
-    node.run()
-    sub_node = node.interface.create_sub_node()
-    sub_node.run()
-
-    print('#####################################################1#####################################################')
-
-    node = create_BoldSkipReorient_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
-                                        preprocess_method=preprocess_method_test)
-    node.run()
-    sub_node = node.interface.create_sub_node()
-    sub_node.run()
-    print('#####################################################2#####################################################')
-    node = create_Stc_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
-                           preprocess_method=preprocess_method_test)
-    node.run()
-    sub_node = node.interface.create_sub_node()
-    sub_node.run()
-    print('#####################################################3#####################################################')
-    node = create_MkTemplate_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
-                                  preprocess_method=preprocess_method_test)
-    node.run()
-    sub_node = node.interface.create_sub_node()
-    sub_node.run()
-    print('#####################################################4#####################################################')
-    node = create_MotionCorrection_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
-                                        preprocess_method=preprocess_method_test)
-    node.run()
-    sub_node = node.interface.create_sub_node()
-    sub_node.run()
-    print('#####################################################5#####################################################')
-    node = create_Register_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
-                                preprocess_method=preprocess_method_test)
-    node.run()
-    sub_node = node.interface.create_sub_node()
-    sub_node.run()
-    print('#####################################################6#####################################################')
-    node = create_Mkbrainmask_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
-                                   preprocess_method=preprocess_method_test)
-    node.run()
-    sub_node = node.interface.create_sub_node()
-    sub_node.run()
-    print('#####################################################7#####################################################')
-    node = create_RestGauss_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
-                                 preprocess_method=preprocess_method_test)
-    node.run()
-    sub_node = node.interface.create_sub_node()
-    sub_node.run()
-    print('#####################################################8#####################################################')
-    node = create_RestBandpass_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
+        node.run()
+        # sub_node = node.interface.create_sub_node()
+        # sub_node.run()
+        print('#####################################################4#####################################################')
+        node = create_MotionCorrection_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
+                                            preprocess_method=preprocess_method_test)
+        node.run()
+        # sub_node = node.interface.create_sub_node()
+        # sub_node.run()
+        print('#####################################################5#####################################################')
+        node = create_Register_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
                                     preprocess_method=preprocess_method_test)
-    node.run()
-    sub_node = node.interface.create_sub_node()
-    sub_node.run()
-    print('#####################################################9#####################################################')
-    node = create_RestRegression_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
-                                      preprocess_method=preprocess_method_test)
-    node.run()
-    sub_node = node.interface.create_sub_node()
-    sub_node.run()
-    print('####################################################10####################################################')
-    node = create_VxmRegNormMNI152_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
+        node.run()
+        # sub_node = node.interface.create_sub_node()
+        # sub_node.run()
+        print('#####################################################6#####################################################')
+        node = create_Mkbrainmask_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
+                                       preprocess_method=preprocess_method_test)
+        node.run()
+        # sub_node = node.interface.create_sub_node()
+        # sub_node.run()
+        print('#####################################################7#####################################################')
+        node = create_RestGauss_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
+                                     preprocess_method=preprocess_method_test)
+        node.run()
+        # sub_node = node.interface.create_sub_node()
+        # sub_node.run()
+        print('#####################################################8#####################################################')
+        node = create_RestBandpass_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
                                         preprocess_method=preprocess_method_test)
-    node.run()
-    sub_node = node.interface.create_sub_node()
-    sub_node.run()
-    print('####################################################11####################################################')
-    node = create_Smooth_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
-                              preprocess_method=preprocess_method_test)
-    node.run()
+        node.run()
+        # sub_node = node.interface.create_sub_node()
+        # sub_node.run()
+        print('#####################################################9#####################################################')
+        node = create_RestRegression_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
+                                          preprocess_method=preprocess_method_test)
+        node.run()
+        # sub_node = node.interface.create_sub_node()
+        # sub_node.run()
+        print('####################################################10####################################################')
+        node = create_VxmRegNormMNI152_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
+                                            preprocess_method=preprocess_method_test)
+        node.run()
+        # sub_node = node.interface.create_sub_node()
+        # sub_node.run()
+        print('####################################################11####################################################')
+        node = create_Smooth_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
+                                  preprocess_method=preprocess_method_test)
+        node.run()
 
 
 if __name__ == '__main__':
