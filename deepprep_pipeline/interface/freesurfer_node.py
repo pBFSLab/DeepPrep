@@ -112,7 +112,10 @@ class OrigAndRawavg(BaseInterface):
 
     def create_sub_node(self):
         from interface.create_node_structure import create_Segment_node
-        node = create_Segment_node(self.inputs.subject_id)
+        from interface.create_node_bold import create_BoldSkipReorient_node
+        node = [create_Segment_node(self.inputs.subject_id),
+                create_BoldSkipReorient_node(self.inputs.subject_id, self.task, self.atlas_type, self.preprocess_method)
+                ]
         return node
 
 
@@ -483,7 +486,8 @@ class WhitePialThickness1(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node_structure import create_Curvstats_node, create_BalabelsMult_node, create_Cortribbon_node
+        from interface.create_node_structure import create_Curvstats_node, create_BalabelsMult_node, \
+            create_Cortribbon_node
         from interface.create_node_bold import create_Register_node
         node = [create_Curvstats_node(self.inputs.subject_id),
                 create_BalabelsMult_node(self.inputs.subject_id),
@@ -549,6 +553,9 @@ class Curvstats(BaseInterface):
         outputs['subject_id'] = subject_id
 
         return outputs
+
+    def create_sub_node(self):
+        return []
 
 
 class CortribbonInputSpec(BaseInterfaceInputSpec):
@@ -916,6 +923,9 @@ class Segstats(BaseInterface):
         outputs['subject_id'] = subject_id
         return outputs
 
+    def create_sub_node(self):
+        return []
+
 
 class Aseg7InputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
@@ -1187,3 +1197,6 @@ class BalabelsMult(BaseInterface):
         outputs['subject_id'] = subject_id
 
         return outputs
+
+    def create_sub_node(self):
+        return []
