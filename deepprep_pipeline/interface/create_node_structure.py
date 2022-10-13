@@ -133,6 +133,9 @@ def create_TalairachAndNu_node(subject_id: str):
 def create_Brainmask_node(subject_id: str):
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
+    atlas_type = os.environ['DEEPPREP_ATLAS_TYPE']
+    task = os.environ['DEEPPREP_TASK']
+    preprocess_method = os.environ['DEEPPREP_PREPROCESS_METHOD']
 
     brainmask_node = Node(Brainmask(), name=f'{subject_id}_brainmask_node')
     brainmask_node.inputs.subjects_dir = subjects_dir
@@ -143,6 +146,10 @@ def create_Brainmask_node(subject_id: str):
 
     brainmask_node.base_dir = workflow_cached_dir
     brainmask_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=1000)
+
+    brainmask_node.interface.atlas_type = atlas_type
+    brainmask_node.interface.task = task
+    brainmask_node.interface.preprocess_method = preprocess_method
 
     return brainmask_node
 
@@ -334,6 +341,9 @@ def create_JacobianAvgcurvCortparc_node(subject_id: str):
 def create_WhitePialThickness1_node(subject_id: str):
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
+    atlas_type = os.environ['DEEPPREP_ATLAS_TYPE']
+    task = os.environ['DEEPPREP_TASK']
+    preprocess_method = os.environ['DEEPPREP_PREPROCESS_METHOD']
     threads = 8
 
     white_pial_thickness1 = Node(WhitePialThickness1(), name=f'{subject_id}_white_pial_thickness1')
@@ -352,6 +362,10 @@ def create_WhitePialThickness1_node(subject_id: str):
 
     white_pial_thickness1.base_dir = workflow_cached_dir
     white_pial_thickness1.source = Source(CPU_n=6, GPU_MB=0, RAM_MB=1500)
+
+    white_pial_thickness1.interface.atlas_type = atlas_type
+    white_pial_thickness1.interface.task = task
+    white_pial_thickness1.interface.preprocess_method = preprocess_method
 
     return white_pial_thickness1
 
