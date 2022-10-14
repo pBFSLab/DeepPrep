@@ -311,7 +311,7 @@ def main():
     os.environ['DEEPPREP_ATLAS_TYPE'] = atlas_type
     os.environ['DEEPPREP_TASK'] = task
     os.environ['DEEPPREP_PREPROCESS_METHOD'] = preprocess_method
-
+    os.environ['DEEPPREP_DEVICES'] = 'cuda'
     subjects_dir.mkdir(parents=True, exist_ok=True)
     bold_preprocess_dir.mkdir(parents=True, exist_ok=True)
     workflow_cached_dir.mkdir(parents=True, exist_ok=True)
