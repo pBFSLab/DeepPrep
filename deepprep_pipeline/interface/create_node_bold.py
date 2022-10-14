@@ -277,15 +277,15 @@ def create_node_t():
     fastcsr_home = pwd / "FastCSR"
     featreg_home = pwd / "FeatReg"
 
-    bids_data_dir_test = '/mnt/ngshare/DeepPrep_Data/glioma_ChineseAcadem_bids'
-    subjects_dir_test = '/mnt/ngshare/DeepPrep/glioma_ChineseAcadem/Recon'
-    bold_preprocess_dir_test = '/mnt/ngshare/DeepPrep/glioma_ChineseAcadem/BoldPreprocess'
-    workflow_cached_dir_test = '/mnt/ngshare/DeepPrep/glioma_ChineseAcadem/Workflow'
-    vxm_model_path_test = '/home/youjia/workspace/DeepPrep/deepprep_pipeline/model/voxelmorph'
+    bids_data_dir_test = '/mnt/ngshare/DeepPrep_workflow_test/UKB_BIDS'
+    subjects_dir_test = '/mnt/ngshare/DeepPrep_workflow_test/UKB_Recon_2'
+    bold_preprocess_dir_test = '/mnt/ngshare/DeepPrep_workflow_test/UKB_BoldPreprocess_2'
+    workflow_cached_dir_test = '/mnt/ngshare/DeepPrep_workflow_test/UKB_Workflow_2'
+    vxm_model_path_test = '/home/anning/workspace/DeepPrep/deepprep_pipeline/model/voxelmorph'
     mni152_brain_mask_test = '/usr/local/fsl/data/standard/MNI152_T1_2mm_brain_mask.nii.gz'
-    resource_dir_test = '/home/youjia/workspace/DeepPrep/deepprep_pipeline/resource'
+    resource_dir_test = '/home/anning/workspace/DeepPrep/deepprep_pipeline/resource'
 
-    subject_id_test = ['sub-L02-ses-01']
+    subject_id_test = 'sub-1013020'
     subject_id_tests = ['sub-L02-ses-01', 'sub-L03-ses-01', 'sub-L04-ses-01', 'sub-L04-ses-02',
                         'sub-L05-ses-01', 'sub-L06-ses-01', 'sub-L07-ses-01', 'sub-L07-ses-02',
                         'sub-L14-ses-01', 'sub-L15-ses-01', 'sub-L16-ses-01',
@@ -316,7 +316,7 @@ def create_node_t():
     os.environ['DEEPPREP_TASK'] = task_test
     os.environ['DEEPPREP_PREPROCESS_METHOD'] = preprocess_method_test
 
-    node = create_Smooth_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
+    node = create_BoldSkipReorient_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
                                       preprocess_method=preprocess_method_test)
     node.run()
     exit()
