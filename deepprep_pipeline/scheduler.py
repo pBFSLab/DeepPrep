@@ -30,9 +30,11 @@ def clear_subject_bold_tmp_dir(bold_preprocess_dir: Path, subject_ids: list, tas
 
 class Scheduler:
     def __init__(self, share_manager: Manager, subject_ids: list, last_node_name=None, auto_schedule=True):
-        self.source_res = Source(36, 24000, 60000, 150, 450)
+        self.source_res = Source(36, 24000, 66000, 200, 500)
         self.last_node_name = last_node_name
         self.auto_schedule = auto_schedule  # 是否开启自动调度
+
+        self.start_datetime = datetime.now().strftime('%Y-%m-%d-%H:%M:%S')
 
         # Queue
         self.queue_subject = share_manager.list()  # 队列中的subject
@@ -115,6 +117,9 @@ class Scheduler:
     def run_node(node, node_error: list, node_success: list, node_running: list, node_done: list, subject_error: list,
                  lock: Lock):
         try:
+            import sys
+            f = open(os.devnull, 'w')
+            sys.stdout = f
             print(f'run start {node.name}')
             node.run()
             print(f'run over {node.name}')
@@ -141,6 +146,7 @@ class Scheduler:
         """
         print('Start run queue =================== ==================')
         lock.acquire()
+        print(f'start_datetime : {self.start_datetime}')
         print(f'nodes_ready    : {len(self.nodes_ready):3d}', self.nodes_ready)
         if len(self.s_nodes_success) > 100:
             print(f'nodes_success  : {len(self.s_nodes_success):3d}', self.s_nodes_success[-100:])
@@ -154,7 +160,8 @@ class Scheduler:
         print(f'subjects_success     : {len(self.subject_success):3d}', self.subject_success)
         print(f'subjects_datetime    : {len(self.subject_success_datetime):3d}', self.subject_success_datetime)
         print(f'subjects_error       : {len(self.subject_error):3d}', self.subject_error)
-        print('                =================== ==================')
+        print()
+        print('                =================== =================')
         # ############# Start deal nodes_done =================== ==================')
         for node_name in self.s_nodes_done:
             node = self.node_all.pop(node_name)
@@ -310,6 +317,7 @@ def main():
     os.environ['VXM_MODEL_PATH'] = str(vxm_model_path)
     os.environ['MNI152_BRAIN_MASK'] = str(mni152_brain_mask)
     os.environ['RESOURCE_DIR'] = str(resource_dir)
+    os.environ['DEEPPREP_DEVICES'] = 'cuda'
 
     os.environ['DEEPPREP_ATLAS_TYPE'] = atlas_type
     os.environ['DEEPPREP_TASK'] = task
