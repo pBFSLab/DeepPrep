@@ -192,6 +192,7 @@ def parse_args():
                         help='Output directory $FREESURFER_HOME (pass via environment or here)')
     parser.add_argument('--hemi', help="which hemisphere")
     parser.add_argument('--verbose', default=False, action='store_true', help="Whether to output detailed log")
+    parser.add_argument('--device', default='cuda',help='Use number of cuda or cpu')
 
     args = parser.parse_args()
     if args.sd is None:
@@ -221,4 +222,4 @@ if __name__ == '__main__':
     fsaverage_dir = os.path.join(args.fsd, 'subjects', 'fsaverage6')
     hemis = args.hemi
 
-    predict(surf_dir, tmp_dir, fsaverage_dir, args.sid, hemispheres=hemis)
+    predict(surf_dir, tmp_dir, fsaverage_dir, args.sid, hemispheres=hemis, device = args.device)

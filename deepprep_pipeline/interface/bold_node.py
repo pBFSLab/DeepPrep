@@ -262,13 +262,16 @@ class MotionCorrection(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node_bold import create_Register_node
-        node = create_Register_node(self.inputs.subject_id,
-                                    self.inputs.task,
-                                    self.inputs.atlas_type,
-                                    self.inputs.preprocess_method)
+        from interface.create_node_bold import create_Register_node, create_Mkbrainmask_node, create_RestGauss_node
+        nodes = [create(self.inputs.subject_id,
+                        self.inputs.task,
+                        self.inputs.atlas_type,
+                        self.inputs.preprocess_method) for create in [create_Register_node,
+                                                                      create_Mkbrainmask_node,
+                                                                      create_RestGauss_node]
 
-        return node
+                 ]
+        return nodes
 
 
 class StcInputSpec(BaseInterfaceInputSpec):
@@ -437,13 +440,7 @@ class Register(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node_bold import create_Mkbrainmask_node
-        node = create_Mkbrainmask_node(self.inputs.subject_id,
-                                       self.inputs.task,
-                                       self.inputs.atlas_type,
-                                       self.inputs.preprocess_method)
-
-        return node
+        return []
 
 
 class MkBrainmaskInputSpec(BaseInterfaceInputSpec):
@@ -542,13 +539,7 @@ class MkBrainmask(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node_bold import create_RestGauss_node
-        node = create_RestGauss_node(self.inputs.subject_id,
-                                     self.inputs.task,
-                                     self.inputs.atlas_type,
-                                     self.inputs.preprocess_method)
-
-        return node
+        return []
 
 
 class VxmRegistraionInputSpec(BaseInterfaceInputSpec):
@@ -561,6 +552,7 @@ class VxmRegistraionInputSpec(BaseInterfaceInputSpec):
     atlas_type = Str(desc="atlas_type", mandatory=True)
     task = Str(exists=True, desc="task", mandatory=True)
     preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
+    gpuid = Str(exists=True, desc='gpuid set', mandatory=True)
 
 
 class VxmRegistraionOutputSpec(TraitedSpec):
@@ -618,8 +610,14 @@ class VxmRegistraion(BaseInterface):
 
         # voxelmorph
         # tensorflow device handling
-        gpuid = '0'
-        device, nb_devices = vxm.tf.utils.setup_device(gpuid)
+        if 'cuda' in self.inputs.gpuid:
+            if len(self.inputs.gpuid) == 4:
+                deepprep_device = '0'
+            else:
+                deepprep_device = self.inputs.gpuid.split(":")[1]
+        else:
+            deepprep_device = -1
+        device, nb_devices = vxm.tf.utils.setup_device(deepprep_device)
 
         # load moving and fixed images
         add_feat_axis = True
@@ -661,13 +659,7 @@ class VxmRegistraion(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node_bold import create_BoldSkipReorient_node
-        node = create_BoldSkipReorient_node(self.inputs.subject_id,
-                                            self.inputs.task,
-                                            self.inputs.atlas_type,
-                                            self.inputs.preprocess_method)
-
-        return node
+        return []
 
 
 class RestGaussInputSpec(BaseInterfaceInputSpec):
@@ -947,6 +939,7 @@ class VxmRegNormMNI152InputSpec(BaseInterfaceInputSpec):
     atlas_type = Str(exists=True, desc='MNI152_T1_2mm', mandatory=True)
     resource_dir = Directory(exists=True, desc='resource', mandatory=True)
     derivative_deepprep_path = Directory(exists=True, desc='derivative_deepprep_path', mandatory=True)
+    gpuid = Str(exists=True, desc='gpuid set', mandatory=True)
 
 
 class VxmRegNormMNI152OutputSpec(TraitedSpec):
@@ -1032,8 +1025,14 @@ class VxmRegNormMNI152(BaseInterface):
         bold_direction = bold_img.direction.copy()
 
         # tensorflow device handling
-        gpuid = '0'
-        device, nb_devices = vxm.tf.utils.setup_device(gpuid)
+        if 'cuda' in self.inputs.gpuid:
+            if len(self.inputs.gpuid) == 4:
+                deepprep_device = '0'
+            else:
+                deepprep_device = self.inputs.gpuid.split(":")[1]
+        else:
+            deepprep_device = -1
+        device, nb_devices = vxm.tf.utils.setup_device(deepprep_device)
 
         fwdtrf_MNI152_2mm = [str(affine_file)]
         trf_file = vxm_model_path / atlas_type / f'{atlas_type}_vxm2atlas.mat'
