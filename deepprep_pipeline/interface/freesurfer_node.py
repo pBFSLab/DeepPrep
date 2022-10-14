@@ -395,6 +395,7 @@ class WhitePialThickness1InputSpec(BaseInterfaceInputSpec):
     subject_id = traits.Str(desc="sub-xxx", mandatory=True)
     threads = traits.Int(desc='threads')
 
+
     lh_white_preaparc = File(exists=True, desc="surf/lh.white.preaparc", mandatory=True)
     rh_white_preaparc = File(exists=True, desc="surf/rh.white.preaparc", mandatory=True)
     aseg_presurf = File(exists=True, desc="mri/aseg.presurf.mgz", mandatory=True)
@@ -490,9 +491,9 @@ class WhitePialThickness1(BaseInterface):
                 create_BalabelsMult_node(self.inputs.subject_id),
                 create_Cortribbon_node(self.inputs.subject_id),
                 create_Register_node(self.inputs.subject_id,
-                                     self.inputs.task,
-                                     self.inputs.atlas_type,
-                                     self.inputs.preprocess_method)
+                                     self.task,
+                                     self.atlas_type,
+                                     self.preprocess_method)
                 ]
 
         return node  # node list
@@ -977,7 +978,8 @@ class Aseg7(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        node = MkBrainmaskInputSpec(self.inputs.subject_id, self.task, self.atlas_type, self.preprocess_method)
+        from interface.create_node_bold import create_Mkbrainmask_node
+        node = create_Mkbrainmask_node(self.inputs.subject_id, self.task, self.atlas_type, self.preprocess_method)
         return node
 
 
