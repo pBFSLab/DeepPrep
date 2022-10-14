@@ -148,10 +148,7 @@ class Scheduler:
         lock.acquire()
         print(f'start_datetime : {self.start_datetime}')
         print(f'nodes_ready    : {len(self.nodes_ready):3d}', self.nodes_ready)
-        if len(self.s_nodes_success) > 100:
-            print(f'nodes_success  : {len(self.s_nodes_success):3d}', self.s_nodes_success[-100:])
-        else:
-            print(f'nodes_success  : {len(self.s_nodes_success):3d}', self.s_nodes_success)
+        print(f'nodes_success  : {len(self.s_nodes_success):3d}', self.s_nodes_success)
         print(f'nodes_error    : {len(self.s_nodes_error):3d}', self.s_nodes_error)
         print(f'nodes_running  : {len(self.s_nodes_running):3d}', self.s_nodes_running)
         print(f'nodes_done     : {len(self.s_nodes_done):3d}', self.s_nodes_done)
@@ -186,7 +183,6 @@ class Scheduler:
                         self.node_all_add_nodes(sub_nodes)
                     except Exception as why:
                         logging_wf.error(f'Create_Sub_Node_Error {node_name}: {why}')
-        # ############# End deal nodes_done =================== ==================')
 
         # ############# Start deal nodes_ready =================== ==================')
         # run node in nodes_ready
@@ -322,7 +318,7 @@ def main():
     os.environ['DEEPPREP_ATLAS_TYPE'] = atlas_type
     os.environ['DEEPPREP_TASK'] = task
     os.environ['DEEPPREP_PREPROCESS_METHOD'] = preprocess_method
-
+    os.environ['DEEPPREP_DEVICES'] = 'cuda'
     subjects_dir.mkdir(parents=True, exist_ok=True)
     bold_preprocess_dir.mkdir(parents=True, exist_ok=True)
     workflow_cached_dir.mkdir(parents=True, exist_ok=True)
