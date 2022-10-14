@@ -434,3 +434,6 @@ class SampleSegmentationToSurfave(BaseInterface):
         outputs["rh_aparc_DKTatlas_mapped_file"] = subjects_dir / subject_id / 'label' / 'rh.aparc.DKTatlas.mapped.annot'
 
         return outputs
+
+    def create_sub_node(self):
+        return []
