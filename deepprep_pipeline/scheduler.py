@@ -23,7 +23,7 @@ def clear_is_running(subjects_dir: Path, subject_ids: list):
 
 def clear_subject_bold_tmp_dir(bold_preprocess_dir: Path, subject_ids: list, task: str):
     for subject_id in subject_ids:
-        tmp_dir = bold_preprocess_dir / subject_id / f'task-{task}'
+        tmp_dir = bold_preprocess_dir / subject_id / 'tmp' / f'task-{task}'
         if tmp_dir.exists():
             os.system(f'rm -r {tmp_dir}')
 
@@ -337,6 +337,8 @@ def main():
         if not multi_t1:
             if 'session' in sub_info:
                 subject_id = subject_id + f"-ses-{sub_info['session']}"
+            if 'run' in sub_info:
+                subject_id = subject_id + f"-run-{sub_info['run']}"
             t1w_filess_all.append([t1w_file])
             subject_ids_all.append(subject_id)
         else:
