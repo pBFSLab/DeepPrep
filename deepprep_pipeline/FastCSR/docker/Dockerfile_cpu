@@ -1,0 +1,27 @@
+FROM ubuntu:20.04
+
+RUN apt update
+RUN apt upgrade -y
+
+# 配置nighres运行环境
+# 解决tzdata安装需要交互的问题, tzdata是安装openjdk-11-jdk的必要组件
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt install tzdata -y
+# java运行环境
+RUN apt install openjdk-11-jdk -y
+RUN apt install python3 python3-pip -y
+RUN pip3 install nighres
+ENV LD_LIBRARY_PATH=/usr/lib/jvm/java-11-openjdk-amd64/lib:/usr/lib/jvm/java-11-openjdk-amd64/lib/server
+
+# FastCSR 执行环境
+RUN pip3 install -U numpy
+RUN pip3 install antspyx
+RUN pip3 install nnunet==1.7.0
+RUN pip3 install sh
+
+# 拷贝模型及脚本
+COPY ./model/ /root/FastCSR/model/
+COPY ./*.py /root/FastCSR/
+
+# 设置容器启动点
+ENTRYPOINT ["python3","/root/FastCSR/pipeline.py"]
