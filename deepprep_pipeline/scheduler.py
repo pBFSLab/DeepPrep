@@ -258,7 +258,9 @@ python3 deepprep_pipeline.py
     parser.add_argument("--subject_nums", help="最多跑多少个数据", default=0, required=False)
     parser.add_argument("--bold_atlas_type", help="bold使用的MNI模板类型", default='MNI152_T1_2mm', required=False)
     parser.add_argument("--bold_task_type", help="跑的task类型example:motor、rest", default='rest', required=False)
-    parser.add_argument("--bold_preprocess_method", help='使用的bold处理方法 rest or task', default=None, required=False)
+    parser.add_argument("--bold_preprocess_method", help='使用的bold处理方法 rest or task', default=None,
+                        required=False)
+    parser.add_argument("--single_sub_multi_t1", help='单个subject对应多个T1', default=False, required=False, type=bool)
 
     args = parser.parse_args()
 
@@ -273,6 +275,7 @@ def main():
     bold_preprocess_dir = Path(args.bold_output_dir)
     workflow_cached_dir = Path(args.cache_dir)
     max_batch_size = int(args.subject_nums)
+    multi_t1 = args.single_sub_multi_t1
 
     # ############### Structure
     pwd = Path.cwd()  # deepprep_pipeline/
@@ -297,7 +300,7 @@ def main():
 
     # ############### Common
     # python_interpret = Path(sys.executable)  # 获取当前的Python解析器地址
-    last_node_name = 'Smooth_node'  # workflow的最后一个node的名字
+    last_node_name = 'VxmRegNormMNI152_node'  # workflow的最后一个node的名字,VxmRegNormMNI152_node or Smooth_node or ...
     auto_schedule = True  # 是否开启自动调度
     clear_bold_tmp_dir = True
 
@@ -331,14 +334,16 @@ def main():
     for t1w_file in layout.get(return_type='filename', suffix="T1w"):
         sub_info = layout.parse_file_entities(t1w_file)
         subject_id = f"sub-{sub_info['subject']}"
-        # if 'session' in sub_info:
-        #     subject_id = subject_id + f"-ses-{sub_info['session']}"
-        # t1w_filess_all.append([t1w_file])
-        # subject_ids_all.append(subject_id)
-        ##################### 合并多个T1跑Recon #####################
-        subject_dict.setdefault(subject_id, []).append(t1w_file)
-        subject_ids_all = list(subject_dict.keys())
-        t1w_filess_all = list(subject_dict.values())
+        if not multi_t1:
+            if 'session' in sub_info:
+                subject_id = subject_id + f"-ses-{sub_info['session']}"
+            t1w_filess_all.append([t1w_file])
+            subject_ids_all.append(subject_id)
+        else:
+            # 合并多个T1跑Recon
+            subject_dict.setdefault(subject_id, []).append(t1w_file)
+            subject_ids_all = list(subject_dict.keys())
+            t1w_filess_all = list(subject_dict.values())
 
     if max_batch_size > 0:
         batch_size = max_batch_size
@@ -346,7 +351,7 @@ def main():
         batch_size = len(subject_ids_all)
 
     # for epoch in range(len(subject_ids_all) + 1):
-        # try:
+    # try:
     t1w_filess = t1w_filess_all[:batch_size]
     subject_ids = subject_ids_all[:batch_size]
 
