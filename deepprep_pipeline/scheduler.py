@@ -293,7 +293,7 @@ def main():
 
     # ############### Common
     # python_interpret = Path(sys.executable)  # 获取当前的Python解析器地址
-    last_node_name = 'Smooth_node'  # workflow的最后一个node的名字
+    last_node_name = 'VxmRegNormMNI152_node'  # workflow的最后一个node的名字,VxmRegNormMNI152_node or Smooth_node or ...
     auto_schedule = True  # 是否开启自动调度
     clear_bold_tmp_dir = True
 
