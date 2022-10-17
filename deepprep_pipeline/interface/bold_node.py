@@ -633,7 +633,7 @@ class MkBrainmask(BaseInterface):
 
     def create_sub_node(self):
         from interface.create_node_bold import create_RestGauss_node, create_VxmRegNormMNI152_node
-        if self.inputs.task == 'rest':
+        if self.inputs.preprocess_method == 'rest':
             node = create_RestGauss_node(self.inputs.subject_id,
                                          self.inputs.task,
                                          self.inputs.atlas_type,
