@@ -600,11 +600,17 @@ class MkBrainmask(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node_bold import create_RestGauss_node
-        node = create_RestGauss_node(self.inputs.subject_id,
-                                     self.inputs.task,
-                                     self.inputs.atlas_type,
-                                     self.inputs.preprocess_method)
+        from interface.create_node_bold import create_RestGauss_node, create_VxmRegNormMNI152_node
+        if self.inputs.task == 'rest':
+            node = create_RestGauss_node(self.inputs.subject_id,
+                                         self.inputs.task,
+                                         self.inputs.atlas_type,
+                                         self.inputs.preprocess_method)
+        else:
+            node = create_VxmRegNormMNI152_node(self.inputs.subject_id,
+                                                self.inputs.task,
+                                                self.inputs.atlas_type,
+                                                self.inputs.preprocess_method)
 
         return node
 
@@ -1106,6 +1112,15 @@ class VxmRegNormMNI152(BaseInterface):
     def __init__(self):
         super(VxmRegNormMNI152, self).__init__()
 
+    def check_output(self, subj_func_path, file_prefix):
+        sub = self.inputs.subject_id
+
+        VxmRegNormMNI152_output_files = ['norm_2mm.nii.gz', f'{sub}_MNI2mm.nii.gz', f'{file_prefix}_bbregister.register.dat']
+        output_list = os.listdir(subj_func_path)
+        check_result = set(VxmRegNormMNI152_output_files) <= set(output_list)
+        if not check_result:
+            return FileExistsError
+
     def register_dat_to_fslmat(self, mov_file, ref_file, reg_file, fslmat_file):
         sh.tkregister2('--mov', mov_file,
                        '--targ', ref_file,
@@ -1296,6 +1311,8 @@ class VxmRegNormMNI152(BaseInterface):
             warped_file = subj_func_path / f'{subject_id}_MNI2mm.nii.gz'
             warped_img = self.vxm_warp_bold_2mm(bold_t1_out, affine_file, warp_file, warped_file, verbose=True)
 
+            self.check_output(subj_func_path,file_prefix)
+
         return runtime
 
     def _list_outputs(self):
@@ -1340,6 +1357,15 @@ class Smooth(BaseInterface):
 
     def __init__(self):
         super(Smooth, self).__init__()
+
+    def check_output(self, subj_func_path, file_prefix):
+        sub = self.inputs.subject_id
+
+        Smooth_output_files = [f'{file_prefix}_resid_MNI2mm_sm6.nii.gz'] # TODO MNI2mm 要不要优化
+        output_list = os.listdir(subj_func_path)
+        check_result = set(Smooth_output_files) <= set(output_list)
+        if not check_result:
+            return FileExistsError
 
     def save_bold(self, warped_img, temp_file, bold_file, save_file):
         ants.image_write(warped_img, str(temp_file))
@@ -1428,6 +1454,19 @@ class Smooth(BaseInterface):
             bids_entities.append(bids_bold.entities)
             bids_path.append(bids_bold.path)
         multipool_BidsBolds_2(self.cmd, bids_entities, bids_path, Multi_Num=8)
+
+        derivative_deepprep_path = Path(self.inputs.derivative_deepprep_path)
+        deepprep_subj_path = derivative_deepprep_path / self.inputs.subject_id
+        for i in range(len(bids_entities)):
+            entities = dict(bids_entities[i])
+            file_prefix = Path(bids_path[i]).name.replace('.nii.gz', '')
+            if 'session' in entities:
+                ses = entities['session']
+                subj_func_path = Path(deepprep_subj_path) / f'ses-{ses}' / 'func'
+            else:
+                subj_func_path = Path(deepprep_subj_path) / 'func'
+            self.check_output(subj_func_path, file_prefix)
+
         return runtime
 
     def _list_outputs(self):
