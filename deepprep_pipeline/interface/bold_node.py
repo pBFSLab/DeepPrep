@@ -633,7 +633,7 @@ class MkBrainmask(BaseInterface):
 
     def create_sub_node(self):
         from interface.create_node_bold import create_RestGauss_node, create_VxmRegNormMNI152_node
-        if self.inputs.task == 'rest':
+        if self.inputs.preprocess_method == 'rest':
             node = create_RestGauss_node(self.inputs.subject_id,
                                          self.inputs.task,
                                          self.inputs.atlas_type,
@@ -1142,7 +1142,7 @@ class VxmRegNormMNI152(BaseInterface):
     def check_output(self, subj_func_path, file_prefix):
         sub = self.inputs.subject_id
 
-        VxmRegNormMNI152_output_files = ['norm_2mm.nii.gz', f'{sub}_MNI2mm.nii.gz', f'{file_prefix}_bbregister.register.dat']
+        VxmRegNormMNI152_output_files = [f'{sub}_norm_2mm.nii.gz', f'{sub}_MNI2mm.nii.gz', f'{file_prefix}_bbregister.register.dat']
         output_list = os.listdir(subj_func_path)
         check_result = set(VxmRegNormMNI152_output_files) <= set(output_list)
         if not check_result:
@@ -1178,9 +1178,9 @@ class VxmRegNormMNI152(BaseInterface):
         trf.set_fixed_parameters(trf_sitk.GetFixedParameters())
         ants.write_transform(trf, trf_file)
 
-    def native_bold_to_T1_2mm_ants(self, residual_file, subj, subj_t1_file, reg_file, save_file, preprocess_dir,
+    def native_bold_to_T1_2mm_ants(self, residual_file, subject_id, subj_t1_file, reg_file, save_file, preprocess_dir,
                                    verbose=False):
-        subj_t1_2mm_file = os.path.join(os.path.split(save_file)[0], 'norm_2mm.nii.gz')
+        subj_t1_2mm_file = os.path.join(os.path.split(save_file)[0], f'{subject_id}_norm_2mm.nii.gz')
         sh.mri_convert('-ds', 2, 2, 2,
                        '-i', subj_t1_file,
                        '-o', subj_t1_2mm_file)
@@ -1329,8 +1329,8 @@ class VxmRegNormMNI152(BaseInterface):
                 bold_file = subj_func_path / f'{file_prefix}_mc.nii.gz'
 
             reg_file = subj_func_path / f'{file_prefix}_bbregister.register.dat'
-            bold_t1_file = subj_func_path / f'{subj}_native_t1_2mm.nii.gz'
-            bold_t1_out = self.native_bold_to_T1_2mm_ants(bold_file, subj, norm_path, reg_file,
+            bold_t1_file = subj_func_path / f'{subject_id}_native_t1_2mm.nii.gz'
+            bold_t1_out = self.native_bold_to_T1_2mm_ants(bold_file, subject_id, norm_path, reg_file,
                                                           bold_t1_file, preprocess_dir, verbose=False)
 
             warp_file = subj_func_path / f'{subject_id}_warp.nii.gz'
