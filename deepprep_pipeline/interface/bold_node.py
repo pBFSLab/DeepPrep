@@ -1079,7 +1079,7 @@ class RestRegression(BaseInterface):
             dst_resid_file = subj_func_path / f'{file_prefix}_resid.nii.gz'
             shutil.copy(src_resid_file, dst_resid_file)
 
-
+            dst_reg_file = subj_func_path / f'{file_prefix}_bbregister.register.dat'
             # hemi = ['lh','rh']
             # multiregressionpool(self.cmd, hemi, subj_surf_path, dst_resid_file, dst_reg_file, Multi_Num=2)
             for hemi in ['lh', 'rh']:
