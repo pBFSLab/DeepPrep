@@ -225,8 +225,8 @@ class Scheduler:
                     logging_wf.info('All task node Done!')
                     break
                 lock.release()
-                print('No new node, sleep 3s')
-                time.sleep(3)
+                print('No new node, wait 10s')
+                time.sleep(10)
 
 
 def parse_args():
