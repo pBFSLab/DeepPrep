@@ -36,7 +36,7 @@ def create_VxmRegistraion_node(subject_id: str, task: str, atlas_type: str, prep
     VxmRegistraion_node.inputs.gpuid = gpuid
 
     VxmRegistraion_node.base_dir = workflow_cached_dir
-    VxmRegistraion_node.source = Source(CPU_n=1, GPU_MB=2715, RAM_MB=3000, IO_write_MB=0, IO_read_MB=0)
+    VxmRegistraion_node.source = Source(CPU_n=0, GPU_MB=2715, RAM_MB=3000, IO_write_MB=0, IO_read_MB=0)
 
     return VxmRegistraion_node
 
@@ -93,7 +93,7 @@ def create_MkTemplate_node(subject_id: str, task: str, atlas_type: str, preproce
     MkTemplate_node.inputs.preprocess_method = preprocess_method
 
     MkTemplate_node.base_dir = workflow_cached_dir
-    MkTemplate_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=1000, IO_write_MB=0, IO_read_MB=0)
+    MkTemplate_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=1000, IO_write_MB=0, IO_read_MB=0)
 
     return MkTemplate_node
 
@@ -152,7 +152,7 @@ def create_Mkbrainmask_node(subject_id: str, task: str, atlas_type: str, preproc
     Mkbrainmask_node.inputs.preprocess_method = preprocess_method
 
     Mkbrainmask_node.base_dir = workflow_cached_dir
-    Mkbrainmask_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=1000, IO_write_MB=0, IO_read_MB=0)
+    Mkbrainmask_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=1000, IO_write_MB=0, IO_read_MB=0)
 
     return Mkbrainmask_node
 
@@ -173,7 +173,7 @@ def create_RestGauss_node(subject_id: str, task: str, atlas_type: str, preproces
     RestGauss_node.inputs.preprocess_method = preprocess_method
 
     RestGauss_node.base_dir = workflow_cached_dir
-    RestGauss_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=2000, IO_write_MB=0, IO_read_MB=0)
+    RestGauss_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=2000, IO_write_MB=0, IO_read_MB=0)
 
     return RestGauss_node
 
@@ -192,7 +192,7 @@ def create_RestBandpass_node(subject_id: str, task: str, atlas_type: str, prepro
     RestBandpass_node.inputs.preprocess_method = preprocess_method
 
     RestBandpass_node.base_dir = workflow_cached_dir
-    RestBandpass_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=3000, IO_write_MB=0, IO_read_MB=0)
+    RestBandpass_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=3000, IO_write_MB=0, IO_read_MB=0)
 
     return RestBandpass_node
 
@@ -261,7 +261,7 @@ def create_Smooth_node(subject_id: str, task: str, atlas_type: str, preprocess_m
     Smooth_node.inputs.derivative_deepprep_path = derivative_deepprep_path
 
     Smooth_node.base_dir = workflow_cached_dir
-    Smooth_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=7000, IO_write_MB=0, IO_read_MB=0)
+    Smooth_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=7000, IO_write_MB=0, IO_read_MB=0)
 
     return Smooth_node
 
