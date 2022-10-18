@@ -331,7 +331,7 @@ def main():
     t1w_filess_all = list()
     subject_ids_all = list()
     subject_dict = {}
-    for t1w_file in layout.get(return_type='filename', suffix="T1w"):
+    for t1w_file in layout.get(return_type='filename', suffix="T1w", extension='.nii.gz'):
         sub_info = layout.parse_file_entities(t1w_file)
         subject_id = f"sub-{sub_info['subject']}"
         if not multi_t1:
