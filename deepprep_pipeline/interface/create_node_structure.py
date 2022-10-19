@@ -57,7 +57,7 @@ def create_Segment_node(subject_id: str):
     segment_node.inputs.network_axial_path = network_axial_path
 
     segment_node.base_dir = workflow_cached_dir
-    segment_node.source = Source(CPU_n=1, GPU_MB=8500, RAM_MB=5000)
+    segment_node.source = Source(CPU_n=0, GPU_MB=8500, RAM_MB=5000)
 
     return segment_node
 
@@ -218,7 +218,7 @@ def create_FastCSR_node(subject_id: str):
     fastcsr_node.inputs.brain_finalsurfs_file = Path(subjects_dir) / subject_id / 'mri/brain.finalsurfs.mgz'
 
     fastcsr_node.base_dir = workflow_cached_dir
-    fastcsr_node.source = Source(CPU_n=1, GPU_MB=7000, RAM_MB=10000)
+    fastcsr_node.source = Source(CPU_n=0, GPU_MB=7000, RAM_MB=10000)
 
     return fastcsr_node
 
@@ -322,7 +322,7 @@ def create_FeatReg_node(subject_id: str):
     featreg_node.inputs.rh_sphere = Path(subjects_dir) / subject_id / f'surf/rh.sphere'
 
     featreg_node.base_dir = workflow_cached_dir
-    featreg_node.source = Source(CPU_n=1, GPU_MB=7000, RAM_MB=5000)
+    featreg_node.source = Source(CPU_n=0, GPU_MB=7000, RAM_MB=10000)
 
     return featreg_node
 
@@ -520,7 +520,7 @@ def create_node_t():
     fastcsr_home = pwd / "FastCSR"
     featreg_home = pwd / "FeatReg"
 
-    bids_data_dir_test = '/mnt/ngshare2/UKB_BIDS'
+    bids_data_dir_test = '/mnt/ngshare2/UKB/BIDS'
     subjects_dir_test = Path('/mnt/ngshare/DeepPrep_workflow_test/UKB_Recon')
     bold_preprocess_dir_test = Path('/mnt/ngshare/DeepPrep_workflow_test/UKB_BoldPreprocess')
     workflow_cached_dir_test = '/mnt/ngshare/DeepPrep_workflow_test/UKB_Workflow'
