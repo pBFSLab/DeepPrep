@@ -53,6 +53,9 @@ class Scheduler:
         # Node
         self.node_all = dict()
 
+        # others
+        self.iter_count = 0
+
     def check_node_source(self, source: Source):
         """
         检查资源是否满足现在的node
@@ -144,21 +147,22 @@ class Scheduler:
         1. node执行完毕
         2. 有新的node进入队列
         """
-        print('Start run queue =================== ==================')
         lock.acquire()
-        print(f'start_datetime : {self.start_datetime}')
-        print(f'nodes_running  : {len(self.s_nodes_running):3d}', self.s_nodes_running)
-        print(f'nodes_done     : {len(self.s_nodes_done):3d}', self.s_nodes_done)
-        print(f'nodes_ready    : {len(self.nodes_ready):3d}', self.nodes_ready)
-        print(f'nodes_success  : {len(self.s_nodes_success):3d}', self.s_nodes_success[-25:])
-        print(f'nodes_error    : {len(self.s_nodes_error):3d}', self.s_nodes_error)
-        print(f'Source Res     : task_running {len(self.s_nodes_running):3d}', self.source_res)
-        print()
-        print(f'subjects_success     : {len(self.subject_success):3d}', self.subject_success)
-        print(f'subjects_datetime    : {len(self.subject_success_datetime):3d}', self.subject_success_datetime)
-        print(f'subjects_error       : {len(self.subject_error):3d}', self.subject_error)
-        print()
-        print('                =================== =================')
+        if self.iter_count % 6 == 0:
+            print('Start run queue =================== ==================')
+            print(f'start_datetime : {self.start_datetime}')
+            print(f'nodes_running  : {len(self.s_nodes_running):3d}', self.s_nodes_running)
+            print(f'nodes_done     : {len(self.s_nodes_done):3d}', self.s_nodes_done)
+            print(f'nodes_ready    : {len(self.nodes_ready):3d}', self.nodes_ready)
+            print(f'nodes_success  : {len(self.s_nodes_success):3d}', self.s_nodes_success[-25:])
+            print(f'nodes_error    : {len(self.s_nodes_error):3d}', self.s_nodes_error)
+            print(f'Source Res     : task_running {len(self.s_nodes_running):3d}', self.source_res)
+            print()
+            print(f'subjects_success     : {len(self.subject_success):3d}', self.subject_success)
+            print(f'subjects_datetime    : {len(self.subject_success_datetime):3d}', self.subject_success_datetime)
+            print(f'subjects_error       : {len(self.subject_error):3d}', self.subject_error)
+            print()
+            print('                =================== =================')
         # ############# Start deal nodes_done =================== ==================')
         for node_name in self.s_nodes_done:
             node = self.node_all.pop(node_name)
@@ -227,6 +231,7 @@ class Scheduler:
                 lock.release()
                 print('No new node, wait 10s')
                 time.sleep(10)
+            self.iter_count += 1
 
 
 def parse_args():
