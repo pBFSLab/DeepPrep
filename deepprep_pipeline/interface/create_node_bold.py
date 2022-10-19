@@ -36,7 +36,7 @@ def create_VxmRegistraion_node(subject_id: str, task: str, atlas_type: str, prep
     VxmRegistraion_node.inputs.gpuid = gpuid
 
     VxmRegistraion_node.base_dir = workflow_cached_dir
-    VxmRegistraion_node.source = Source(CPU_n=0, GPU_MB=2715, RAM_MB=3000, IO_write_MB=0, IO_read_MB=0)
+    VxmRegistraion_node.source = Source(CPU_n=1, GPU_MB=2715, RAM_MB=3000, IO_write_MB=0, IO_read_MB=0)
 
     return VxmRegistraion_node
 
@@ -93,7 +93,7 @@ def create_MkTemplate_node(subject_id: str, task: str, atlas_type: str, preproce
     MkTemplate_node.inputs.preprocess_method = preprocess_method
 
     MkTemplate_node.base_dir = workflow_cached_dir
-    MkTemplate_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=1000, IO_write_MB=0, IO_read_MB=0)
+    MkTemplate_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=1000, IO_write_MB=0, IO_read_MB=0)
 
     return MkTemplate_node
 
@@ -152,7 +152,7 @@ def create_Mkbrainmask_node(subject_id: str, task: str, atlas_type: str, preproc
     Mkbrainmask_node.inputs.preprocess_method = preprocess_method
 
     Mkbrainmask_node.base_dir = workflow_cached_dir
-    Mkbrainmask_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=1000, IO_write_MB=0, IO_read_MB=0)
+    Mkbrainmask_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=1000, IO_write_MB=0, IO_read_MB=0)
 
     return Mkbrainmask_node
 
