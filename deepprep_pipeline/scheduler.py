@@ -30,7 +30,7 @@ def clear_subject_bold_tmp_dir(bold_preprocess_dir: Path, subject_ids: list, tas
 
 class Scheduler:
     def __init__(self, share_manager: Manager, subject_ids: list, last_node_name=None, auto_schedule=True):
-        self.source_res = Source(36, 24000, 66000, 200, 500)
+        self.source_res = Source(36, 24000, 70000, 200, 500)
         self.last_node_name = last_node_name
         self.auto_schedule = auto_schedule  # 是否开启自动调度
 
@@ -147,11 +147,11 @@ class Scheduler:
         print('Start run queue =================== ==================')
         lock.acquire()
         print(f'start_datetime : {self.start_datetime}')
-        print(f'nodes_ready    : {len(self.nodes_ready):3d}', self.nodes_ready)
-        print(f'nodes_success  : {len(self.s_nodes_success):3d}', self.s_nodes_success)
-        print(f'nodes_error    : {len(self.s_nodes_error):3d}', self.s_nodes_error)
         print(f'nodes_running  : {len(self.s_nodes_running):3d}', self.s_nodes_running)
         print(f'nodes_done     : {len(self.s_nodes_done):3d}', self.s_nodes_done)
+        print(f'nodes_ready    : {len(self.nodes_ready):3d}', self.nodes_ready)
+        print(f'nodes_success  : {len(self.s_nodes_success):3d}', self.s_nodes_success[-25:])
+        print(f'nodes_error    : {len(self.s_nodes_error):3d}', self.s_nodes_error)
         print(f'Source Res     : task_running {len(self.s_nodes_running):3d}', self.source_res)
         print()
         print(f'subjects_success     : {len(self.subject_success):3d}', self.subject_success)
@@ -381,10 +381,11 @@ def main():
             scheduler.node_all[node.name] = node
             scheduler.nodes_ready.append(node.name)
         scheduler.run(lock)
-        logging_wf.info(f'subject_success: {scheduler.subject_success}')
-        logging_wf.info(f'subject_success_datetime: {scheduler.subject_success_datetime}')
-        logging_wf.error(f'nodes_error: {scheduler.s_nodes_error}')
-        logging_wf.error(f'subject_error: {scheduler.subject_error}')
+        logging_wf.info(f'subject_success {len(scheduler.subject_success)}: {scheduler.subject_success}')
+        logging_wf.info(f'subject_success_datetime {len(scheduler.subject_success_datetime)}:'
+                        f' {scheduler.subject_success_datetime}')
+        logging_wf.error(f'nodes_error {len(scheduler.s_nodes_error)}: {scheduler.s_nodes_error}')
+        logging_wf.error(f'subject_error {len(scheduler.subject_error)}: {scheduler.subject_error}')
         if clear_bold_tmp_dir:
             clear_subject_bold_tmp_dir(bold_preprocess_dir, subject_ids, task)
 
