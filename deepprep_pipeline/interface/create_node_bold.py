@@ -173,7 +173,7 @@ def create_RestGauss_node(subject_id: str, task: str, atlas_type: str, preproces
     RestGauss_node.inputs.preprocess_method = preprocess_method
 
     RestGauss_node.base_dir = workflow_cached_dir
-    RestGauss_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=2000, IO_write_MB=0, IO_read_MB=0)
+    RestGauss_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=2000, IO_write_MB=0, IO_read_MB=0)
 
     return RestGauss_node
 
@@ -192,7 +192,7 @@ def create_RestBandpass_node(subject_id: str, task: str, atlas_type: str, prepro
     RestBandpass_node.inputs.preprocess_method = preprocess_method
 
     RestBandpass_node.base_dir = workflow_cached_dir
-    RestBandpass_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=3000, IO_write_MB=0, IO_read_MB=0)
+    RestBandpass_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=3000, IO_write_MB=0, IO_read_MB=0)
 
     return RestBandpass_node
 
@@ -240,7 +240,7 @@ def create_VxmRegNormMNI152_node(subject_id: str, task: str, atlas_type: str, pr
     VxmRegNormMNI152_node.inputs.gpuid = gpuid
 
     VxmRegNormMNI152_node.base_dir = workflow_cached_dir
-    VxmRegNormMNI152_node.source = Source(CPU_n=0, GPU_MB=4529, RAM_MB=14000, IO_write_MB=20, IO_read_MB=40)
+    VxmRegNormMNI152_node.source = Source(CPU_n=0, GPU_MB=4529, RAM_MB=15000, IO_write_MB=20, IO_read_MB=40)
 
     return VxmRegNormMNI152_node
 
@@ -261,7 +261,7 @@ def create_Smooth_node(subject_id: str, task: str, atlas_type: str, preprocess_m
     Smooth_node.inputs.derivative_deepprep_path = derivative_deepprep_path
 
     Smooth_node.base_dir = workflow_cached_dir
-    Smooth_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=7000, IO_write_MB=0, IO_read_MB=0)
+    Smooth_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=7000, IO_write_MB=0, IO_read_MB=0)
 
     return Smooth_node
 
@@ -277,15 +277,21 @@ def create_node_t():
     fastcsr_home = pwd / "FastCSR"
     featreg_home = pwd / "FeatReg"
 
-    bids_data_dir_test = '/mnt/ngshare/DeepPrep_workflow_test/UKB_BIDS'
-    subjects_dir_test = '/mnt/ngshare/DeepPrep_workflow_test/UKB_Recon_2'
-    bold_preprocess_dir_test = '/mnt/ngshare/DeepPrep_workflow_test/UKB_BoldPreprocess_2'
-    workflow_cached_dir_test = '/mnt/ngshare/DeepPrep_workflow_test/UKB_Workflow_2'
-    vxm_model_path_test = '/home/anning/workspace/DeepPrep/deepprep_pipeline/model/voxelmorph'
+    bids_data_dir_test = '/mnt/ngshare2/UKB/BIDS'
+    subjects_dir_test = Path('/mnt/ngshare/DeepPrep_workflow_test/UKB_Recon')
+    bold_preprocess_dir_test = Path('/mnt/ngshare/DeepPrep_workflow_test/UKB_BoldPreprocess')
+    workflow_cached_dir_test = '/mnt/ngshare/DeepPrep_workflow_test/UKB_Workflow'
+    vxm_model_path_test = '/home/pbfs19/workspace/DeepPrep/deepprep_pipeline/model/voxelmorph'
     mni152_brain_mask_test = '/usr/local/fsl/data/standard/MNI152_T1_2mm_brain_mask.nii.gz'
-    resource_dir_test = '/home/anning/workspace/DeepPrep/deepprep_pipeline/resource'
+    resource_dir_test = '/home/pbfs19/workspace/DeepPrep/deepprep_pipeline/resource'
 
-    subject_id_test = 'sub-1013020'
+    if not subjects_dir_test.exists():
+        subjects_dir_test.mkdir(parents=True, exist_ok=True)
+
+    if not bold_preprocess_dir_test.exists():
+        bold_preprocess_dir_test.mkdir(parents=True, exist_ok=True)
+
+    subject_id_test = 'sub-1000301-ses-02'
 
     # t1w_files = ['/mnt/ngshare/DeepPrep_workflow_test/UKB_BIDS/sub-1000037/ses-02/anat/sub-1000037_ses-02_T1w.nii.gz']
 
@@ -313,6 +319,7 @@ def create_node_t():
     node = create_VxmRegistraion_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
                                       preprocess_method=preprocess_method_test)
     node.run()
+    exit()
     # sub_node = node.interface.create_sub_node()
     # sub_node.run()
 

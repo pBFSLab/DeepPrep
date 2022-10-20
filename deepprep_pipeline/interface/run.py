@@ -76,13 +76,15 @@ def multipool_BidsBolds_2(cmd, bids_entities, bids_path, Multi_Num=2):
     pool.join()
 
 
-def set_envrion(threads: int = 1):
+def set_envrion(freesurfer_home='/usr/local/freesurfer720',
+                java_home='/usr/lib/jvm/java-11-openjdk-amd64',
+                fsl_home='/usr/local/fsl',
+                threads: int = 1):
     # FreeSurfer recon-all env
-    freesurfer_home = '/usr/local/freesurfer720'
     os.environ['FREESURFER_HOME'] = f'{freesurfer_home}'
     os.environ['FREESURFER'] = f'{freesurfer_home}'
     os.environ['SUBJECTS_DIR'] = f'{freesurfer_home}/subjects'
-    os.environ['PATH'] = f'{freesurfer_home}/bin:/usr/local/freesurfer/mni/bin:/usr/local/freesurfer/tktools:' + \
+    os.environ['PATH'] = f'{freesurfer_home}/bin:{freesurfer_home}/mni/bin:{freesurfer_home}/tktools:' + \
                          f'{freesurfer_home}/fsfast/bin:' + os.environ['PATH']
     os.environ['MINC_BIN_DIR'] = f'{freesurfer_home}/mni/bin'
     os.environ['MINC_LIB_DIR'] = f'{freesurfer_home}/mni/lib'
@@ -94,10 +96,10 @@ def set_envrion(threads: int = 1):
 
     # FastCSR
     os.environ[
-        'LD_LIBRARY_PATH'] = '/usr/lib/jvm/java-11-openjdk-amd64/lib:/usr/lib/jvm/java-11-openjdk-amd64/lib/server:'
+        'LD_LIBRARY_PATH'] = f'{java_home}/lib:{java_home}/lib/server:'
 
     # FSL
-    os.environ['PATH'] = '/usr/local/fsl/bin:' + os.environ['PATH']
+    os.environ['PATH'] = f'{fsl_home}/bin:' + os.environ['PATH']
 
     # set FreeSurfer threads
     os.environ['OMP_NUM_THREADS'] = str(threads)

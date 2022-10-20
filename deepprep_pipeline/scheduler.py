@@ -23,16 +23,18 @@ def clear_is_running(subjects_dir: Path, subject_ids: list):
 
 def clear_subject_bold_tmp_dir(bold_preprocess_dir: Path, subject_ids: list, task: str):
     for subject_id in subject_ids:
-        tmp_dir = bold_preprocess_dir / subject_id / f'task-{task}'
+        tmp_dir = bold_preprocess_dir / subject_id / 'tmp' / f'task-{task}'
         if tmp_dir.exists():
             os.system(f'rm -r {tmp_dir}')
 
 
 class Scheduler:
     def __init__(self, share_manager: Manager, subject_ids: list, last_node_name=None, auto_schedule=True):
-        self.source_res = Source(36, 24000, 60000, 150, 450)
+        self.source_res = Source(36, 24000, 70000, 200, 500)
         self.last_node_name = last_node_name
         self.auto_schedule = auto_schedule  # 是否开启自动调度
+
+        self.start_datetime = datetime.now().strftime('%Y-%m-%d-%H:%M:%S')
 
         # Queue
         self.queue_subject = share_manager.list()  # 队列中的subject
@@ -50,6 +52,9 @@ class Scheduler:
 
         # Node
         self.node_all = dict()
+
+        # others
+        self.iter_count = 0
 
     def check_node_source(self, source: Source):
         """
@@ -115,6 +120,9 @@ class Scheduler:
     def run_node(node, node_error: list, node_success: list, node_running: list, node_done: list, subject_error: list,
                  lock: Lock):
         try:
+            import sys
+            f = open(os.devnull, 'w')
+            sys.stdout = f
             print(f'run start {node.name}')
             node.run()
             print(f'run over {node.name}')
@@ -139,19 +147,22 @@ class Scheduler:
         1. node执行完毕
         2. 有新的node进入队列
         """
-        print('Start run queue =================== ==================')
         lock.acquire()
-        print(f'nodes_ready    : {len(self.nodes_ready):3d}', self.nodes_ready)
-        print(f'nodes_success  : {len(self.s_nodes_success):3d}', self.s_nodes_success)
-        print(f'nodes_error    : {len(self.s_nodes_error):3d}', self.s_nodes_error)
-        print(f'nodes_running  : {len(self.s_nodes_running):3d}', self.s_nodes_running)
-        print(f'nodes_done     : {len(self.s_nodes_done):3d}', self.s_nodes_done)
-        print(f'Source Res     : task_running {len(self.s_nodes_running):3d}', self.source_res)
-        print()
-        print(f'subjects_success     : {len(self.subject_success):3d}', self.subject_success)
-        print(f'subjects_datetime    : {len(self.subject_success_datetime):3d}', self.subject_success_datetime)
-        print(f'subjects_error       : {len(self.subject_error):3d}', self.subject_error)
-        print('                =================== ==================')
+        if self.iter_count % 6 == 0:
+            print('Start run queue =================== ==================')
+            print(f'start_datetime : {self.start_datetime}')
+            print(f'nodes_running  : {len(self.s_nodes_running):3d}', self.s_nodes_running)
+            print(f'nodes_done     : {len(self.s_nodes_done):3d}', self.s_nodes_done)
+            print(f'nodes_ready    : {len(self.nodes_ready):3d}', self.nodes_ready)
+            print(f'nodes_success  : {len(self.s_nodes_success):3d}', self.s_nodes_success[-25:])
+            print(f'nodes_error    : {len(self.s_nodes_error):3d}', self.s_nodes_error)
+            print(f'Source Res     : task_running {len(self.s_nodes_running):3d}', self.source_res)
+            print()
+            print(f'subjects_success     : {len(self.subject_success):3d}', self.subject_success)
+            print(f'subjects_datetime    : {len(self.subject_success_datetime):3d}', self.subject_success_datetime)
+            print(f'subjects_error       : {len(self.subject_error):3d}', self.subject_error)
+            print()
+            print('                =================== =================')
         # ############# Start deal nodes_done =================== ==================')
         for node_name in self.s_nodes_done:
             node = self.node_all.pop(node_name)
@@ -218,8 +229,9 @@ class Scheduler:
                     logging_wf.info('All task node Done!')
                     break
                 lock.release()
-                print('No new node, sleep 3s')
-                time.sleep(3)
+                print('No new node, wait 10s')
+                time.sleep(10)
+            self.iter_count += 1
 
 
 def parse_args():
@@ -293,7 +305,7 @@ def main():
 
     # ############### Common
     # python_interpret = Path(sys.executable)  # 获取当前的Python解析器地址
-    last_node_name = 'Smooth_node'  # workflow的最后一个node的名字
+    last_node_name = 'VxmRegNormMNI152_node'  # workflow的最后一个node的名字,VxmRegNormMNI152_node or Smooth_node or ...
     auto_schedule = True  # 是否开启自动调度
     clear_bold_tmp_dir = True
 
@@ -309,6 +321,7 @@ def main():
     os.environ['VXM_MODEL_PATH'] = str(vxm_model_path)
     os.environ['MNI152_BRAIN_MASK'] = str(mni152_brain_mask)
     os.environ['RESOURCE_DIR'] = str(resource_dir)
+    os.environ['DEEPPREP_DEVICES'] = 'cuda'
 
     os.environ['DEEPPREP_ATLAS_TYPE'] = atlas_type
     os.environ['DEEPPREP_TASK'] = task
@@ -323,12 +336,14 @@ def main():
     t1w_filess_all = list()
     subject_ids_all = list()
     subject_dict = {}
-    for t1w_file in layout.get(return_type='filename', suffix="T1w"):
+    for t1w_file in layout.get(return_type='filename', suffix="T1w", extension='.nii.gz'):
         sub_info = layout.parse_file_entities(t1w_file)
         subject_id = f"sub-{sub_info['subject']}"
         if not multi_t1:
             if 'session' in sub_info:
                 subject_id = subject_id + f"-ses-{sub_info['session']}"
+            if 'run' in sub_info:
+                subject_id = subject_id + f"-run-{sub_info['run']}"
             t1w_filess_all.append([t1w_file])
             subject_ids_all.append(subject_id)
         else:
@@ -344,8 +359,8 @@ def main():
 
     # for epoch in range(len(subject_ids_all) + 1):
     # try:
-    t1w_filess = t1w_filess_all[:batch_size]
-    subject_ids = subject_ids_all[:batch_size]
+    t1w_filess = t1w_filess_all[200: 200 + batch_size]
+    subject_ids = subject_ids_all[200: 200 + batch_size]
 
     if len(t1w_filess) <= 0 or len(subject_ids) <= 0:
         logging_wf.warning(f'len(subject_ids == 0)')
@@ -371,10 +386,11 @@ def main():
             scheduler.node_all[node.name] = node
             scheduler.nodes_ready.append(node.name)
         scheduler.run(lock)
-        logging_wf.info(f'subject_success: {scheduler.subject_success}')
-        logging_wf.info(f'subject_success_datetime: {scheduler.subject_success_datetime}')
-        logging_wf.error(f'nodes_error: {scheduler.s_nodes_error}')
-        logging_wf.error(f'subject_error: {scheduler.subject_error}')
+        logging_wf.info(f'subject_success {len(scheduler.subject_success)}: {scheduler.subject_success}')
+        logging_wf.info(f'subject_success_datetime {len(scheduler.subject_success_datetime)}:'
+                        f' {scheduler.subject_success_datetime}')
+        logging_wf.error(f'nodes_error {len(scheduler.s_nodes_error)}: {scheduler.s_nodes_error}')
+        logging_wf.error(f'subject_error {len(scheduler.subject_error)}: {scheduler.subject_error}')
         if clear_bold_tmp_dir:
             clear_subject_bold_tmp_dir(bold_preprocess_dir, subject_ids, task)
 
