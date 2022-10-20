@@ -208,6 +208,7 @@ def create_FastCSR_node(subject_id: str):
     fastcsr_node = Node(FastCSR(), name=f'{subject_id}_fastcsr_node')
     fastcsr_node.inputs.python_interpret = python_interpret
     fastcsr_node.inputs.fastcsr_py = fastcsr_py
+    fastcsr_node.inputs.parallel_scheduling = 'off'
     fastcsr_node.inputs.subjects_dir = subjects_dir
     fastcsr_node.inputs.subject_id = subject_id
     fastcsr_node.inputs.orig_file = Path(subjects_dir) / subject_id / 'mri/orig.mgz'
@@ -218,7 +219,7 @@ def create_FastCSR_node(subject_id: str):
     fastcsr_node.inputs.brain_finalsurfs_file = Path(subjects_dir) / subject_id / 'mri/brain.finalsurfs.mgz'
 
     fastcsr_node.base_dir = workflow_cached_dir
-    fastcsr_node.source = Source(CPU_n=0, GPU_MB=7000, RAM_MB=10000)
+    fastcsr_node.source = Source(CPU_n=0, GPU_MB=7000, RAM_MB=6000)
 
     return fastcsr_node
 
@@ -524,9 +525,9 @@ def create_node_t():
     subjects_dir_test = Path('/mnt/ngshare/DeepPrep_workflow_test/UKB_Recon')
     bold_preprocess_dir_test = Path('/mnt/ngshare/DeepPrep_workflow_test/UKB_BoldPreprocess')
     workflow_cached_dir_test = '/mnt/ngshare/DeepPrep_workflow_test/UKB_Workflow'
-    vxm_model_path_test = '/home/pbfs19/workspace/DeepPrep/deepprep_pipeline/model/voxelmorph'
+    vxm_model_path_test = '/home/pbfs18/workspace/DeepPrep/deepprep_pipeline/model/voxelmorph'
     mni152_brain_mask_test = '/usr/local/fsl/data/standard/MNI152_T1_2mm_brain_mask.nii.gz'
-    resource_dir_test = '/home/pbfs19/workspace/DeepPrep/deepprep_pipeline/resource'
+    resource_dir_test = '/home/pbfs18/workspace/DeepPrep/deepprep_pipeline/resource'
 
     if not subjects_dir_test.exists():
         subjects_dir_test.mkdir(parents=True, exist_ok=True)
@@ -559,7 +560,7 @@ def create_node_t():
     os.environ['DEEPPREP_PREPROCESS_METHOD'] = preprocess_method_test
 
     # 测试
-    node = create_FeatReg_node(subject_id=subject_id_test)
+    node = create_FastCSR_node(subject_id=subject_id_test)
     node.run()
     exit()
     # sub_node = node.interface.create_sub_node()
