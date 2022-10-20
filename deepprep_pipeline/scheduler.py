@@ -359,8 +359,8 @@ def main():
 
     # for epoch in range(len(subject_ids_all) + 1):
     # try:
-    t1w_filess = t1w_filess_all[200: 200 + batch_size]
-    subject_ids = subject_ids_all[200: 200 + batch_size]
+    t1w_filess = t1w_filess_all[:batch_size]
+    subject_ids = subject_ids_all[:batch_size]
 
     if len(t1w_filess) <= 0 or len(subject_ids) <= 0:
         logging_wf.warning(f'len(subject_ids == 0)')
