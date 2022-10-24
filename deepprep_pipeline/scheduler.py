@@ -266,6 +266,7 @@ python3 deepprep_pipeline.py
     parser.add_argument("--bold_preprocess_method", help='使用的bold处理方法 rest or task', default=None,
                         required=False)
     parser.add_argument("--single_sub_multi_t1", help='单个subject对应多个T1', default=False, required=False, type=bool)
+    parser.add_argument("--subject_filter", help='通过subject_id过滤', default=False, required=False)
 
     args = parser.parse_args()
 
@@ -309,6 +310,15 @@ def main():
     auto_schedule = True  # 是否开启自动调度
     clear_bold_tmp_dir = True
 
+    # ############### filter subjects by subjects_filter_file
+    if args.subject_filter is not None:
+        with open(args.subject_filter, 'r') as f:
+            subject_filter_ids = f.readlines()
+            subject_filter_ids = [i.strip() for i in subject_filter_ids]
+            subject_filter_ids = set(subject_filter_ids)
+    else:
+        subject_filter_ids = None
+
     # ############### ENV
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
     os.environ['BOLD_PREPROCESS_DIR'] = str(bold_preprocess_dir)
@@ -339,6 +349,9 @@ def main():
     for t1w_file in layout.get(return_type='filename', suffix="T1w", extension='.nii.gz'):
         sub_info = layout.parse_file_entities(t1w_file)
         subject_id = f"sub-{sub_info['subject']}"
+        # filter subjects by subjects_filter_file
+        if (subject_filter_ids is not None) and (sub_info['subject'] not in subject_filter_ids):
+            continue
         if not multi_t1:
             if 'session' in sub_info:
                 subject_id = subject_id + f"-ses-{sub_info['session']}"
@@ -359,8 +372,8 @@ def main():
 
     # for epoch in range(len(subject_ids_all) + 1):
     # try:
-    t1w_filess = t1w_filess_all[200: 200 + batch_size]
-    subject_ids = subject_ids_all[200: 200 + batch_size]
+    t1w_filess = t1w_filess_all[:batch_size]
+    subject_ids = subject_ids_all[:batch_size]
 
     if len(t1w_filess) <= 0 or len(subject_ids) <= 0:
         logging_wf.warning(f'len(subject_ids == 0)')
