@@ -30,7 +30,7 @@ def clear_subject_bold_tmp_dir(bold_preprocess_dir: Path, subject_ids: list, tas
 
 class Scheduler:
     def __init__(self, share_manager: Manager, subject_ids: list, last_node_name=None, auto_schedule=True):
-        self.source_res = Source(36, 24000, 70000, 200, 500)
+        self.source_res = Source(20, 24000, 35000, 200, 500)
         self.last_node_name = last_node_name
         self.auto_schedule = auto_schedule  # 是否开启自动调度
 
@@ -265,8 +265,9 @@ python3 deepprep_pipeline.py
     parser.add_argument("--bold_task_type", help="跑的task类型example:motor、rest", default='rest', required=False)
     parser.add_argument("--bold_preprocess_method", help='使用的bold处理方法 rest or task', default=None,
                         required=False)
+    parser.add_argument("--bold_only", help='跳过Recon', default=False, required=False, type=bool)
     parser.add_argument("--single_sub_multi_t1", help='单个subject对应多个T1', default=False, required=False, type=bool)
-    parser.add_argument("--subject_filter", help='通过subject_id过滤', default=False, required=False)
+    parser.add_argument("--subject_filter", help='通过subject_id过滤', required=False)
 
     args = parser.parse_args()
 
@@ -306,9 +307,9 @@ def main():
 
     # ############### Common
     # python_interpret = Path(sys.executable)  # 获取当前的Python解析器地址
-    last_node_name = 'VxmRegNormMNI152_node'  # workflow的最后一个node的名字,VxmRegNormMNI152_node or Smooth_node or ...
+    last_node_name = 'Smooth_node'  # workflow的最后一个node的名字,VxmRegNormMNI152_node or Smooth_node or ...
     auto_schedule = True  # 是否开启自动调度
-    clear_bold_tmp_dir = True
+    clear_bold_tmp_dir = False
 
     # ############### filter subjects by subjects_filter_file
     if args.subject_filter is not None:
@@ -394,10 +395,18 @@ def main():
         scheduler = Scheduler(share_manager, subject_ids,
                               last_node_name=last_node_name,
                               auto_schedule=auto_schedule)
-        for subject_id, t1w_files in zip(subject_ids, t1w_filess):
-            node = create_origandrawavg_node(subject_id=subject_id, t1w_files=t1w_files)
-            scheduler.node_all[node.name] = node
-            scheduler.nodes_ready.append(node.name)
+        if args.bold_only:
+            from interface.create_node_bold_only import create_VxmRegistraion_node
+            for subject_id in subject_ids:
+                node = create_VxmRegistraion_node(subject_id=subject_id, task=task, atlas_type=atlas_type,
+                                                  preprocess_method=preprocess_method)
+                scheduler.node_all[node.name] = node
+                scheduler.nodes_ready.append(node.name)
+        else:
+            for subject_id, t1w_files in zip(subject_ids, t1w_filess):
+                node = create_origandrawavg_node(subject_id=subject_id, t1w_files=t1w_files)
+                scheduler.node_all[node.name] = node
+                scheduler.nodes_ready.append(node.name)
         scheduler.run(lock)
         logging_wf.info(f'subject_success {len(scheduler.subject_success)}: {scheduler.subject_success}')
         logging_wf.info(f'subject_success_datetime {len(scheduler.subject_success_datetime)}:'
