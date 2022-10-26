@@ -69,6 +69,64 @@ def info_label_aseg():
                        255: "CC_Anterior"}
     return aseg_label, aseg_label_dict
 
+def info_label_aparc(parc=18, type="func"):
+    if parc == 18 and type=="func":
+        index = np.squeeze(ants.image_read('aparc_template/lh.Clustering_18_fs6_new.mgh').numpy())
+        aparc_label = set(index)
+        aparc_label_dict = {}
+        for i in aparc_label:
+            if i != 0:
+                aparc_label_dict[i] = f'Network_{int(i)}'
+            else:
+                aparc_label_dict[i] = f'Unknown'
+        return aparc_label, aparc_label_dict
+    elif parc == 92 and type=="func":
+        index = np.squeeze(ants.image_read('aparc_template/lh.Clustering_46_fs6.mgh').numpy())
+        aparc_label = set(index)
+        aparc_label_dict = {}
+        for i in aparc_label:
+            if i != 0:
+                aparc_label_dict[i] = f'Network_{int(i)}'
+            else:
+                aparc_label_dict[i] = f'Unknown'
+        return aparc_label, aparc_label_dict
+    elif parc == 152 and type=="func":
+        index = np.squeeze(ants.image_read('aparc_template/lh.Clustering_76_fs6.mgh').numpy())
+        aparc_label = set(index)
+        aparc_label_dict = {}
+        for i in aparc_label:
+            if i != 0:
+                aparc_label_dict[i] = f'Network_{int(i)}'
+            else:
+                aparc_label_dict[i] = f'Unknown'
+        return aparc_label, aparc_label_dict
+    elif parc == 213 and type=="func":
+        index_l = np.squeeze(ants.image_read('aparc_template/lh.Clustering_108_fs6.mgh').numpy())
+        index_r = np.squeeze(ants.image_read('aparc_template/rh.Clustering_108_fs6.mgh').numpy())
+        aparc_label_l = set(index_l)
+        aparc_label_r = set(index_r)
+        aparc_label_dict_l = {}
+        aparc_label_dict_r = {}
+        for i in aparc_label_l:
+            if i != 0:
+                aparc_label_dict_l[i] = f'Network_{int(i)}'
+            else:
+                aparc_label_dict_l[i] = f'Unknown'
+        for i in aparc_label_r:
+            if i != 0:
+                aparc_label_dict_r[i] = f'Network_{int(i)}'
+            else:
+                aparc_label_dict_r[i] = f'Unknown'
+
+        return aparc_label_l, aparc_label_dict_l, aparc_label_r, aparc_label_dict_r
+    elif type=="anat":
+        index = nib.freesurfer.io.read_annot('aparc_template/lh.aparc.annot')
+        aparc_label = np.unique(index[0])
+        aparc_label_dict = {}
+        for k, v in zip(aparc_label, index[2]):
+            aparc_label_dict[k] = str(v).lstrip('b').strip("''")
+        return aparc_label, aparc_label_dict
+
 
 
 
@@ -261,12 +319,13 @@ class AccAndStability:
         method_dict = {}
 
         for sub in os.listdir(input_dir):
-            sub_id = sub.split('_')[0] # MSC
-            # sub_id = '-'.join(sub.split('-')[:2])  # HNU_1
-            if sub_id not in method_dict:
-                method_dict[sub_id] = [sub]
-            else:
-                method_dict[sub_id].append(sub)
+            if 'ses' in sub:
+                sub_id = sub.split('-ses')[0] # MSC
+                # sub_id = '-'.join(sub.split('-')[:2])  # HNU_1
+                if sub_id not in method_dict:
+                    method_dict[sub_id] = [sub]
+                else:
+                    method_dict[sub_id].append(sub)
 
         df_dice_mean = pd.DataFrame(columns=label_dict.values(), index=sorted(method_dict.keys()))
         df_dice_std = pd.DataFrame(columns=label_dict.values(), index=sorted(method_dict.keys()))
@@ -311,6 +370,99 @@ class AccAndStability:
         df_dice.to_csv(output_dir)
 
 
+    def aparc_stability(self, input_dir, parc, method='DeepPrep'):
+        """
+        calculate 18, 92 , 152 or 213 aparc stability (std of dice) for each sub
+
+        Arguments
+        ---------
+        method: aparc method
+        aparc: 18 -- get 18 aparc labels
+              92 -- get 92 aparc labels
+              152 -- get 152 aparc labels
+              213 -- get 213 aparc labels
+
+        Returns
+        -------
+        save stability (std of dice) for all subjects and each of them
+        """
+        output_dir = Path(self.output_dir, f'aparc{parc}_{method}_csv')
+        if not output_dir.exists():
+            output_dir.mkdir(parents=True, exist_ok=True)
+        if parc == 213:
+            label_lh, label_dict_lh, label_rh, label_dict_rh = info_label_aparc(parc, type="func")
+        elif parc in [18, 92, 152]:
+            label, label_dict = info_label_aparc(parc, type="func")
+        sub_id = [sub for sub in sorted(os.listdir(input_dir))]
+        dict = {}
+        for sub in sub_id:
+            sub_dir = Path(input_dir, sub)
+            dict[sub] = sorted(os.listdir(sub_dir))
+
+        for hemi in ['lh', 'rh']:
+            if parc == 213 and hemi == 'lh':
+                label = label_lh
+                label_dict = label_dict_lh
+            elif parc == 213 and hemi == 'rh':
+                label = label_rh
+                label_dict = label_dict_rh
+            else:
+                pass
+            df_dice_mean = pd.DataFrame(columns=label_dict.values(), index=sorted(dict.keys()))
+            df_dice_std = pd.DataFrame(columns=label_dict.values(), index=sorted(dict.keys()))
+
+            for sub in sorted(dict.keys()):
+                print(sub)
+                dice_dict = {}
+                df_sub_dice = None
+
+                i = 0
+                while i < len(dict[sub]):
+                    aparc_i = dict[sub][i]
+                    for j in range(i + 1, len(dict[sub])):
+                        aparc_j = dict[sub][j]
+                        if parc == 18:
+                            i_dir = \
+                                glob(os.path.join(input_dir, sub, aparc_i,
+                                                  f'parc/{aparc_i}/*/{hemi}_parc_result.annot'))[0] # App dir
+                            j_dir = \
+                                glob(os.path.join(input_dir, sub, aparc_j,
+                                                  f'parc/{aparc_j}/*/{hemi}_parc_result.annot'))[0] # App dir
+                        elif parc == 92:
+                            i_dir = \
+                            glob(os.path.join(input_dir, sub, aparc_i, f'parc92/{hemi}_parc92_result.annot'))[0] # App dir
+                            j_dir = \
+                            glob(os.path.join(input_dir, sub, aparc_j, f'parc92/{hemi}_parc92_result.annot'))[0] # App dir
+                        else:
+                            pass
+                        print(aparc_i, aparc_j)
+                        dice_dict['sub'] = aparc_i + ' & ' + aparc_j
+                        i_aseg = nib.freesurfer.read_annot(i_dir)[0]
+                        j_aseg = nib.freesurfer.read_annot(j_dir)[0]
+
+                        for l in label:
+                            dice = self.evaluate_aseg(i_aseg, j_aseg, l)
+                            dice_dict[label_dict[l]] = [dice]
+
+                        df = pd.DataFrame.from_dict(dice_dict)
+
+                        if df_sub_dice is None:
+                            df_sub_dice = df
+                        else:
+                            df_sub_dice = pd.concat((df_sub_dice, df), axis=0)
+
+                    i += 1
+                sub_output = Path(output_dir, f'{method}_{hemi}_{sub}_aparc{parc}_dice.csv')
+                df_sub_dice.loc['mean'], df_sub_dice.loc['std'] = df_sub_dice.mean(axis=0), df_sub_dice.std(axis=0)
+                df_sub_dice.to_csv(sub_output, index=False)
+                df_dice_mean.loc[sub] = df_sub_dice.loc['mean']
+                df_dice_std.loc[sub] = df_sub_dice.loc['std']
+
+            stability_output_dir = Path(output_dir, f'{method}_{hemi}_aparc{parc}_stability.csv')
+            df_dice = pd.concat([df_dice_mean, df_dice_std], axis=0)
+            df_dice.to_csv(stability_output_dir)
+
+
 
 class ScreenShot:
     """
@@ -334,7 +486,7 @@ class ScreenShot:
         self.dataset = dataset
         self.method1 = method1
         self.method2 = method2
-        self.feature_dir = Path(f'/mnt/ngshare/{self.method1}/Validation/{self.dataset}/v1_feature')
+        self.feature_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/{self.dataset}/v1_feature')
         self.Multi_CPU_Num = 10
 
     def run_cmd(self, cmd):
@@ -399,8 +551,9 @@ class ScreenShot:
         """
         project subjects to fsaverage6 space
         """
+        method = self.method1
         recon_dir = Path(recon_dir)
-        output_dir = Path(self.feature_dir, 'recon_interp_fsaverage6')
+        output_dir = Path(self.feature_dir, f'recon_interp_fsaverage6/{method}')
 
         target = recon_dir / 'fsaverage6'
         if not target.exists():
@@ -435,17 +588,18 @@ class ScreenShot:
         """
         calculate individual's mean and std according to different features
         """
-        interp_dir = Path(self.feature_dir, 'recon_interp_fsaverage6')
+        method = self.method1
+        interp_dir = Path(self.feature_dir, f'recon_interp_fsaverage6/{method}')
         individual_dir = Path(self.feature_dir, 'recon_individual_fsaverage6')
 
         dp_dict = dict()
         for subject_path in interp_dir.iterdir():
             if not 'sub' in subject_path.name:
                 continue
-            if 'ses' not in subject_path.name:
-                continue
+            # if 'ses' not in subject_path.name:
+            #     continue
 
-            sub_name = subject_path.name.split('_')[0]
+            sub_name = subject_path.name.split('-ses')[0]
             # sub_name = '-'.join(subject_path.name.split('-')[:2])
 
             if sub_name not in dp_dict:
@@ -485,7 +639,8 @@ class ScreenShot:
         input: surf/?h.std.<feature>
         output: surf/?h.<feature>
         """
-        group_dir = Path(self.feature_dir, 'recon_individual_fsaverage6')
+        # method = self.method1
+        group_dir = Path(self.feature_dir, f'recon_individual_fsaverage6')
         stability_dir = Path(self.feature_dir, 'recon_stability_fsaverage6')
 
         project = self.method1
@@ -519,15 +674,16 @@ class ScreenShot:
         output: surf/?h.mean.<feature>
                 surf/?h.std.<feature>
         """
-        interp_dir = Path(self.feature_dir, 'recon_interp_fsaverage6')
+        method = self.method1
+        interp_dir = Path(self.feature_dir, f'recon_interp_fsaverage6/{method}')
         group_dir = Path(self.feature_dir, 'recon_group_fsaverage6')
 
         dp_list = list()
         for subject_path in interp_dir.iterdir():
             if not 'sub' in subject_path.name:
                 continue
-            if 'ses' not in subject_path.name:
-                continue
+            # if 'ses' not in subject_path.name:
+            #     continue
 
             dp_list.append(subject_path)
 
@@ -579,7 +735,7 @@ class ScreenShot:
 
         input_dir = Path(self.feature_dir, f'recon_group_fsaverage6/{method}')
         out_dir = Path(self.feature_dir, f'recon_group_fsaverage6_screenshot/{method}')
-        concat_dir = Path(self.feature_dir, 'recon_group_fsaverage6_screenshot_concat')
+        concat_dir = Path(self.feature_dir, f'recon_group_fsaverage6_screenshot_concat/{method}')
 
         args_list1 = []
         args_list2 = []
@@ -624,10 +780,10 @@ class ScreenShot:
     def stability_screenshot(self, feature='thickness', vmin='', vmax=''):
         """
         """
+        method = self.method1
         input_dir = Path(self.feature_dir, 'recon_stability_fsaverage6')
         out_dir = Path(self.feature_dir, 'recon_stability_fsaverage6_screenshot')
-        concat_dir = Path(self.feature_dir, 'recon_stability_fsaverage6_screenshot_concat')
-        method = self.method1
+        concat_dir = Path(self.feature_dir, f'recon_stability_fsaverage6_screenshot_concat/{method}')
 
         args_list1 = []
         args_list2 = []
@@ -661,26 +817,70 @@ if __name__ == '__main__':
     cls = AccAndStability(recon_dir, 'HNU_1', 'DeepPrep')
     # cls.ants_reg('Rigid') # register to MNI152 space
     # cls.aseg_stability('DeepPrep')
+    # cls.aparc_stability()
 
-    ######################## project to fs6 ##########################
+    ####################### project to fs6 ##########################
     method1 = 'FreeSurfer'
+    # method1 = 'DeepPrep'
     method2 = None
     recon_dir1 = '/mnt/ngshare/FreeSurfer_HNU_1/HNU_1_Recon_allT1'
+    # recon_dir1 = '/mnt/ngshare/DeepPrep_HNU_1/HNU_1_Recon_allT1'
     recon_dir2 = None
     dataset = 'HNU_1'
     screenshot = ScreenShot(recon_dir1, recon_dir2, dataset, method1, method2)
     for feature, (vmin, vmax), (vmin2, vmax2), (vmin3, vmax3) in zip(['thickness', 'curv', 'sulc'],
                                                                      [('1', '3.5'), ('-0.5', '0.25'), ('-13', '13'), ],
-                                                                     [('0', '0.35'), ('0', '0.05'), ('0', '1.3'), ],
-                                                                     [('0', '0.35'), ('0', '0.05'), ('0', '1.3')], ):
+                                                                     [('0', '0.8'), ('0', '0.15'), ('0', '4'), ],
+                                                                     [('0', '0.6'), ('0', '0.08'), ('0', '1.3')], ):
         print(feature, vmin, vmax, vmin2, vmax2, vmin3, vmax3)
-        # screenshot.feature_screenshot(feature) # TODO 重画
+        # screenshot.feature_screenshot(feature)
 
-        for hemi in ['lh', 'rh']:
-            screenshot.project_fsaverage6(recon_dir1, feature=feature, hemi=hemi)
-            screenshot.cal_individual_fsaverage6(feature=feature, hemi=hemi)
-            screenshot.cal_stability_fsaverage6(feature=feature, hemi=hemi)
-            screenshot.cal_group_fsaverage6(feature=feature, hemi=hemi)
+        # for hemi in ['lh', 'rh']:
+            # screenshot.project_fsaverage6(recon_dir1, feature=feature, hemi=hemi)
+            # screenshot.cal_individual_fsaverage6(feature=feature, hemi=hemi)
+            # screenshot.cal_stability_fsaverage6(feature=feature, hemi=hemi)
+            # screenshot.cal_group_fsaverage6(feature=feature, hemi=hemi)
 
-        # screenshot.group_screenshot(feature=feature, vmin1=vmin, vmax1=vmax, vmin2=vmin2, vmax2=vmax2)
-        # screenshot.stability_screenshot(feature=feature, vmin=vmin3, vmax=vmax3)
+        screenshot.group_screenshot(feature=feature, vmin1=vmin, vmax1=vmax, vmin2=vmin2, vmax2=vmax2)
+        screenshot.stability_screenshot(feature=feature, vmin=vmin3, vmax=vmax3)
+
+    # ####################### project to fs6 ##########################
+    # method1 = 'fMRIPrep'
+    # method2 = None
+    # recon_dir1 = '/mnt/ngshare/fMRIPrep_UKB_50/UKB_50_Recon'
+    # recon_dir2 = None
+    # dataset = 'UKB_50'
+    # screenshot = ScreenShot(recon_dir1, recon_dir2, dataset, method1, method2)
+    # for feature, (vmin, vmax), (vmin2, vmax2), (vmin3, vmax3) in zip(['thickness', 'curv', 'sulc'],
+    #                                                                  [('1', '3.5'), ('-0.5', '0.25'), ('-13', '13'), ],
+    #                                                                  [('0', '0.8'), ('0', '0.15'), ('0', '4'), ],
+    #                                                                  [('0', '0.6'), ('0', '0.08'), ('0', '1.3')], ):
+    #     print(feature, vmin, vmax, vmin2, vmax2, vmin3, vmax3)
+    #     # screenshot.feature_screenshot(feature)
+    #
+    #     # for hemi in ['lh', 'rh']:
+    #         # screenshot.project_fsaverage6(recon_dir1, feature=feature, hemi=hemi)
+    #         # screenshot.cal_group_fsaverage6(feature=feature, hemi=hemi)
+    #
+    #     # screenshot.group_screenshot(feature=feature, vmin1=vmin, vmax1=vmax, vmin2=vmin2, vmax2=vmax2)
+
+    # ######################## project to fs6 ##########################
+    # method1 = 'DeepPrep'
+    # method2 = None
+    # recon_dir1 = '/mnt/ngshare/DeepPrep_UKB_50/UKB_50_Recon'
+    # recon_dir2 = None
+    # dataset = 'UKB_50'
+    # screenshot = ScreenShot(recon_dir1, recon_dir2, dataset, method1, method2)
+    # for feature, (vmin, vmax), (vmin2, vmax2), (vmin3, vmax3) in zip(['thickness', 'curv', 'sulc'],
+    #                                                                  [('1', '3.5'), ('-0.5', '0.25'),
+    #                                                                   ('-13', '13'), ],
+    #                                                                  [('0', '0.8'), ('0', '0.15'), ('0', '4'), ],
+    #                                                                  [('0', '0.6'), ('0', '0.08'), ('0', '1.3')], ):
+    #     print(feature, vmin, vmax, vmin2, vmax2, vmin3, vmax3)
+    #     screenshot.feature_screenshot(feature)
+    #
+    #     for hemi in ['lh', 'rh']:
+    #         screenshot.project_fsaverage6(recon_dir1, feature=feature, hemi=hemi)
+    #         screenshot.cal_group_fsaverage6(feature=feature, hemi=hemi)
+    #
+    #     screenshot.group_screenshot(feature=feature, vmin1=vmin, vmax1=vmax, vmin2=vmin2, vmax2=vmax2)
