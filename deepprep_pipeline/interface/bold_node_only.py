@@ -400,20 +400,20 @@ class Stc(BaseInterface):
         # # # runs = ['001', '002', '003', '004']
         # # # runs = ['001', '002']
         # # runs = ['001']
-        # multipool_run(self.cmd, runs, Multi_Num=8)
+        multipool_run(self.cmd, runs, Multi_Num=8)
 
-        input_fname = f'{self.inputs.subject_id}_bld_rest_reorient_skip'
-        output_fname = f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln'
-        shargs = [
-            '-s', self.inputs.subject_id,
-            '-d', self.inputs.preprocess_dir,
-            '-fsd', 'bold',
-            '-so', 'odd',
-            '-ngroups', 1,
-            '-i', input_fname,
-            '-o', output_fname,
-            '-nolog']
-        sh.stc_sess(*shargs, _out=sys.stdout)
+        # input_fname = f'{self.inputs.subject_id}_bld_rest_reorient_skip'
+        # output_fname = f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln'
+        # shargs = [
+        #     '-s', self.inputs.subject_id,
+        #     '-d', self.inputs.preprocess_dir,
+        #     '-fsd', 'bold',
+        #     '-so', 'odd',
+        #     '-ngroups', 1,
+        #     '-i', input_fname,
+        #     '-o', output_fname,
+        #     '-nolog']
+        # sh.stc_sess(*shargs, _out=sys.stdout)
 
         self.check_output(runs)
         return runtime
