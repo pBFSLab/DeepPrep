@@ -1587,6 +1587,12 @@ class Smooth(BaseInterface):
                 subj_func_path = Path(deepprep_subj_path) / 'func'
             self.check_output(subj_func_path, file_prefix)
 
+        tmp_dir = deepprep_subj_path / 'tmp'
+        try:
+            os.system(f'rm -r {tmp_dir}')
+        except:
+            pass
+
         return runtime
 
     def _list_outputs(self):
