@@ -400,20 +400,20 @@ class Stc(BaseInterface):
         # # # runs = ['001', '002', '003', '004']
         # # # runs = ['001', '002']
         # # runs = ['001']
-        multipool_run(self.cmd, runs, Multi_Num=8)
+        # multipool_run(self.cmd, runs, Multi_Num=8)
 
-        # input_fname = f'{self.inputs.subject_id}_bld_rest_reorient_skip'
-        # output_fname = f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln'
-        # shargs = [
-        #     '-s', self.inputs.subject_id,
-        #     '-d', self.inputs.preprocess_dir,
-        #     '-fsd', 'bold',
-        #     '-so', 'odd',
-        #     '-ngroups', 1,
-        #     '-i', input_fname,
-        #     '-o', output_fname,
-        #     '-nolog']
-        # sh.stc_sess(*shargs, _out=sys.stdout)
+        input_fname = f'{self.inputs.subject_id}_bld_rest_reorient_skip'
+        output_fname = f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln'
+        shargs = [
+            '-s', self.inputs.subject_id,
+            '-d', self.inputs.preprocess_dir,
+            '-fsd', 'bold',
+            '-so', 'odd',
+            '-ngroups', 1,
+            '-i', input_fname,
+            '-o', output_fname,
+            '-nolog']
+        sh.stc_sess(*shargs, _out=sys.stdout)
 
         self.check_output(runs)
         return runtime
@@ -795,8 +795,6 @@ class MkBrainmask(BaseInterface):
             preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
         reg = Path(
             preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.register.dat'
-        moved = Path(
-            preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc_moved.nii.gz'
         func = Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}.func.aseg.nii'
         wm = Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}.func.wm.nii.gz'
         vent = Path(
@@ -809,45 +807,38 @@ class MkBrainmask(BaseInterface):
             preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}.brainmask.bin.nii.gz'
 
         shargs = [
+            '--seg', seg,
+            '--temp', mov,
+            '--reg', reg,
+            '--o', func]
+        sh.mri_label2vol(*shargs, _out=sys.stdout)
+
+        shargs = [
+            '--i', func,
+            '--wm',
+            '--erode', 1,
+            '--o', wm]
+        sh.mri_binarize(*shargs, _out=sys.stdout)
+
+        shargs = [
+            '--i', func,
+            '--ventricles',
+            '--o', vent]
+        sh.mri_binarize(*shargs, _out=sys.stdout)
+
+        shargs = [
             '--reg', reg,
             '--targ', targ,
             '--mov', mov,
-            '--o', moved]
+            '--inv',
+            '--o', mask]
         sh.mri_vol2vol(*shargs, _out=sys.stdout)
 
-        # shargs = [
-        #     '--seg', seg,
-        #     '--temp', mov,
-        #     '--reg', reg,
-        #     '--o', func]
-        # sh.mri_label2vol(*shargs, _out=sys.stdout)
-        #
-        # shargs = [
-        #     '--i', func,
-        #     '--wm',
-        #     '--erode', 1,
-        #     '--o', wm]
-        # sh.mri_binarize(*shargs, _out=sys.stdout)
-        #
-        # shargs = [
-        #     '--i', func,
-        #     '--ventricles',
-        #     '--o', vent]
-        # sh.mri_binarize(*shargs, _out=sys.stdout)
-        #
-        # shargs = [
-        #     '--reg', reg,
-        #     '--targ', targ,
-        #     '--mov', mov,
-        #     '--inv',
-        #     '--o', mask]
-        # sh.mri_vol2vol(*shargs, _out=sys.stdout)
-        #
-        # shargs = [
-        #     '--i', mask,
-        #     '--o', binmask,
-        #     '--min', 0.0001]
-        # sh.mri_binarize(*shargs, _out=sys.stdout)
+        shargs = [
+            '--i', mask,
+            '--o', binmask,
+            '--min', 0.0001]
+        sh.mri_binarize(*shargs, _out=sys.stdout)
 
     def _run_interface(self, runtime):
         preprocess_dir = Path(
