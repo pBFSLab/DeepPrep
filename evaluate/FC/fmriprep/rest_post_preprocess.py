@@ -14,16 +14,27 @@ from sklearn.decomposition import PCA
 from multiprocessing import Pool
 
 
-def project(input_path, hemi, outpath, reg_path=None):
+def project_surface_deepprep(input_path, hemi, outpath, reg_path):
     cmd = ['--mov', input_path,
+           '--hemi', hemi,
+           '--reg', reg_path,
+           '--projfrac', 0.5,
+           '--trgsubject', 'fsaverage6',
+           '--o', outpath,
+           '--reshape',
+           '--interp', 'trilinear']
+    sh.mri_vol2surf(cmd, _out=sys.stdout)
+
+
+def project_surface_fmriprep(input_path, hemi, outpath):
+    cmd = ['--mov', input_path,
+           '--mni152reg',
            '--hemi', hemi,
            '--projfrac', 0.5,
            '--trgsubject', 'fsaverage6',
            '--o', outpath,
            '--reshape',
            '--interp', 'trilinear']
-    if reg_path is not None:
-        cmd.extend(['--reg', reg_path])
     sh.mri_vol2surf(cmd, _out=sys.stdout)
 
 
@@ -237,6 +248,9 @@ def batch_run():
 
 
 if __name__ == '__main__':
+    from interface.run import set_envrion
+
+    set_envrion()
     # app_regressors()
     # data_path = Path('/home/weiwei/workdata/DeepPrep/workdir/ds000224')
     data_path = Path('/mnt/ngshare/fMRIPrep_UKB_150/BIDS')
@@ -254,23 +268,45 @@ if __name__ == '__main__':
                 print(bids_bold)
                 entities = dict(bids_bold.entities)
                 TR = layout.get_tr(entities)
-                bold_preproc_file = bold_preprocess_result_path / f'sub-{subj}' / f'ses-{ses}' / 'func' / f'sub-{subj}_ses-{ses}_task-rest_run-01_space-MNI152NLin6Asym_res-02_desc-preproc_bold.nii.gz'
-                mask_path = bold_preprocess_result_path / f'sub-{subj}' / f'ses-{ses}' / 'func' / f'sub-{subj}_ses-{ses}_task-rest_run-01_space-MNI152NLin6Asym_res-02_desc-brain_mask.nii.gz'
-                confounds_path = bold_preprocess_result_path / f'sub-{subj}' / f'ses-{ses}' / 'func' / f'sub-{subj}_ses-{ses}_task-rest_run-01_desc-confounds_timeseries.tsv'
-                result_path_dir = bold_result_path / f'sub-{subj}' / f'ses-{ses}' / 'func'
-                result_path_dir.mkdir(parents=True, exist_ok=True)
-                bpss_path = result_path_dir / f'sub-{subj}_ses-{ses}_task-rest_run-01_space-MNI152NLin6Asym_res-02_desc-preproc_bold_bpss.nii.gz'
-                arg = [bold_preproc_file, mask_path, confounds_path, bpss_path, TR]
-                args.append(arg)
+                result_func_path_dir = bold_result_path / f'sub-{subj}' / f'ses-{ses}' / 'func'
+                result_surf_path_dir = bold_result_path / f'sub-{subj}' / f'ses-{ses}' / 'surf'
+
+                result_func_path_dir.mkdir(parents=True, exist_ok=True)
+                result_surf_path_dir.mkdir(parents=True, exist_ok=True)
+
+                bold_preproc_file = result_func_path_dir / f'sub-{subj}_ses-{ses}_task-rest_run-01_space-MNI152NLin6Asym_res-02_desc-preproc_bold.nii.gz'
+                mask_path = result_func_path_dir / f'sub-{subj}_ses-{ses}_task-rest_run-01_space-MNI152NLin6Asym_res-02_desc-brain_mask.nii.gz'
+                confounds_path = result_func_path_dir / f'sub-{subj}_ses-{ses}_task-rest_run-01_desc-confounds_timeseries.tsv'
+
+                bpss_path = result_func_path_dir / f'sub-{subj}_ses-{ses}_task-rest_run-01_space-MNI152NLin6Asym_res-02_desc-preproc_bold_bpss.nii.gz'
+                bold_resid_file = result_func_path_dir / f'sub-{subj}_ses-{ses}_task-rest_run-01_space-MNI152NLin6Asym_res-02_desc-preproc_bold_bpss_resid6.nii.gz'
+                bold_sm6_file = result_func_path_dir / f'sub-{subj}_ses-{ses}_task-rest_run-01_space-MNI152NLin6Asym_res-02_desc-preproc_bold_bpss_resid6_sm6.nii.gz'
+                # mimic_fmriprep_regressors(bold_preproc_file, mask_path, confounds_path, bpss_path, TR)
+
+                lh_project_surface = result_surf_path_dir / f'lh.sub-{subj}_ses-{ses}_task-rest_run-01_space-MNI152NLin6Asym_res-02_desc-preproc_bold_bpss_resid6_fsaverage6.nii.gz'
+                rh_project_surface = result_surf_path_dir / f'rh.sub-{subj}_ses-{ses}_task-rest_run-01_space-MNI152NLin6Asym_res-02_desc-preproc_bold_bpss_resid6_fsaverage6.nii.gz'
+                if not lh_project_surface.exists():
+                    project_surface_fmriprep(bold_resid_file, 'lh', lh_project_surface)
+                if not rh_project_surface.exists():
+                    project_surface_fmriprep(bold_resid_file, 'rh', rh_project_surface)
+
+                # arg = [bold_preproc_file, mask_path, confounds_path, bpss_path, TR]
+                # args.append(arg)
                 # try:
                 #     mimic_fmriprep_regressors(bold_preproc_file, mask_path, confounds_path, bpss_path, TR)
+                #     lh_project_surface = result_surf_path_dir / f'lh.sub-{subj}_ses-{ses}_task-rest_run-01_space-MNI152NLin6Asym_res-02_desc-preproc_bold_bpss_resid6_fsaverage6.nii.gz'
+                #     rh_project_surface = result_surf_path_dir / f'rh.sub-{subj}_ses-{ses}_task-rest_run-01_space-MNI152NLin6Asym_res-02_desc-preproc_bold_bpss_resid6_fsaverage6.nii.gz'
+                #     if not lh_project_surface.exists():
+                #         project_surface(bold_resid_file, 'lh', lh_project_surface)
+                #     if not rh_project_surface.exists():
+                #         project_surface(bold_resid_file, 'rh', rh_project_surface)
                 # except Exception as why:
                 #     print(why)
                 #     print(bold_preproc_file)
                 #     print(mask_path)
                 #     print(confounds_path)
                 #     break
-                # print()
-    pool.starmap(mimic_fmriprep_regressors, args)
-    pool.close()
-    pool.join()
+                print()
+    # pool.starmap(mimic_fmriprep_regressors, args)
+    # pool.close()
+    # pool.join()
