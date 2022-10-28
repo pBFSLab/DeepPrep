@@ -1,3 +1,5 @@
+import sys
+import sh
 from pathlib import Path
 import bids
 import ants
@@ -9,6 +11,20 @@ from app_pipeline.regressors.regressors import regression, compile_regressors
 import pandas as pd
 import nibabel as nib
 from sklearn.decomposition import PCA
+from multiprocessing import Pool
+
+
+def project(input_path, hemi, outpath, reg_path=None):
+    cmd = ['--mov', input_path,
+           '--hemi', hemi,
+           '--projfrac', 0.5,
+           '--trgsubject', 'fsaverage6',
+           '--o', outpath,
+           '--reshape',
+           '--interp', 'trilinear']
+    if reg_path is not None:
+        cmd.extend(['--reg', reg_path])
+    sh.mri_vol2surf(cmd, _out=sys.stdout)
 
 
 def bandpass_nifti(gauss_path, bpss_path, tr):
@@ -126,59 +142,65 @@ def mimic_fmriprep_regressors(bold_preproc_path, mask_path, confounds_path, bpss
     # bold_preproc_file = derivatives/fmriprep/sub-MSC01/{sess}/func/sub-{subj}_ses-{ses}_task-rest_space-MNI152NLin6Asym_res-02_desc-preproc_bold.nii.gz
     # confounds_path = derivatives/fmriprep/sub-MSC01/{sess}/func/sub-MSC01_{sess}_task-rest_desc-confounds_timeseries.tsv
     # mask_path = derivatives/fmriprep/sub-MSC01/{sess}/func/sub-MSC01_{sess}_task-rest_space-MNI152NLin6Asym_res-02_desc-brain_mask.nii.gz
-    bpss_path = bandpass_nifti(str(bold_preproc_path), bpss_path, TR)
+    if not bpss_path.exists():
+        bpss_path = bandpass_nifti(str(bold_preproc_path), bpss_path, TR)
+        print(f'>>> {bpss_path}')
 
     resid_stem = 'resid6'
-    df_fmri = pd.read_csv(confounds_path, sep='\t')
-    fmri_confounds = list(df_fmri.columns)
-    # reg_confounds = [confound for confound in fmri_confounds if 'trans' in confound or 'rot' in confound]
-    # reg_confounds = reg_confounds + [confound for confound in fmri_confounds if
-    #                                  'global_signal' in confound or 'csf' in confound or 'white_matter' in confound]
-    # reg_confounds = [confound for confound in fmri_confounds if
-    #                  'motion_outlier' not in confound and 'non_steady_state_outlier' not in confound and 'cosine' not in confound]
-    # reg_confounds = fmri_confounds
-    reg_confounds = [confound for confound in fmri_confounds if 'trans' in confound or 'rot' in confound]
-    reg_confounds = reg_confounds + [confound for confound in fmri_confounds if
-                                     'global_signal' in confound or 'csf' in confound or 'white_matter' in confound]
-    reg_confounds = [confound for confound in reg_confounds if 'power2' not in confound]
-    regressors = df_fmri[reg_confounds].to_numpy()
-    regressors[np.isnan(regressors)] = 0
+    resid_path = str(bpss_path).replace('.nii.gz', f'_{resid_stem}.nii.gz')
+    if not Path(resid_path).exists():
+        df_fmri = pd.read_csv(confounds_path, sep='\t')
+        fmri_confounds = list(df_fmri.columns)
+        # reg_confounds = [confound for confound in fmri_confounds if 'trans' in confound or 'rot' in confound]
+        # reg_confounds = reg_confounds + [confound for confound in fmri_confounds if
+        #                                  'global_signal' in confound or 'csf' in confound or 'white_matter' in confound]
+        # reg_confounds = [confound for confound in fmri_confounds if
+        #                  'motion_outlier' not in confound and 'non_steady_state_outlier' not in confound and 'cosine' not in confound]
+        # reg_confounds = fmri_confounds
+        reg_confounds = [confound for confound in fmri_confounds if 'trans' in confound or 'rot' in confound]
+        reg_confounds = reg_confounds + [confound for confound in fmri_confounds if
+                                         'global_signal' in confound or 'csf' in confound or 'white_matter' in confound]
+        reg_confounds = [confound for confound in reg_confounds if 'power2' not in confound]
+        regressors = df_fmri[reg_confounds].to_numpy()
+        regressors[np.isnan(regressors)] = 0
 
-    # PCA
-    # Generate PCA regressors of bpss nifti.
-    mask_path = mask_path
-    # pca_out_path = fcmri_path / ('%s_bld%s_pca_regressor_dt.dat' % (subject, bldrun))
-    pca_regressor = regressors_PCA(bpss_path, str(mask_path))
-    regressors = np.hstack((regressors, pca_regressor))
-    reg_confounds = reg_confounds + [f'comp{i + 1}' for i in range(10)]
-    with open(f'{resid_stem}.txt', 'w') as f:
-        f.write('\n'.join(reg_confounds))
+        # PCA
+        # Generate PCA regressors of bpss nifti.
+        mask_path = mask_path
+        # pca_out_path = fcmri_path / ('%s_bld%s_pca_regressor_dt.dat' % (subject, bldrun))
+        pca_regressor = regressors_PCA(bpss_path, str(mask_path))
+        regressors = np.hstack((regressors, pca_regressor))
+        reg_confounds = reg_confounds + [f'comp{i + 1}' for i in range(10)]
+        with open(f'{resid_stem}.txt', 'w') as f:
+            f.write('\n'.join(reg_confounds))
 
-    # Read NIFTI values.
-    nifti_img = nib.load(bpss_path)
-    nifti_data = nifti_img.get_fdata()
-    nx, ny, nz, nv = nifti_data.shape
-    nifti_data = np.reshape(nifti_data, (nx * ny * nz, nv)).T
+        # Read NIFTI values.
+        nifti_img = nib.load(bpss_path)
+        nifti_data = nifti_img.get_fdata()
+        nx, ny, nz, nv = nifti_data.shape
+        nifti_data = np.reshape(nifti_data, (nx * ny * nz, nv)).T
 
-    # Assemble linear system and solve it.
-    A = np.hstack((regressors, np.ones((regressors.shape[0], 1))))
-    x = np.linalg.lstsq(A, nifti_data, rcond=-1)[0]
+        # Assemble linear system and solve it.
+        A = np.hstack((regressors, np.ones((regressors.shape[0], 1))))
+        x = np.linalg.lstsq(A, nifti_data, rcond=-1)[0]
 
-    # Compute residuals.
-    residuals = nifti_data - np.matmul(A, x)
-    residuals = np.reshape(residuals.T, (nx, ny, nz, nv))
+        # Compute residuals.
+        residuals = nifti_data - np.matmul(A, x)
+        residuals = np.reshape(residuals.T, (nx, ny, nz, nv))
 
-    # Save result.
-    resid_path = bpss_path.replace('.nii.gz', f'_{resid_stem}.nii.gz')
-    hdr = nifti_img.header
-    aff = nifti_img.affine
-    new_img = nib.Nifti1Image(
-        residuals.astype(np.float32), affine=aff, header=hdr)
-    new_img.header['pixdim'] = nifti_img.header['pixdim']
-    nib.save(new_img, resid_path)
+        # Save result.
+        hdr = nifti_img.header
+        aff = nifti_img.affine
+        new_img = nib.Nifti1Image(
+            residuals.astype(np.float32), affine=aff, header=hdr)
+        new_img.header['pixdim'] = nifti_img.header['pixdim']
+        nib.save(new_img, resid_path)
+        print(f'>>> {resid_path}')
 
-    sm6_file = resid_path.replace('.nii.gz', '_sm6.nii.gz')
-    bold_smooth_6_ants(resid_path, sm6_file, verbose=True)
+    sm6_file = str(resid_path).replace('.nii.gz', '_sm6.nii.gz')
+    if not Path(sm6_file).exists():
+        bold_smooth_6_ants(resid_path, sm6_file, verbose=True)
+        print(f'>>> {sm6_file}')
 
 
 def batch_run():
@@ -217,11 +239,13 @@ def batch_run():
 if __name__ == '__main__':
     # app_regressors()
     # data_path = Path('/home/weiwei/workdata/DeepPrep/workdir/ds000224')
-    data_path = Path('/run/user/1000/gvfs/sftp:host=30.30.30.81,user=youjia/mnt/ngshare/fMRIPrep_UKB_150/BIDS')
-    bold_preprocess_result_path = Path('/run/user/1000/gvfs/sftp:host=30.30.30.81,user=youjia/mnt/ngshare/fMRIPrep_UKB_150/UKB_150_BoldPreprocess')
-    bold_result_path = Path('/mnt/ngshare/fMRIPrep_UKB_150/UKB_150_BoldPreprocess')
+    data_path = Path('/mnt/ngshare/fMRIPrep_UKB_150/BIDS')
+    bold_preprocess_result_path = Path('/mnt/ngshare/fMRIPrep_UKB_150/UKB_150_BoldPreprocess')
+    bold_result_path = Path('/mnt/ngshare/fMRIPrep_UKB_150/UKB_150_BoldPreprocess_bpss_resid_smooth')
     layout = bids.BIDSLayout(str(data_path))
     subjs = sorted(layout.get_subjects())
+    pool = Pool(4)
+    args = list()
     for subj in subjs:
         sess = layout.get_session(subject=subj)
         for ses in sess:
@@ -231,17 +255,22 @@ if __name__ == '__main__':
                 entities = dict(bids_bold.entities)
                 TR = layout.get_tr(entities)
                 bold_preproc_file = bold_preprocess_result_path / f'sub-{subj}' / f'ses-{ses}' / 'func' / f'sub-{subj}_ses-{ses}_task-rest_run-01_space-MNI152NLin6Asym_res-02_desc-preproc_bold.nii.gz'
-                mask_path = bold_preprocess_result_path / f'sub-{subj}' / f'ses-{ses}' / 'func' / f'sub-{subj}_ses-{ses}_task-rest_run-01_space-MNI152NLin6Asym_res-02_desc-preproc_bold.nii.gz'
-                confounds_path = bold_preprocess_result_path / f'sub-{subj}' / f'ses-{ses}' / 'func' / f'sub-{subj}_ses-{ses}_task-rest_run-01_space-MNI152NLin6Asym_res-02_desc-preproc_bold.nii.gz'
+                mask_path = bold_preprocess_result_path / f'sub-{subj}' / f'ses-{ses}' / 'func' / f'sub-{subj}_ses-{ses}_task-rest_run-01_space-MNI152NLin6Asym_res-02_desc-brain_mask.nii.gz'
+                confounds_path = bold_preprocess_result_path / f'sub-{subj}' / f'ses-{ses}' / 'func' / f'sub-{subj}_ses-{ses}_task-rest_run-01_desc-confounds_timeseries.tsv'
                 result_path_dir = bold_result_path / f'sub-{subj}' / f'ses-{ses}' / 'func'
                 result_path_dir.mkdir(parents=True, exist_ok=True)
                 bpss_path = result_path_dir / f'sub-{subj}_ses-{ses}_task-rest_run-01_space-MNI152NLin6Asym_res-02_desc-preproc_bold_bpss.nii.gz'
+                arg = [bold_preproc_file, mask_path, confounds_path, bpss_path, TR]
+                args.append(arg)
                 # try:
-                mimic_fmriprep_regressors(bold_preproc_file, mask_path, confounds_path, bpss_path, TR)
+                #     mimic_fmriprep_regressors(bold_preproc_file, mask_path, confounds_path, bpss_path, TR)
                 # except Exception as why:
                 #     print(why)
                 #     print(bold_preproc_file)
                 #     print(mask_path)
                 #     print(confounds_path)
                 #     break
-                print()
+                # print()
+    pool.starmap(mimic_fmriprep_regressors, args)
+    pool.close()
+    pool.join()
