@@ -251,15 +251,19 @@ if __name__ == '__main__':
     from interface.run import set_envrion
 
     set_envrion()
-    # app_regressors()
-    # data_path = Path('/home/weiwei/workdata/DeepPrep/workdir/ds000224')
-    data_path = Path('/mnt/ngshare/fMRIPrep_UKB_150/BIDS')
-    bold_preprocess_result_path = Path('/mnt/ngshare/fMRIPrep_UKB_150/UKB_150_BoldPreprocess')
-    bold_result_path = Path('/mnt/ngshare/fMRIPrep_UKB_150/UKB_150_BoldPreprocess_bpss_resid_smooth')
+
+    # data_path = Path('/mnt/ngshare/fMRIPrep_UKB_150/BIDS')
+    # bold_preprocess_result_path = Path('/mnt/ngshare/fMRIPrep_UKB_150/UKB_150_BoldPreprocess')
+    # bold_result_path = Path('/mnt/ngshare/fMRIPrep_UKB_150/UKB_150_BoldPreprocess_bpss_resid_smooth')
+
+    data_path = Path('/mnt/ngshare2/MSC_all/MSC')
+    bold_preprocess_result_path = Path('/mnt/ngshare2/MSC_all/MSC_output')
+    bold_result_path = Path('/mnt/ngshare2/MSC_all/MSC_output_BoldPreprocess_bpss_resid_smooth')
+
     layout = bids.BIDSLayout(str(data_path))
     subjs = sorted(layout.get_subjects())
-    pool = Pool(4)
-    args = list()
+    args_mimic_fmriprep_regressors = list()
+    args_project_surface_fmriprep = list()
     for subj in subjs:
         sess = layout.get_session(subject=subj)
         for ses in sess:
@@ -286,12 +290,13 @@ if __name__ == '__main__':
                 lh_project_surface = result_surf_path_dir / f'lh.sub-{subj}_ses-{ses}_task-rest_run-01_space-MNI152NLin6Asym_res-02_desc-preproc_bold_bpss_resid6_fsaverage6.nii.gz'
                 rh_project_surface = result_surf_path_dir / f'rh.sub-{subj}_ses-{ses}_task-rest_run-01_space-MNI152NLin6Asym_res-02_desc-preproc_bold_bpss_resid6_fsaverage6.nii.gz'
                 if not lh_project_surface.exists():
-                    project_surface_fmriprep(bold_resid_file, 'lh', lh_project_surface)
+                    # project_surface_fmriprep(bold_resid_file, 'lh', lh_project_surface)
+                    args_project_surface_fmriprep.append([bold_resid_file, 'lh', lh_project_surface])
                 if not rh_project_surface.exists():
-                    project_surface_fmriprep(bold_resid_file, 'rh', rh_project_surface)
+                    # project_surface_fmriprep(bold_resid_file, 'rh', rh_project_surface)
+                    args_project_surface_fmriprep.append([bold_resid_file, 'rh', lh_project_surface])
 
-                # arg = [bold_preproc_file, mask_path, confounds_path, bpss_path, TR]
-                # args.append(arg)
+                args_mimic_fmriprep_regressors.append([bold_preproc_file, mask_path, confounds_path, bpss_path, TR])
                 # try:
                 #     mimic_fmriprep_regressors(bold_preproc_file, mask_path, confounds_path, bpss_path, TR)
                 #     lh_project_surface = result_surf_path_dir / f'lh.sub-{subj}_ses-{ses}_task-rest_run-01_space-MNI152NLin6Asym_res-02_desc-preproc_bold_bpss_resid6_fsaverage6.nii.gz'
@@ -307,6 +312,11 @@ if __name__ == '__main__':
                 #     print(confounds_path)
                 #     break
                 print()
-    # pool.starmap(mimic_fmriprep_regressors, args)
-    # pool.close()
-    # pool.join()
+    pool = Pool(5)
+    pool.starmap(mimic_fmriprep_regressors, args_mimic_fmriprep_regressors)
+    pool.close()
+    pool.join()
+    pool = Pool(10)
+    pool.starmap(project_surface_fmriprep, args_project_surface_fmriprep)
+    pool.close()
+    pool.join()
