@@ -252,13 +252,13 @@ if __name__ == '__main__':
 
     set_envrion()
 
-    # data_path = Path('/mnt/ngshare/fMRIPrep_UKB_150/BIDS')
-    # bold_preprocess_result_path = Path('/mnt/ngshare/fMRIPrep_UKB_150/UKB_150_BoldPreprocess')
-    # bold_result_path = Path('/mnt/ngshare/fMRIPrep_UKB_150/UKB_150_BoldPreprocess_bpss_resid_smooth')
+    data_path = Path('/mnt/ngshare/fMRIPrep_UKB_150/BIDS')
+    bold_preprocess_result_path = Path('/mnt/ngshare/fMRIPrep_UKB_150/UKB_150_BoldPreprocess')
+    bold_result_path = Path('/mnt/ngshare/fMRIPrep_UKB_150/UKB_150_BoldPreprocess_bpss_resid_smooth')
 
-    data_path = Path('/mnt/ngshare2/MSC_all/MSC')
-    bold_preprocess_result_path = Path('/mnt/ngshare2/MSC_all/MSC_output')
-    bold_result_path = Path('/mnt/ngshare2/MSC_all/MSC_output_BoldPreprocess_bpss_resid_smooth')
+    # data_path = Path('/mnt/ngshare2/MSC_all/MSC')
+    # bold_preprocess_result_path = Path('/mnt/ngshare2/MSC_all/MSC_output')
+    # bold_result_path = Path('/mnt/ngshare2/MSC_all/MSC_output_BoldPreprocess_bpss_resid_smooth')
 
     layout = bids.BIDSLayout(str(data_path))
     subjs = sorted(layout.get_subjects())
@@ -272,20 +272,28 @@ if __name__ == '__main__':
                 print(bids_bold)
                 entities = dict(bids_bold.entities)
                 TR = layout.get_tr(entities)
+
+                preprocess_func_path_dir = bold_preprocess_result_path / f'sub-{subj}' / f'ses-{ses}' / 'func'
+                preprocess_surf_path_dir = bold_preprocess_result_path / f'sub-{subj}' / f'ses-{ses}' / 'surf'
+
                 result_func_path_dir = bold_result_path / f'sub-{subj}' / f'ses-{ses}' / 'func'
                 result_surf_path_dir = bold_result_path / f'sub-{subj}' / f'ses-{ses}' / 'surf'
 
                 result_func_path_dir.mkdir(parents=True, exist_ok=True)
                 result_surf_path_dir.mkdir(parents=True, exist_ok=True)
 
-                bold_preproc_file = result_func_path_dir / f'sub-{subj}_ses-{ses}_task-rest_run-01_space-MNI152NLin6Asym_res-02_desc-preproc_bold.nii.gz'
-                mask_path = result_func_path_dir / f'sub-{subj}_ses-{ses}_task-rest_run-01_space-MNI152NLin6Asym_res-02_desc-brain_mask.nii.gz'
-                confounds_path = result_func_path_dir / f'sub-{subj}_ses-{ses}_task-rest_run-01_desc-confounds_timeseries.tsv'
+                bold_preproc_file = preprocess_func_path_dir / f'sub-{subj}_ses-{ses}_task-rest_run-01_space-MNI152NLin6Asym_res-02_desc-preproc_bold.nii.gz'
+                mask_path = preprocess_func_path_dir / f'sub-{subj}_ses-{ses}_task-rest_run-01_space-MNI152NLin6Asym_res-02_desc-brain_mask.nii.gz'
+                confounds_path = preprocess_func_path_dir / f'sub-{subj}_ses-{ses}_task-rest_run-01_desc-confounds_timeseries.tsv'
 
                 bpss_path = result_func_path_dir / f'sub-{subj}_ses-{ses}_task-rest_run-01_space-MNI152NLin6Asym_res-02_desc-preproc_bold_bpss.nii.gz'
                 bold_resid_file = result_func_path_dir / f'sub-{subj}_ses-{ses}_task-rest_run-01_space-MNI152NLin6Asym_res-02_desc-preproc_bold_bpss_resid6.nii.gz'
                 bold_sm6_file = result_func_path_dir / f'sub-{subj}_ses-{ses}_task-rest_run-01_space-MNI152NLin6Asym_res-02_desc-preproc_bold_bpss_resid6_sm6.nii.gz'
                 # mimic_fmriprep_regressors(bold_preproc_file, mask_path, confounds_path, bpss_path, TR)
+
+                if not bold_preproc_file.exists():
+                    print(f'ERROR: {bold_preproc_file}')
+                    continue
 
                 lh_project_surface = result_surf_path_dir / f'lh.sub-{subj}_ses-{ses}_task-rest_run-01_space-MNI152NLin6Asym_res-02_desc-preproc_bold_bpss_resid6_fsaverage6.nii.gz'
                 rh_project_surface = result_surf_path_dir / f'rh.sub-{subj}_ses-{ses}_task-rest_run-01_space-MNI152NLin6Asym_res-02_desc-preproc_bold_bpss_resid6_fsaverage6.nii.gz'
@@ -295,6 +303,15 @@ if __name__ == '__main__':
                 if not rh_project_surface.exists():
                     # project_surface_fmriprep(bold_resid_file, 'rh', rh_project_surface)
                     args_project_surface_fmriprep.append([bold_resid_file, 'rh', lh_project_surface])
+
+                lh_project_surface = result_surf_path_dir / f'lh.sub-{subj}_ses-{ses}_task-rest_run-01_space-MNI152NLin6Asym_res-02_desc-preproc_bold_bpss_resid6_sm6_fsaverage6.nii.gz'
+                rh_project_surface = result_surf_path_dir / f'rh.sub-{subj}_ses-{ses}_task-rest_run-01_space-MNI152NLin6Asym_res-02_desc-preproc_bold_bpss_resid6_sm6_fsaverage6.nii.gz'
+                if not lh_project_surface.exists():
+                    # project_surface_fmriprep(bold_resid_file, 'lh', lh_project_surface)
+                    args_project_surface_fmriprep.append([bold_sm6_file, 'lh', lh_project_surface])
+                if not rh_project_surface.exists():
+                    # project_surface_fmriprep(bold_resid_file, 'rh', rh_project_surface)
+                    args_project_surface_fmriprep.append([bold_sm6_file, 'rh', lh_project_surface])
 
                 args_mimic_fmriprep_regressors.append([bold_preproc_file, mask_path, confounds_path, bpss_path, TR])
                 # try:
