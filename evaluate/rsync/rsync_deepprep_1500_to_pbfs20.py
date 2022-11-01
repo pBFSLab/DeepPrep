@@ -10,19 +10,22 @@ def rsync(o_dir, d_dir, user=None, host=None):
     os.system(cmd)
 
 
-def main():
-    # user = 'pbfs20'
-    # host = '30.30.30.73'
+def copy_deepprep_1500_to_pbfs20():
+    """
+    跑之前执行：  ssh-copy-id pbfs20@30.30.30.73
+    """
+    user = 'pbfs20'
+    host = '30.30.30.73'
 
-    user = None
-    host = None
+    # user = None
+    # host = None
 
-    src_bold_dir = Path('/mnt/ngshare2/DeepPrep_UKB_500/UKB_BoldPreprocess')
+    src_bold_dir = Path('/mnt/ngshare2/DeepPrep_UKB/UKB_BoldPreprocess')
     src_recon_dir = Path('/mnt/ngshare2/DeepPrep_UKB/UKB_Recon')
-    dst_bold_dir = Path('/mnt/ngshare2/DeepPrep_UKB_500/UKB_BoldPreprocess')
-    dst_recon_dir = Path('/mnt/ngshare2/DeepPrep_UKB/UKB_Recon')
+    dst_bold_dir = Path('/mnt/ngshare2/DeepPrep_UKB_1500/UKB_BoldPreprocess')
+    dst_recon_dir = Path('/mnt/ngshare2/DeepPrep_UKB_1500/UKB_Recon')
 
-    subject_filter_file = Path('/mnt/ngshare2/UKB/allsub_keep_3747_fieldid_1500_first_complete_1500.csv')
+    subject_filter_file = Path('/home/anning/Downloads/UKB_info/allsub_keep_3747_fieldid_1500.csv')
 
     with open(subject_filter_file, 'r') as f:
         subject_filter_ids = f.readlines()
@@ -51,7 +54,9 @@ def main():
 
 
 if __name__ == '__main__':
-    # src_bold_dir = Path('/mnt/ngshare/DeepPrep_UKB_500/UKB_BoldPreprocess')
-    # dst_bold_dir = Path('/mnt/ngshare2/DeepPrep_UKB_500/UKB_BoldPreprocess')
-    # rsync(src_bold_dir, dst_bold_dir)
-    main()
+    # user = 'pbfs20'
+    # host = '30.30.30.73'
+    # src_bold_dir = Path('/mnt/ngshare2/DeepPrep_UKB_500/UKB_BoldPreprocess')
+    # dst_bold_dir = Path('/mnt/ngshare2/DeepPrep_UKB_1500/UKB_BoldPreprocess')
+    # rsync(src_bold_dir, dst_bold_dir, user, host)
+    copy_deepprep_1500_to_pbfs20()
