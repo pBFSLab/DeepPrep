@@ -1,6 +1,6 @@
 from nipype.interfaces.base import BaseInterface, \
     BaseInterfaceInputSpec, File, TraitedSpec, Directory, Str
-from interface.run import multipool_run, multipool_BidsBolds, multipool_BidsBolds_2
+from interface.run import multipool_run, multipool_BidsBolds, multipool_BidsBolds_2, Pool
 import sys
 import sh
 import nibabel as nib
@@ -14,6 +14,139 @@ import shutil
 import voxelmorph as vxm
 
 from app.filters.filters import bandpass_nifti
+
+
+class VxmRegistraionInputSpec(BaseInterfaceInputSpec):
+    subject_id = Str(desc="subject id", mandatory=True)
+    subjects_dir = Directory(exists=True, desc='subjects_dir', mandatory=True)
+    data_path = Directory(exists=True, desc='data path', mandatory=True)
+    derivative_deepprep_path = Directory(exists=True, desc='derivative_deepprep_path', mandatory=True)
+    model_file = File(exists=True, desc="atlas_type/model.h5", mandatory=True)
+    vxm_model_path = Directory(exists=True, desc="model/voxelmorph", mandatory=True)
+    atlas_type = Str(desc="atlas_type", mandatory=True)
+    task = Str(exists=True, desc="task", mandatory=True)
+    preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
+    gpuid = Str(exists=True, desc='gpuid set', mandatory=True)
+
+
+class VxmRegistraionOutputSpec(TraitedSpec):
+    subjects_dir = Directory(exists=True, desc='subjects_dir')
+
+
+class VxmRegistraion(BaseInterface):
+    input_spec = VxmRegistraionInputSpec
+    output_spec = VxmRegistraionOutputSpec
+
+    time = 15 / 60  # 运行时间：分钟 / 单run测试时间
+    cpu = 14  # 最大cpu占用：个
+    gpu = 2703  # 最大gpu占用：MB
+
+    def __init__(self):
+        super(VxmRegistraion, self).__init__()
+
+    def check_output(self):
+        subject_id = self.inputs.subject_id
+        VxmRegistraion_output_files = [f'{subject_id}_norm_warped_vxm_atlas.nii.gz',
+                                       f'{subject_id}_deformation_field_for_warp_to_vxm_atlas.nii.gz',
+                                       f'{subject_id}_norm_affined_vxm_atlas.npz',
+                                       f'{subject_id}_trf_for_affine_to_vxm_atlas.mat']
+        output_list = os.listdir(Path(self.inputs.derivative_deepprep_path) / subject_id / 'transform')
+        check_result = set(VxmRegistraion_output_files) <= set(output_list)
+        if not check_result:
+            return FileExistsError
+
+    def _run_interface(self, runtime):
+        # import tensorflow as tf
+        # import ants
+        # import shutil
+        # import deepprep_pipeline.voxelmorph as vxm
+        subject_id = self.inputs.subject_id
+        deepprep_subj_path = Path(self.inputs.derivative_deepprep_path) / subject_id
+
+        transform_dir = Path(deepprep_subj_path) / 'transform'
+        transform_dir.mkdir(parents=True, exist_ok=True)
+
+        norm = Path(self.inputs.subjects_dir) / subject_id / 'mri' / 'norm.mgz'
+        trf_path = transform_dir / f'{subject_id}_trf_for_affine_to_vxm_atlas.mat'
+        vxm_warp = transform_dir / f'{subject_id}_deformation_field_for_warp_to_vxm_atlas.nii.gz'
+        vxm_warped_path = transform_dir / f'{subject_id}_norm_warped_vxm_atlas.nii.gz'
+        vxm_input_npz = transform_dir / f'{subject_id}_norm_affined_vxm_atlas.npz'
+
+        # atlas and model
+        vxm_model_path = Path(self.inputs.vxm_model_path)
+        atlas_type = self.inputs.atlas_type
+        model_file = self.inputs.model_file  # vxm_model_path / atlas_type / f'model.h5'
+        atlas_path = vxm_model_path / atlas_type / f'{atlas_type}_brain.nii.gz'
+        vxm_atlas_path = vxm_model_path / atlas_type / f'{atlas_type}_brain_vxm.nii.gz'
+        vxm_atlas_npz_path = vxm_model_path / atlas_type / f'{atlas_type}_brain_vxm.npz'
+        vxm2atlas_trf = vxm_model_path / atlas_type / f'{atlas_type}_vxm2atlas.mat'
+
+        # transform norm to vxm_atlas
+        norm = ants.image_read(str(norm))
+        vxm_atlas = ants.image_read(str(vxm_atlas_path))
+        tx = ants.registration(fixed=vxm_atlas, moving=norm, type_of_transform='Affine')
+        trf = ants.read_transform(tx['fwdtransforms'][0])
+        ants.write_transform(trf, str(trf_path))
+        affined = tx['warpedmovout']
+        vol = affined.numpy() / 255.0
+        np.savez_compressed(vxm_input_npz, vol=vol)
+
+        # voxelmorph
+        # tensorflow device handling
+        if 'cuda' in self.inputs.gpuid:
+            if len(self.inputs.gpuid) == 4:
+                deepprep_device = '0'
+            else:
+                deepprep_device = self.inputs.gpuid.split(":")[1]
+        else:
+            deepprep_device = -1
+        device, nb_devices = vxm.tf.utils.setup_device(deepprep_device)
+
+        # load moving and fixed images
+        add_feat_axis = True
+        moving = vxm.py.utils.load_volfile(str(vxm_input_npz), add_batch_axis=True, add_feat_axis=add_feat_axis)
+        fixed, fixed_affine = vxm.py.utils.load_volfile(str(vxm_atlas_npz_path), add_batch_axis=True,
+                                                        add_feat_axis=add_feat_axis,
+                                                        ret_affine=True)
+        vxm_atlas_nib = nib.load(str(vxm_atlas_path))
+        fixed_affine = vxm_atlas_nib.affine.copy()
+        inshape = moving.shape[1:-1]
+        nb_feats = moving.shape[-1]
+
+        with tf.device(device):
+            # load model and predict
+            warp = vxm.networks.VxmDense.load(model_file).register(moving, fixed)
+            # warp = vxm.networks.VxmDenseSemiSupervisedSeg.load(args.model).register(moving, fixed)
+            moving = affined.numpy()[np.newaxis, ..., np.newaxis]
+            moved = vxm.networks.Transform(inshape, nb_feats=nb_feats).predict([moving, warp])
+
+        # save warp
+        vxm.py.utils.save_volfile(warp.squeeze(), str(vxm_warp), fixed_affine)
+
+        # save moved image
+        vxm.py.utils.save_volfile(moved.squeeze(), str(vxm_warped_path), fixed_affine)
+
+        # affine to atlas
+        atlas = ants.image_read(str(atlas_path))
+        vxm_warped = ants.image_read(str(vxm_warped_path))
+        warped = ants.apply_transforms(fixed=atlas, moving=vxm_warped, transformlist=[str(vxm2atlas_trf)])
+        Path(vxm_warped_path).parent.mkdir(parents=True, exist_ok=True)
+        ants.image_write(warped, str(vxm_warped_path))
+
+        self.check_output()
+
+        return runtime
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["subjects_dir"] = self.inputs.subjects_dir
+        return outputs
+
+    def create_sub_node(self):
+        from interface.create_node_bold_only import create_BoldSkipReorient_node
+        node = create_BoldSkipReorient_node(self.inputs.subject_id, self.inputs.task, self.inputs.atlas_type,
+                                            self.inputs.preprocess_method)
+        return node
 
 
 class BoldSkipReorientInputSpec(BaseInterfaceInputSpec):
@@ -41,16 +174,10 @@ class BoldSkipReorient(BaseInterface):
     def __init__(self):
         super(BoldSkipReorient, self).__init__()
 
-    def check_output(self, runs):
-        sub = self.inputs.subject_id
-        task = self.inputs.task
-        for run in runs:
-            BoldSkipReorient_output_files = [f'{sub}_bld{run}_rest.nii.gz', f'{sub}_bld{run}_rest_reorient_skip.nii.gz',
-                                             f'{sub}_bld{run}_rest_skip.nii.gz', f'{sub}_bld_rest_reorient_skip.nii.gz']
-            output_list = os.listdir(
-                Path(self.inputs.derivative_deepprep_path) / sub / 'tmp' / f'task-{task}' / sub / 'bold' / run)
-            check_result = set(BoldSkipReorient_output_files) <= set(output_list)
-            if not check_result:
+    def check_output(self, run_dirs: list, bolds: list):
+        for run_dir, bold in zip(run_dirs, bolds):
+            reorient_skip_bold = run_dir / bold.name.replace('.nii.gz', '_skip_reorient.nii.gz')
+            if not reorient_skip_bold.exist():
                 raise FileExistsError
 
     def dimstr2dimno(self, dimstr):
@@ -91,72 +218,48 @@ class BoldSkipReorient(BaseInterface):
         newimg = img.as_reoriented(ornt)
         nib.save(newimg, outfile)
 
-    def cmd(self, run):
-        preprocess_dir = Path(
-            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
-        subj_bold_dir = preprocess_dir / f'{self.inputs.subject_id}' / 'bold'
+    def cmd(self, run_dir: Path, bold: Path):
+        run_dir.mkdir(exist_ok=True)
 
-        bold = Path(
-            preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld{run}_rest.nii.gz'
-        skip_bold = Path(
-            preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld{run}_rest_skip.nii.gz'
-        reorient_skip_bold = Path(
-            preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld{run}_rest_reorient_skip.nii.gz'
         # skip 0 frame
-        sh.mri_convert('-i', bold, '-o', skip_bold, _out=sys.stdout)
+        nskip = 0
+        if nskip > 0:
+            skip_bold = run_dir / bold.name.replace('.nii.gz', '_skip.nii.gz')
+            sh.mri_convert('-i', bold, '--nskip', nskip, '-o', skip_bold, _out=sys.stdout)
+            bold = skip_bold
 
         # reorient
-        self.swapdim(str(skip_bold), 'x', '-y', 'z', str(reorient_skip_bold))
-        shutil.copy(subj_bold_dir / run / f'{self.inputs.subject_id}_bld{run}_rest_reorient_skip.nii.gz',
-                    subj_bold_dir / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip.nii.gz')
+        reorient_skip_bold = run_dir / bold.name.replace('.nii.gz', '_skip_reorient.nii.gz')
+        self.swapdim(str(bold), 'x', '-y', 'z', str(reorient_skip_bold))
 
     def _run_interface(self, runtime):
         preprocess_dir = Path(
             self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
-        deepprep_subj_path = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id
         subj = self.inputs.subject_id.split('-')[1]
         layout = bids.BIDSLayout(str(self.inputs.data_path), derivatives=False)
-        sess = layout.get_session(subject=subj)
-        tmpdir = deepprep_subj_path / 'tmp'
-        trf_file = tmpdir / f'{self.inputs.subject_id}_affine.mat'
-        warp_file = tmpdir / f'{self.inputs.subject_id}_warp.nii.gz'
-        warped_file = tmpdir / f'{self.inputs.subject_id}_warped.nii.gz'
         subj_bold_dir = Path(preprocess_dir) / f'{self.inputs.subject_id}' / 'bold'
         subj_bold_dir.mkdir(parents=True, exist_ok=True)
-        if len(sess) == 0:
-            subj_func_path = deepprep_subj_path / 'func'
-            subj_func_path.mkdir(exist_ok=True)
-            shutil.copy(trf_file, subj_func_path / f'{self.inputs.subject_id}_affine.mat')
-            shutil.copy(warp_file, subj_func_path / f'{self.inputs.subject_id}_warp.nii.gz')
-            shutil.copy(warped_file, subj_func_path / f'{self.inputs.subject_id}_warped.nii.gz')
-        else:
-            for ses in sess:
-                if self.inputs.task is None:
-                    bids_bolds = layout.get(subject=subj, session=ses, suffix='bold', extension='.nii.gz')
-                else:
-                    bids_bolds = layout.get(subject=subj, session=ses, task=self.inputs.task, suffix='bold',
-                                            extension='.nii.gz')
-                if len(bids_bolds) == 0:
-                    continue
-                subj_func_path = deepprep_subj_path / f'ses-{ses}' / 'func'
-                subj_func_path.mkdir(parents=True, exist_ok=True)
-                shutil.copy(trf_file, subj_func_path / f'{self.inputs.subject_id}_affine.mat')
-                shutil.copy(warp_file, subj_func_path / f'{self.inputs.subject_id}_warp.nii.gz')
-                shutil.copy(warped_file, subj_func_path / f'{self.inputs.subject_id}_warped.nii.gz')
+
+        args = []
+        run_dirs = []
+        bold_files = []
         if self.inputs.task is None:
             bids_bolds = layout.get(subject=subj, suffix='bold', extension='.nii.gz')
         else:
             bids_bolds = layout.get(subject=subj, task=self.inputs.task, suffix='bold', extension='.nii.gz')
         for idx, bids_bold in enumerate(bids_bolds):
-            bids_file = Path(bids_bold.path)
+            bold_file = Path(bids_bold.path)
             run = f'{idx + 1:03}'
-            (subj_bold_dir / run).mkdir(exist_ok=True)
-            shutil.copy(bids_file, subj_bold_dir / run / f'{self.inputs.subject_id}_bld{run}_rest.nii.gz')
-        runs = sorted(
-            [d.name for d in (Path(preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if d.is_dir()])
-        multipool_run(self.cmd, runs, Multi_Num=8)
+            run_dir = subj_bold_dir / run
+            run_dirs.append(run_dir)
+            args.append([run_dir, bold_file])
 
-        self.check_output(runs)
+        pool = Pool(2)
+        pool.starmap(self.cmd, args)
+        pool.close()
+        pool.join()
+
+        self.check_output(run_dirs, bold_files)
         return runtime
 
     def _list_outputs(self):
@@ -167,142 +270,13 @@ class BoldSkipReorient(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node_bold import create_Stc_node
+        from interface.create_node_bold_only import create_Stc_node
         node = create_Stc_node(self.inputs.subject_id,
                                self.inputs.task,
                                self.inputs.atlas_type,
                                self.inputs.preprocess_method)
 
         return node
-
-
-class MotionCorrectionInputSpec(BaseInterfaceInputSpec):
-    subject_id = Str(exists=True, desc='subject_id', mandatory=True)
-    task = Str(exists=True, desc="task", mandatory=True)
-    data_path = Directory(exists=True, desc="data path", mandatory=True)
-    derivative_deepprep_path = Directory(exists=True, desc="derivative_deepprep_path", mandatory=True)
-    preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
-    atlas_type = Str(exists=True, desc='MNI152_T1_2mm', mandatory=True)
-
-
-class MotionCorrectionOutputSpec(TraitedSpec):
-    data_path = Directory(exists=True, desc="data path")
-    subject_id = Str(exists=True, desc="subject id")
-
-
-class MotionCorrection(BaseInterface):
-    input_spec = MotionCorrectionInputSpec
-    output_spec = MotionCorrectionOutputSpec
-
-    time = 400 / 60  # 运行时间：分钟 / 单run测试时间
-    cpu = 0  # 最大cpu占用：个
-    gpu = 0  # 最大gpu占用：MB
-
-    def __init__(self):
-        super(MotionCorrection, self).__init__()
-
-    def check_output(self, runs):
-        sub = self.inputs.subject_id
-        task = self.inputs.task
-        for run in runs:
-            MotionCorrection_output_files = ['mcextreg', f'{sub}_bld_rest_reorient_skip_faln_mc.mat.aff12.1D',
-                                             f'{sub}_bld_rest_reorient_skip_faln_mc.mcdat',
-                                             f'{sub}_bld_rest_reorient_skip_faln_mc.nii.gz']
-            output_list = os.listdir(
-                Path(self.inputs.derivative_deepprep_path) / sub / 'tmp' / f'task-{task}' / sub / 'bold' / run)
-            check_result = set(MotionCorrection_output_files) <= set(output_list)
-            if not check_result:
-                return FileExistsError
-
-    def cmd(self, run):
-        # ln create 001
-        # run mc
-        # mv result file
-        preprocess_dir = Path(
-            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
-        link_dir = preprocess_dir / self.inputs.subject_id / 'bold' / run / self.inputs.subject_id / 'bold' / run
-        if not link_dir.exists():
-            link_dir.mkdir(parents=True, exist_ok=True)
-        link_files = os.listdir(Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run)
-        link_files.remove(self.inputs.subject_id)
-        try:
-            os.symlink(Path(preprocess_dir) / self.inputs.subject_id / 'bold' / 'template.nii.gz',
-                       Path(
-                           preprocess_dir) / self.inputs.subject_id / 'bold' / run / self.inputs.subject_id / 'bold' / 'template.nii.gz')
-        except:
-            pass
-        for link_file in link_files:
-            try:
-                os.symlink(Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / link_file,
-                           link_dir / link_file)
-            except:
-                continue
-        shargs = [
-            '-s', self.inputs.subject_id,
-            '-d', Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run,
-            '-per-session',
-            '-fsd', 'bold',
-            '-fstem', f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln',
-            '-fmcstem', f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc',
-            '-nolog']
-        sh.mc_sess(*shargs, _out=sys.stdout)
-        ori_path = Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run
-        try:
-            shutil.move(link_dir / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz',
-                        ori_path / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz')
-            shutil.move(link_dir / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.mat.aff12.1D',
-                        ori_path / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.mat.aff12.1D')
-            shutil.move(link_dir / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz.mclog',
-                        ori_path / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz.mclog')
-            shutil.move(link_dir / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.mcdat',
-                        ori_path / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.mcdat')
-            shutil.move(link_dir / 'mcextreg', ori_path / 'mcextreg')
-            shutil.move(link_dir / 'mcdat2extreg.log', ori_path / 'mcdat2extreg.log')
-        except:
-            pass
-        shutil.rmtree(ori_path / self.inputs.subject_id)
-
-    def _run_interface(self, runtime):
-        preprocess_dir = Path(
-            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
-        runs = sorted(
-            [d.name for d in (Path(preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if d.is_dir()])
-        # runs = ['001', '002', '003', '004', '005', '006', '007', '008']
-        multipool_run(self.cmd, runs, Multi_Num=8)
-
-        layout = bids.BIDSLayout(str(self.inputs.data_path), derivatives=False)
-        subj = self.inputs.subject_id.split('-')[1]
-        if self.inputs.task is None:
-            bids_bolds = layout.get(subject=subj, suffix='bold', extension='.nii.gz')
-        else:
-            bids_bolds = layout.get(subject=subj, task=self.inputs.task, suffix='bold', extension='.nii.gz')
-        subj_bold_dir = Path(preprocess_dir) / f'{self.inputs.subject_id}' / 'bold'
-        deepprep_subj_path = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id
-        deepprep_subj_path = Path(deepprep_subj_path)
-        for idx, bids_bold in enumerate(bids_bolds):
-            run = f"{idx + 1:03}"
-            entities = dict(bids_bold.entities)
-            file_prefix = Path(bids_bold.path).name.replace('.nii.gz', '')
-            if 'session' in entities:
-                subj_func_path = deepprep_subj_path / f"ses-{entities['session']}" / 'func'
-            else:
-                subj_func_path = deepprep_subj_path / 'func'
-            src_mc_file = subj_bold_dir / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
-            dst_mc_file = subj_func_path / f'{file_prefix}_mc.nii.gz'
-            shutil.copy(src_mc_file, dst_mc_file)
-
-        self.check_output(runs)
-
-        return runtime
-
-    def _list_outputs(self):
-        outputs = self._outputs().get()
-        outputs["data_path"] = self.inputs.data_path
-        outputs["subject_id"] = self.inputs.subject_id
-        return outputs
-
-    def create_sub_node(self):
-        return []
 
 
 class StcInputSpec(BaseInterfaceInputSpec):
@@ -419,11 +393,225 @@ class Stc(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node_bold import create_MkTemplate_node
+        from interface.create_node_bold_only import create_MkTemplate_node
         node = create_MkTemplate_node(self.inputs.subject_id,
                                       self.inputs.task,
                                       self.inputs.atlas_type,
                                       self.inputs.preprocess_method)
+
+        return node
+
+
+class MkTemplateInputSpec(BaseInterfaceInputSpec):
+    subject_id = Str(exists=True, desc='subject', mandatory=True)
+    data_path = Directory(exists=True, desc="data path", mandatory=True)
+    task = Str(exists=True, desc='task', mandatory=True)
+    derivative_deepprep_path = Directory(exists=True, desc="derivative_deepprep_path", mandatory=True)
+    preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
+    atlas_type = Str(exists=True, desc='MNI152_T1_2mm', mandatory=True)
+
+
+class MkTemplateOutputSpec(TraitedSpec):
+    data_path = Directory(exists=True, desc="data path")
+    subject_id = Str(exists=True, desc="subject id")
+
+
+class MkTemplate(BaseInterface):
+    input_spec = MkTemplateInputSpec
+    output_spec = MkTemplateOutputSpec
+
+    # time = 120 / 60  # 运行时间：分钟
+    # cpu = 2  # 最大cpu占用：个
+    # gpu = 0  # 最大gpu占用：MB
+
+    def __init__(self):
+        super(MkTemplate, self).__init__()
+
+    def check_output(self, runs):
+        sub = self.inputs.subject_id
+        task = self.inputs.task
+        for run in runs:
+            MkTemplate_output_files = ['template.nii.gz']
+            output_list = os.listdir(
+                Path(self.inputs.derivative_deepprep_path) / sub / 'tmp' / f'task-{task}' / sub / 'bold' / run)
+            check_result = set(MkTemplate_output_files) <= set(output_list)
+            if not check_result:
+                return FileExistsError
+
+    def _run_interface(self, runtime):
+        preprocess_dir = Path(
+            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
+        shargs = [
+            '-s', self.inputs.subject_id,
+            '-d', preprocess_dir,
+            '-fsd', 'bold',
+            '-funcstem', f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln',
+            '-nolog']
+        sh.mktemplate_sess(*shargs, _out=sys.stdout)
+
+        runs = sorted(
+            [d.name for d in (Path(preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if d.is_dir()])
+        self.check_output(runs)
+        return runtime
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["data_path"] = self.inputs.data_path
+        outputs["subject_id"] = self.inputs.subject_id
+        return outputs
+
+    def create_sub_node(self):
+        from interface.create_node_bold_only import create_MotionCorrection_node
+        node = create_MotionCorrection_node(self.inputs.subject_id,
+                                            self.inputs.task,
+                                            self.inputs.atlas_type,
+                                            self.inputs.preprocess_method)
+
+        return node
+
+
+class MotionCorrectionInputSpec(BaseInterfaceInputSpec):
+    subject_id = Str(exists=True, desc='subject_id', mandatory=True)
+    task = Str(exists=True, desc="task", mandatory=True)
+    data_path = Directory(exists=True, desc="data path", mandatory=True)
+    derivative_deepprep_path = Directory(exists=True, desc="derivative_deepprep_path", mandatory=True)
+    preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
+    atlas_type = Str(exists=True, desc='MNI152_T1_2mm', mandatory=True)
+
+
+class MotionCorrectionOutputSpec(TraitedSpec):
+    data_path = Directory(exists=True, desc="data path")
+    subject_id = Str(exists=True, desc="subject id")
+
+
+class MotionCorrection(BaseInterface):
+    input_spec = MotionCorrectionInputSpec
+    output_spec = MotionCorrectionOutputSpec
+
+    time = 400 / 60  # 运行时间：分钟 / 单run测试时间
+    cpu = 0  # 最大cpu占用：个
+    gpu = 0  # 最大gpu占用：MB
+
+    def __init__(self):
+        super(MotionCorrection, self).__init__()
+
+    def check_output(self, runs):
+        sub = self.inputs.subject_id
+        task = self.inputs.task
+        for run in runs:
+            MotionCorrection_output_files = ['mcextreg', f'{sub}_bld_rest_reorient_skip_faln_mc.mat.aff12.1D',
+                                             f'{sub}_bld_rest_reorient_skip_faln_mc.mcdat',
+                                             f'{sub}_bld_rest_reorient_skip_faln_mc.nii.gz']
+            output_list = os.listdir(
+                Path(self.inputs.derivative_deepprep_path) / sub / 'tmp' / f'task-{task}' / sub / 'bold' / run)
+            check_result = set(MotionCorrection_output_files) <= set(output_list)
+            if not check_result:
+                return FileExistsError
+
+    def cmd(self, run):
+        # ln create 001
+        # run mc
+        # mv result file
+        preprocess_dir = Path(
+            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
+        link_dir = preprocess_dir / self.inputs.subject_id / 'bold' / run / self.inputs.subject_id / 'bold' / run
+        if not link_dir.exists():
+            link_dir.mkdir(parents=True, exist_ok=True)
+        link_files = os.listdir(Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run)
+        link_files.remove(self.inputs.subject_id)
+        try:
+            os.symlink(Path(preprocess_dir) / self.inputs.subject_id / 'bold' / 'template.nii.gz',
+                       Path(
+                           preprocess_dir) / self.inputs.subject_id / 'bold' / run / self.inputs.subject_id / 'bold' / 'template.nii.gz')
+        except:
+            pass
+        for link_file in link_files:
+            try:
+                os.symlink(Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / link_file,
+                           link_dir / link_file)
+            except:
+                continue
+        shargs = [
+            '-s', self.inputs.subject_id,
+            '-d', Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run,
+            '-per-session',
+            '-fsd', 'bold',
+            '-fstem', f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln',
+            '-fmcstem', f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc',
+            '-nolog']
+        sh.mc_sess(*shargs, _out=sys.stdout)
+        ori_path = Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run
+        try:
+            shutil.move(link_dir / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz',
+                        ori_path / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz')
+            shutil.move(link_dir / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.mat.aff12.1D',
+                        ori_path / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.mat.aff12.1D')
+            shutil.move(link_dir / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz.mclog',
+                        ori_path / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz.mclog')
+            shutil.move(link_dir / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.mcdat',
+                        ori_path / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.mcdat')
+            shutil.move(link_dir / 'mcextreg', ori_path / 'mcextreg')
+            shutil.move(link_dir / 'mcdat2extreg.log', ori_path / 'mcdat2extreg.log')
+        except:
+            pass
+        shutil.rmtree(ori_path / self.inputs.subject_id)
+
+    def _run_interface(self, runtime):
+        preprocess_dir = Path(
+            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
+        runs = sorted(
+            [d.name for d in (Path(preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if d.is_dir()])
+        # runs = ['001', '002', '003', '004', '005', '006', '007', '008']
+
+        shargs = [
+            '-s', self.inputs.subject_id,
+            '-d', preprocess_dir,
+            '-per-session',
+            '-fsd', 'bold',
+            '-fstem', f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln',
+            '-fmcstem', f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc',
+            '-nolog']
+        sh.mc_sess(*shargs, _out=sys.stdout)
+
+        # multipool_run(self.cmd, runs, Multi_Num=8)
+        #
+        # layout = bids.BIDSLayout(str(self.inputs.data_path), derivatives=False)
+        # subj = self.inputs.subject_id.split('-')[1]
+        # if self.inputs.task is None:
+        #     bids_bolds = layout.get(subject=subj, suffix='bold', extension='.nii.gz')
+        # else:
+        #     bids_bolds = layout.get(subject=subj, task=self.inputs.task, suffix='bold', extension='.nii.gz')
+        # subj_bold_dir = Path(preprocess_dir) / f'{self.inputs.subject_id}' / 'bold'
+        # deepprep_subj_path = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id
+        # deepprep_subj_path = Path(deepprep_subj_path)
+        # for idx, bids_bold in enumerate(bids_bolds):
+        #     run = f"{idx + 1:03}"
+        #     entities = dict(bids_bold.entities)
+        #     file_prefix = Path(bids_bold.path).name.replace('.nii.gz', '')
+        #     if 'session' in entities:
+        #         subj_func_path = deepprep_subj_path / f"ses-{entities['session']}" / 'func'
+        #     else:
+        #         subj_func_path = deepprep_subj_path / 'func'
+        #     src_mc_file = subj_bold_dir / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
+        #     dst_mc_file = subj_func_path / f'{file_prefix}_mc.nii.gz'
+        #     shutil.copy(src_mc_file, dst_mc_file)
+        #
+        # self.check_output(runs)
+
+        return runtime
+
+    def _list_outputs(self):
+        outputs = self._outputs().get()
+        outputs["data_path"] = self.inputs.data_path
+        outputs["subject_id"] = self.inputs.subject_id
+        return outputs
+
+    def create_sub_node(self):
+        from interface.create_node_bold_only import create_Register_node
+        node = create_Register_node(self.inputs.subject_id,
+                                            self.inputs.task,
+                                            self.inputs.atlas_type,
+                                            self.inputs.preprocess_method)
 
         return node
 
@@ -519,7 +707,13 @@ class Register(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        return []
+        from interface.create_node_bold_only import create_Mkbrainmask_node
+        node = create_Mkbrainmask_node(self.inputs.subject_id,
+                                    self.inputs.task,
+                                    self.inputs.atlas_type,
+                                    self.inputs.preprocess_method)
+
+        return node
 
 
 class MkBrainmaskInputSpec(BaseInterfaceInputSpec):
@@ -569,6 +763,8 @@ class MkBrainmask(BaseInterface):
             preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
         reg = Path(
             preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.register.dat'
+        moved = Path(
+            preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc_moved.nii.gz'
         func = Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}.func.aseg.nii'
         wm = Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}.func.wm.nii.gz'
         vent = Path(
@@ -579,39 +775,47 @@ class MkBrainmask(BaseInterface):
             preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}.brainmask.nii.gz'
         binmask = Path(
             preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}.brainmask.bin.nii.gz'
-        shargs = [
-            '--seg', seg,
-            '--temp', mov,
-            '--reg', reg,
-            '--o', func]
-        sh.mri_label2vol(*shargs, _out=sys.stdout)
-
-        shargs = [
-            '--i', func,
-            '--wm',
-            '--erode', 1,
-            '--o', wm]
-        sh.mri_binarize(*shargs, _out=sys.stdout)
-
-        shargs = [
-            '--i', func,
-            '--ventricles',
-            '--o', vent]
-        sh.mri_binarize(*shargs, _out=sys.stdout)
 
         shargs = [
             '--reg', reg,
             '--targ', targ,
             '--mov', mov,
-            '--inv',
-            '--o', mask]
+            '--o', moved]
         sh.mri_vol2vol(*shargs, _out=sys.stdout)
 
-        shargs = [
-            '--i', mask,
-            '--o', binmask,
-            '--min', 0.0001]
-        sh.mri_binarize(*shargs, _out=sys.stdout)
+        # shargs = [
+        #     '--seg', seg,
+        #     '--temp', mov,
+        #     '--reg', reg,
+        #     '--o', func]
+        # sh.mri_label2vol(*shargs, _out=sys.stdout)
+        #
+        # shargs = [
+        #     '--i', func,
+        #     '--wm',
+        #     '--erode', 1,
+        #     '--o', wm]
+        # sh.mri_binarize(*shargs, _out=sys.stdout)
+        #
+        # shargs = [
+        #     '--i', func,
+        #     '--ventricles',
+        #     '--o', vent]
+        # sh.mri_binarize(*shargs, _out=sys.stdout)
+        #
+        # shargs = [
+        #     '--reg', reg,
+        #     '--targ', targ,
+        #     '--mov', mov,
+        #     '--inv',
+        #     '--o', mask]
+        # sh.mri_vol2vol(*shargs, _out=sys.stdout)
+        #
+        # shargs = [
+        #     '--i', mask,
+        #     '--o', binmask,
+        #     '--min', 0.0001]
+        # sh.mri_binarize(*shargs, _out=sys.stdout)
 
     def _run_interface(self, runtime):
         preprocess_dir = Path(
@@ -632,7 +836,7 @@ class MkBrainmask(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node_bold import create_RestGauss_node, create_VxmRegNormMNI152_node
+        from interface.create_node_bold_only import create_RestGauss_node, create_VxmRegNormMNI152_node
         if self.inputs.preprocess_method == 'rest':
             node = create_RestGauss_node(self.inputs.subject_id,
                                          self.inputs.task,
@@ -644,140 +848,6 @@ class MkBrainmask(BaseInterface):
                                                 self.inputs.atlas_type,
                                                 self.inputs.preprocess_method)
 
-        return node
-
-
-class VxmRegistraionInputSpec(BaseInterfaceInputSpec):
-    subject_id = Str(desc="subject id", mandatory=True)
-    subjects_dir = Directory(exists=True, desc='subjects_dir', mandatory=True)
-    data_path = Directory(exists=True, desc='data path', mandatory=True)
-    derivative_deepprep_path = Directory(exists=True, desc='derivative_deepprep_path', mandatory=True)
-    model_file = File(exists=True, desc="atlas_type/model.h5", mandatory=True)
-    vxm_model_path = Directory(exists=True, desc="model/voxelmorph", mandatory=True)
-    atlas_type = Str(desc="atlas_type", mandatory=True)
-    task = Str(exists=True, desc="task", mandatory=True)
-    preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
-    gpuid = Str(exists=True, desc='gpuid set', mandatory=True)
-
-
-class VxmRegistraionOutputSpec(TraitedSpec):
-    subjects_dir = Directory(exists=True, desc='subjects_dir')
-
-
-class VxmRegistraion(BaseInterface):
-    input_spec = VxmRegistraionInputSpec
-    output_spec = VxmRegistraionOutputSpec
-
-    time = 15 / 60  # 运行时间：分钟 / 单run测试时间
-    cpu = 14  # 最大cpu占用：个
-    gpu = 2703  # 最大gpu占用：MB
-
-    def __init__(self):
-        super(VxmRegistraion, self).__init__()
-
-    def check_output(self):
-        sub = self.inputs.subject_id
-        VxmRegistraion_output_files = ['warped.nii.gz', 'warp.nii.gz', 'vxminput.npz', f'{sub}_warped.nii.gz',
-                                       f'{sub}_warp.nii.gz', f'{sub}_affine.mat']
-        output_list = os.listdir(Path(self.inputs.derivative_deepprep_path) / sub / 'tmp')
-        check_result = set(VxmRegistraion_output_files) <= set(output_list)
-        if not check_result:
-            return FileExistsError
-
-    def _run_interface(self, runtime):
-        # import tensorflow as tf
-        # import ants
-        # import shutil
-        # import deepprep_pipeline.voxelmorph as vxm
-        subject_id = self.inputs.subject_id
-        deepprep_subj_path = Path(self.inputs.derivative_deepprep_path) / subject_id
-
-        norm = Path(self.inputs.subjects_dir) / subject_id / 'mri' / 'norm.mgz'
-        trf_path = deepprep_subj_path / 'tmp' / f'{subject_id}_affine.mat'
-        warp_path = deepprep_subj_path / 'tmp' / f'{subject_id}_warp.nii.gz'
-        warped_path = deepprep_subj_path / 'tmp' / f'{subject_id}_warped.nii.gz'
-        vxm_warp = deepprep_subj_path / 'tmp' / 'warp.nii.gz'
-        vxm_warped_path = deepprep_subj_path / 'tmp' / 'warped.nii.gz'
-        npz = deepprep_subj_path / 'tmp' / 'vxminput.npz'
-        Path(deepprep_subj_path).mkdir(exist_ok=True)
-
-        tmpdir = Path(deepprep_subj_path) / 'tmp'
-        tmpdir.mkdir(exist_ok=True)
-
-        # atlas and model
-        vxm_model_path = Path(self.inputs.vxm_model_path)
-        atlas_type = self.inputs.atlas_type
-        model_file = self.inputs.model_file  # vxm_model_path / atlas_type / f'model.h5'
-        atlas_path = vxm_model_path / atlas_type / f'{atlas_type}_brain.nii.gz'
-        vxm_atlas_path = vxm_model_path / atlas_type / f'{atlas_type}_brain_vxm.nii.gz'
-        vxm_atlas_npz_path = vxm_model_path / atlas_type / f'{atlas_type}_brain_vxm.npz'
-        vxm2atlas_trf = vxm_model_path / atlas_type / f'{atlas_type}_vxm2atlas.mat'
-
-        norm = ants.image_read(str(norm))
-        vxm_atlas = ants.image_read(str(vxm_atlas_path))
-        tx = ants.registration(fixed=vxm_atlas, moving=norm, type_of_transform='Affine')
-        trf = ants.read_transform(tx['fwdtransforms'][0])
-        ants.write_transform(trf, str(trf_path))
-        affined = tx['warpedmovout']
-        vol = affined.numpy() / 255.0
-        np.savez_compressed(npz, vol=vol)
-
-        # voxelmorph
-        # tensorflow device handling
-        if 'cuda' in self.inputs.gpuid:
-            if len(self.inputs.gpuid) == 4:
-                deepprep_device = '0'
-            else:
-                deepprep_device = self.inputs.gpuid.split(":")[1]
-        else:
-            deepprep_device = -1
-        device, nb_devices = vxm.tf.utils.setup_device(deepprep_device)
-
-        # load moving and fixed images
-        add_feat_axis = True
-        moving = vxm.py.utils.load_volfile(str(npz), add_batch_axis=True, add_feat_axis=add_feat_axis)
-        fixed, fixed_affine = vxm.py.utils.load_volfile(str(vxm_atlas_npz_path), add_batch_axis=True,
-                                                        add_feat_axis=add_feat_axis,
-                                                        ret_affine=True)
-        vxm_atlas_nib = nib.load(str(vxm_atlas_path))
-        fixed_affine = vxm_atlas_nib.affine.copy()
-        inshape = moving.shape[1:-1]
-        nb_feats = moving.shape[-1]
-
-        with tf.device(device):
-            # load model and predict
-            warp = vxm.networks.VxmDense.load(model_file).register(moving, fixed)
-            # warp = vxm.networks.VxmDenseSemiSupervisedSeg.load(args.model).register(moving, fixed)
-            moving = affined.numpy()[np.newaxis, ..., np.newaxis]
-            moved = vxm.networks.Transform(inshape, nb_feats=nb_feats).predict([moving, warp])
-
-        # save warp
-        vxm.py.utils.save_volfile(warp.squeeze(), str(vxm_warp), fixed_affine)
-        shutil.copy(vxm_warp, warp_path)
-
-        # save moved image
-        vxm.py.utils.save_volfile(moved.squeeze(), str(vxm_warped_path), fixed_affine)
-
-        # affine to atlas
-        atlas = ants.image_read(str(atlas_path))
-        vxm_warped = ants.image_read(str(vxm_warped_path))
-        warped = ants.apply_transforms(fixed=atlas, moving=vxm_warped, transformlist=[str(vxm2atlas_trf)])
-        Path(warped_path).parent.mkdir(parents=True, exist_ok=True)
-        ants.image_write(warped, str(warped_path))
-
-        self.check_output()
-
-        return runtime
-
-    def _list_outputs(self):
-        outputs = self._outputs().get()
-        outputs["subjects_dir"] = self.inputs.subjects_dir
-        return outputs
-
-    def create_sub_node(self):
-        from interface.create_node_bold import create_BoldSkipReorient_node
-        node = create_BoldSkipReorient_node(self.inputs.subject_id, self.inputs.task, self.inputs.atlas_type,
-                                            self.inputs.preprocess_method)
         return node
 
 
@@ -845,7 +915,7 @@ class RestGauss(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node_bold import create_RestBandpass_node
+        from interface.create_node_bold_only import create_RestBandpass_node
         node = create_RestBandpass_node(self.inputs.subject_id,
                                         self.inputs.task,
                                         self.inputs.atlas_type,
@@ -936,7 +1006,7 @@ class RestBandpass(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node_bold import create_RestRegression_node
+        from interface.create_node_bold_only import create_RestRegression_node
         node = create_RestRegression_node(self.inputs.subject_id,
                                           self.inputs.task,
                                           self.inputs.atlas_type,
@@ -1101,7 +1171,7 @@ class RestRegression(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node_bold import create_VxmRegNormMNI152_node
+        from interface.create_node_bold_only import create_VxmRegNormMNI152_node
         node = create_VxmRegNormMNI152_node(self.inputs.subject_id,
                                             self.inputs.task,
                                             self.inputs.atlas_type,
@@ -1180,6 +1250,9 @@ class VxmRegNormMNI152(BaseInterface):
 
     def native_bold_to_T1_2mm_ants(self, residual_file, subject_id, subj_t1_file, reg_file, save_file, preprocess_dir,
                                    verbose=False):
+        """
+        # TODO 在之前的步骤已经生成了 norm_2mm 数据，这里不需要再生成，直接读取就可以了
+        """
         subj_t1_2mm_file = os.path.join(os.path.split(save_file)[0], f'{subject_id}_norm_2mm.nii.gz')
         sh.mri_convert('-ds', 2, 2, 2,
                        '-i', subj_t1_file,
@@ -1329,16 +1402,18 @@ class VxmRegNormMNI152(BaseInterface):
                 bold_file = subj_func_path / f'{file_prefix}_mc.nii.gz'
 
             reg_file = subj_func_path / f'{file_prefix}_bbregister.register.dat'
-            bold_t1_file = subj_func_path / f'{subject_id}_native_t1_2mm.nii.gz'
+            bold_t1_file = bold_file.name.replace('.nii.gz', '_T1_2mm.nii.gz')  # save reg to T1 result file
+            ants_dir = preprocess_dir / self.inputs.subject_id / 'ants'
             bold_t1_out = self.native_bold_to_T1_2mm_ants(bold_file, subject_id, norm_path, reg_file,
-                                                          bold_t1_file, preprocess_dir, verbose=False)
+                                                          bold_t1_file, ants_dir, verbose=True)
 
-            warp_file = subj_func_path / f'{subject_id}_warp.nii.gz'
-            affine_file = subj_func_path / f'{subject_id}_affine.mat'
-            warped_file = subj_func_path / f'{subject_id}_MNI2mm.nii.gz'
+            subj_transform_path = Path(deepprep_subj_path) / 'transform'
+            warp_file = subj_transform_path / f'{subject_id}_deformation_field_for_warp_to_vxm_atlas.nii.gz'
+            affine_file = subj_transform_path / f'{subject_id}_trf_for_affine_to_vxm_atlas.mat'
+            warped_file = bold_file.name.replace('.nii.gz', '_MNI152_2mm.nii.gz')  # save reg to MNI152 result file
             warped_img = self.vxm_warp_bold_2mm(bold_t1_out, affine_file, warp_file, warped_file, verbose=True)
 
-            self.check_output(subj_func_path,file_prefix)
+            self.check_output(subj_func_path, file_prefix)
 
         return runtime
 
@@ -1350,7 +1425,7 @@ class VxmRegNormMNI152(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node_bold import create_Smooth_node
+        from interface.create_node_bold_only import create_Smooth_node
         node = create_Smooth_node(self.inputs.subject_id,
                                   self.inputs.task,
                                   self.inputs.atlas_type,
@@ -1504,69 +1579,3 @@ class Smooth(BaseInterface):
         return outputs
 
 
-class MkTemplateInputSpec(BaseInterfaceInputSpec):
-    subject_id = Str(exists=True, desc='subject', mandatory=True)
-    data_path = Directory(exists=True, desc="data path", mandatory=True)
-    task = Str(exists=True, desc='task', mandatory=True)
-    derivative_deepprep_path = Directory(exists=True, desc="derivative_deepprep_path", mandatory=True)
-    preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
-    atlas_type = Str(exists=True, desc='MNI152_T1_2mm', mandatory=True)
-
-
-class MkTemplateOutputSpec(TraitedSpec):
-    data_path = Directory(exists=True, desc="data path")
-    subject_id = Str(exists=True, desc="subject id")
-
-
-class MkTemplate(BaseInterface):
-    input_spec = MkTemplateInputSpec
-    output_spec = MkTemplateOutputSpec
-
-    # time = 120 / 60  # 运行时间：分钟
-    # cpu = 2  # 最大cpu占用：个
-    # gpu = 0  # 最大gpu占用：MB
-
-    def __init__(self):
-        super(MkTemplate, self).__init__()
-
-    def check_output(self, runs):
-        sub = self.inputs.subject_id
-        task = self.inputs.task
-        for run in runs:
-            MkTemplate_output_files = ['template.nii.gz']
-            output_list = os.listdir(
-                Path(self.inputs.derivative_deepprep_path) / sub / 'tmp' / f'task-{task}' / sub / 'bold' / run)
-            check_result = set(MkTemplate_output_files) <= set(output_list)
-            if not check_result:
-                return FileExistsError
-
-    def _run_interface(self, runtime):
-        preprocess_dir = Path(
-            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
-        shargs = [
-            '-s', self.inputs.subject_id,
-            '-d', preprocess_dir,
-            '-fsd', 'bold',
-            '-funcstem', f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln',
-            '-nolog']
-        sh.mktemplate_sess(*shargs, _out=sys.stdout)
-
-        runs = sorted(
-            [d.name for d in (Path(preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if d.is_dir()])
-        self.check_output(runs)
-        return runtime
-
-    def _list_outputs(self):
-        outputs = self._outputs().get()
-        outputs["data_path"] = self.inputs.data_path
-        outputs["subject_id"] = self.inputs.subject_id
-        return outputs
-
-    def create_sub_node(self):
-        from interface.create_node_bold import create_MotionCorrection_node
-        node = create_MotionCorrection_node(self.inputs.subject_id,
-                                            self.inputs.task,
-                                            self.inputs.atlas_type,
-                                            self.inputs.preprocess_method)
-
-        return node
