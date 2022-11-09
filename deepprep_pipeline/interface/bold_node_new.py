@@ -1,6 +1,7 @@
 from nipype.interfaces.base import BaseInterface, \
     BaseInterfaceInputSpec, File, TraitedSpec, Directory, Str
 from interface.run import multipool_run, multipool_BidsBolds, multipool_BidsBolds_2, Pool
+from glob import glob
 import sys
 import sh
 import nibabel as nib
@@ -44,22 +45,18 @@ class VxmRegistraion(BaseInterface):
     def __init__(self):
         super(VxmRegistraion, self).__init__()
 
-    def check_output(self):
+    def check_output(self, output_dir: Path):
         subject_id = self.inputs.subject_id
         VxmRegistraion_output_files = [f'{subject_id}_norm_warped_vxm_atlas.nii.gz',
                                        f'{subject_id}_deformation_field_for_warp_to_vxm_atlas.nii.gz',
                                        f'{subject_id}_norm_affined_vxm_atlas.npz',
                                        f'{subject_id}_trf_for_affine_to_vxm_atlas.mat']
-        output_list = os.listdir(Path(self.inputs.derivative_deepprep_path) / subject_id / 'transform')
+        output_list = os.listdir(output_dir)
         check_result = set(VxmRegistraion_output_files) <= set(output_list)
         if not check_result:
             return FileExistsError
 
     def _run_interface(self, runtime):
-        # import tensorflow as tf
-        # import ants
-        # import shutil
-        # import deepprep_pipeline.voxelmorph as vxm
         subject_id = self.inputs.subject_id
         deepprep_subj_path = Path(self.inputs.derivative_deepprep_path) / subject_id
 
@@ -133,7 +130,7 @@ class VxmRegistraion(BaseInterface):
         Path(vxm_warped_path).parent.mkdir(parents=True, exist_ok=True)
         ants.image_write(warped, str(vxm_warped_path))
 
-        self.check_output()
+        self.check_output(transform_dir)
 
         return runtime
 
@@ -252,6 +249,7 @@ class BoldSkipReorient(BaseInterface):
             run = f'{idx + 1:03}'
             run_dir = subj_bold_dir / run
             run_dirs.append(run_dir)
+            bold_files.append(bold_file)
             args.append([run_dir, bold_file])
 
         pool = Pool(2)
@@ -304,42 +302,35 @@ class Stc(BaseInterface):
     def __init__(self):
         super(Stc, self).__init__()
 
-    def check_output(self, runs):
-        sub = self.inputs.subject_id
-        task = self.inputs.task
-        for run in runs:
-            Stc_output_files = [f'{sub}_bld_rest_reorient_skip_faln.nii.gz']
-            output_list = os.listdir(
-                Path(self.inputs.derivative_deepprep_path) / sub / 'tmp' / f'task-{task}' / sub / 'bold' / run)
-            check_result = set(Stc_output_files) <= set(output_list)
-            if not check_result:
-                return FileExistsError
+    def check_output(self, run_dirs: list, bolds: list):
+        for run_dir, bold in zip(run_dirs, bolds):
+            reorient_skip_bold = run_dir / bold.name.replace('.nii.gz', '_skip_reorient_faln.nii.gz')
+            if not reorient_skip_bold.exist():
+                raise FileExistsError
 
-    def cmd(self, run):
-        preprocess_dir = Path(
-            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
-        link_dir = Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / self.inputs.subject_id / 'bold' / run
+    def cmd(self, run_dir: Path, template: Path):
+        run = os.path.basename(str(run_dir))
+        link_dir = run_dir / self.inputs.subject_id / 'bold' / run
         if not link_dir.exists():
             link_dir.mkdir(parents=True, exist_ok=True)
-        link_files = os.listdir(Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run)
+        link_files = os.listdir(run_dir)
         link_files.remove(self.inputs.subject_id)
         try:
-            os.symlink(Path(preprocess_dir) / self.inputs.subject_id / 'bold' / 'template.nii.gz',
-                       Path(
-                           preprocess_dir) / self.inputs.subject_id / 'bold' / run / self.inputs.subject_id / 'bold' / 'template.nii.gz')
+            os.symlink(template,
+                       run_dir / self.inputs.subject_id / 'bold' / 'template.nii.gz')
         except:
             pass
         for link_file in link_files:
             try:
-                os.symlink(Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / link_file,
+                os.symlink(run_dir / link_file,
                            link_dir / link_file)
             except:
                 continue
-        input_fname = f'{self.inputs.subject_id}_bld_rest_reorient_skip'
-        output_fname = f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln'
+        input_fname = os.path.basename(glob(str(link_dir / f'*_skip_reorient.nii.gz'))[0]).replace('.nii.gz', '')
+        output_fname = input_fname + '_faln'
         shargs = [
             '-s', self.inputs.subject_id,
-            '-d', Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run,
+            '-d', run_dir,
             '-fsd', 'bold',
             '-so', 'odd',
             '-ngroups', 1,
@@ -347,14 +338,12 @@ class Stc(BaseInterface):
             '-o', output_fname,
             '-nolog']
         sh.stc_sess(*shargs, _out=sys.stdout)
-        ori_path = Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run
+        ori_path = run_dir
         try:
-            shutil.move(link_dir / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln.nii.gz',
-                        ori_path / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln.nii.gz')
-            shutil.move(link_dir / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln.nii.gz.log',
-                        ori_path / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln.nii.gz.log')
-            shutil.move(link_dir / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln.nii.gz.log.bak',
-                        ori_path / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln.nii.gz.log.bak')
+            shutil.move(link_dir / f'{output_fname}.nii.gz',
+                        ori_path / f'{output_fname}.nii.gz')
+            shutil.move(link_dir / f'{output_fname}.nii.gz.log',
+                        ori_path / f'{output_fname}.nii.gz.log')
         except:
             pass
         shutil.rmtree(ori_path / self.inputs.subject_id)
@@ -362,28 +351,34 @@ class Stc(BaseInterface):
     def _run_interface(self, runtime):
         preprocess_dir = Path(
             self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
-        runs = sorted([d.name for d in (Path(preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if
-                       d.is_dir()])
-        # # runs = ['001', '002', '003', '004', '005', '006', '007', '008']
-        # # # runs = ['001', '002', '003', '004']
-        # # # runs = ['001', '002']
-        # # runs = ['001']
-        multipool_run(self.cmd, runs, Multi_Num=8)
+        subj = self.inputs.subject_id.split('-')[1]
+        layout = bids.BIDSLayout(str(self.inputs.data_path), derivatives=False)
+        subj_bold_dir = Path(preprocess_dir) / f'{self.inputs.subject_id}' / 'bold'
+        subj_bold_dir.mkdir(parents=True, exist_ok=True)
 
-        # input_fname = f'{self.inputs.subject_id}_bld_rest_reorient_skip'
-        # output_fname = f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln'
-        # shargs = [
-        #     '-s', self.inputs.subject_id,
-        #     '-d', self.inputs.preprocess_dir,
-        #     '-fsd', 'bold',
-        #     '-so', 'odd',
-        #     '-ngroups', 1,
-        #     '-i', input_fname,
-        #     '-o', output_fname,
-        #     '-nolog']
-        # sh.stc_sess(*shargs, _out=sys.stdout)
+        template_file = subj_bold_dir / 'template.nii.gz'
 
-        self.check_output(runs)
+        args = []
+        run_dirs = []
+        bold_files = []
+        if self.inputs.task is None:
+            bids_bolds = layout.get(subject=subj, suffix='bold', extension='.nii.gz')
+        else:
+            bids_bolds = layout.get(subject=subj, task=self.inputs.task, suffix='bold', extension='.nii.gz')
+        for idx, bids_bold in enumerate(bids_bolds):
+            bold_file = Path(bids_bold.path)
+            run = f'{idx + 1:03}'
+            run_dir = subj_bold_dir / run
+            run_dirs.append(run_dir)
+            bold_files.append(bold_file)
+            args.append([run_dir, template_file])
+
+        pool = Pool(2)
+        pool.starmap(self.cmd, args)
+        pool.close()
+        pool.join()
+
+        self.check_output(run_dirs, bold_files)
         return runtime
 
     def _list_outputs(self):
