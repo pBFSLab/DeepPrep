@@ -171,11 +171,14 @@ class BoldSkipReorient(BaseInterface):
     def __init__(self):
         super(BoldSkipReorient, self).__init__()
 
-    def check_output(self, run_dirs: list, bolds: list):
-        for run_dir, bold in zip(run_dirs, bolds):
-            reorient_skip_bold = run_dir / bold.name.replace('.nii.gz', '_skip_reorient.nii.gz')
-            if not reorient_skip_bold.exist():
-                raise FileExistsError
+    def check_output(self, subj_func_dir: Path, bolds: list):
+        filenames = ['_skip_reorient.nii.gz',
+                     ]
+        for bold in bolds:
+            for filename in filenames:
+                file_path = subj_func_dir / bold.name.replace('.nii.gz', filename)
+                if not file_path.exists():
+                    raise FileExistsError(file_path)
 
     def dimstr2dimno(self, dimstr):
         if 'x' in dimstr:
@@ -215,30 +218,27 @@ class BoldSkipReorient(BaseInterface):
         newimg = img.as_reoriented(ornt)
         nib.save(newimg, outfile)
 
-    def cmd(self, run_dir: Path, bold: Path):
-        run_dir.mkdir(exist_ok=True)
+    def cmd(self, subj_func_dir: Path, bold: Path):
 
         # skip 0 frame
         nskip = 0
         if nskip > 0:
-            skip_bold = run_dir / bold.name.replace('.nii.gz', '_skip.nii.gz')
+            skip_bold = subj_func_dir / bold.name.replace('.nii.gz', '_skip.nii.gz')
             sh.mri_convert('-i', bold, '--nskip', nskip, '-o', skip_bold, _out=sys.stdout)
             bold = skip_bold
 
         # reorient
-        reorient_skip_bold = run_dir / bold.name.replace('.nii.gz', '_skip_reorient.nii.gz')
+        reorient_skip_bold = subj_func_dir / bold.name.replace('.nii.gz', '_skip_reorient.nii.gz')
         self.swapdim(str(bold), 'x', '-y', 'z', str(reorient_skip_bold))
 
     def _run_interface(self, runtime):
-        preprocess_dir = Path(
-            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
+        preprocess_dir = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id
         subj = self.inputs.subject_id.split('-')[1]
         layout = bids.BIDSLayout(str(self.inputs.data_path), derivatives=False)
-        subj_bold_dir = Path(preprocess_dir) / f'{self.inputs.subject_id}' / 'bold'
-        subj_bold_dir.mkdir(parents=True, exist_ok=True)
+        subj_func_dir = Path(preprocess_dir) / 'func'
+        subj_func_dir.mkdir(parents=True, exist_ok=True)
 
         args = []
-        run_dirs = []
         bold_files = []
         if self.inputs.task is None:
             bids_bolds = layout.get(subject=subj, suffix='bold', extension='.nii.gz')
@@ -246,18 +246,15 @@ class BoldSkipReorient(BaseInterface):
             bids_bolds = layout.get(subject=subj, task=self.inputs.task, suffix='bold', extension='.nii.gz')
         for idx, bids_bold in enumerate(bids_bolds):
             bold_file = Path(bids_bold.path)
-            run = f'{idx + 1:03}'
-            run_dir = subj_bold_dir / run
-            run_dirs.append(run_dir)
             bold_files.append(bold_file)
-            args.append([run_dir, bold_file])
+            args.append([subj_func_dir, bold_file])
 
         pool = Pool(2)
         pool.starmap(self.cmd, args)
         pool.close()
         pool.join()
 
-        self.check_output(run_dirs, bold_files)
+        self.check_output(subj_func_dir, bold_files)
         return runtime
 
     def _list_outputs(self):
@@ -277,7 +274,7 @@ class BoldSkipReorient(BaseInterface):
         return node
 
 
-class StcInputSpec(BaseInterfaceInputSpec):
+class StcMcInputSpec(BaseInterfaceInputSpec):
     subject_id = Str(exists=True, desc='subject_id', mandatory=True)
     task = Str(exists=True, desc="task", mandatory=True)
     data_path = Directory(exists=True, desc="data path", mandatory=True)
@@ -286,99 +283,142 @@ class StcInputSpec(BaseInterfaceInputSpec):
     atlas_type = Str(exists=True, desc='MNI152_T1_2mm', mandatory=True)
 
 
-class StcOutputSpec(TraitedSpec):
+class StcMcOutputSpec(TraitedSpec):
     data_path = Directory(exists=True, desc="data path")
     subject_id = Str(exists=True, desc="subject id")
 
 
-class Stc(BaseInterface):
-    input_spec = StcInputSpec
-    output_spec = StcOutputSpec
+class StcMc(BaseInterface):
+    input_spec = StcMcInputSpec
+    output_spec = StcMcOutputSpec
 
-    time = 214 / 60  # 运行时间：分钟
-    cpu = 6  # 最大cpu占用：个
+    time = 300 / 60  # 运行时间：分钟
+    cpu = 2  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
 
     def __init__(self):
-        super(Stc, self).__init__()
+        super(StcMc, self).__init__()
 
-    def check_output(self, run_dirs: list, bolds: list):
-        for run_dir, bold in zip(run_dirs, bolds):
-            reorient_skip_bold = run_dir / bold.name.replace('.nii.gz', '_skip_reorient_faln.nii.gz')
-            if not reorient_skip_bold.exist():
-                raise FileExistsError
+    def check_output(self, subj_func_dir: Path, bolds: list):
+        filenames = ['_skip_reorient_faln.nii.gz',
+                     '_skip_reorient_faln_mc.nii.gz',
+                     '_skip_reorient_faln_mc.mcdat',
+                     ]
+        for bold in bolds:
+            for filename in filenames:
+                file_path = subj_func_dir / bold.name.replace('.nii.gz', filename)
+                if not file_path.exists():
+                    raise FileExistsError(file_path)
 
-    def cmd(self, run_dir: Path, template: Path):
-        run = os.path.basename(str(run_dir))
-        link_dir = run_dir / self.inputs.subject_id / 'bold' / run
+    def cmd(self, subj_func_dir: Path, bold: Path, run: str):
+        tmp_run = subj_func_dir / run
+        if tmp_run.exists():
+            shutil.rmtree(tmp_run)
+        link_dir = tmp_run / self.inputs.subject_id / 'bold' / run
         if not link_dir.exists():
             link_dir.mkdir(parents=True, exist_ok=True)
-        link_files = os.listdir(run_dir)
-        link_files.remove(self.inputs.subject_id)
-        try:
-            os.symlink(template,
-                       run_dir / self.inputs.subject_id / 'bold' / 'template.nii.gz')
-        except:
-            pass
+        link_files = os.listdir(subj_func_dir)
+        link_files.remove(run)
         for link_file in link_files:
             try:
-                os.symlink(run_dir / link_file,
+                os.symlink(subj_func_dir / link_file,
                            link_dir / link_file)
             except:
                 continue
-        input_fname = os.path.basename(glob(str(link_dir / f'*_skip_reorient.nii.gz'))[0]).replace('.nii.gz', '')
-        output_fname = input_fname + '_faln'
+
+        # STC
+        input_fname = bold.name.replace('.nii.gz', '_skip_reorient')
+        faln_fname = bold.name.replace('.nii.gz', '_skip_reorient_faln')
+        mc_fname = bold.name.replace('.nii.gz', '_skip_reorient_faln_mc')
         shargs = [
             '-s', self.inputs.subject_id,
-            '-d', run_dir,
+            '-d', tmp_run,
             '-fsd', 'bold',
             '-so', 'odd',
             '-ngroups', 1,
             '-i', input_fname,
-            '-o', output_fname,
+            '-o', faln_fname,
             '-nolog']
         sh.stc_sess(*shargs, _out=sys.stdout)
-        ori_path = run_dir
+
+        # MkTemplate
+        shargs = [
+            '-s', self.inputs.subject_id,
+            '-d', tmp_run,
+            '-fsd', 'bold',
+            '-funcstem', faln_fname,
+            '-nolog']
+        sh.mktemplate_sess(*shargs, _out=sys.stdout)
+
+        # Mc
+        shargs = [
+            '-s', self.inputs.subject_id,
+            '-d', tmp_run,
+            '-per-session',
+            '-fsd', 'bold',
+            '-fstem', faln_fname,
+            '-fmcstem', mc_fname,
+            '-nolog']
+        sh.mc_sess(*shargs, _out=sys.stdout)
+
+        ori_path = subj_func_dir
         try:
-            shutil.move(link_dir / f'{output_fname}.nii.gz',
-                        ori_path / f'{output_fname}.nii.gz')
-            shutil.move(link_dir / f'{output_fname}.nii.gz.log',
-                        ori_path / f'{output_fname}.nii.gz.log')
+            # Stc
+            shutil.move(link_dir / f'{faln_fname}.nii.gz',
+                        ori_path / f'{faln_fname}.nii.gz')
+            shutil.move(link_dir / f'{faln_fname}.nii.gz.log',
+                        ori_path / f'{faln_fname}.nii.gz.log')
+
+            # bold template
+            shutil.move(link_dir.parent / f'template.nii.gz',
+                        ori_path.parent / f'template.nii.gz')
+            shutil.move(link_dir.parent / f'template.log',
+                        ori_path.parent / f'template.log')
+            shutil.move(link_dir / f'template.nii.gz',
+                        ori_path / f'template.nii.gz')
+            shutil.move(link_dir / f'template.log',
+                        ori_path / f'template.log')
+
+            # Mc
+            shutil.move(link_dir / f'{mc_fname}.nii.gz',
+                        ori_path / f'{mc_fname}.nii.gz')
+            shutil.move(link_dir / f'{mc_fname}.mat.aff12.1D',
+                        ori_path / f'{mc_fname}.mat.aff12.1D')
+            shutil.move(link_dir / f'{mc_fname}.nii.gz.mclog',
+                        ori_path / f'{mc_fname}.nii.gz.mclog')
+            shutil.move(link_dir / f'{mc_fname}.mcdat',
+                        ori_path / f'{mc_fname}.mcdat')
+            shutil.move(link_dir / 'mcextreg', ori_path / 'mcextreg')
+            shutil.move(link_dir / 'mcdat2extreg.log', ori_path / 'mcdat2extreg.log')
         except:
             pass
-        shutil.rmtree(ori_path / self.inputs.subject_id)
+        shutil.rmtree(ori_path / run)
 
     def _run_interface(self, runtime):
-        preprocess_dir = Path(
-            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
+        preprocess_dir = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id
         subj = self.inputs.subject_id.split('-')[1]
         layout = bids.BIDSLayout(str(self.inputs.data_path), derivatives=False)
-        subj_bold_dir = Path(preprocess_dir) / f'{self.inputs.subject_id}' / 'bold'
-        subj_bold_dir.mkdir(parents=True, exist_ok=True)
-
-        template_file = subj_bold_dir / 'template.nii.gz'
+        subj_func_dir = Path(preprocess_dir) / 'func'
+        subj_func_dir.mkdir(parents=True, exist_ok=True)
 
         args = []
-        run_dirs = []
         bold_files = []
         if self.inputs.task is None:
             bids_bolds = layout.get(subject=subj, suffix='bold', extension='.nii.gz')
         else:
             bids_bolds = layout.get(subject=subj, task=self.inputs.task, suffix='bold', extension='.nii.gz')
         for idx, bids_bold in enumerate(bids_bolds):
+            run = f'{idx + 1:03d}'
             bold_file = Path(bids_bold.path)
-            run = f'{idx + 1:03}'
-            run_dir = subj_bold_dir / run
-            run_dirs.append(run_dir)
             bold_files.append(bold_file)
-            args.append([run_dir, template_file])
+            args.append([subj_func_dir, bold_file, run])
 
         pool = Pool(2)
         pool.starmap(self.cmd, args)
         pool.close()
         pool.join()
 
-        self.check_output(run_dirs, bold_files)
+        self.check_output(subj_func_dir, bold_files)
         return runtime
 
     def _list_outputs(self):
@@ -393,220 +433,6 @@ class Stc(BaseInterface):
                                       self.inputs.task,
                                       self.inputs.atlas_type,
                                       self.inputs.preprocess_method)
-
-        return node
-
-
-class MkTemplateInputSpec(BaseInterfaceInputSpec):
-    subject_id = Str(exists=True, desc='subject', mandatory=True)
-    data_path = Directory(exists=True, desc="data path", mandatory=True)
-    task = Str(exists=True, desc='task', mandatory=True)
-    derivative_deepprep_path = Directory(exists=True, desc="derivative_deepprep_path", mandatory=True)
-    preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
-    atlas_type = Str(exists=True, desc='MNI152_T1_2mm', mandatory=True)
-
-
-class MkTemplateOutputSpec(TraitedSpec):
-    data_path = Directory(exists=True, desc="data path")
-    subject_id = Str(exists=True, desc="subject id")
-
-
-class MkTemplate(BaseInterface):
-    input_spec = MkTemplateInputSpec
-    output_spec = MkTemplateOutputSpec
-
-    # time = 120 / 60  # 运行时间：分钟
-    # cpu = 2  # 最大cpu占用：个
-    # gpu = 0  # 最大gpu占用：MB
-
-    def __init__(self):
-        super(MkTemplate, self).__init__()
-
-    def check_output(self, runs):
-        sub = self.inputs.subject_id
-        task = self.inputs.task
-        for run in runs:
-            MkTemplate_output_files = ['template.nii.gz']
-            output_list = os.listdir(
-                Path(self.inputs.derivative_deepprep_path) / sub / 'tmp' / f'task-{task}' / sub / 'bold' / run)
-            check_result = set(MkTemplate_output_files) <= set(output_list)
-            if not check_result:
-                return FileExistsError
-
-    def _run_interface(self, runtime):
-        preprocess_dir = Path(
-            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
-        shargs = [
-            '-s', self.inputs.subject_id,
-            '-d', preprocess_dir,
-            '-fsd', 'bold',
-            '-funcstem', f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln',
-            '-nolog']
-        sh.mktemplate_sess(*shargs, _out=sys.stdout)
-
-        runs = sorted(
-            [d.name for d in (Path(preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if d.is_dir()])
-        self.check_output(runs)
-        return runtime
-
-    def _list_outputs(self):
-        outputs = self._outputs().get()
-        outputs["data_path"] = self.inputs.data_path
-        outputs["subject_id"] = self.inputs.subject_id
-        return outputs
-
-    def create_sub_node(self):
-        from interface.create_node_bold_only import create_MotionCorrection_node
-        node = create_MotionCorrection_node(self.inputs.subject_id,
-                                            self.inputs.task,
-                                            self.inputs.atlas_type,
-                                            self.inputs.preprocess_method)
-
-        return node
-
-
-class MotionCorrectionInputSpec(BaseInterfaceInputSpec):
-    subject_id = Str(exists=True, desc='subject_id', mandatory=True)
-    task = Str(exists=True, desc="task", mandatory=True)
-    data_path = Directory(exists=True, desc="data path", mandatory=True)
-    derivative_deepprep_path = Directory(exists=True, desc="derivative_deepprep_path", mandatory=True)
-    preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
-    atlas_type = Str(exists=True, desc='MNI152_T1_2mm', mandatory=True)
-
-
-class MotionCorrectionOutputSpec(TraitedSpec):
-    data_path = Directory(exists=True, desc="data path")
-    subject_id = Str(exists=True, desc="subject id")
-
-
-class MotionCorrection(BaseInterface):
-    input_spec = MotionCorrectionInputSpec
-    output_spec = MotionCorrectionOutputSpec
-
-    time = 400 / 60  # 运行时间：分钟 / 单run测试时间
-    cpu = 0  # 最大cpu占用：个
-    gpu = 0  # 最大gpu占用：MB
-
-    def __init__(self):
-        super(MotionCorrection, self).__init__()
-
-    def check_output(self, runs):
-        sub = self.inputs.subject_id
-        task = self.inputs.task
-        for run in runs:
-            MotionCorrection_output_files = ['mcextreg', f'{sub}_bld_rest_reorient_skip_faln_mc.mat.aff12.1D',
-                                             f'{sub}_bld_rest_reorient_skip_faln_mc.mcdat',
-                                             f'{sub}_bld_rest_reorient_skip_faln_mc.nii.gz']
-            output_list = os.listdir(
-                Path(self.inputs.derivative_deepprep_path) / sub / 'tmp' / f'task-{task}' / sub / 'bold' / run)
-            check_result = set(MotionCorrection_output_files) <= set(output_list)
-            if not check_result:
-                return FileExistsError
-
-    def cmd(self, run):
-        # ln create 001
-        # run mc
-        # mv result file
-        preprocess_dir = Path(
-            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
-        link_dir = preprocess_dir / self.inputs.subject_id / 'bold' / run / self.inputs.subject_id / 'bold' / run
-        if not link_dir.exists():
-            link_dir.mkdir(parents=True, exist_ok=True)
-        link_files = os.listdir(Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run)
-        link_files.remove(self.inputs.subject_id)
-        try:
-            os.symlink(Path(preprocess_dir) / self.inputs.subject_id / 'bold' / 'template.nii.gz',
-                       Path(
-                           preprocess_dir) / self.inputs.subject_id / 'bold' / run / self.inputs.subject_id / 'bold' / 'template.nii.gz')
-        except:
-            pass
-        for link_file in link_files:
-            try:
-                os.symlink(Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / link_file,
-                           link_dir / link_file)
-            except:
-                continue
-        shargs = [
-            '-s', self.inputs.subject_id,
-            '-d', Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run,
-            '-per-session',
-            '-fsd', 'bold',
-            '-fstem', f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln',
-            '-fmcstem', f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc',
-            '-nolog']
-        sh.mc_sess(*shargs, _out=sys.stdout)
-        ori_path = Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run
-        try:
-            shutil.move(link_dir / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz',
-                        ori_path / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz')
-            shutil.move(link_dir / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.mat.aff12.1D',
-                        ori_path / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.mat.aff12.1D')
-            shutil.move(link_dir / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz.mclog',
-                        ori_path / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz.mclog')
-            shutil.move(link_dir / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.mcdat',
-                        ori_path / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.mcdat')
-            shutil.move(link_dir / 'mcextreg', ori_path / 'mcextreg')
-            shutil.move(link_dir / 'mcdat2extreg.log', ori_path / 'mcdat2extreg.log')
-        except:
-            pass
-        shutil.rmtree(ori_path / self.inputs.subject_id)
-
-    def _run_interface(self, runtime):
-        preprocess_dir = Path(
-            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
-        runs = sorted(
-            [d.name for d in (Path(preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if d.is_dir()])
-        # runs = ['001', '002', '003', '004', '005', '006', '007', '008']
-
-        shargs = [
-            '-s', self.inputs.subject_id,
-            '-d', preprocess_dir,
-            '-per-session',
-            '-fsd', 'bold',
-            '-fstem', f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln',
-            '-fmcstem', f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc',
-            '-nolog']
-        sh.mc_sess(*shargs, _out=sys.stdout)
-
-        # multipool_run(self.cmd, runs, Multi_Num=8)
-        #
-        # layout = bids.BIDSLayout(str(self.inputs.data_path), derivatives=False)
-        # subj = self.inputs.subject_id.split('-')[1]
-        # if self.inputs.task is None:
-        #     bids_bolds = layout.get(subject=subj, suffix='bold', extension='.nii.gz')
-        # else:
-        #     bids_bolds = layout.get(subject=subj, task=self.inputs.task, suffix='bold', extension='.nii.gz')
-        # subj_bold_dir = Path(preprocess_dir) / f'{self.inputs.subject_id}' / 'bold'
-        # deepprep_subj_path = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id
-        # deepprep_subj_path = Path(deepprep_subj_path)
-        # for idx, bids_bold in enumerate(bids_bolds):
-        #     run = f"{idx + 1:03}"
-        #     entities = dict(bids_bold.entities)
-        #     file_prefix = Path(bids_bold.path).name.replace('.nii.gz', '')
-        #     if 'session' in entities:
-        #         subj_func_path = deepprep_subj_path / f"ses-{entities['session']}" / 'func'
-        #     else:
-        #         subj_func_path = deepprep_subj_path / 'func'
-        #     src_mc_file = subj_bold_dir / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
-        #     dst_mc_file = subj_func_path / f'{file_prefix}_mc.nii.gz'
-        #     shutil.copy(src_mc_file, dst_mc_file)
-        #
-        # self.check_output(runs)
-
-        return runtime
-
-    def _list_outputs(self):
-        outputs = self._outputs().get()
-        outputs["data_path"] = self.inputs.data_path
-        outputs["subject_id"] = self.inputs.subject_id
-        return outputs
-
-    def create_sub_node(self):
-        from interface.create_node_bold_only import create_Register_node
-        node = create_Register_node(self.inputs.subject_id,
-                                            self.inputs.task,
-                                            self.inputs.atlas_type,
-                                            self.inputs.preprocess_method)
 
         return node
 
@@ -629,34 +455,25 @@ class Register(BaseInterface):
     input_spec = RegisterInputSpec
     output_spec = RegisterOutputSpec
 
-    time = 382 / 60  # 运行时间：分钟
+    time = 141 / 60  # 运行时间：分钟
     cpu = 1  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
 
     def __init__(self):
         super(Register, self).__init__()
 
-    def check_output(self, runs):
-        sub = self.inputs.subject_id
-        task = self.inputs.task
-        for run in runs:
-            Register_output_files = [f'{sub}_bld_rest_reorient_skip_faln_mc.register.dat',
-                                     f'{sub}_bld_rest_reorient_skip_faln_mc.register.dat.mincost',
-                                     f'{sub}_bld_rest_reorient_skip_faln_mc.register.dat.param',
-                                     f'{sub}_bld_rest_reorient_skip_faln_mc.register.dat.sum']
-            output_list = os.listdir(
-                Path(self.inputs.derivative_deepprep_path) / sub / 'tmp' / f'task-{task}' / sub / 'bold' / run)
-            check_result = set(Register_output_files) <= set(output_list)
-            if not check_result:
-                return FileExistsError
+    def check_output(self, subj_func_dir: Path, bolds: list):
+        filenames = ['_skip_reorient_faln_mc.register.dat',
+                     ]
+        for bold in bolds:
+            for filename in filenames:
+                file_path = subj_func_dir / bold.name.replace('.nii.gz', filename)
+                if not file_path.exists():
+                    raise FileExistsError
 
-    def cmd(self, run):
-        preprocess_dir = Path(
-            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
-        mov = Path(
-            preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
-        reg = Path(
-            preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.register.dat'
+    def cmd(self, subj_func_dir: Path, bold: Path):
+        mov = subj_func_dir / bold.name.replace('.nii.gz', '_skip_reorient_faln_mc.nii.gz')
+        reg = subj_func_dir / bold.name.replace('.nii.gz', '_skip_reorient_faln_mc.register.dat')
         shargs = [
             '--bold',
             '--s', self.inputs.subject_id,
@@ -665,34 +482,29 @@ class Register(BaseInterface):
         sh.bbregister(*shargs, _out=sys.stdout)
 
     def _run_interface(self, runtime):
-        preprocess_dir = Path(
-            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
-        runs = sorted(
-            [d.name for d in (Path(preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if d.is_dir()])
-        multipool_run(self.cmd, runs, Multi_Num=8)
-
-        layout = bids.BIDSLayout(str(self.inputs.data_path), derivatives=False)
+        preprocess_dir = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id
         subj = self.inputs.subject_id.split('-')[1]
+        layout = bids.BIDSLayout(str(self.inputs.data_path), derivatives=False)
+        subj_func_dir = Path(preprocess_dir) / 'func'
+        subj_func_dir.mkdir(parents=True, exist_ok=True)
+
+        args = []
+        bold_files = []
         if self.inputs.task is None:
             bids_bolds = layout.get(subject=subj, suffix='bold', extension='.nii.gz')
         else:
             bids_bolds = layout.get(subject=subj, task=self.inputs.task, suffix='bold', extension='.nii.gz')
-        subj_bold_dir = Path(preprocess_dir) / f'{self.inputs.subject_id}' / 'bold'
-        deepprep_subj_path = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id
-        deepprep_subj_path = Path(deepprep_subj_path)
         for idx, bids_bold in enumerate(bids_bolds):
-            run = f"{idx + 1:03}"
-            entities = dict(bids_bold.entities)
-            file_prefix = Path(bids_bold.path).name.replace('.nii.gz', '')
-            if 'session' in entities:
-                subj_func_path = deepprep_subj_path / f"ses-{entities['session']}" / 'func'
-            else:
-                subj_func_path = deepprep_subj_path / 'func'
-            src_reg_file = subj_bold_dir / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.register.dat'
-            dst_reg_file = subj_func_path / f'{file_prefix}_bbregister.register.dat'
-            shutil.copy(src_reg_file, dst_reg_file)
+            bold_file = Path(bids_bold.path)
+            bold_files.append(bold_file)
+            args.append([subj_func_dir, bold_file])
 
-        self.check_output(runs)
+        pool = Pool(2)
+        pool.starmap(self.cmd, args)
+        pool.close()
+        pool.join()
+
+        self.check_output(subj_func_dir, bold_files)
         return runtime
 
     def _list_outputs(self):
@@ -704,9 +516,9 @@ class Register(BaseInterface):
     def create_sub_node(self):
         from interface.create_node_bold_only import create_Mkbrainmask_node
         node = create_Mkbrainmask_node(self.inputs.subject_id,
-                                    self.inputs.task,
-                                    self.inputs.atlas_type,
-                                    self.inputs.preprocess_method)
+                                       self.inputs.task,
+                                       self.inputs.atlas_type,
+                                       self.inputs.preprocess_method)
 
         return node
 
@@ -730,98 +542,97 @@ class MkBrainmask(BaseInterface):
     input_spec = MkBrainmaskInputSpec
     output_spec = MkBrainmaskOutputSpec
 
-    time = 18 / 60  # 运行时间：分钟 / 单run测试时间
-    cpu = 2.7  # 最大cpu占用：个
+    time = 5 / 60  # 运行时间：分钟 / 单run测试时间
+    cpu = 1  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
 
     def __init__(self):
         super(MkBrainmask, self).__init__()
 
-    def check_output(self, runs):
-        sub = self.inputs.subject_id
-        task = self.inputs.task
-        for run in runs:
-            MkBrainmask_output_files = [f'{sub}.brainmask.bin.nii.gz', f'{sub}.brainmask.nii.gz',
-                                        f'{sub}.func.aseg.nii', f'{sub}.func.ventricles.nii.gz', f'{sub}.func.wm.nii.gz']
-            output_list = os.listdir(
-                Path(self.inputs.derivative_deepprep_path) / sub / 'tmp' / f'task-{task}' / sub / 'bold' / run)
-            check_result = set(MkBrainmask_output_files) <= set(output_list)
-            if not check_result:
-                return FileExistsError
+    def check_output(self, subj_func_dir: Path, bolds: list):
+        filenames = ['.func.aseg.nii.gz',
+                     '.func.wm.nii.gz',
+                     '.func.ventricles.nii.gz',
+                     '.brainmask.nii.gz',
+                     '.brainmask.bin.nii.gz',
+                     ]
+        for bold in bolds:
+            for filename in filenames:
+                file_path = subj_func_dir / bold.name.replace('.nii.gz', filename)
+                if not file_path.exists():
+                    raise FileExistsError(file_path)
 
-    def cmd(self, run):
-        preprocess_dir = Path(
-            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
-        seg = Path(
-            self.inputs.subjects_dir) / self.inputs.subject_id / 'mri/aparc+aseg.mgz'  # TODO 这个应该由structure_workflow传进来
-        mov = Path(
-            preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
-        reg = Path(
-            preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.register.dat'
-        moved = Path(
-            preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc_moved.nii.gz'
-        func = Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}.func.aseg.nii'
-        wm = Path(preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}.func.wm.nii.gz'
-        vent = Path(
-            preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}.func.ventricles.nii.gz'
-        targ = Path(
-            self.inputs.subjects_dir) / self.inputs.subject_id / 'mri/brainmask.mgz'  # TODO 这个应该由structure_workflow传进来
-        mask = Path(
-            preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}.brainmask.nii.gz'
-        binmask = Path(
-            preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}.brainmask.bin.nii.gz'
+    def cmd(self, subj_func_dir: Path, bold: Path):
+        # project aparc+aseg to mc
+        seg = Path(self.inputs.subjects_dir) / self.inputs.subject_id / 'mri/aparc+aseg.mgz'  # Recon
+        mov = subj_func_dir / bold.name.replace('.nii.gz', '_skip_reorient_faln_mc.nii.gz')
+        reg = subj_func_dir / bold.name.replace('.nii.gz', '_skip_reorient_faln_mc.register.dat')
+        func = subj_func_dir / bold.name.replace('.nii.gz', '.func.aseg.nii.gz')
+        wm = subj_func_dir / bold.name.replace('.nii.gz', '.func.wm.nii.gz')
+        vent = subj_func_dir / bold.name.replace('.nii.gz', '.func.ventricles.nii.gz')
+        # project bold to brainmask.mgz
+        targ = Path(self.inputs.subjects_dir) / self.inputs.subject_id / 'mri/brainmask.mgz'  # Recon
+        mask = subj_func_dir / bold.name.replace('.nii.gz', '.brainmask.nii.gz')
+        binmask = subj_func_dir / bold.name.replace('.nii.gz', '.brainmask.bin.nii.gz')
+
+        shargs = [
+            '--seg', seg,
+            '--temp', mov,
+            '--reg', reg,
+            '--o', func]
+        sh.mri_label2vol(*shargs, _out=sys.stdout)
+
+        shargs = [
+            '--i', func,
+            '--wm',
+            '--erode', 1,
+            '--o', wm]
+        sh.mri_binarize(*shargs, _out=sys.stdout)
+
+        shargs = [
+            '--i', func,
+            '--ventricles',
+            '--o', vent]
+        sh.mri_binarize(*shargs, _out=sys.stdout)
 
         shargs = [
             '--reg', reg,
             '--targ', targ,
             '--mov', mov,
-            '--o', moved]
+            '--inv',
+            '--o', mask]
         sh.mri_vol2vol(*shargs, _out=sys.stdout)
 
-        # shargs = [
-        #     '--seg', seg,
-        #     '--temp', mov,
-        #     '--reg', reg,
-        #     '--o', func]
-        # sh.mri_label2vol(*shargs, _out=sys.stdout)
-        #
-        # shargs = [
-        #     '--i', func,
-        #     '--wm',
-        #     '--erode', 1,
-        #     '--o', wm]
-        # sh.mri_binarize(*shargs, _out=sys.stdout)
-        #
-        # shargs = [
-        #     '--i', func,
-        #     '--ventricles',
-        #     '--o', vent]
-        # sh.mri_binarize(*shargs, _out=sys.stdout)
-        #
-        # shargs = [
-        #     '--reg', reg,
-        #     '--targ', targ,
-        #     '--mov', mov,
-        #     '--inv',
-        #     '--o', mask]
-        # sh.mri_vol2vol(*shargs, _out=sys.stdout)
-        #
-        # shargs = [
-        #     '--i', mask,
-        #     '--o', binmask,
-        #     '--min', 0.0001]
-        # sh.mri_binarize(*shargs, _out=sys.stdout)
+        shargs = [
+            '--i', mask,
+            '--o', binmask,
+            '--min', 0.0001]
+        sh.mri_binarize(*shargs, _out=sys.stdout)
 
     def _run_interface(self, runtime):
-        preprocess_dir = Path(
-            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
-        runs = sorted(
-            [d.name for d in (Path(preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if d.is_dir()])
+        preprocess_dir = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id
+        subj = self.inputs.subject_id.split('-')[1]
+        layout = bids.BIDSLayout(str(self.inputs.data_path), derivatives=False)
+        subj_func_dir = Path(preprocess_dir) / 'func'
+        subj_func_dir.mkdir(parents=True, exist_ok=True)
 
-        multipool_run(self.cmd, runs, Multi_Num=8)
+        args = []
+        bold_files = []
+        if self.inputs.task is None:
+            bids_bolds = layout.get(subject=subj, suffix='bold', extension='.nii.gz')
+        else:
+            bids_bolds = layout.get(subject=subj, task=self.inputs.task, suffix='bold', extension='.nii.gz')
+        for idx, bids_bold in enumerate(bids_bolds):
+            bold_file = Path(bids_bold.path)
+            bold_files.append(bold_file)
+            args.append([subj_func_dir, bold_file])
 
-        self.check_output(runs)
+        pool = Pool(2)
+        pool.starmap(self.cmd, args)
+        pool.close()
+        pool.join()
 
+        self.check_output(subj_func_dir, bold_files)
         return runtime
 
     def _list_outputs(self):
@@ -877,7 +688,8 @@ class RestGauss(BaseInterface):
 
         for run in runs:
             RestGauss_output_files = [f'{sub}_bld_rest_reorient_skip_faln_mc_g1000000000.nii.gz']
-            output_list = os.listdir(Path(self.inputs.derivative_deepprep_path) / sub / 'tmp' / f'task-{task}' / sub / 'bold' / run)
+            output_list = os.listdir(
+                Path(self.inputs.derivative_deepprep_path) / sub / 'tmp' / f'task-{task}' / sub / 'bold' / run)
             check_result = set(RestGauss_output_files) <= set(output_list)
             if not check_result:
                 return FileExistsError
@@ -951,7 +763,7 @@ class RestBandpass(BaseInterface):
         for run in runs:
             RestBandpass_output_files = [f'{sub}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss.nii.gz']
             output_list = os.listdir(
-                Path(self.inputs.derivative_deepprep_path) / sub / 'tmp'/ f'task-{task}' / sub / 'bold' / run)
+                Path(self.inputs.derivative_deepprep_path) / sub / 'tmp' / f'task-{task}' / sub / 'bold' / run)
             check_result = set(RestBandpass_output_files) <= set(output_list)
             if not check_result:
                 return FileExistsError
@@ -1035,31 +847,35 @@ class RestRegression(BaseInterface):
     def __init__(self):
         super(RestRegression, self).__init__()
 
-    def check_output(self,runs):
+    def check_output(self, runs):
         sub = self.inputs.subject_id
         task = self.inputs.task
 
         for run in runs:
-            RestRegression_bold_output_files = [f'{sub}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss_resid_snr.nii.gz',
-                                                f'{sub}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss_resid_sd1.nii.gz',
-                                                f'{sub}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss_resid.nii.gz']
+            RestRegression_bold_output_files = [
+                f'{sub}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss_resid_snr.nii.gz',
+                f'{sub}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss_resid_sd1.nii.gz',
+                f'{sub}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss_resid.nii.gz']
             bold_output_list = os.listdir(
-                Path(self.inputs.derivative_deepprep_path) / sub / 'tmp'/ f'task-{task}' / sub / 'bold' / run)
+                Path(self.inputs.derivative_deepprep_path) / sub / 'tmp' / f'task-{task}' / sub / 'bold' / run)
             check_bold_result = set(RestRegression_bold_output_files) <= set(bold_output_list)
 
-            RestRegression_fcmri_output_files = [f"{sub}_bld{run}_mov_regressor.dat", f"{sub}_bld{run}_pca_regressor_dt.dat",
-                                                 f"{sub}_bld{run}_regressors.dat", f"{sub}_bld{run}_ventricles_regressor_dt.dat",
-                                                 f"{sub}_bld{run}_vent_wm_dt.dat", f"{sub}_bld{run}_WB_regressor_dt.dat",
+            RestRegression_fcmri_output_files = [f"{sub}_bld{run}_mov_regressor.dat",
+                                                 f"{sub}_bld{run}_pca_regressor_dt.dat",
+                                                 f"{sub}_bld{run}_regressors.dat",
+                                                 f"{sub}_bld{run}_ventricles_regressor_dt.dat",
+                                                 f"{sub}_bld{run}_vent_wm_dt.dat",
+                                                 f"{sub}_bld{run}_WB_regressor_dt.dat",
                                                  f"{sub}_bld{run}_wm_regressor_dt.dat"]
             fcmri_output_list = os.listdir(
-                Path(self.inputs.derivative_deepprep_path) / sub / 'tmp'/ f'task-{task}' / sub / 'fcmri')
+                Path(self.inputs.derivative_deepprep_path) / sub / 'tmp' / f'task-{task}' / sub / 'fcmri')
             check_fcmri_result = set(RestRegression_fcmri_output_files) <= set(fcmri_output_list)
 
             RestRegression_movement_output_files = [f"{sub}_bld{run}_rest_reorient_skip_faln_mc.dat",
-                                                 f"{sub}_bld{run}_rest_reorient_skip_faln_mc.ddat",
-                                                 f"{sub}_bld{run}_rest_reorient_skip_faln_mc.par",
-                                                 f"{sub}_bld{run}_rest_reorient_skip_faln_mc.rdat",
-                                                 f"{sub}_bld{run}_rest_reorient_skip_faln_mc.rddat"]
+                                                    f"{sub}_bld{run}_rest_reorient_skip_faln_mc.ddat",
+                                                    f"{sub}_bld{run}_rest_reorient_skip_faln_mc.par",
+                                                    f"{sub}_bld{run}_rest_reorient_skip_faln_mc.rdat",
+                                                    f"{sub}_bld{run}_rest_reorient_skip_faln_mc.rddat"]
             movement_output_list = os.listdir(
                 Path(self.inputs.derivative_deepprep_path) / sub / 'tmp' / f'task-{task}' / sub / 'movement')
             check_movement_result = set(RestRegression_movement_output_files) <= set(movement_output_list)
@@ -1207,7 +1023,8 @@ class VxmRegNormMNI152(BaseInterface):
     def check_output(self, subj_func_path, file_prefix):
         sub = self.inputs.subject_id
 
-        VxmRegNormMNI152_output_files = [f'{sub}_norm_2mm.nii.gz', f'{sub}_MNI2mm.nii.gz', f'{file_prefix}_bbregister.register.dat']
+        VxmRegNormMNI152_output_files = [f'{sub}_norm_2mm.nii.gz', f'{sub}_MNI2mm.nii.gz',
+                                         f'{file_prefix}_bbregister.register.dat']
         output_list = os.listdir(subj_func_path)
         check_result = set(VxmRegNormMNI152_output_files) <= set(output_list)
         if not check_result:
@@ -1458,7 +1275,7 @@ class Smooth(BaseInterface):
     def check_output(self, subj_func_path, file_prefix):
         sub = self.inputs.subject_id
 
-        Smooth_output_files = [f'{file_prefix}_resid_MNI2mm_sm6.nii.gz'] # TODO MNI2mm 要不要优化
+        Smooth_output_files = [f'{file_prefix}_resid_MNI2mm_sm6.nii.gz']  # TODO MNI2mm 要不要优化
         output_list = os.listdir(subj_func_path)
         check_result = set(Smooth_output_files) <= set(output_list)
         if not check_result:
@@ -1572,5 +1389,3 @@ class Smooth(BaseInterface):
         outputs["data_path"] = self.inputs.data_path
 
         return outputs
-
-
