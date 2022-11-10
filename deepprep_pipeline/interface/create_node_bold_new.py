@@ -278,7 +278,7 @@ def create_node_t():
     os.environ['DEEPPREP_TASK'] = task_test
     os.environ['DEEPPREP_PREPROCESS_METHOD'] = preprocess_method_test
 
-    node = create_Mkbrainmask_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
+    node = create_VxmRegNormMNI152_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
                              preprocess_method=preprocess_method_test)
     node.run()
     exit()
