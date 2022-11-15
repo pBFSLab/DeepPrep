@@ -30,7 +30,7 @@ def clear_subject_bold_tmp_dir(bold_preprocess_dir: Path, subject_ids: list, tas
 
 class Scheduler:
     def __init__(self, share_manager: Manager, subject_ids: list, last_node_name=None, auto_schedule=True):
-        self.source_res = Source(20, 24000, 35000, 200, 500)
+        self.source_res = Source(CPU_n=36, GPU_MB=23000, RAM_MB=100000, IO_write_MB=200, IO_read_MB=400)
         self.last_node_name = last_node_name
         self.auto_schedule = auto_schedule  # 是否开启自动调度
 
@@ -266,6 +266,7 @@ python3 deepprep_pipeline.py
     parser.add_argument("--bold_preprocess_method", help='使用的bold处理方法 rest or task', default=None,
                         required=False)
     parser.add_argument("--bold_only", help='跳过Recon', default=False, required=False, type=bool)
+    parser.add_argument("--recon_only", help='跳过BOLD', default=False, required=False, type=bool)
     parser.add_argument("--single_sub_multi_t1", help='单个subject对应多个T1', default=False, required=False, type=bool)
     parser.add_argument("--subject_filter", help='通过subject_id过滤', required=False)
 
@@ -402,11 +403,21 @@ def main():
                                                   preprocess_method=preprocess_method)
                 scheduler.node_all[node.name] = node
                 scheduler.nodes_ready.append(node.name)
-        else:
+        elif args.recon_only:
             for subject_id, t1w_files in zip(subject_ids, t1w_filess):
                 node = create_origandrawavg_node(subject_id=subject_id, t1w_files=t1w_files)
                 scheduler.node_all[node.name] = node
                 scheduler.nodes_ready.append(node.name)
+        else:
+            from interface.create_node_bold_new import create_BoldSkipReorient_node
+            for subject_id, t1w_files in zip(subject_ids, t1w_filess):
+                node = create_origandrawavg_node(subject_id=subject_id, t1w_files=t1w_files)
+                scheduler.node_all[node.name] = node
+                scheduler.nodes_ready.append(node.name)
+                node = create_BoldSkipReorient_node(subject_id, task, atlas_type, preprocess_method)
+                scheduler.node_all[node.name] = node
+                scheduler.nodes_ready.append(node.name)
+
         scheduler.run(lock)
         logging_wf.info(f'subject_success {len(scheduler.subject_success)}: {scheduler.subject_success}')
         logging_wf.info(f'subject_success_datetime {len(scheduler.subject_success_datetime)}:'

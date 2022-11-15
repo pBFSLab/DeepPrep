@@ -228,6 +228,9 @@ def create_WhitePreaparc1_node(subject_id: str):
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+    atlas_type = os.environ['DEEPPREP_ATLAS_TYPE']
+    task = os.environ['DEEPPREP_TASK']
+    preprocess_method = os.environ['DEEPPREP_PREPROCESS_METHOD']
 
     white_preaparc1 = Node(WhitePreaparc1(), name=f'{subject_id}_white_preaparc1_node')
     white_preaparc1.inputs.subjects_dir = subjects_dir
@@ -236,6 +239,10 @@ def create_WhitePreaparc1_node(subject_id: str):
 
     white_preaparc1.base_dir = workflow_cached_dir
     white_preaparc1.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=1500)
+
+    white_preaparc1.interface.atlas_type = atlas_type
+    white_preaparc1.interface.task = task
+    white_preaparc1.interface.preprocess_method = preprocess_method
 
     return white_preaparc1
 
@@ -478,9 +485,6 @@ def create_Parcstats_node(subject_id: str):
 def create_Aseg7_node(subject_id: str):
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-    atlas_type = os.environ['DEEPPREP_ATLAS_TYPE']
-    task = os.environ['DEEPPREP_TASK']
-    preprocess_method = os.environ['DEEPPREP_PREPROCESS_METHOD']
 
     subject_mri_dir = subjects_dir / subject_id / 'mri'
     subject_surf_dir = subjects_dir / subject_id / 'surf'
@@ -502,10 +506,6 @@ def create_Aseg7_node(subject_id: str):
     Aseg7_node.inputs.rh_aparc_annot = subject_label_dir / 'rh.aparc.annot'
     Aseg7_node.base_dir = workflow_cached_dir
     Aseg7_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=800)
-
-    Aseg7_node.interface.atlas_type = atlas_type
-    Aseg7_node.interface.task = task
-    Aseg7_node.interface.preprocess_method = preprocess_method
 
     return Aseg7_node
 

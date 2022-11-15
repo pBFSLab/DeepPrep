@@ -142,10 +142,7 @@ class VxmRegistraion(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node_bold_only import create_BoldSkipReorient_node
-        node = create_BoldSkipReorient_node(self.inputs.subject_id, self.inputs.task, self.inputs.atlas_type,
-                                            self.inputs.preprocess_method)
-        return node
+        return []
 
 
 class VxmRegNormMNI152InputSpec(BaseInterfaceInputSpec):
@@ -365,13 +362,7 @@ class VxmRegNormMNI152(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node_bold_only import create_Smooth_node
-        node = create_Smooth_node(self.inputs.subject_id,
-                                  self.inputs.task,
-                                  self.inputs.atlas_type,
-                                  self.inputs.preprocess_method)
-
-        return node
+        return []
 
 
 class BoldSkipReorientInputSpec(BaseInterfaceInputSpec):
@@ -493,8 +484,8 @@ class BoldSkipReorient(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node_bold_only import create_Stc_node
-        node = create_Stc_node(self.inputs.subject_id,
+        from interface.create_node_bold_new import create_StcMc_node
+        node = create_StcMc_node(self.inputs.subject_id,
                                self.inputs.task,
                                self.inputs.atlas_type,
                                self.inputs.preprocess_method)
@@ -656,13 +647,7 @@ class StcMc(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node_bold_only import create_MkTemplate_node
-        node = create_MkTemplate_node(self.inputs.subject_id,
-                                      self.inputs.task,
-                                      self.inputs.atlas_type,
-                                      self.inputs.preprocess_method)
-
-        return node
+        return []
 
 
 class RegisterInputSpec(BaseInterfaceInputSpec):
@@ -702,6 +687,7 @@ class Register(BaseInterface):
     def cmd(self, subj_func_dir: Path, bold: Path):
         mov = subj_func_dir / bold.name.replace('.nii.gz', '_skip_reorient_faln_mc.nii.gz')
         reg = subj_func_dir / bold.name.replace('.nii.gz', '_skip_reorient_faln_mc_bbregister.register.dat')
+        print(os.environ["SUBJECTS_DIR"])
         shargs = [
             '--bold',
             '--s', self.inputs.subject_id,
@@ -742,7 +728,7 @@ class Register(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node_bold_only import create_Mkbrainmask_node
+        from interface.create_node_bold_new import create_Mkbrainmask_node
         node = create_Mkbrainmask_node(self.inputs.subject_id,
                                        self.inputs.task,
                                        self.inputs.atlas_type,
@@ -870,17 +856,11 @@ class MkBrainmask(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node_bold_only import create_RestGauss_node, create_VxmRegNormMNI152_node
-        if self.inputs.preprocess_method == 'rest':
-            node = create_RestGauss_node(self.inputs.subject_id,
-                                         self.inputs.task,
-                                         self.inputs.atlas_type,
-                                         self.inputs.preprocess_method)
-        else:
-            node = create_VxmRegNormMNI152_node(self.inputs.subject_id,
-                                                self.inputs.task,
-                                                self.inputs.atlas_type,
-                                                self.inputs.preprocess_method)
+        from interface.create_node_bold_new import create_VxmRegNormMNI152_node
+        node = create_VxmRegNormMNI152_node(self.inputs.subject_id,
+                                       self.inputs.task,
+                                       self.inputs.atlas_type,
+                                       self.inputs.preprocess_method)
 
         return node
 
