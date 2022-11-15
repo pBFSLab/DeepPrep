@@ -485,14 +485,10 @@ class WhitePialThickness1(BaseInterface):
     def create_sub_node(self):
         from interface.create_node_structure import create_Curvstats_node, create_BalabelsMult_node, \
             create_Cortribbon_node
-        from interface.create_node_bold_new import create_Register_node
+
         node = [create_Curvstats_node(self.inputs.subject_id),
                 create_BalabelsMult_node(self.inputs.subject_id),
                 create_Cortribbon_node(self.inputs.subject_id),
-                create_Register_node(self.inputs.subject_id,
-                                     self.task,
-                                     self.atlas_type,
-                                     self.preprocess_method)
                 ]
 
         return node  # node list
@@ -977,6 +973,11 @@ class Aseg7(BaseInterface):
         return outputs
 
     def create_sub_node(self):
+        from interface.create_node_bold_new import create_Register_node
+        node = create_Register_node(self.inputs.subject_id,
+                             self.task,
+                             self.atlas_type,
+                             self.preprocess_method)
         return []
 
 
