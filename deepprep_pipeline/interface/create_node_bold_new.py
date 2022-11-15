@@ -114,7 +114,7 @@ def create_Mkbrainmask_node(subject_id: str, task: str, atlas_type: str, preproc
     Mkbrainmask_node.inputs.preprocess_method = preprocess_method
 
     Mkbrainmask_node.base_dir = workflow_cached_dir
-    Mkbrainmask_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=1000, IO_write_MB=0, IO_read_MB=0)
+    Mkbrainmask_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=1000, IO_write_MB=20, IO_read_MB=40)
 
     return Mkbrainmask_node
 
@@ -202,7 +202,7 @@ def create_VxmRegNormMNI152_node(subject_id: str, task: str, atlas_type: str, pr
     VxmRegNormMNI152_node.inputs.gpuid = gpuid
 
     VxmRegNormMNI152_node.base_dir = workflow_cached_dir
-    VxmRegNormMNI152_node.source = Source(CPU_n=0, GPU_MB=4529, RAM_MB=15000, IO_write_MB=20, IO_read_MB=40)
+    VxmRegNormMNI152_node.source = Source(CPU_n=0, GPU_MB=4529, RAM_MB=15000, IO_write_MB=0, IO_read_MB=0)
 
     return VxmRegNormMNI152_node
 
@@ -223,7 +223,7 @@ def create_Smooth_node(subject_id: str, task: str, atlas_type: str, preprocess_m
     Smooth_node.inputs.derivative_deepprep_path = derivative_deepprep_path
 
     Smooth_node.base_dir = workflow_cached_dir
-    Smooth_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=7000, IO_write_MB=0, IO_read_MB=0)
+    Smooth_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=7500, IO_write_MB=0, IO_read_MB=0)
 
     return Smooth_node
 
