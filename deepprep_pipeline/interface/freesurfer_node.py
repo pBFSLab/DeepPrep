@@ -449,8 +449,10 @@ class WhitePialThickness1(BaseInterface):
         threads = self.inputs.threads if self.inputs.threads else 0
         fsthreads = get_freesurfer_threads(threads)
 
+        # TODO 这里使用lh.smoothwm生成了lh.white,调用了lh.aparc.annot
         cmd = f"recon-all -subject {subject_id} -white -no-isrunning {fsthreads}"
         run_cmd_with_timing(cmd)
+
         cmd = f"recon-all -subject {subject_id} -pial -no-isrunning {fsthreads}"
         run_cmd_with_timing(cmd)
 
