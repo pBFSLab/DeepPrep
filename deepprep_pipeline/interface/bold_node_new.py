@@ -38,7 +38,7 @@ class VxmRegistraion(BaseInterface):
     output_spec = VxmRegistraionOutputSpec
 
     time = 20 / 60  # 运行时间：分钟 / 单run测试时间
-    cpu = 14  # 最大cpu占用：个
+    cpu = 1  # 最大cpu占用：个
     gpu = 2703  # 最大gpu占用：MB
 
     def __init__(self):
@@ -46,48 +46,52 @@ class VxmRegistraion(BaseInterface):
 
     def check_output(self, output_dir: Path):
         subject_id = self.inputs.subject_id
-        VxmRegistraion_output_files = [f'{subject_id}_norm_warped_vxm_atlas.nii.gz',
-                                       f'{subject_id}_vxm_deformation_field_for_warp_to_vxm_atlas.nii.gz',
+        VxmRegistraion_output_files = [f'{subject_id}_norm_norigid_vxm_atlas.nii.gz',
+                                       f'{subject_id}_vxm_deformation_field_from_norm_to_vxm_atlas.nii.gz',
                                        f'{subject_id}_norm_affined_vxm_atlas.npz',
-                                       f'{subject_id}_ants_trf_for_affine_to_vxm_atlas.mat']
-        output_list = os.listdir(output_dir)
-        check_result = set(VxmRegistraion_output_files) <= set(output_list)
-        if not check_result:
-            return FileExistsError
+                                       f'{subject_id}_ants_affine_trf_from_norm_to_vxm_atlas.mat']
+        for filename in VxmRegistraion_output_files:
+            if not (output_dir / filename).exists():
+                return FileExistsError(output_dir / filename)
 
     def _run_interface(self, runtime):
         subject_id = self.inputs.subject_id
         deepprep_subj_path = Path(self.inputs.derivative_deepprep_path) / subject_id
 
+        func_dir = Path(deepprep_subj_path) / 'func'
         transform_dir = Path(deepprep_subj_path) / 'transform'
+        func_dir.mkdir(parents=True, exist_ok=True)
         transform_dir.mkdir(parents=True, exist_ok=True)
 
         norm = Path(self.inputs.subjects_dir) / subject_id / 'mri' / 'norm.mgz'
-        trf_path = transform_dir / f'{subject_id}_ants_trf_for_affine_to_vxm_atlas.mat'
-        vxm_warp = transform_dir / f'{subject_id}_vxm_deformation_field_for_warp_to_vxm_atlas.nii.gz'
-        vxm_warped_path = transform_dir / f'{subject_id}_norm_warped_vxm_atlas.nii.gz'
-        vxm_input_npz = transform_dir / f'{subject_id}_norm_affined_vxm_atlas.npz'
+
+        trf_path = transform_dir / f'{subject_id}_ants_affine_trf_from_norm_to_vxm_atlas.mat'  # affine trf from native T1 to vxm_MNI152
+        vxm_warp = transform_dir / f'{subject_id}_vxm_deformation_field_from_norm_to_vxm_atlas.nii.gz'  # norigid warp from native T1 to vxm_MNI152
+        vxm_input_npz = transform_dir / f'{subject_id}_norm_affined_vxm_atlas.npz'  # npz
+
+        vxm_warped_path = func_dir / f'{subject_id}_norm_norigid_vxm_atlas.nii.gz'
+        warped_path = func_dir / f'{subject_id}_norm_norigid_atlas.nii.gz'
 
         # atlas and model
         vxm_model_path = Path(self.inputs.vxm_model_path)
         atlas_type = self.inputs.atlas_type
         model_file = self.inputs.model_file  # vxm_model_path / atlas_type / f'model.h5'
-        atlas_path = vxm_model_path / atlas_type / f'{atlas_type}_brain.nii.gz'
-        vxm_atlas_path = vxm_model_path / atlas_type / f'{atlas_type}_brain_vxm.nii.gz'
+        atlas_path = vxm_model_path / atlas_type / f'{atlas_type}_brain.nii.gz'  # MNI152空间模板
+        vxm_atlas_path = vxm_model_path / atlas_type / f'{atlas_type}_brain_vxm.nii.gz'  # vxm_MNI152空间模板
         vxm_atlas_npz_path = vxm_model_path / atlas_type / f'{atlas_type}_brain_vxm.npz'
-        vxm2atlas_trf = vxm_model_path / atlas_type / f'{atlas_type}_vxm2atlas.mat'
+        vxm2atlas_trf = vxm_model_path / atlas_type / f'{atlas_type}_vxm2atlas.mat'  # trf from vxm_MNI152 to MNI152
 
-        # transform norm to vxm_atlas
+        # ####################### ants affine transform norm to vxm_atlas
         norm = ants.image_read(str(norm))
         vxm_atlas = ants.image_read(str(vxm_atlas_path))
         tx = ants.registration(fixed=vxm_atlas, moving=norm, type_of_transform='Affine')
         trf = ants.read_transform(tx['fwdtransforms'][0])
         ants.write_transform(trf, str(trf_path))
-        affined = tx['warpedmovout']
-        vol = affined.numpy() / 255.0
-        np.savez_compressed(vxm_input_npz, vol=vol)
+        affined = tx['warpedmovout']  # vxm的输入，应用deformation_field，输出moved
+        vol = affined.numpy() / 255.0  # vxm模型输入，输入模型用来计算deformation_field
+        np.savez_compressed(vxm_input_npz, vol=vol)  # vxm输入，
 
-        # voxelmorph
+        # ####################### voxelmorph norigid
         # tensorflow device handling
         if 'cuda' in self.inputs.gpuid:
             if len(self.inputs.gpuid) == 4:
@@ -100,18 +104,18 @@ class VxmRegistraion(BaseInterface):
 
         # load moving and fixed images
         add_feat_axis = True
-        moving = vxm.py.utils.load_volfile(str(vxm_input_npz), add_batch_axis=True, add_feat_axis=add_feat_axis)
+        moving_divide_255 = vxm.py.utils.load_volfile(str(vxm_input_npz), add_batch_axis=True, add_feat_axis=add_feat_axis)
         fixed, fixed_affine = vxm.py.utils.load_volfile(str(vxm_atlas_npz_path), add_batch_axis=True,
                                                         add_feat_axis=add_feat_axis,
                                                         ret_affine=True)
         vxm_atlas_nib = nib.load(str(vxm_atlas_path))
         fixed_affine = vxm_atlas_nib.affine.copy()
-        inshape = moving.shape[1:-1]
-        nb_feats = moving.shape[-1]
+        inshape = moving_divide_255.shape[1:-1]
+        nb_feats = moving_divide_255.shape[-1]
 
         with tf.device(device):
             # load model and predict
-            warp = vxm.networks.VxmDense.load(model_file).register(moving, fixed)
+            warp = vxm.networks.VxmDense.load(model_file).register(moving_divide_255, fixed)
             # warp = vxm.networks.VxmDenseSemiSupervisedSeg.load(args.model).register(moving, fixed)
             moving = affined.numpy()[np.newaxis, ..., np.newaxis]
             moved = vxm.networks.Transform(inshape, nb_feats=nb_feats).predict([moving, warp])
@@ -126,8 +130,7 @@ class VxmRegistraion(BaseInterface):
         atlas = ants.image_read(str(atlas_path))
         vxm_warped = ants.image_read(str(vxm_warped_path))
         warped = ants.apply_transforms(fixed=atlas, moving=vxm_warped, transformlist=[str(vxm2atlas_trf)])
-        Path(vxm_warped_path).parent.mkdir(parents=True, exist_ok=True)
-        ants.image_write(warped, str(vxm_warped_path))
+        ants.image_write(warped, str(warped_path))
 
         self.check_output(transform_dir)
 
@@ -167,8 +170,8 @@ class VxmRegNormMNI152(BaseInterface):
     input_spec = VxmRegNormMNI152InputSpec
     output_spec = VxmRegNormMNI152OutputSpec
 
-    time = 503 / 60  # 运行时间：分钟
-    cpu = 2  # 最大cpu占用：个
+    time = 217 / 60  # 运行时间：分钟
+    cpu = 1  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
 
     def __init__(self):
@@ -186,22 +189,16 @@ class VxmRegNormMNI152(BaseInterface):
                        '--fslregout', fslmat_file,
                        '--noedit')
 
-    def register_dat_to_trf(self, mov_file: Path, subject_id, ref_file, reg_file, preprocess_dir, trf_file):
+    def register_dat_to_trf(self, mov_file: Path, subject_id, ref_file, reg_file, transform_dir, trf_file):
         import SimpleITK as sitk
 
-        fsltrf_file = os.path.join(preprocess_dir, f'{subject_id}_fsl_tkregister2_trf_for_reg_bold_to_norm_2mm.fsl')
+        fsltrf_file = os.path.join(transform_dir, f'{subject_id}_fsl_tkregister2_trf_from_reg_bold_to_norm_2mm.fsl')
         self.register_dat_to_fslmat(mov_file, ref_file, reg_file, fsltrf_file)
         # create frame0  # 直接使用subj/func/template.nii.gz 不可以，template.nii.gz 没有进行mc操作
         first_frame_file = mov_file.parent / mov_file.name.replace('.nii.gz', '_frame0.nii.gz')
-        bold = ants.image_read(str(mov_file))
-        frame0_np = bold[:, :, :, 0]
-        origin = bold.origin[:3]
-        spacing = bold.spacing[:3]
-        direction = bold.direction[:3, :3].copy()
-        frame0 = ants.from_numpy(frame0_np, origin=origin, spacing=spacing, direction=direction)
-        ants.image_write(frame0, str(first_frame_file))
+        sh.mri_convert(mov_file, first_frame_file, '--frame', 0)
 
-        tfm_file = os.path.join(preprocess_dir, f'{subject_id}_itk_trf_for_reg_bold_to_norm_2mm.tfm')
+        tfm_file = os.path.join(transform_dir, f'{subject_id}_itk_trf_from_reg_bold_to_norm_2mm.tfm')
         c3d_affine_tool = Path(self.inputs.resource_dir) / 'c3d_affine_tool'
         cmd = f'{c3d_affine_tool} -ref {ref_file} -src {first_frame_file} {fsltrf_file} -fsl2ras -oitk {tfm_file}'
         os.system(cmd)
@@ -211,19 +208,19 @@ class VxmRegNormMNI152(BaseInterface):
         trf.set_fixed_parameters(trf_sitk.GetFixedParameters())
         ants.write_transform(trf, trf_file)
 
-    def native_bold_to_T1_2mm_ants(self, bold_file: Path, subject_id, subj_t1_file, reg_file, save_file: str, preprocess_dir,
-                                   verbose=False):
+    def native_bold_to_T1_2mm_ants(self, bold_file: Path, subject_id, subj_t1_file, reg_file, save_file: str,
+                                   func_dir, transform_dir, verbose=False):
         """
         bold_file : moving
         subj_t1_file : norm_2mm.nii.gz
         reg_file : bbregister.register.dat
         """
-        subj_t1_2mm_file = os.path.join(preprocess_dir, f'{subject_id}_norm_2mm.nii.gz')
+        subj_t1_2mm_file = os.path.join(func_dir, f'{subject_id}_norm_2mm.nii.gz')
         sh.mri_convert('-ds', 2, 2, 2,
                        '-i', subj_t1_file,
                        '-o', subj_t1_2mm_file)
-        trf_file = os.path.join(preprocess_dir, f'{subject_id}_trf_for_reg_bold_to_norm_2mm.mat')
-        self.register_dat_to_trf(bold_file, subject_id, subj_t1_2mm_file, reg_file, preprocess_dir, trf_file)
+        trf_file = os.path.join(transform_dir, f'{subject_id}_ants_trf_from_reg_bold_to_norm_2mm.mat')
+        self.register_dat_to_trf(bold_file, subject_id, subj_t1_2mm_file, reg_file, transform_dir, trf_file)
         bold_img = ants.image_read(str(bold_file))
         fixed = ants.image_read(subj_t1_2mm_file)
         affined_bold_img = ants.apply_transforms(fixed=fixed, moving=bold_img, transformlist=[trf_file], imagetype=3)
@@ -238,10 +235,10 @@ class VxmRegNormMNI152(BaseInterface):
         vxm_model_path = Path(self.inputs.vxm_model_path)
         atlas_type = self.inputs.atlas_type
 
-        atlas_file = vxm_model_path / atlas_type / f'{atlas_type}_brain_vxm.nii.gz'
+        vxm_atlas_file = vxm_model_path / atlas_type / f'{atlas_type}_brain_vxm.nii.gz'
         MNI152_2mm_file = vxm_model_path / atlas_type / f'{atlas_type}_brain.nii.gz'
         MNI152_2mm = ants.image_read(str(MNI152_2mm_file))
-        atlas = ants.image_read(str(atlas_file))
+        vxm_atlas = ants.image_read(str(vxm_atlas_file))
         if isinstance(resid_t1, str):
             bold_img = ants.image_read(resid_t1)
         else:
@@ -267,12 +264,12 @@ class VxmRegNormMNI152(BaseInterface):
         deform, deform_affine = vxm.py.utils.load_volfile(str(warp_file), add_batch_axis=True, ret_affine=True)
 
         # affine to MNI152 croped
-        affined_np = ants.apply_transforms(atlas, bold_img, fwdtrf_MNI152_2mm, imagetype=3).numpy()
+        affined_np = ants.apply_transforms(vxm_atlas, bold_img, fwdtrf_MNI152_2mm, imagetype=3).numpy()
 
         # voxelmorph warp
-        warped_np = np.zeros(shape=(*atlas.shape, n_frame), dtype=np.float32)
+        warped_np = np.zeros(shape=(*vxm_atlas.shape, n_frame), dtype=np.float32)
         with tf.device(device):
-            transform = vxm.networks.Transform(atlas.shape, interp_method='linear', nb_feats=1)
+            transform = vxm.networks.Transform(vxm_atlas.shape, interp_method='linear', nb_feats=1)
             tf_dataset = tf.data.Dataset.from_tensor_slices(np.transpose(affined_np, (3, 0, 1, 2)))
             del affined_np
             batch_size = 16
@@ -293,10 +290,10 @@ class VxmRegNormMNI152(BaseInterface):
             del moved_data
 
         # affine to MNI152
-        origin = (*atlas.origin, bold_origin[3])
-        spacing = (*atlas.spacing, bold_spacing[3])
+        origin = (*vxm_atlas.origin, bold_origin[3])
+        spacing = (*vxm_atlas.spacing, bold_spacing[3])
         direction = bold_direction.copy()
-        direction[:3, :3] = atlas.direction
+        direction[:3, :3] = vxm_atlas.direction
 
         warped_img = ants.from_numpy(warped_np, origin=origin, spacing=spacing, direction=direction)
         del warped_np
@@ -321,7 +318,8 @@ class VxmRegNormMNI152(BaseInterface):
         preprocess_dir = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id
         subj = self.inputs.subject_id.split('-')[1]
         layout = bids.BIDSLayout(str(self.inputs.data_path), derivatives=False)
-        subj_func_dir = Path(preprocess_dir) / 'func'
+        subj_func_dir = preprocess_dir / 'func'
+        subj_transform_dir = Path(preprocess_dir) / 'transform'
         subj_func_dir.mkdir(parents=True, exist_ok=True)
 
         norm_path = Path(self.inputs.subjects_dir) / self.inputs.subject_id / 'mri' / 'norm.mgz'
@@ -339,19 +337,17 @@ class VxmRegNormMNI152(BaseInterface):
             bold_files.append(bold_file)
             args.append([subj_func_dir, bold_file])
 
-            file_prefix = Path(bids_bold.path).name.replace('.nii.gz', '')
-            subj_func_path = Path(preprocess_dir) / 'func'
-            bold_moving_file = subj_func_path / bold_file.name.replace('.nii.gz', '_skip_reorient_faln_mc.nii.gz')
+            bold_moving_file = subj_func_dir / bold_file.name.replace('.nii.gz', '_skip_reorient_faln_mc.nii.gz')
 
-            reg_file = subj_func_path / bold_file.name.replace('.nii.gz', '_skip_reorient_faln_mc_bbregister.register.dat')
-            bold_t1_file = subj_func_path / bold_file.name.replace('.nii.gz', '_skip_reorient_faln_mc_native_T1_2mm.nii.gz')  # save reg to T1 result file
+            reg_file = subj_func_dir / bold_file.name.replace('.nii.gz', '_skip_reorient_faln_mc_bbregister.register.dat')
+            bold_t1_file = subj_func_dir / bold_file.name.replace('.nii.gz', '_skip_reorient_faln_mc_native_T1_2mm.nii.gz')  # save reg to T1 result file
             bold_t1_out = self.native_bold_to_T1_2mm_ants(bold_moving_file, subject_id, norm_path, reg_file,
-                                                          str(bold_t1_file), preprocess_dir, verbose=True)
+                                                          str(bold_t1_file), subj_func_dir, subj_transform_dir,
+                                                          verbose=True)
 
-            subj_transform_path = Path(preprocess_dir) / 'transform'
-            warp_file = subj_transform_path / f'{subject_id}_vxm_deformation_field_for_warp_to_vxm_atlas.nii.gz'
-            affine_file = subj_transform_path / f'{subject_id}_ants_trf_for_affine_to_vxm_atlas.mat'
-            warped_file = subj_func_path / bold_file.name.replace(
+            warp_file = subj_transform_dir / f'{subject_id}_vxm_deformation_field_from_norm_to_vxm_atlas.nii.gz'
+            affine_file = subj_transform_dir / f'{subject_id}_ants_affine_trf_from_norm_to_vxm_atlas.mat'
+            warped_file = subj_func_dir / bold_file.name.replace(
                 '.nii.gz', f'_skip_reorient_faln_mc_native_T1_2mm_{self.inputs.atlas_type}.nii.gz')  # save reg to MNI152 result file
             self.vxm_warp_bold_2mm(bold_t1_out, affine_file, warp_file, warped_file, verbose=True)
             output_bolds.append(bold_t1_file)
@@ -396,7 +392,7 @@ class BoldSkipReorient(BaseInterface):
     input_spec = BoldSkipReorientInputSpec
     output_spec = BoldSkipReorientOutputSpec
 
-    time = 14 / 60  # 运行时间：分钟
+    time = 16 / 60  # 运行时间：分钟
     cpu = 2.5  # 最大cpu占用：个
     gpu = 0  # 最大gpu占用：MB
 
@@ -603,13 +599,13 @@ class StcMc(BaseInterface):
 
             # bold template
             shutil.move(link_dir.parent / f'template.nii.gz',
-                        ori_path.parent / f'template.nii.gz')
+                        ori_path / f'template_frame0.nii.gz')
             shutil.move(link_dir.parent / f'template.log',
-                        ori_path.parent / f'template.log')
+                        ori_path / f'template_frame0.log')
             shutil.move(link_dir / f'template.nii.gz',
-                        ori_path / f'template.nii.gz')
+                        ori_path / f'template_frame_mid.nii.gz')
             shutil.move(link_dir / f'template.log',
-                        ori_path / f'template.log')
+                        ori_path / f'template_frame_mid.log')
 
             # Mc
             shutil.move(link_dir / f'{mc_fname}.nii.gz',
@@ -1221,9 +1217,6 @@ class RestRegression(BaseInterface):
                                             self.inputs.preprocess_method)
 
         return node
-
-
-
 
 
 class SmoothInputSpec(BaseInterfaceInputSpec):
