@@ -57,7 +57,7 @@ def create_Segment_node(subject_id: str):
     segment_node.inputs.network_axial_path = network_axial_path
 
     segment_node.base_dir = workflow_cached_dir
-    segment_node.source = Source(CPU_n=0, GPU_MB=8500, RAM_MB=5000)
+    segment_node.source = Source(CPU_n=0, GPU_MB=8500, RAM_MB=7500)
 
     return segment_node
 
@@ -219,7 +219,7 @@ def create_FastCSR_node(subject_id: str):
     fastcsr_node.inputs.brain_finalsurfs_file = Path(subjects_dir) / subject_id / 'mri/brain.finalsurfs.mgz'
 
     fastcsr_node.base_dir = workflow_cached_dir
-    fastcsr_node.source = Source(CPU_n=0, GPU_MB=7000, RAM_MB=6000)
+    fastcsr_node.source = Source(CPU_n=0, GPU_MB=7000, RAM_MB=6500)
 
     return fastcsr_node
 
@@ -521,13 +521,13 @@ def create_node_t():
     fastcsr_home = pwd / "FastCSR"
     featreg_home = pwd / "FeatReg"
 
-    bids_data_dir_test = '/mnt/ngshare2/UKB/BIDS'
+    bids_data_dir_test = '/mnt/ngshare/DeepPrep_workflow_test/UKB_BIDS'
     subjects_dir_test = Path('/mnt/ngshare/DeepPrep_workflow_test/UKB_Recon')
     bold_preprocess_dir_test = Path('/mnt/ngshare/DeepPrep_workflow_test/UKB_BoldPreprocess')
     workflow_cached_dir_test = '/mnt/ngshare/DeepPrep_workflow_test/UKB_Workflow'
-    vxm_model_path_test = '/home/pbfs18/workspace/DeepPrep/deepprep_pipeline/model/voxelmorph'
+    vxm_model_path_test = '/home/anning/workspace/DeepPrep/deepprep_pipeline/model/voxelmorph'
     mni152_brain_mask_test = '/usr/local/fsl/data/standard/MNI152_T1_2mm_brain_mask.nii.gz'
-    resource_dir_test = '/home/pbfs18/workspace/DeepPrep/deepprep_pipeline/resource'
+    resource_dir_test = '/home/anning/workspace/DeepPrep/deepprep_pipeline/resource'
 
     if not subjects_dir_test.exists():
         subjects_dir_test.mkdir(parents=True, exist_ok=True)
@@ -535,7 +535,7 @@ def create_node_t():
     if not bold_preprocess_dir_test.exists():
         bold_preprocess_dir_test.mkdir(parents=True, exist_ok=True)
 
-    subject_id_test = 'sub-1000301-ses-02'
+    subject_id_test = 'sub-1000037-ses-02'
     # t1w_files = ['/mnt/ngshare/DeepPrep_workflow_test/UKB_BIDS/sub-1000037/ses-02/anat/sub-1000037_ses-02_T1w.nii.gz']
 
     os.environ['SUBJECTS_DIR'] = str(subjects_dir_test)
