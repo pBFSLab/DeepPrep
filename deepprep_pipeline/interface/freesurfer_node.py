@@ -978,7 +978,7 @@ class Aseg7(BaseInterface):
                              self.task,
                              self.atlas_type,
                              self.preprocess_method)
-        return []
+        return node
 
 
 class Aseg7ToAsegInputSpec(BaseInterfaceInputSpec):
