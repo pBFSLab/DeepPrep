@@ -2,7 +2,7 @@ import os
 import time
 import cv2
 
-import ants
+# import ants
 
 from image import concat_horizontal, concat_vertical
 import numpy as np
@@ -69,8 +69,9 @@ def info_label_aseg():
                        255: "CC_Anterior"}
     return aseg_label, aseg_label_dict
 
+
 def info_label_aparc(parc=18, type="func"):
-    if parc == 18 and type=="func":
+    if parc == 18 and type == "func":
         index = np.squeeze(ants.image_read('aparc_template/lh.Clustering_18_fs6_new.mgh').numpy())
         aparc_label = set(index)
         aparc_label_dict = {}
@@ -80,7 +81,7 @@ def info_label_aparc(parc=18, type="func"):
             else:
                 aparc_label_dict[i] = f'Unknown'
         return aparc_label, aparc_label_dict
-    elif parc == 92 and type=="func":
+    elif parc == 92 and type == "func":
         index = np.squeeze(ants.image_read('aparc_template/lh.Clustering_46_fs6.mgh').numpy())
         aparc_label = set(index)
         aparc_label_dict = {}
@@ -90,7 +91,7 @@ def info_label_aparc(parc=18, type="func"):
             else:
                 aparc_label_dict[i] = f'Unknown'
         return aparc_label, aparc_label_dict
-    elif parc == 152 and type=="func":
+    elif parc == 152 and type == "func":
         index = np.squeeze(ants.image_read('aparc_template/lh.Clustering_76_fs6.mgh').numpy())
         aparc_label = set(index)
         aparc_label_dict = {}
@@ -100,7 +101,7 @@ def info_label_aparc(parc=18, type="func"):
             else:
                 aparc_label_dict[i] = f'Unknown'
         return aparc_label, aparc_label_dict
-    elif parc == 213 and type=="func":
+    elif parc == 213 and type == "func":
         index_l = np.squeeze(ants.image_read('aparc_template/lh.Clustering_108_fs6.mgh').numpy())
         index_r = np.squeeze(ants.image_read('aparc_template/rh.Clustering_108_fs6.mgh').numpy())
         aparc_label_l = set(index_l)
@@ -119,16 +120,13 @@ def info_label_aparc(parc=18, type="func"):
                 aparc_label_dict_r[i] = f'Unknown'
 
         return aparc_label_l, aparc_label_dict_l, aparc_label_r, aparc_label_dict_r
-    elif type=="anat":
+    elif type == "anat":
         index = nib.freesurfer.io.read_annot('aparc_template/lh.aparc.annot')
         aparc_label = np.unique(index[0])
         aparc_label_dict = {}
         for k, v in zip(aparc_label, index[2]):
             aparc_label_dict[k] = str(v).lstrip('b').strip("''")
         return aparc_label, aparc_label_dict
-
-
-
 
 
 class AccAndStability:
@@ -219,9 +217,6 @@ class AccAndStability:
         if sphere_interp_file is not None and not os.path.exists(sphere_interp_file):
             shutil.copyfile(sphere_target_file, sphere_interp_file)
             print(f'copy sphere_target_file to sphere_interp_file: >>> {sphere_interp_file}')
-
-
-
 
     def ants_reg(self, type_of_transform='SyN'):
         """
@@ -320,7 +315,7 @@ class AccAndStability:
 
         for sub in os.listdir(input_dir):
             if 'ses' in sub:
-                sub_id = sub.split('-ses')[0] # MSC
+                sub_id = sub.split('-ses')[0]  # MSC
                 # sub_id = '-'.join(sub.split('-')[:2])  # HNU_1
                 if sub_id not in method_dict:
                     method_dict[sub_id] = [sub]
@@ -368,7 +363,6 @@ class AccAndStability:
 
         df_dice = pd.concat([df_dice_mean, df_dice_std], axis=0)
         df_dice.to_csv(output_dir)
-
 
     def aparc_stability(self, input_dir, parc, method='DeepPrep'):
         """
@@ -424,15 +418,17 @@ class AccAndStability:
                         if parc == 18:
                             i_dir = \
                                 glob(os.path.join(input_dir, sub, aparc_i,
-                                                  f'parc/{aparc_i}/*/{hemi}_parc_result.annot'))[0] # App dir
+                                                  f'parc/{aparc_i}/*/{hemi}_parc_result.annot'))[0]  # App dir
                             j_dir = \
                                 glob(os.path.join(input_dir, sub, aparc_j,
-                                                  f'parc/{aparc_j}/*/{hemi}_parc_result.annot'))[0] # App dir
+                                                  f'parc/{aparc_j}/*/{hemi}_parc_result.annot'))[0]  # App dir
                         elif parc == 92:
                             i_dir = \
-                            glob(os.path.join(input_dir, sub, aparc_i, f'parc92/{hemi}_parc92_result.annot'))[0] # App dir
+                                glob(os.path.join(input_dir, sub, aparc_i, f'parc92/{hemi}_parc92_result.annot'))[
+                                    0]  # App dir
                             j_dir = \
-                            glob(os.path.join(input_dir, sub, aparc_j, f'parc92/{hemi}_parc92_result.annot'))[0] # App dir
+                                glob(os.path.join(input_dir, sub, aparc_j, f'parc92/{hemi}_parc92_result.annot'))[
+                                    0]  # App dir
                         else:
                             pass
                         print(aparc_i, aparc_j)
@@ -463,13 +459,12 @@ class AccAndStability:
             df_dice.to_csv(stability_output_dir)
 
 
-
 class ScreenShot:
     """
     Take screenshots of input pipeline and dataset according to different methods and features (thickness, sulc, curv).
     """
 
-    def __init__(self, recon_dir1, recon_dir2, dataset, method1="DeepPrep", method2=None):
+    def __init__(self, recon_dir1, dataset, method1="DeepPrep"):
         """
         Initialize the ScreenShot
 
@@ -481,11 +476,9 @@ class ScreenShot:
         dataset : string
             the datasett used
         """
-        self.recon_dir1 = recon_dir1 # method 1
-        self.recon_dir2 = recon_dir2 # method 2
+        self.recon_dir1 = recon_dir1  # method 1
         self.dataset = dataset
         self.method1 = method1
-        self.method2 = method2
         self.feature_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/{self.dataset}/v1_feature')
         self.Multi_CPU_Num = 10
 
@@ -504,43 +497,36 @@ class ScreenShot:
         print(cmd)
         os.system(cmd)
 
-    def pvalue_image_screenshot(self, surf_file, overlay_file, save_path, min, max, overlay_color='heat'):
-        cmd = f'freeview --viewsize 800 600 -viewport 3D  -layout 1 -hide-3d-slices -f {surf_file}:overlay={overlay_file}:overlay_threshold={min},{max}:overlay_color={overlay_color}, -cam dolly 1.4 azimuth 0 -ss {save_path}'
-        print(cmd)
-        os.system(cmd)
-
-    def pvalue_image_screenshot_azimuth_180(self, surf_file, overlay_file, save_path, min, max, overlay_color='heat'):
-        cmd = f'freeview --viewsize 800 600 -viewport 3D  -layout 1 -hide-3d-slices -f {surf_file}:overlay={overlay_file}:overlay_threshold={min},{max}:overlay_color={overlay_color}, -cam dolly 1.4 azimuth 180 -ss {save_path}'
-        print(cmd)
-        os.system(cmd)
-
-    def feature_screenshot(self, feature='thickness', vmin='', vmax=''):
+    def feature_screenshot(self, feature='thickness', vmin='', vmax='', surf='inflated'):
         """
         读取FreeSurfer格式的目录，并对aparc结构进行截图
         需要 surf/?h.pial 和 label/?h.aparc.annot
         """
-        for method, recon_dir in zip([self.method1, self.method2], [self.recon_dir1, self.recon_dir2]):
-            if method is None:
-                continue
-            out_dir = Path(self.feature_dir, f'{feature}/feature_map_image_{method}')
+        method = self.method1
+        recon_dir = self.recon_dir1
 
-            # HNU_1
-            subject_list = [sub for sub in os.listdir(recon_dir) if sub.startswith('sub-')]
+        out_dir = Path(self.feature_dir, f'{feature}/feature_map_image_{method}_{surf}')
 
-            args_list1 = []
-            args_list2 = []
-            for subject in subject_list:
-                for hemi in ['lh', 'rh']:
+        # HNU_1
+        subject_list = [sub for sub in os.listdir(recon_dir) if sub.startswith('sub-')]
+
+        args_list1 = []
+        args_list2 = []
+        for subject in subject_list:
+            for hemi in ['lh', 'rh']:
+                if surf == 'inflated':
+                    surf_file = os.path.join(recon_dir, subject, 'surf', f'{hemi}.inflated')
+                else:
                     surf_file = os.path.join(recon_dir, subject, 'surf', f'{hemi}.pial')
 
-                    if not os.path.exists(out_dir):
-                        os.makedirs(out_dir)
+                if not os.path.exists(out_dir):
+                    os.makedirs(out_dir)
 
-                    overlay_file = os.path.join(recon_dir, subject, 'surf', f'{hemi}.{feature}')
-                    save_file = os.path.join(out_dir, f'{subject}_{hemi}_lateral.png')
-                    args_list1.append([surf_file, overlay_file, save_file, vmin, vmax])
-                    save_file = os.path.join(out_dir, f'{subject}_{hemi}_medial.png')
-                    args_list2.append([surf_file, overlay_file, save_file, vmin, vmax])
+                overlay_file = os.path.join(recon_dir, subject, 'surf', f'{hemi}.{feature}')
+                save_file = os.path.join(out_dir, f'{subject}_{hemi}_lateral.png')
+                args_list1.append([surf_file, overlay_file, save_file, vmin, vmax])
+                save_file = os.path.join(out_dir, f'{subject}_{hemi}_medial.png')
+                args_list2.append([surf_file, overlay_file, save_file, vmin, vmax])
             pool = Pool(self.Multi_CPU_Num)
             pool.starmap(self.image_screenshot, args_list1)
             pool.starmap(self.image_screenshot_azimuth_180, args_list2)
@@ -564,6 +550,8 @@ class ScreenShot:
             subject_id = subject.name
             if not 'sub' in subject_id:
                 continue
+            # if not 'run' in subject_id:
+            #     continue
             if 'fsaverage' in subject_id:
                 continue
 
@@ -590,7 +578,7 @@ class ScreenShot:
         """
         method = self.method1
         interp_dir = Path(self.feature_dir, f'recon_interp_fsaverage6/{method}')
-        individual_dir = Path(self.feature_dir, 'recon_individual_fsaverage6')
+        individual_dir = Path(self.feature_dir, f'recon_individual_fsaverage6/{method}')
 
         dp_dict = dict()
         for subject_path in interp_dir.iterdir():
@@ -599,7 +587,7 @@ class ScreenShot:
             # if 'ses' not in subject_path.name:
             #     continue
 
-            sub_name = subject_path.name.split('-ses')[0]
+            sub_name = subject_path.name.split('_ses')[0]
             # sub_name = '-'.join(subject_path.name.split('-')[:2])
 
             if sub_name not in dp_dict:
@@ -607,8 +595,7 @@ class ScreenShot:
             else:
                 dp_dict[sub_name].append(subject_path)
 
-
-        project = self.method1
+        # project = self.method1
         proj_dict = dp_dict
 
         for sub_name in proj_dict.keys():
@@ -617,6 +604,8 @@ class ScreenShot:
 
             data_concat = None
             for subject_path in subjects:
+                if '_ses' not in os.path.basename(subject_path):
+                    continue
                 feature_file = subject_path / 'surf' / f'{hemi}.{feature}'
                 data = np.expand_dims(nib.freesurfer.read_morph_data(str(feature_file)), 1)
                 if data_concat is None:
@@ -627,7 +616,7 @@ class ScreenShot:
             data_mean = np.nanmean(data_concat, axis=1)
             data_std = np.nanstd(data_concat, axis=1)
 
-            out_dir = individual_dir / project / sub_name / 'surf'
+            out_dir = individual_dir / sub_name / 'surf'
             out_dir.mkdir(parents=True, exist_ok=True)
             out_file_mean = out_dir / f'{hemi}.mean.{feature}'
             out_file_std = out_dir / f'{hemi}.std.{feature}'
@@ -639,14 +628,14 @@ class ScreenShot:
         input: surf/?h.std.<feature>
         output: surf/?h.<feature>
         """
-        # method = self.method1
-        group_dir = Path(self.feature_dir, f'recon_individual_fsaverage6')
-        stability_dir = Path(self.feature_dir, 'recon_stability_fsaverage6')
+        method = self.method1
+        group_dir = Path(self.feature_dir, f'recon_individual_fsaverage6/{method}')
+        stability_dir = Path(self.feature_dir, f'recon_stability_fsaverage6/{method}')
 
-        project = self.method1
+        # project = self.method1
 
         subjects = []
-        for subject_path in (group_dir / project).iterdir():
+        for subject_path in group_dir.iterdir():
             if not 'sub' in subject_path.name:
                 continue
             subjects.append(subject_path)
@@ -661,7 +650,7 @@ class ScreenShot:
                 data_concat = np.concatenate([data_concat, data], axis=1)
         data_mean = np.nanmean(data_concat, axis=1)
 
-        out_dir = stability_dir / project / 'surf'
+        out_dir = stability_dir / 'surf'
         out_dir.mkdir(parents=True, exist_ok=True)
         out_file_mean = out_dir / f'{hemi}.{feature}'
         nib.freesurfer.write_morph_data(out_file_mean, data_mean)
@@ -727,20 +716,23 @@ class ScreenShot:
             cv2.imwrite(str(save_file), img_h1)
             print(f'>>> save image : {save_file}')
 
-    def group_screenshot(self, feature='thickness', vmin1='', vmax1='', vmin2='', vmax2=''):
+    def group_screenshot(self, feature='thickness', vmin1='', vmax1='', vmin2='', vmax2='', surf='inflated'):
         """
 
         """
         method = self.method1
 
         input_dir = Path(self.feature_dir, f'recon_group_fsaverage6/{method}')
-        out_dir = Path(self.feature_dir, f'recon_group_fsaverage6_screenshot/{method}')
-        concat_dir = Path(self.feature_dir, f'recon_group_fsaverage6_screenshot_concat/{method}')
+        out_dir = Path(self.feature_dir, f'recon_group_fsaverage6_screenshot_{surf}/{method}')
+        concat_dir = Path(self.feature_dir, f'recon_group_fsaverage6_screenshot_{surf}_concat/{method}')
 
         args_list1 = []
         args_list2 = []
         for hemi in ['lh', 'rh']:
-            surf_file = os.path.join('/usr/local/freesurfer/subjects/fsaverage6', 'surf', f'{hemi}.pial')
+            if surf == 'inflated':
+                surf_file = os.path.join('/usr/local/freesurfer/subjects/fsaverage6', 'surf', f'{hemi}.inflated')
+            else:
+                surf_file = os.path.join('/usr/local/freesurfer/subjects/fsaverage6', 'surf', f'{hemi}.pial')
 
             if not os.path.exists(out_dir):
                 os.makedirs(out_dir)
@@ -777,24 +769,27 @@ class ScreenShot:
         cv2.imwrite(str(save_file), img_h1)
         print(f'>>> save image : {save_file}')
 
-    def stability_screenshot(self, feature='thickness', vmin='', vmax=''):
+    def stability_screenshot(self, feature='thickness', vmin='', vmax='', surf='inflated'):
         """
         """
         method = self.method1
-        input_dir = Path(self.feature_dir, 'recon_stability_fsaverage6')
-        out_dir = Path(self.feature_dir, 'recon_stability_fsaverage6_screenshot')
-        concat_dir = Path(self.feature_dir, f'recon_stability_fsaverage6_screenshot_concat/{method}')
+        input_dir = Path(self.feature_dir, f'recon_stability_fsaverage6/{method}')
+        out_dir = Path(self.feature_dir, f'recon_stability_fsaverage6_screenshot_{surf}/{method}')
+        concat_dir = Path(self.feature_dir, f'recon_stability_fsaverage6_screenshot_{surf}_concat/{method}')
 
         args_list1 = []
         args_list2 = []
 
         for hemi in ['lh', 'rh']:
-            surf_file = os.path.join('/usr/local/freesurfer/subjects/fsaverage6', 'surf', f'{hemi}.pial')
+            if surf == 'inflated':
+                surf_file = os.path.join('/usr/local/freesurfer/subjects/fsaverage6', 'surf', f'{hemi}.inflated')
+            else:
+                surf_file = os.path.join('/usr/local/freesurfer/subjects/fsaverage6', 'surf', f'{hemi}.pial')
 
             if not os.path.exists(out_dir):
                 os.makedirs(out_dir)
 
-            overlay_file = Path(input_dir, method, 'surf', f'{hemi}.{feature}')
+            overlay_file = Path(input_dir, 'surf', f'{hemi}.{feature}')
             save_file = Path(out_dir, f'{method}_{feature}_{hemi}_lateral.png')
             args_list1.append([surf_file, overlay_file, save_file, vmin, vmax])
             save_file = os.path.join(out_dir, f'{method}_{feature}_{hemi}_medial.png')
@@ -808,69 +803,344 @@ class ScreenShot:
         self.concat_stability_screenshot(out_dir, concat_dir, feature=feature)
 
 
+class PValue:
+    """
+    """
+
+    def __init__(self, dataset, method1="DeepPrep", method2='fMRIPrep'):
+        """
+        """
+        self.dataset = dataset
+        self.method1 = method1
+        self.method2 = method2
+        self.feature_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/{self.dataset}/v1_feature')
+        self.Multi_CPU_Num = 10
+
+    def pvalue_image_screenshot(self, surf_file, overlay_file, save_path, min, max, overlay_color='heat', hemi='lh',
+                                surf='inflated'):
+        if hemi == 'rh' and surf == 'inflated':
+            cmd = f'freeview --viewsize 800 600 -viewport 3D  -layout 1 -hide-3d-slices -f {surf_file}:overlay={overlay_file}:overlay_threshold={min},{max}:overlay_color={overlay_color}, -cam dolly 1.6 azimuth 0 -ss {save_path}'
+        else:
+            cmd = f'freeview --viewsize 800 600 -viewport 3D  -layout 1 -hide-3d-slices -f {surf_file}:overlay={overlay_file}:overlay_threshold={min},{max}:overlay_color={overlay_color}, -cam dolly 1.4 azimuth 0 -ss {save_path}'
+        print(cmd)
+        os.system(cmd)
+
+    def pvalue_image_screenshot_azimuth_180(self, surf_file, overlay_file, save_path, min, max, overlay_color='heat',
+                                            hemi='lh', surf='inflated'):
+        if hemi == 'lh' and surf == 'inflated':
+            cmd = f'freeview --viewsize 800 600 -viewport 3D  -layout 1 -hide-3d-slices -f {surf_file}:overlay={overlay_file}:overlay_threshold={min},{max}:overlay_color={overlay_color}, -cam dolly 1.6 azimuth 180 -ss {save_path}'
+        else:
+            cmd = f'freeview --viewsize 800 600 -viewport 3D  -layout 1 -hide-3d-slices -f {surf_file}:overlay={overlay_file}:overlay_threshold={min},{max}:overlay_color={overlay_color}, -cam dolly 1.4 azimuth 180 -ss {save_path}'
+        print(cmd)
+        os.system(cmd)
+
+    def concat_pvalue_screenshot(self, screenshot_dir: str, feature='thickness'):
+        """
+       拼接DeepPrep和FreeSurfer的p_value结果图像
+       """
+        lh_medial = os.path.join(screenshot_dir, f'lh_pvalue_{feature}_medial.png')
+        lh_lateral = os.path.join(screenshot_dir, f'lh_pvalue_{feature}_lateral.png')
+        rh_medial = os.path.join(screenshot_dir, f'rh_pvalue_{feature}_medial.png')
+        rh_lateral = os.path.join(screenshot_dir, f'rh_pvalue_{feature}_lateral.png')
+
+        img_h1 = concat_vertical([lh_lateral, lh_medial])
+        img_h2 = concat_vertical([rh_lateral, rh_medial])
+        save_path = os.path.join(os.path.dirname(screenshot_dir), os.path.basename(screenshot_dir) + '_concat')
+        save_file = os.path.join(save_path, f'pvalue_{feature}.png')
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+        img = concat_horizontal([img_h1, img_h2], save_file)
+
+    def cal_group_difference(self, feature='thickness', hemi='lh'):
+        """
+        Calculate the significance of difference (p-value) between subjects processed using DeepPrep & FreeSurfer on fs6.
+
+        input: surf/?h.<feature>
+        output: ?h_pvalue.<feature>
+        """
+        input_dir1 = Path(self.feature_dir, f'recon_interp_fsaverage6/{self.method1}')
+        input_dir2 = Path(self.feature_dir, f'recon_interp_fsaverage6/{self.method2}')
+        output_dir = Path(self.feature_dir, f'recon_interp_fsaverage6_{self.method1}_{self.method2}_pvalue')
+
+        folders1 = os.listdir(str(input_dir1))
+        folders2 = os.listdir(str(input_dir2))
+        try:
+            len(folders1) == len(folders2)
+        except:
+            raise SyntaxError(f"subject numbers are not equivalent")
+
+        method1_data = None
+        method2_data = None
+        for folder in folders2:  # foldre2 = 'fMRIPrep', folder = 'sub-xxx'
+            try:
+                file1 = Path(input_dir1, folder + '-ses-02', 'surf',
+                             f'{hemi}.{feature}')  # 'DeepPrep': folder='sub-xxx-ses-02'
+                data = np.expand_dims(nib.freesurfer.read_morph_data(file1), 1)
+            except:
+                file1 = Path(input_dir1, folder, 'surf',
+                             f'{hemi}.{feature}')  # 'DeepPrep': folder='sub-xxx'
+                data = np.expand_dims(nib.freesurfer.read_morph_data(file1), 1)
+            if method1_data is None:
+                method1_data = data
+            else:
+                method1_data = np.concatenate([method1_data, data], axis=1)
+
+            file2 = Path(input_dir2, folder, 'surf', f'{hemi}.{feature}')  # 'fMRIPrep': folder='sub-xxx'
+            data = np.expand_dims(nib.freesurfer.read_morph_data(file2), 1)
+            if method2_data is None:
+                method2_data = data
+            else:
+                method2_data = np.concatenate([method2_data, data], axis=1)
+
+        p_value = []
+        for i in range(method1_data.shape[0]):
+            _, p = ztest(method1_data[i], method2_data[i], alternative='two-sided')
+            p_value.append(-np.log10(p))
+        p_value = np.asarray(p_value)
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
+        nib.freesurfer.write_morph_data(os.path.join(output_dir, f'{hemi}_pvalue.{feature}'), p_value)
+        print(os.path.join(output_dir, f'{hemi}_pvalue.{feature}'))
+
+    def p_value_screenshot(self, feature='thickness', vmin1='2.0', vmax1='5.0', surf='inflated'):
+        """
+        读取p_value路径，并对fs6的p_value进行截图
+        需要 ?h.sulc, ?h.curv, ?h.thickness
+        """
+        p_value_dir = Path(self.feature_dir, f'recon_interp_fsaverage6_{self.method1}_{self.method2}_pvalue')
+        out_dir = Path(self.feature_dir, f'recon_interp_fsaverage6_{self.method1}_{self.method2}_pvalue_screenshot_{surf}')
+
+        args_list1 = []
+        args_list2 = []
+        args_list3 = []
+        args_list4 = []
+        if not os.path.exists(out_dir):
+            os.mkdir(out_dir)
+        for hemi in ['lh', 'rh']:
+            if hemi == 'rh':
+                continue
+
+            if surf == 'inflated':
+                surf_file = f'/usr/local/freesurfer/subjects/fsaverage6/surf/{hemi}.inflated'
+            else:
+                surf_file = f'/usr/local/freesurfer/subjects/fsaverage6/surf/{hemi}.pial'
+
+            overlay_file = os.path.join(p_value_dir, f'{hemi}_pvalue.{feature}')
+            save_file = os.path.join(out_dir, f'{hemi}_pvalue_{feature}_lateral.png')
+            args_list1.append([surf_file, overlay_file, save_file, vmin1, vmax1, 'heat', hemi, surf])
+            save_file = os.path.join(out_dir, f'{hemi}_pvalue_{feature}_medial.png')
+            args_list2.append([surf_file, overlay_file, save_file, vmin1, vmax1, 'heat', hemi, surf])
+        else:
+            if surf == 'inflated':
+                surf_file = f'/usr/local/freesurfer/subjects/fsaverage6/surf/{hemi}.inflated'
+            else:
+                surf_file = f'/usr/local/freesurfer/subjects/fsaverage6/surf/{hemi}.pial'
+
+            overlay_file = os.path.join(p_value_dir, f'{hemi}_pvalue.{feature}')
+            save_file = os.path.join(out_dir, f'{hemi}_pvalue_{feature}_medial.png')
+            args_list4.append([surf_file, overlay_file, save_file, vmin1, vmax1, 'heat', hemi, surf])
+            save_file = os.path.join(out_dir, f'{hemi}_pvalue_{feature}_lateral.png')
+            args_list3.append([surf_file, overlay_file, save_file, vmin1, vmax1, 'heat', hemi, surf])
+        pool = Pool(self.Multi_CPU_Num)
+        pool.starmap(self.pvalue_image_screenshot, args_list1)
+        pool.starmap(self.pvalue_image_screenshot_azimuth_180, args_list2)
+        pool.starmap(self.pvalue_image_screenshot, args_list4)
+        pool.starmap(self.pvalue_image_screenshot_azimuth_180, args_list3)
+        pool.close()
+        pool.join()
+
+        self.concat_pvalue_screenshot(out_dir, feature=feature)
+
+
+class FeatureDifference:
+
+    def __init__(self, method1, method2, dataset):
+        self.method1 = method1
+        self.method2 = method2
+        self.dataset = dataset
+        self.recon_dir1 = f'/mnt/ngshare/DeepPrep/Validation/{dataset}/v1_feature/recon_interp_fsaverage6/{self.method1}'  # fs6 space
+        self.recon_dir2 = f'/mnt/ngshare/DeepPrep/Validation/{dataset}/v1_feature/recon_interp_fsaverage6/{self.method2}'  # fs6 space
+        self.output_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/{dataset}/v1_feature')
+        self.Multi_CPU_Num = 10
+
+    def image_screenshot(self, surf_file, overlay_file, save_path, min, max, overlay_color='heat', hemi='lh',
+                         surf='inflated'):
+        if hemi == 'rh' and surf == 'inflated':
+            cmd = f'freeview --viewsize 800 600 -viewport 3D  -layout 1 -hide-3d-slices -f {surf_file}:overlay={overlay_file}:overlay_threshold={min},{max}:overlay_color={overlay_color},inverse -cam dolly 1.6 azimuth 0 -ss {save_path}'
+        else:
+            cmd = f'freeview --viewsize 800 600 -viewport 3D  -layout 1 -hide-3d-slices -f {surf_file}:overlay={overlay_file}:overlay_threshold={min},{max}:overlay_color={overlay_color},inverse -cam dolly 1.4 azimuth 0 -ss {save_path}'
+        print(cmd)
+        os.system(cmd)
+
+    def image_screenshot_azimuth_180(self, surf_file, overlay_file, save_path, min, max, overlay_color='heat',
+                                     hemi='lh', surf='inflated'):
+        if hemi == 'lh' and surf == 'inflated':
+            cmd = f'freeview --viewsize 800 600 -viewport 3D  -layout 1 -hide-3d-slices -f {surf_file}:overlay={overlay_file}:overlay_threshold={min},{max}:overlay_color={overlay_color},inverse -cam dolly 1.6 azimuth 180 -ss {save_path}'
+        else:
+            cmd = f'freeview --viewsize 800 600 -viewport 3D  -layout 1 -hide-3d-slices -f {surf_file}:overlay={overlay_file}:overlay_threshold={min},{max}:overlay_color={overlay_color},inverse -cam dolly 1.4 azimuth 180 -ss {save_path}'
+        print(cmd)
+        os.system(cmd)
+
+    def concat_image_screenshot(self, sub, screenshot_dir: str):
+        """
+       拼接DeepPrep和FreeSurfer的p_value结果图像
+       """
+        for feature in ['sulc', 'curv', 'thickness']:
+            lh_medial = os.path.join(screenshot_dir, f'{sub}_lh_diff_{feature}_medial.png')
+            lh_lateral = os.path.join(screenshot_dir, f'{sub}_lh_diff_{feature}_lateral.png')
+            rh_medial = os.path.join(screenshot_dir, f'{sub}_rh_diff_{feature}_medial.png')
+            rh_lateral = os.path.join(screenshot_dir, f'{sub}_rh_diff_{feature}_lateral.png')
+
+            img_h1 = concat_vertical([lh_lateral, lh_medial])
+            img_h2 = concat_vertical([rh_lateral, rh_medial])
+            save_path = os.path.join(os.path.dirname(screenshot_dir), os.path.basename(screenshot_dir) + '_concat')
+            save_file = os.path.join(save_path, f'{sub}_diff_{feature}.png')
+            if not os.path.exists(save_path):
+                os.makedirs(save_path)
+            img = concat_horizontal([img_h1, img_h2], save_file)
+
+    def MSC_allrun_diff(self):
+        output_diff_dir = Path(self.output_dir, f'Diff_{self.method1}_minus_{self.method2}')
+        if not output_diff_dir.exists():
+            output_diff_dir.mkdir(parents=True, exist_ok=True)
+
+        method1_subjects = [sub for sub in os.listdir(self.recon_dir1) if 'run' in sub]
+        method2_subjects = [sub for sub in os.listdir(self.recon_dir2) if 'run' in sub]
+        unique_subjects = list(set(method1_subjects).symmetric_difference(set(method2_subjects)))
+
+        features = ['sulc', 'curv', 'thickness']
+        hemis = ['lh', 'rh']
+
+        for hemi in hemis:
+            for feature in features:
+                for sub in method1_subjects:
+                    if sub in unique_subjects:
+                        continue
+
+                    sub1_dir = Path(self.recon_dir1, sub, 'surf', f'{hemi}.{feature}')
+                    sub2_dir = Path(self.recon_dir2, sub, 'surf', f'{hemi}.{feature}')
+                    data1 = nib.freesurfer.read_morph_data(sub1_dir)
+                    data2 = nib.freesurfer.read_morph_data(sub2_dir)
+                    data_diff = data1 - data2
+                    output_file_dir = os.path.join(output_diff_dir, f'{sub}_{hemi}_diff.{feature}')
+                    nib.freesurfer.write_morph_data(output_file_dir, data_diff)
+                    print(f"saved {output_file_dir}")
+
+    def MSC_allrun_screenshot(self, surf='inflated'):
+        out_dir = Path(
+            f'/mnt/ngshare/DeepPrep/Validation/{dataset}/v1_feature/Diff_{self.method1}_minus_{self.method2}_{surf}_screenshot')
+
+        diff_dir = Path(
+            f"/mnt/ngshare/DeepPrep/Validation/{dataset}/v1_feature/Diff_{self.method1}_minus_{self.method2}")
+        subjects_id = list(sorted(set(['_'.join(sub.split('_')[:3]) for sub in os.listdir(diff_dir)])))
+        subjects_id = subjects_id[:8]
+
+        if surf != 'inflated':
+            surf = 'pial'
+
+        if not os.path.exists(out_dir):
+            os.mkdir(out_dir)
+
+        for sub in subjects_id:
+            args_list1 = []
+            args_list2 = []
+            args_list3 = []
+            args_list4 = []
+            for hemi in ['lh', 'rh']:
+                for feature, vmin1, vmax1 in zip(['sulc', 'curv', 'thickness'], ['-5', '-0.3', '-1'],
+                                                 ['5', '0.3', '1']):
+                    if hemi == 'lh':
+                        if surf == 'inflated':
+                            surf_file = f'/usr/local/freesurfer/subjects/fsaverage6/surf/{hemi}.inflated'
+                        else:
+                            surf_file = f'/usr/local/freesurfer/subjects/fsaverage6/surf/{hemi}.pial'
+
+                        overlay_file = os.path.join(diff_dir, f'{sub}_{hemi}_diff.{feature}')
+                        save_file = os.path.join(out_dir, f'{sub}_{hemi}_diff_{feature}_lateral.png')
+                        args_list1.append([surf_file, overlay_file, save_file, vmin1, vmax1, 'heat', hemi, surf])
+                        save_file = os.path.join(out_dir, f'{sub}_{hemi}_diff_{feature}_medial.png')
+                        args_list2.append([surf_file, overlay_file, save_file, vmin1, vmax1, 'heat', hemi, surf])
+                    else:
+                        if surf == 'inflated':
+                            surf_file = f'/usr/local/freesurfer/subjects/fsaverage6/surf/{hemi}.inflated'
+                        else:
+                            surf_file = f'/usr/local/freesurfer/subjects/fsaverage6/surf/{hemi}.pial'
+
+                        overlay_file = os.path.join(diff_dir, f'{sub}_{hemi}_diff.{feature}')
+                        save_file = os.path.join(out_dir, f'{sub}_{hemi}_diff_{feature}_medial.png')
+                        args_list4.append([surf_file, overlay_file, save_file, vmin1, vmax1, 'heat', hemi, surf])
+                        save_file = os.path.join(out_dir, f'{sub}_{hemi}_diff_{feature}_lateral.png')
+                        args_list3.append([surf_file, overlay_file, save_file, vmin1, vmax1, 'heat', hemi, surf])
+
+            pool = Pool(self.Multi_CPU_Num)
+            pool.starmap(self.image_screenshot, args_list1)
+            pool.starmap(self.image_screenshot_azimuth_180, args_list2)
+            pool.starmap(self.image_screenshot, args_list4)
+            pool.starmap(self.image_screenshot_azimuth_180, args_list3)
+            pool.close()
+            pool.join()
+
+            self.concat_image_screenshot(sub, out_dir)
+
 
 if __name__ == '__main__':
     set_envrion()
 
     ######################## Acc & Stability ##########################
-    recon_dir = '/mnt/ngshare/DeepPrep_HNU_1/HNU_1_Recon_allT1'
-    cls = AccAndStability(recon_dir, 'HNU_1', 'DeepPrep')
+    # recon_dir = '/mnt/ngshare/DeepPrep_HNU_1/HNU_1_Recon_allT1'
+    # cls = AccAndStability(recon_dir, 'HNU_1', 'DeepPrep')
     # cls.ants_reg('Rigid') # register to MNI152 space
     # cls.aseg_stability('DeepPrep')
     # cls.aparc_stability()
 
-    ####################### project to fs6 ##########################
-    method1 = 'FreeSurfer'
+    # ####################### HNU_1 ##########################
+    # # method1 = 'FreeSurfer'
     # method1 = 'DeepPrep'
-    method2 = None
-    recon_dir1 = '/mnt/ngshare/FreeSurfer_HNU_1/HNU_1_Recon_allT1'
-    # recon_dir1 = '/mnt/ngshare/DeepPrep_HNU_1/HNU_1_Recon_allT1'
-    recon_dir2 = None
-    dataset = 'HNU_1'
-    screenshot = ScreenShot(recon_dir1, recon_dir2, dataset, method1, method2)
-    for feature, (vmin, vmax), (vmin2, vmax2), (vmin3, vmax3) in zip(['thickness', 'curv', 'sulc'],
-                                                                     [('1', '3.5'), ('-0.5', '0.25'), ('-13', '13'), ],
-                                                                     [('0', '0.8'), ('0', '0.15'), ('0', '4'), ],
-                                                                     [('0', '0.6'), ('0', '0.08'), ('0', '1.3')], ):
-        print(feature, vmin, vmax, vmin2, vmax2, vmin3, vmax3)
-        # screenshot.feature_screenshot(feature)
-
-        # for hemi in ['lh', 'rh']:
-            # screenshot.project_fsaverage6(recon_dir1, feature=feature, hemi=hemi)
-            # screenshot.cal_individual_fsaverage6(feature=feature, hemi=hemi)
-            # screenshot.cal_stability_fsaverage6(feature=feature, hemi=hemi)
-            # screenshot.cal_group_fsaverage6(feature=feature, hemi=hemi)
-
-        screenshot.group_screenshot(feature=feature, vmin1=vmin, vmax1=vmax, vmin2=vmin2, vmax2=vmax2)
-        screenshot.stability_screenshot(feature=feature, vmin=vmin3, vmax=vmax3)
-
-    # ####################### project to fs6 ##########################
-    # method1 = 'fMRIPrep'
     # method2 = None
-    # recon_dir1 = '/mnt/ngshare/fMRIPrep_UKB_50/UKB_50_Recon'
+    # # recon_dir1 = '/mnt/ngshare/FreeSurfer_HNU_1/HNU_1_Recon_allT1'
+    # recon_dir1 = '/mnt/ngshare/DeepPrep_HNU_1/HNU_1_Recon_allT1'
     # recon_dir2 = None
-    # dataset = 'UKB_50'
+    # dataset = 'HNU_1'
     # screenshot = ScreenShot(recon_dir1, recon_dir2, dataset, method1, method2)
     # for feature, (vmin, vmax), (vmin2, vmax2), (vmin3, vmax3) in zip(['thickness', 'curv', 'sulc'],
     #                                                                  [('1', '3.5'), ('-0.5', '0.25'), ('-13', '13'), ],
     #                                                                  [('0', '0.8'), ('0', '0.15'), ('0', '4'), ],
     #                                                                  [('0', '0.6'), ('0', '0.08'), ('0', '1.3')], ):
     #     print(feature, vmin, vmax, vmin2, vmax2, vmin3, vmax3)
-    #     # screenshot.feature_screenshot(feature)
+    #     screenshot.feature_screenshot(feature)
     #
     #     # for hemi in ['lh', 'rh']:
     #         # screenshot.project_fsaverage6(recon_dir1, feature=feature, hemi=hemi)
+    #         # screenshot.cal_individual_fsaverage6(feature=feature, hemi=hemi)
+    #         # screenshot.cal_stability_fsaverage6(feature=feature, hemi=hemi)
     #         # screenshot.cal_group_fsaverage6(feature=feature, hemi=hemi)
     #
-    #     # screenshot.group_screenshot(feature=feature, vmin1=vmin, vmax1=vmax, vmin2=vmin2, vmax2=vmax2)
+    #     screenshot.group_screenshot(feature=feature, vmin1=vmin, vmax1=vmax, vmin2=vmin2, vmax2=vmax2)
+    #     screenshot.stability_screenshot(feature=feature, vmin=vmin3, vmax=vmax3)
 
-    # ######################## project to fs6 ##########################
-    # method1 = 'DeepPrep'
-    # method2 = None
-    # recon_dir1 = '/mnt/ngshare/DeepPrep_UKB_50/UKB_50_Recon'
-    # recon_dir2 = None
+    # ####################### UKB_50 ##########################
+    # method1 = 'fMRIPrep'
+    # recon_dir1 = '/mnt/ngshare/fMRIPrep_UKB_50/UKB_50_Recon'
     # dataset = 'UKB_50'
-    # screenshot = ScreenShot(recon_dir1, recon_dir2, dataset, method1, method2)
+    # screenshot = ScreenShot(recon_dir1, dataset, method1)
+    # for feature, (vmin, vmax), (vmin2, vmax2), (vmin3, vmax3) in zip(['thickness', 'curv', 'sulc'],
+    #                                                                  [('1', '3.5'), ('-0.5', '0.25'), ('-13', '13'), ],
+    #                                                                  [('0', '0.8'), ('0', '0.15'), ('0', '4'), ],
+    #                                                                  [('0', '0.6'), ('0', '0.08'), ('0', '1.3')], ):
+    #     print(feature, vmin, vmax, vmin2, vmax2, vmin3, vmax3)
+    #     screenshot.feature_screenshot(feature)
+    #
+    #     for hemi in ['lh', 'rh']:
+    #         screenshot.project_fsaverage6(recon_dir1, feature=feature, hemi=hemi)
+    #         screenshot.cal_group_fsaverage6(feature=feature, hemi=hemi)
+    #
+    #     screenshot.group_screenshot(feature=feature, vmin1=vmin, vmax1=vmax, vmin2=vmin2, vmax2=vmax2)
+
+    # ######################## UKB_50 ##########################
+    # method1 = 'DeepPrep'
+    # recon_dir1 = '/mnt/ngshare/DeepPrep_UKB_50/UKB_50_Recon'
+    # dataset = 'UKB_50'
+    # screenshot = ScreenShot(recon_dir1, dataset, method1)
     # for feature, (vmin, vmax), (vmin2, vmax2), (vmin3, vmax3) in zip(['thickness', 'curv', 'sulc'],
     #                                                                  [('1', '3.5'), ('-0.5', '0.25'),
     #                                                                   ('-13', '13'), ],
@@ -884,3 +1154,117 @@ if __name__ == '__main__':
     #         screenshot.cal_group_fsaverage6(feature=feature, hemi=hemi)
     #
     #     screenshot.group_screenshot(feature=feature, vmin1=vmin, vmax1=vmax, vmin2=vmin2, vmax2=vmax2)
+
+    ######################## UKB_146 ##########################
+    # dataset = 'UKB_150'
+    # method1 = 'DeepPrep'
+    # method2 = 'fMRIPrep'
+    # recon_dir1 = '/mnt/ngshare/DeepPrep_UKB_150/UKB_150_Recon'
+    # recon_dir1 = '/run/user/1000/gvfs/sftp:host=30.30.30.73,user=pbfs20/mnt/ngshare2/DeepPrep_UKB_1500/UKB_Recon$'
+    # recon_dir2 = '/mnt/ngshare/fMRIPrep_UKB_150/UKB_150_Recon'
+    # pvalue = PValue(dataset, method1, method2)
+    # screenshot1 = ScreenShot(recon_dir1, dataset, method1)
+    # screenshot2 = ScreenShot(recon_dir2, dataset, method2)
+    #
+    # for feature in ['thickness', 'curv', 'sulc']:
+    #     for hemi in ['lh', 'rh']:
+    #         screenshot1.project_fsaverage6(recon_dir1, feature=feature, hemi=hemi)
+    #         screenshot2.project_fsaverage6(recon_dir2, feature=feature, hemi=hemi)
+    #         pvalue.cal_group_difference(feature=feature, hemi=hemi)
+    #     pvalue.p_value_screenshot(feature=feature, vmin1='2.0', vmax1='5.0', surf='pial')
+
+    # ######################## FeatReg HCP ##########################
+    # dataset = 'HCP'
+    # method1 = 'FeatReg'
+    # method2 = 'FreeSurfer'
+    # recon_dir1 = '/mnt/ngshare/FeatReg/Data_PredictResult/NoRigid_HCP__UsePreTrain30_SUnetRotate_FS6_fs904_AdamW_CR_SuCu_19_1_lr0003_nres_6_inch_8_SD_corr_1_mse_1_mae_10_smape_0_mssim_0_lap_1000_smooth_4_epoch_1000/FeatReg'
+    # recon_dir2 = '/mnt/ngshare/FeatReg/Data_PredictResult/NoRigid_HCP__UsePreTrain30_SUnetRotate_FS6_fs904_AdamW_CR_SuCu_19_1_lr0003_nres_6_inch_8_SD_corr_1_mse_1_mae_10_smape_0_mssim_0_lap_1000_smooth_4_epoch_1000/FreeSurfer'
+    # pvalue = PValue(dataset, method1, method2)
+    # screenshot1 = ScreenShot(recon_dir1, dataset, method1)
+    # screenshot2 = ScreenShot(recon_dir2, dataset, method2)
+    #
+    # for feature in ['curv', 'sulc']:
+    #     for hemi in ['lh', 'rh']:
+    #         if hemi == 'rh':
+    #             continue
+    #         screenshot1.project_fsaverage6(recon_dir1, feature=feature, hemi=hemi)
+    #         screenshot2.project_fsaverage6(recon_dir2, feature=feature, hemi=hemi)
+    #         pvalue.cal_group_difference(feature=feature, hemi=hemi)
+    #     pvalue.p_value_screenshot(feature=feature, vmin1='2.0', vmax1='5.0', surf='inflated')
+
+    # ######################## Feature Difference ##########################
+    # ############# UKB_150 #############
+    # recon_dir1 = '/mnt/ngshare/DeepPrep_UKB_150/UKB_150_Recon_by_FreeSurfer_surfreg'
+    # recon_dir2 = '/mnt/ngshare/DeepPrep_UKB_150/UKB_150_Recon'
+    # # recon_dir2 = '/mnt/ngshare/fMRIPrep_UKB_150/UKB_150_Recon'
+    # method1 = 'FSReatReg'
+    # method2 = 'DeepPrep'
+    # # method2 = 'fMRIPrep'
+    # dataset = 'UKB_150'
+    #
+    # screenshot1 = ScreenShot(recon_dir1, dataset, method1)
+    # screenshot2 = ScreenShot(recon_dir2, dataset, method2)
+    # pvalue = PValue(dataset, method1, method2)
+    #
+    # for feature, (vmin, vmax), (vmin2, vmax2), (vmin3, vmax3) in zip(['thickness', 'curv', 'sulc'],
+    #                                                                  [('1', '3.5'), ('-0.5', '0.25'),
+    #                                                                   ('-13', '13'), ],
+    #                                                                  [('0', '0.8'), ('0', '0.15'), ('0', '4'), ],
+    #                                                                  [('0', '0.6'), ('0', '0.08'), ('0', '1.3')], ):
+    #     for hemi in ['lh', 'rh']:
+    #         # screenshot1.project_fsaverage6(recon_dir1, feature=feature, hemi=hemi)
+    #         # screenshot2.project_fsaverage6(recon_dir2, feature=feature, hemi=hemi)
+    #         # screenshot1.cal_group_fsaverage6(feature=feature, hemi=hemi)
+    #         # screenshot2.cal_group_fsaverage6(feature=feature, hemi=hemi)
+    #         pvalue.cal_group_difference(feature=feature, hemi=hemi)
+    #     pvalue.p_value_screenshot(feature=feature, vmin1='2.0', vmax1='5.0', surf='inflated')
+    #     # screenshot1.group_screenshot(feature=feature, vmin1=vmin, vmax1=vmax, vmin2=vmin2, vmax2=vmax2)
+    #     screenshot2.group_screenshot(feature=feature, vmin1=vmin, vmax1=vmax, vmin2=vmin2, vmax2=vmax2)
+
+    ######################## MSC Feature Difference ##########################
+    # recon_dir1 = '/mnt/ngshare/FreeSurfer_MSC/FreeSurfer'  # rsync -arv youjia@30.30.30.141:/mnt/ngshare/public/share/ProjData/DeepPrep/MSC/FreeSurfer
+    # method1 = 'FreeSurfer'
+    #
+    # recon_dir1 = '/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon'
+    # method1 = 'DeepPrep'
+    #
+    # dataset = 'MSC'
+    # screenshot1 = ScreenShot(recon_dir1, dataset, method1)
+    #
+    # for feature, (vmin, vmax), (vmin2, vmax2), (vmin3, vmax3) in zip(['thickness', 'curv', 'sulc'],
+    #                                                                  [('1', '3.5'), ('-0.5', '0.25'),
+    #                                                                   ('-13', '13'), ],
+    #                                                                  [('0', '0.8'), ('0', '0.15'), ('0', '4'), ],
+    #                                                                  [('0', '0.6'), ('0', '0.08'), ('0', '1.3')], ):
+    #     for hemi in ['lh', 'rh']:
+    #         screenshot1.project_fsaverage6(recon_dir1, feature=feature, hemi=hemi)
+    #         screenshot1.cal_group_fsaverage6(feature=feature, hemi=hemi)
+    #     screenshot1.group_screenshot(feature=feature, vmin1=vmin, vmax1=vmax, vmin2=vmin2, vmax2=vmax2)
+    #
+    # diff = FeatureDifference(method1, method2, dataset)
+    # diff.MSC_allrun_diff()
+    # diff.MSC_allrun_screenshot(surf='inflated')
+
+    ######################## MSC intra-subject stability ##########################
+    # recon_dir1 = '/mnt/ngshare/FreeSurfer_MSC/FreeSurfer'  # rsync -arv youjia@30.30.30.141:/mnt/ngshare/public/share/ProjData/DeepPrep/MSC/FreeSurfer
+    # method1 = 'FreeSurfer'
+
+    recon_dir1 = '/mnt/ngshare/Data_Mirror/FreeSurferFeatReg/MSC/derivatives/deepprep/Recon'
+    method1 = 'FreeSurferFeatReg'
+
+    dataset = 'MSC'
+    screenshot1 = ScreenShot(recon_dir1, dataset, method1)
+
+    for feature, (vmin, vmax), (vmin2, vmax2), (vmin3, vmax3) in zip(['thickness', 'curv', 'sulc'],
+                                                                     [('1', '3.5'), ('-0.5', '0.25'),
+                                                                      ('-13', '13'), ],
+                                                                     [('0', '0.8'), ('0', '0.15'), ('0', '4'), ],
+                                                                     [('0', '0.6'), ('0', '0.08'), ('0', '1.3')], ):
+        for hemi in ['lh', 'rh']:
+            screenshot1.project_fsaverage6(recon_dir1, feature=feature, hemi=hemi)
+            screenshot1.cal_individual_fsaverage6(feature=feature, hemi=hemi)
+            screenshot1.cal_stability_fsaverage6(feature=feature, hemi=hemi)
+        screenshot1.stability_screenshot(feature=feature, vmin=vmin3, vmax=vmax3)
+
+
+
