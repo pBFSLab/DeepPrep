@@ -214,39 +214,6 @@ def mimic_fmriprep_regressors(bold_preproc_path, mask_path, confounds_path, bpss
         print(f'>>> {sm6_file}')
 
 
-def batch_run():
-    data_path = Path('/home/weiwei/workdata/DeepPrep/workdir/ds000224')
-    layout = bids.BIDSLayout(str(data_path))
-    subjs = sorted(layout.get_subjects())
-    for subj in subjs:
-        sess = layout.get_session(subject=subj)
-        for ses in sess:
-            bids_bolds = layout.get(subject=subj, session=ses, task='rest', suffix='bold', extension='.nii.gz')
-            for bids_bold in bids_bolds:
-                print(bids_bold)
-                entities = dict(bids_bold.entities)
-                TR = layout.get_tr(entities)
-                bold_preproc_file = data_path / 'derivatives' / 'fmriprep' / f'sub-{subj}' / f'ses-{ses}' / 'func' / f'sub-{subj}_ses-{ses}_task-rest_space-MNI152NLin6Asym_res-02_desc-preproc_bold.nii.gz'
-
-                # mc_path = preprocess_dir / subj / 'bold' / run / f'{subj}_bld_rest_reorient_skip_faln_mc.nii.gz'
-                # mc_path = bold_preproc_file
-                # gauss_path = gauss_nifti(str(mc_path), 1000000000)
-
-                # bandpass_filtering
-                # bpss_path = bandpass_nifti(gauss_path, TR)
-                # bpss_path = bandpass_nifti(str(bold_preproc_file), TR)
-                bpss_path = str(bold_preproc_file).replace('.nii.gz', '_bpss.nii.gz')
-                sm6_file = bpss_path.replace('.nii.gz', '_sm6.nii.gz')
-                bold_smooth_6_ants(bpss_path, sm6_file, verbose=True)
-
-    # compile_regressors, regression
-    # fcmri_dir = Path('fcmri')
-    # fcmri_dir.mkdir(exist_ok=True)
-    # bold_dir = preprocess_dir / subj / 'bold'
-    # all_regressors_path = compile_regressors(preprocess_dir, bold_dir, run, subj, fcmri_dir, bpss_path)
-    # regression(bpss_path, all_regressors_path)
-
-
 if __name__ == '__main__':
     from interface.run import set_envrion
 
