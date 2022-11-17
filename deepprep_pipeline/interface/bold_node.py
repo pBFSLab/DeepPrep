@@ -1190,7 +1190,8 @@ class VxmRegNormMNI152(BaseInterface):
         fixed = ants.image_read(subj_t1_2mm_file)
         affined_bold_img = ants.apply_transforms(fixed=fixed, moving=bold_img, transformlist=[trf_file], imagetype=3)
         if verbose:
-            ants.image_write(affined_bold_img, save_file)
+            ants.image_write(affined_bold_img, str(save_file))
+            shutil.copy(trf_file, os.path.join(os.path.split(save_file)[0], f'{subject_id}_reg.mat'))
         return affined_bold_img
 
     def vxm_warp_bold_2mm(self, resid_t1, affine_file, warp_file, warped_file, verbose=True):
@@ -1329,9 +1330,9 @@ class VxmRegNormMNI152(BaseInterface):
                 bold_file = subj_func_path / f'{file_prefix}_mc.nii.gz'
 
             reg_file = subj_func_path / f'{file_prefix}_bbregister.register.dat'
-            bold_t1_file = subj_func_path / f'{subject_id}_native_t1_2mm.nii.gz'
+            bold_t1_file = subj_func_path / f'{file_prefix}_native_t1_2mm.nii.gz'  # jiance zheng que xing yong de
             bold_t1_out = self.native_bold_to_T1_2mm_ants(bold_file, subject_id, norm_path, reg_file,
-                                                          bold_t1_file, preprocess_dir, verbose=False)
+                                                          bold_t1_file, preprocess_dir, verbose=True)
 
             warp_file = subj_func_path / f'{subject_id}_warp.nii.gz'
             affine_file = subj_func_path / f'{subject_id}_affine.mat'
