@@ -1178,7 +1178,7 @@ class VxmRegNormMNI152(BaseInterface):
         trf.set_fixed_parameters(trf_sitk.GetFixedParameters())
         ants.write_transform(trf, trf_file)
 
-    def native_bold_to_T1_2mm_ants(self, residual_file, subject_id, subj_t1_file, reg_file, save_file, preprocess_dir,
+    def native_bold_to_T1_2mm_ants(self, residual_file, subject_id, subj_t1_file, reg_file, save_file: str, preprocess_dir,
                                    verbose=False):
         subj_t1_2mm_file = os.path.join(os.path.split(save_file)[0], f'{subject_id}_norm_2mm.nii.gz')
         sh.mri_convert('-ds', 2, 2, 2,
