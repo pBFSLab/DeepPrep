@@ -22,7 +22,7 @@ def create_origandrawavg_node(subject_id: str, t1w_files: list):
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     workflow_cached_dir = os.environ['WORKFLOW_CACHED_DIR']
 
-    origandrawavg_node = Node(OrigAndRawavg(), f'{subject_id}_origandrawavg_node')
+    origandrawavg_node = Node(OrigAndRawavg(), f'{subject_id}_recon_origandrawavg_node')
     origandrawavg_node.inputs.t1w_files = t1w_files
     origandrawavg_node.inputs.subjects_dir = subjects_dir
     origandrawavg_node.inputs.subject_id = subject_id
@@ -47,7 +47,7 @@ def create_Segment_node(subject_id: str):
     network_coronal_path = weight_dir / "Coronal_Weights_FastSurferCNN" / "ckpts" / "Epoch_30_training_state.pkl"
     network_axial_path = weight_dir / "Axial_Weights_FastSurferCNN" / "ckpts" / "Epoch_30_training_state.pkl"
 
-    segment_node = Node(Segment(), f'{subject_id}_segment_node')
+    segment_node = Node(Segment(), f'{subject_id}_recon_segment_node')
     segment_node.inputs.subjects_dir = subjects_dir
     segment_node.inputs.subject_id = subject_id
     segment_node.inputs.python_interpret = python_interpret
@@ -70,7 +70,7 @@ def create_Noccseg_node(subject_id: str):
 
     reduce_to_aseg_py = fastsurfer_home / 'recon_surf' / 'reduce_to_aseg.py'
 
-    noccseg_node = Node(Noccseg(), f'{subject_id}_noccseg_node')
+    noccseg_node = Node(Noccseg(), f'{subject_id}_recon_noccseg_node')
     noccseg_node.inputs.python_interpret = python_interpret
     noccseg_node.inputs.reduce_to_aseg_py = reduce_to_aseg_py
     noccseg_node.inputs.subject_id = subject_id
@@ -92,7 +92,7 @@ def create_N4BiasCorrect_node(subject_id: str):
     orig_file = sub_mri_dir / "orig.mgz"
     mask_file = sub_mri_dir / "mask.mgz"
 
-    N4_bias_correct_node = Node(N4BiasCorrect(), name=f'{subject_id}_N4_bias_correct_node')
+    N4_bias_correct_node = Node(N4BiasCorrect(), name=f'{subject_id}_recon_N4_bias_correct_node')
     N4_bias_correct_node.inputs.subject_id = subject_id
     N4_bias_correct_node.inputs.subjects_dir = subjects_dir
     N4_bias_correct_node.inputs.python_interpret = python_interpret
@@ -116,7 +116,7 @@ def create_TalairachAndNu_node(subject_id: str):
     freesurfer_home = Path(os.environ['FREESURFER_HOME'])
     mni305 = freesurfer_home / "average" / "mni305.cor.mgz"
 
-    talairach_and_nu_node = Node(TalairachAndNu(), name=f'{subject_id}_talairach_and_nu_node')
+    talairach_and_nu_node = Node(TalairachAndNu(), name=f'{subject_id}_recon_talairach_and_nu_node')
     talairach_and_nu_node.inputs.subjects_dir = subjects_dir
     talairach_and_nu_node.inputs.subject_id = subject_id
     talairach_and_nu_node.inputs.threads = 1
@@ -137,7 +137,7 @@ def create_Brainmask_node(subject_id: str):
     task = os.environ['DEEPPREP_TASK']
     preprocess_method = os.environ['DEEPPREP_PREPROCESS_METHOD']
 
-    brainmask_node = Node(Brainmask(), name=f'{subject_id}_brainmask_node')
+    brainmask_node = Node(Brainmask(), name=f'{subject_id}_recon_brainmask_node')
     brainmask_node.inputs.subjects_dir = subjects_dir
     brainmask_node.inputs.subject_id = subject_id
     brainmask_node.inputs.need_t1 = True
@@ -162,7 +162,7 @@ def create_UpdateAseg_node(subject_id: str):
     subject_mri_dir = subjects_dir / subject_id / 'mri'
 
     paint_cc_file = fastsurfer_home / 'recon_surf' / 'paint_cc_into_pred.py'
-    updateaseg_node = Node(UpdateAseg(), name=f'{subject_id}_updateaseg_node')
+    updateaseg_node = Node(UpdateAseg(), name=f'{subject_id}_recon_updateaseg_node')
     updateaseg_node.inputs.subjects_dir = subjects_dir
     updateaseg_node.inputs.subject_id = subject_id
     updateaseg_node.inputs.paint_cc_file = paint_cc_file
@@ -182,7 +182,7 @@ def create_Filled_node(subject_id: str):
 
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
-    filled_node = Node(Filled(), name=f'{subject_id}_filled_node')
+    filled_node = Node(Filled(), name=f'{subject_id}_recon_filled_node')
     filled_node.inputs.subjects_dir = subjects_dir
     filled_node.inputs.subject_id = subject_id
     filled_node.inputs.threads = 1
@@ -205,7 +205,7 @@ def create_FastCSR_node(subject_id: str):
     fastcsr_home = Path(os.environ['FASTCSR_HOME'])
     fastcsr_py = fastcsr_home / 'pipeline.py'  # inference script
 
-    fastcsr_node = Node(FastCSR(), name=f'{subject_id}_fastcsr_node')
+    fastcsr_node = Node(FastCSR(), name=f'{subject_id}_recon_fastcsr_node')
     fastcsr_node.inputs.python_interpret = python_interpret
     fastcsr_node.inputs.fastcsr_py = fastcsr_py
     fastcsr_node.inputs.parallel_scheduling = 'off'
@@ -232,7 +232,7 @@ def create_WhitePreaparc1_node(subject_id: str):
     task = os.environ['DEEPPREP_TASK']
     preprocess_method = os.environ['DEEPPREP_PREPROCESS_METHOD']
 
-    white_preaparc1 = Node(WhitePreaparc1(), name=f'{subject_id}_white_preaparc1_node')
+    white_preaparc1 = Node(WhitePreaparc1(), name=f'{subject_id}_recon_white_preaparc1_node')
     white_preaparc1.inputs.subjects_dir = subjects_dir
     white_preaparc1.inputs.subject_id = subject_id
     white_preaparc1.inputs.threads = 1
@@ -263,7 +263,7 @@ def create_SampleSegmentationToSurfave_node(subject_id: str):
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
     SampleSegmentationToSurfave_node = Node(SampleSegmentationToSurfave(),
-                                            name=f'{subject_id}_SampleSegmentationToSurfave_node')
+                                            name=f'{subject_id}_recon_SampleSegmentationToSurfave_node')
     SampleSegmentationToSurfave_node.inputs.subjects_dir = subjects_dir
     SampleSegmentationToSurfave_node.inputs.subject_id = subject_id
     SampleSegmentationToSurfave_node.inputs.python_interpret = python_interpret
@@ -290,7 +290,7 @@ def create_InflatedSphere_node(subject_id: str):
     lh_white_preaparc_file = subjects_dir / subject_id / "surf" / "lh.white.preaparc"
     rh_white_preaparc_file = subjects_dir / subject_id / "surf" / "rh.white.preaparc"
 
-    Inflated_Sphere_node = Node(InflatedSphere(), f'{subject_id}_Inflated_Sphere_node')
+    Inflated_Sphere_node = Node(InflatedSphere(), f'{subject_id}_recon_Inflated_Sphere_node')
     Inflated_Sphere_node.inputs.threads = 1
     Inflated_Sphere_node.inputs.subjects_dir = subjects_dir
     Inflated_Sphere_node.inputs.subject_id = subject_id
@@ -314,7 +314,7 @@ def create_FeatReg_node(subject_id: str):
     python_interpret = sys.executable
     featreg_py = featreg_home / "featreg" / 'predict.py'  # inference script
 
-    featreg_node = Node(FeatReg(), f'{subject_id}_featreg_node')
+    featreg_node = Node(FeatReg(), f'{subject_id}_recon_featreg_node')
     featreg_node.inputs.featreg_py = featreg_py
     featreg_node.inputs.python_interpret = python_interpret
     featreg_node.inputs.device = device
@@ -355,7 +355,7 @@ def create_WhitePialThickness1_node(subject_id: str):
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
     threads = 1
 
-    white_pial_thickness1 = Node(WhitePialThickness1(), name=f'{subject_id}_white_pial_thickness1')
+    white_pial_thickness1 = Node(WhitePialThickness1(), name=f'{subject_id}_recon_white_pial_thickness1')
     white_pial_thickness1.inputs.subjects_dir = subjects_dir
     white_pial_thickness1.inputs.subject_id = subject_id
     white_pial_thickness1.inputs.threads = threads
@@ -380,7 +380,7 @@ def create_Curvstats_node(subject_id: str):
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
     threads = 8
 
-    Curvstats_node = Node(Curvstats(), name=f'{subject_id}_Curvstats_node')
+    Curvstats_node = Node(Curvstats(), name=f'{subject_id}_recon_Curvstats_node')
     Curvstats_node.inputs.subjects_dir = subjects_dir
     Curvstats_node.inputs.subject_id = subject_id
     subject_surf_dir = subjects_dir / subject_id / "surf"
@@ -404,7 +404,7 @@ def create_BalabelsMult_node(subject_id: str):
     subject_surf_dir = subjects_dir / subject_id / 'surf'
     threads = 1
 
-    BalabelsMult_node = Node(BalabelsMult(), name=f'{subject_id}_BalabelsMult_node')
+    BalabelsMult_node = Node(BalabelsMult(), name=f'{subject_id}_recon_BalabelsMult_node')
     BalabelsMult_node.inputs.subjects_dir = subjects_dir
     BalabelsMult_node.inputs.subject_id = subject_id
     BalabelsMult_node.inputs.threads = threads
@@ -428,7 +428,7 @@ def create_Cortribbon_node(subject_id: str):
     subject_surf_dir = subjects_dir / subject_id / 'surf'
     threads = 1
 
-    Cortribbon_node = Node(Cortribbon(), name=f'{subject_id}_Cortribbon_node')
+    Cortribbon_node = Node(Cortribbon(), name=f'{subject_id}_recon_Cortribbon_node')
     Cortribbon_node.inputs.subjects_dir = subjects_dir
     Cortribbon_node.inputs.subject_id = subject_id
     Cortribbon_node.inputs.threads = threads
@@ -454,7 +454,7 @@ def create_Parcstats_node(subject_id: str):
     subject_label_dir = subjects_dir / subject_id / 'label'
     threads = 1
 
-    Parcstats_node = Node(Parcstats(), name=f'{subject_id}_Parcstats_node')
+    Parcstats_node = Node(Parcstats(), name=f'{subject_id}_recon_Parcstats_node')
     Parcstats_node.inputs.subjects_dir = subjects_dir
     Parcstats_node.inputs.subject_id = subject_id
     Parcstats_node.inputs.threads = threads
@@ -487,7 +487,7 @@ def create_Aseg7_node(subject_id: str):
     subject_label_dir = subjects_dir / subject_id / 'label'
     threads = 1
 
-    Aseg7_node = Node(Aseg7(), name=f'{subject_id}_Aseg7_node')
+    Aseg7_node = Node(Aseg7(), name=f'{subject_id}_recon_Aseg7_node')
     Aseg7_node.inputs.subjects_dir = subjects_dir
     Aseg7_node.inputs.subject_id = subject_id
     Aseg7_node.inputs.threads = threads
