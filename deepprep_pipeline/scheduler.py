@@ -9,7 +9,7 @@ from multiprocessing import Lock, Manager, Process
 from nipype import config, logging
 from interface.run import set_envrion
 from interface.node_source import Source
-from interface.create_node_structure import create_origandrawavg_node
+from interface.create_node_structure import create_OrigAndRawavg_node
 
 logging_wf = logging.getLogger("nipype.workflow")
 
@@ -339,6 +339,10 @@ def main():
     os.environ['DEEPPREP_TASK'] = task
     os.environ['DEEPPREP_PREPROCESS_METHOD'] = preprocess_method
     os.environ['DEEPPREP_DEVICES'] = 'cuda'
+
+    os.environ['RECON_ONLY'] = str(args.recon_only)
+    os.environ['BOLD_ONLY'] = str(args.bold_only)
+
     subjects_dir.mkdir(parents=True, exist_ok=True)
     bold_preprocess_dir.mkdir(parents=True, exist_ok=True)
     workflow_cached_dir.mkdir(parents=True, exist_ok=True)
@@ -397,21 +401,24 @@ def main():
                               last_node_name=last_node_name,
                               auto_schedule=auto_schedule)
         if args.bold_only:
-            from interface.create_node_bold_only import create_VxmRegistraion_node
+            scheduler.last_node_name = 'VxmRegNormMNI152_node'
+            from interface.create_node_bold_new import create_BoldSkipReorient_node
             for subject_id in subject_ids:
-                node = create_VxmRegistraion_node(subject_id=subject_id, task=task, atlas_type=atlas_type,
-                                                  preprocess_method=preprocess_method)
+                node = create_BoldSkipReorient_node(subject_id=subject_id, task=task, atlas_type=atlas_type,
+                                                    preprocess_method=preprocess_method)
                 scheduler.node_all[node.name] = node
                 scheduler.nodes_ready.append(node.name)
+
         elif args.recon_only:
+            scheduler.last_node_name = 'Aseg7_node'
             for subject_id, t1w_files in zip(subject_ids, t1w_filess):
-                node = create_origandrawavg_node(subject_id=subject_id, t1w_files=t1w_files)
+                node = create_OrigAndRawavg_node(subject_id=subject_id, t1w_files=t1w_files)
                 scheduler.node_all[node.name] = node
                 scheduler.nodes_ready.append(node.name)
         else:
             from interface.create_node_bold_new import create_BoldSkipReorient_node
             for subject_id, t1w_files in zip(subject_ids, t1w_filess):
-                node = create_origandrawavg_node(subject_id=subject_id, t1w_files=t1w_files)
+                node = create_OrigAndRawavg_node(subject_id=subject_id, t1w_files=t1w_files)
                 scheduler.node_all[node.name] = node
                 scheduler.nodes_ready.append(node.name)
                 node = create_BoldSkipReorient_node(subject_id, task, atlas_type, preprocess_method)
