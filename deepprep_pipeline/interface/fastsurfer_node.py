@@ -348,7 +348,7 @@ class UpdateAseg(BaseInterface):
         return node
 
 
-class SampleSegmentationToSurfaveInputSpec(BaseInterfaceInputSpec):
+class SampleSegmentationToSurfaceInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
     python_interpret = File(exists=True, desc="python interpret", mandatory=True)
@@ -369,16 +369,16 @@ class SampleSegmentationToSurfaveInputSpec(BaseInterfaceInputSpec):
     # rh_aparc_DKTatlas_mapped_file = File(desc="label/rh.aparc.DKTatlas.mapped.annot", mandatory=True)
 
 
-class SampleSegmentationToSurfaveOutputSpec(TraitedSpec):
+class SampleSegmentationToSurfaceOutputSpec(TraitedSpec):
     lh_aparc_DKTatlas_mapped_prefix_file = File(exists=True, desc="label/lh.aparc.DKTatlas.mapped.prefix.annot")
     rh_aparc_DKTatlas_mapped_prefix_file = File(exists=True, desc="label/rh.aparc.DKTatlas.mapped.prefix.annot")
     lh_aparc_DKTatlas_mapped_file = File(exists=True, desc="label/lh.aparc.DKTatlas.mapped.annot")
     rh_aparc_DKTatlas_mapped_file = File(exists=True, desc="label/rh.aparc.DKTatlas.mapped.annot")
 
 
-class SampleSegmentationToSurfave(BaseInterface):
-    input_spec = SampleSegmentationToSurfaveInputSpec
-    output_spec = SampleSegmentationToSurfaveOutputSpec
+class SampleSegmentationToSurface(BaseInterface):
+    input_spec = SampleSegmentationToSurfaceInputSpec
+    output_spec = SampleSegmentationToSurfaceOutputSpec
 
     # Pool
     time = 15 / 60  # 运行时间：分钟 / 单脑测试时间
