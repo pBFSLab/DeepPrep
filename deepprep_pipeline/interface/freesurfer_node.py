@@ -73,6 +73,8 @@ class Brainmask(BaseInterface):
         from interface.create_node_bold_new import create_VxmRegistraion_node
         node = [create_UpdateAseg_node(self.inputs.subject_id),
                 create_VxmRegistraion_node(self.inputs.subject_id, self.task, self.atlas_type, self.preprocess_method)]
+        if self.recon_only == 'True':
+            node = create_UpdateAseg_node(self.inputs.subject_id)
         return node
 
 
@@ -391,7 +393,6 @@ class WhitePialThickness1InputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc='subjects dir', mandatory=True)
     subject_id = traits.Str(desc="sub-xxx", mandatory=True)
     threads = traits.Int(desc='threads')
-
 
     lh_white_preaparc = File(exists=True, desc="surf/lh.white.preaparc", mandatory=True)
     rh_white_preaparc = File(exists=True, desc="surf/rh.white.preaparc", mandatory=True)
@@ -975,9 +976,11 @@ class Aseg7(BaseInterface):
     def create_sub_node(self):
         from interface.create_node_bold_new import create_Register_node
         node = create_Register_node(self.inputs.subject_id,
-                             self.task,
-                             self.atlas_type,
-                             self.preprocess_method)
+                                    self.task,
+                                    self.atlas_type,
+                                    self.preprocess_method)
+        if self.recon_only == 'True':
+            node = []
         return node
 
 
