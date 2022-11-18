@@ -46,10 +46,11 @@ class VxmRegistraion(BaseInterface):
 
     def check_output(self, output_dir: Path):
         subject_id = self.inputs.subject_id
-        VxmRegistraion_output_files = [f'{subject_id}_norm_norigid_vxm_atlas.nii.gz',
-                                       f'{subject_id}_vxm_deformation_field_from_norm_to_vxm_atlas.nii.gz',
-                                       f'{subject_id}_norm_affined_vxm_atlas.npz',
-                                       f'{subject_id}_ants_affine_trf_from_norm_to_vxm_atlas.mat']
+        atlas_type = self.inputs.atlas_type
+        VxmRegistraion_output_files = [f'{subject_id}_norm_norigid_vxm_{atlas_type}.nii.gz',
+                                       f'{subject_id}_vxm_deformation_field_from_norm_to_vxm_{atlas_type}.nii.gz',
+                                       f'{subject_id}_norm_affined_vxm_{atlas_type}.npz',
+                                       f'{subject_id}_ants_affine_trf_from_norm_to_vxm_{atlas_type}.mat']
         for filename in VxmRegistraion_output_files:
             if not (output_dir / filename).exists():
                 return FileExistsError(output_dir / filename)
@@ -143,6 +144,13 @@ class VxmRegistraion(BaseInterface):
         return outputs
 
     def create_sub_node(self):
+        if self.bold_only == 'True':
+            from interface.create_node_bold_new import create_VxmRegNormMNI152_node
+            node = create_VxmRegNormMNI152_node(self.inputs.subject_id,
+                                                self.inputs.task,
+                                                self.inputs.atlas_type,
+                                                self.inputs.preprocess_method)
+            return node
         return []
 
 
@@ -322,6 +330,7 @@ class VxmRegNormMNI152(BaseInterface):
 
         norm_path = Path(self.inputs.subjects_dir) / self.inputs.subject_id / 'mri' / 'norm.mgz'
         subject_id = self.inputs.subject_id
+        atlas_type = self.inputs.atlas_type
 
         args = []
         bold_files = []
@@ -345,8 +354,8 @@ class VxmRegNormMNI152(BaseInterface):
                                                           str(bold_t1_file), subj_func_dir, subj_transform_dir,
                                                           verbose=True)
 
-            warp_file = subj_transform_dir / f'{subject_id}_vxm_deformation_field_from_norm_to_vxm_atlas.nii.gz'
-            affine_file = subj_transform_dir / f'{subject_id}_ants_affine_trf_from_norm_to_vxm_atlas.mat'
+            warp_file = subj_transform_dir / f'{subject_id}_vxm_deformation_field_from_norm_to_vxm_{atlas_type}.nii.gz'
+            affine_file = subj_transform_dir / f'{subject_id}_ants_affine_trf_from_norm_to_vxm_{atlas_type}.mat'
             warped_file = subj_func_dir / bold_file.name.replace(
                 '.nii.gz',
                 f'_skip_reorient_faln_mc_native_T1_2mm_{self.inputs.atlas_type}.nii.gz')  # save reg to MNI152 result file
@@ -651,6 +660,12 @@ class StcMc(BaseInterface):
         return outputs
 
     def create_sub_node(self):
+        if self.bold_only == 'True':
+            from interface.create_node_bold_new import create_Register_node
+            return create_Register_node(self.inputs.subject_id,
+                                        self.inputs.task,
+                                        self.inputs.atlas_type,
+                                        self.inputs.preprocess_method)
         return []
 
 
@@ -860,11 +875,18 @@ class MkBrainmask(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node_bold_new import create_VxmRegNormMNI152_node
-        node = create_VxmRegNormMNI152_node(self.inputs.subject_id,
-                                            self.inputs.task,
-                                            self.inputs.atlas_type,
-                                            self.inputs.preprocess_method)
+        if self.bold_only == 'True':
+            from interface.create_node_bold_new import create_VxmRegistraion_node
+            node = create_VxmRegistraion_node(self.inputs.subject_id,
+                                                self.inputs.task,
+                                                self.inputs.atlas_type,
+                                                self.inputs.preprocess_method)
+        else:
+            from interface.create_node_bold_new import create_VxmRegNormMNI152_node
+            node = create_VxmRegNormMNI152_node(self.inputs.subject_id,
+                                                self.inputs.task,
+                                                self.inputs.atlas_type,
+                                                self.inputs.preprocess_method)
 
         return node
 
@@ -934,7 +956,7 @@ class RestGauss(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node_bold_only import create_RestBandpass_node
+        from interface.create_node_bold_new import create_RestBandpass_node
         node = create_RestBandpass_node(self.inputs.subject_id,
                                         self.inputs.task,
                                         self.inputs.atlas_type,
@@ -1025,7 +1047,7 @@ class RestBandpass(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node_bold_only import create_RestRegression_node
+        from interface.create_node_bold_new import create_RestRegression_node
         node = create_RestRegression_node(self.inputs.subject_id,
                                           self.inputs.task,
                                           self.inputs.atlas_type,
@@ -1194,7 +1216,7 @@ class RestRegression(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node_bold_only import create_VxmRegNormMNI152_node
+        from interface.create_node_bold_new import create_VxmRegNormMNI152_node
         node = create_VxmRegNormMNI152_node(self.inputs.subject_id,
                                             self.inputs.task,
                                             self.inputs.atlas_type,
