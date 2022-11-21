@@ -902,6 +902,51 @@ class PValue:
         nib.freesurfer.write_morph_data(os.path.join(output_dir, f'{hemi}_pvalue.{feature}'), p_value)
         print(os.path.join(output_dir, f'{hemi}_pvalue.{feature}'))
 
+    def cal_MSC_group_difference(self, feature='thickness', hemi='lh'):
+        """
+        Calculate the significance of difference (p-value) between subjects processed using DeepPrep & FreeSurfer on fs6.
+
+        input: surf/?h.<feature>
+        output: ?h_pvalue.<feature>
+        """
+        input_dir1 = Path(self.feature_dir, f'recon_interp_fsaverage6/{self.method1}')
+        input_dir2 = Path(self.feature_dir, f'recon_interp_fsaverage6/{self.method2}')
+        output_dir = Path(self.feature_dir, f'recon_interp_fsaverage6_{self.method1}_{self.method2}_pvalue')
+
+        folders1 = os.listdir(str(input_dir1))
+        folders2 = os.listdir(str(input_dir2))
+        if len(folders1) != len(folders2):
+            folders1 = list(set(folders1) & set(folders2))
+            folders2 = list(set(folders1) & set(folders2))
+
+        method1_data = None
+        method2_data = None
+        for folder in folders1:  # foldre1 = 'MSC', folder = 'sub-xxx_ses-struct0x-run-0x'
+            file1 = Path(input_dir1, folder, 'surf',
+                         f'{hemi}.{feature}')  # 'DeepPrep': folder='sub-xxx'
+            data = np.expand_dims(nib.freesurfer.read_morph_data(file1), 1)
+            if method1_data is None:
+                method1_data = data
+            else:
+                method1_data = np.concatenate([method1_data, data], axis=1)
+
+            file2 = Path(input_dir2, folder, 'surf', f'{hemi}.{feature}')  # 'fMRIPrep': folder='sub-xxx'
+            data = np.expand_dims(nib.freesurfer.read_morph_data(file2), 1)
+            if method2_data is None:
+                method2_data = data
+            else:
+                method2_data = np.concatenate([method2_data, data], axis=1)
+
+        p_value = []
+        for i in range(method1_data.shape[0]):
+            _, p = ztest(method1_data[i], method2_data[i], alternative='two-sided')
+            p_value.append(-np.log10(p))
+        p_value = np.asarray(p_value)
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
+        nib.freesurfer.write_morph_data(os.path.join(output_dir, f'{hemi}_pvalue.{feature}'), p_value)
+        print(os.path.join(output_dir, f'{hemi}_pvalue.{feature}'))
+
     def p_value_screenshot(self, feature='thickness', vmin1='2.0', vmax1='5.0', surf='inflated'):
         """
         读取p_value路径，并对fs6的p_value进行截图
@@ -1083,6 +1128,11 @@ class FeatureDifference:
             self.concat_image_screenshot(sub, out_dir)
 
 
+# def boder_stability(bold_dir):
+
+
+
+
 if __name__ == '__main__':
     set_envrion()
 
@@ -1246,14 +1296,16 @@ if __name__ == '__main__':
     # diff.MSC_allrun_screenshot(surf='inflated')
 
     ######################## MSC intra-subject stability ##########################
-    # recon_dir1 = '/mnt/ngshare/FreeSurfer_MSC/FreeSurfer'  # rsync -arv youjia@30.30.30.141:/mnt/ngshare/public/share/ProjData/DeepPrep/MSC/FreeSurfer
-    # method1 = 'FreeSurfer'
+    recon_dir2 = '/mnt/ngshare/FreeSurfer_MSC/FreeSurfer'  # rsync -arv youjia@30.30.30.141:/mnt/ngshare/public/share/ProjData/DeepPrep/MSC/FreeSurfer
+    method2 = 'FreeSurfer'
 
     recon_dir1 = '/mnt/ngshare/Data_Mirror/FreeSurferFeatReg/MSC/derivatives/deepprep/Recon'
     method1 = 'FreeSurferFeatReg'
 
     dataset = 'MSC'
     screenshot1 = ScreenShot(recon_dir1, dataset, method1)
+    screenshot2 = ScreenShot(recon_dir2, dataset, method2)
+    pvalue = PValue(dataset, method1, method2)
 
     for feature, (vmin, vmax), (vmin2, vmax2), (vmin3, vmax3) in zip(['thickness', 'curv', 'sulc'],
                                                                      [('1', '3.5'), ('-0.5', '0.25'),
@@ -1262,9 +1314,15 @@ if __name__ == '__main__':
                                                                      [('0', '0.6'), ('0', '0.08'), ('0', '1.3')], ):
         for hemi in ['lh', 'rh']:
             screenshot1.project_fsaverage6(recon_dir1, feature=feature, hemi=hemi)
+            screenshot2.project_fsaverage6(recon_dir2, feature=feature, hemi=hemi)
             screenshot1.cal_individual_fsaverage6(feature=feature, hemi=hemi)
+            screenshot2.cal_individual_fsaverage6(feature=feature, hemi=hemi)
             screenshot1.cal_stability_fsaverage6(feature=feature, hemi=hemi)
+            screenshot2.cal_stability_fsaverage6(feature=feature, hemi=hemi)
+            pvalue.cal_MSC_group_difference(feature=feature, hemi=hemi)
+        pvalue.p_value_screenshot(feature=feature, vmin1='2.0', vmax1='5.0', surf='inflated')
         screenshot1.stability_screenshot(feature=feature, vmin=vmin3, vmax=vmax3)
+        screenshot2.stability_screenshot(feature=feature, vmin=vmin3, vmax=vmax3)
 
 
 
