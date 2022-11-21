@@ -18,11 +18,11 @@ python_interpret = sys.executable
 """
 
 
-def create_origandrawavg_node(subject_id: str, t1w_files: list):
+def create_OrigAndRawavg_node(subject_id: str, t1w_files: list):
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     workflow_cached_dir = os.environ['WORKFLOW_CACHED_DIR']
 
-    origandrawavg_node = Node(OrigAndRawavg(), f'{subject_id}_origandrawavg_node')
+    origandrawavg_node = Node(OrigAndRawavg(), f'{subject_id}_recon_OrigAndRawavg_node')
     origandrawavg_node.inputs.t1w_files = t1w_files
     origandrawavg_node.inputs.subjects_dir = subjects_dir
     origandrawavg_node.inputs.subject_id = subject_id
@@ -30,6 +30,8 @@ def create_origandrawavg_node(subject_id: str, t1w_files: list):
 
     origandrawavg_node.base_dir = workflow_cached_dir
     origandrawavg_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=500)
+
+    origandrawavg_node.interface.recon_only = os.environ['RECON_ONLY']
 
     return origandrawavg_node
 
@@ -47,7 +49,7 @@ def create_Segment_node(subject_id: str):
     network_coronal_path = weight_dir / "Coronal_Weights_FastSurferCNN" / "ckpts" / "Epoch_30_training_state.pkl"
     network_axial_path = weight_dir / "Axial_Weights_FastSurferCNN" / "ckpts" / "Epoch_30_training_state.pkl"
 
-    segment_node = Node(Segment(), f'{subject_id}_segment_node')
+    segment_node = Node(Segment(), f'{subject_id}_recon_Segment_node')
     segment_node.inputs.subjects_dir = subjects_dir
     segment_node.inputs.subject_id = subject_id
     segment_node.inputs.python_interpret = python_interpret
@@ -58,6 +60,8 @@ def create_Segment_node(subject_id: str):
 
     segment_node.base_dir = workflow_cached_dir
     segment_node.source = Source(CPU_n=0, GPU_MB=8500, RAM_MB=7500)
+
+    segment_node.interface.recon_only = os.environ['RECON_ONLY']
 
     return segment_node
 
@@ -70,7 +74,7 @@ def create_Noccseg_node(subject_id: str):
 
     reduce_to_aseg_py = fastsurfer_home / 'recon_surf' / 'reduce_to_aseg.py'
 
-    noccseg_node = Node(Noccseg(), f'{subject_id}_noccseg_node')
+    noccseg_node = Node(Noccseg(), f'{subject_id}_recon_Noccseg_node')
     noccseg_node.inputs.python_interpret = python_interpret
     noccseg_node.inputs.reduce_to_aseg_py = reduce_to_aseg_py
     noccseg_node.inputs.subject_id = subject_id
@@ -78,6 +82,9 @@ def create_Noccseg_node(subject_id: str):
 
     noccseg_node.base_dir = workflow_cached_dir
     noccseg_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=500)
+
+    noccseg_node.interface.recon_only = os.environ['RECON_ONLY']
+
     return noccseg_node
 
 
@@ -92,7 +99,7 @@ def create_N4BiasCorrect_node(subject_id: str):
     orig_file = sub_mri_dir / "orig.mgz"
     mask_file = sub_mri_dir / "mask.mgz"
 
-    N4_bias_correct_node = Node(N4BiasCorrect(), name=f'{subject_id}_N4_bias_correct_node')
+    N4_bias_correct_node = Node(N4BiasCorrect(), name=f'{subject_id}_recon_N4BiasCorrect_node')
     N4_bias_correct_node.inputs.subject_id = subject_id
     N4_bias_correct_node.inputs.subjects_dir = subjects_dir
     N4_bias_correct_node.inputs.python_interpret = python_interpret
@@ -103,6 +110,8 @@ def create_N4BiasCorrect_node(subject_id: str):
 
     N4_bias_correct_node.base_dir = workflow_cached_dir
     N4_bias_correct_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=500)
+
+    N4_bias_correct_node.interface.recon_only = os.environ['RECON_ONLY']
 
     return N4_bias_correct_node
 
@@ -116,7 +125,7 @@ def create_TalairachAndNu_node(subject_id: str):
     freesurfer_home = Path(os.environ['FREESURFER_HOME'])
     mni305 = freesurfer_home / "average" / "mni305.cor.mgz"
 
-    talairach_and_nu_node = Node(TalairachAndNu(), name=f'{subject_id}_talairach_and_nu_node')
+    talairach_and_nu_node = Node(TalairachAndNu(), name=f'{subject_id}_recon_TalairachAndNu_node')
     talairach_and_nu_node.inputs.subjects_dir = subjects_dir
     talairach_and_nu_node.inputs.subject_id = subject_id
     talairach_and_nu_node.inputs.threads = 1
@@ -126,6 +135,8 @@ def create_TalairachAndNu_node(subject_id: str):
 
     talairach_and_nu_node.base_dir = workflow_cached_dir
     talairach_and_nu_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=500)
+
+    talairach_and_nu_node.interface.recon_only = os.environ['RECON_ONLY']
 
     return talairach_and_nu_node
 
@@ -137,7 +148,7 @@ def create_Brainmask_node(subject_id: str):
     task = os.environ['DEEPPREP_TASK']
     preprocess_method = os.environ['DEEPPREP_PREPROCESS_METHOD']
 
-    brainmask_node = Node(Brainmask(), name=f'{subject_id}_brainmask_node')
+    brainmask_node = Node(Brainmask(), name=f'{subject_id}_recon_Brainmask_node')
     brainmask_node.inputs.subjects_dir = subjects_dir
     brainmask_node.inputs.subject_id = subject_id
     brainmask_node.inputs.need_t1 = True
@@ -150,6 +161,7 @@ def create_Brainmask_node(subject_id: str):
     brainmask_node.interface.atlas_type = atlas_type
     brainmask_node.interface.task = task
     brainmask_node.interface.preprocess_method = preprocess_method
+    brainmask_node.interface.recon_only = os.environ['RECON_ONLY']
 
     return brainmask_node
 
@@ -162,7 +174,7 @@ def create_UpdateAseg_node(subject_id: str):
     subject_mri_dir = subjects_dir / subject_id / 'mri'
 
     paint_cc_file = fastsurfer_home / 'recon_surf' / 'paint_cc_into_pred.py'
-    updateaseg_node = Node(UpdateAseg(), name=f'{subject_id}_updateaseg_node')
+    updateaseg_node = Node(UpdateAseg(), name=f'{subject_id}_recon_UpdateAseg_node')
     updateaseg_node.inputs.subjects_dir = subjects_dir
     updateaseg_node.inputs.subject_id = subject_id
     updateaseg_node.inputs.paint_cc_file = paint_cc_file
@@ -173,6 +185,8 @@ def create_UpdateAseg_node(subject_id: str):
     updateaseg_node.base_dir = workflow_cached_dir
     updateaseg_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=500)
 
+    updateaseg_node.interface.recon_only = os.environ['RECON_ONLY']
+
     return updateaseg_node
 
 
@@ -182,7 +196,7 @@ def create_Filled_node(subject_id: str):
 
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
-    filled_node = Node(Filled(), name=f'{subject_id}_filled_node')
+    filled_node = Node(Filled(), name=f'{subject_id}_recon_Filled_node')
     filled_node.inputs.subjects_dir = subjects_dir
     filled_node.inputs.subject_id = subject_id
     filled_node.inputs.threads = 1
@@ -193,6 +207,8 @@ def create_Filled_node(subject_id: str):
 
     filled_node.base_dir = workflow_cached_dir
     filled_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=500)
+
+    filled_node.interface.recon_only = os.environ['RECON_ONLY']
 
     return filled_node
 
@@ -205,7 +221,7 @@ def create_FastCSR_node(subject_id: str):
     fastcsr_home = Path(os.environ['FASTCSR_HOME'])
     fastcsr_py = fastcsr_home / 'pipeline.py'  # inference script
 
-    fastcsr_node = Node(FastCSR(), name=f'{subject_id}_fastcsr_node')
+    fastcsr_node = Node(FastCSR(), name=f'{subject_id}_recon_FastCSR_node')
     fastcsr_node.inputs.python_interpret = python_interpret
     fastcsr_node.inputs.fastcsr_py = fastcsr_py
     fastcsr_node.inputs.parallel_scheduling = 'off'
@@ -221,6 +237,8 @@ def create_FastCSR_node(subject_id: str):
     fastcsr_node.base_dir = workflow_cached_dir
     fastcsr_node.source = Source(CPU_n=0, GPU_MB=7000, RAM_MB=6500)
 
+    fastcsr_node.interface.recon_only = os.environ['RECON_ONLY']
+
     return fastcsr_node
 
 
@@ -232,7 +250,7 @@ def create_WhitePreaparc1_node(subject_id: str):
     task = os.environ['DEEPPREP_TASK']
     preprocess_method = os.environ['DEEPPREP_PREPROCESS_METHOD']
 
-    white_preaparc1 = Node(WhitePreaparc1(), name=f'{subject_id}_white_preaparc1_node')
+    white_preaparc1 = Node(WhitePreaparc1(), name=f'{subject_id}_recon_WhitePreaparc1_node')
     white_preaparc1.inputs.subjects_dir = subjects_dir
     white_preaparc1.inputs.subject_id = subject_id
     white_preaparc1.inputs.threads = 1
@@ -243,11 +261,12 @@ def create_WhitePreaparc1_node(subject_id: str):
     white_preaparc1.interface.atlas_type = atlas_type
     white_preaparc1.interface.task = task
     white_preaparc1.interface.preprocess_method = preprocess_method
+    white_preaparc1.interface.recon_only = os.environ['RECON_ONLY']
 
     return white_preaparc1
 
 
-def create_SampleSegmentationToSurfave_node(subject_id: str):
+def create_SampleSegmentationToSurface_node(subject_id: str):
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
     python_interpret = sys.executable
@@ -262,8 +281,8 @@ def create_SampleSegmentationToSurfave_node(subject_id: str):
     rh_DKTatlaslookup_file = fastsurfer_home / 'recon_surf' / f'rh.DKTatlaslookup.txt'
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
-    SampleSegmentationToSurfave_node = Node(SampleSegmentationToSurfave(),
-                                            name=f'{subject_id}_SampleSegmentationToSurfave_node')
+    SampleSegmentationToSurfave_node = Node(SampleSegmentationToSurface(),
+                                            name=f'{subject_id}_recon_SampleSegmentationToSurface_node')
     SampleSegmentationToSurfave_node.inputs.subjects_dir = subjects_dir
     SampleSegmentationToSurfave_node.inputs.subject_id = subject_id
     SampleSegmentationToSurfave_node.inputs.python_interpret = python_interpret
@@ -280,6 +299,8 @@ def create_SampleSegmentationToSurfave_node(subject_id: str):
     SampleSegmentationToSurfave_node.base_dir = workflow_cached_dir
     SampleSegmentationToSurfave_node.source = Source(CPU_n=2, GPU_MB=0, RAM_MB=4000)
 
+    SampleSegmentationToSurfave_node.interface.recon_only = os.environ['RECON_ONLY']
+
     return SampleSegmentationToSurfave_node
 
 
@@ -290,7 +311,7 @@ def create_InflatedSphere_node(subject_id: str):
     lh_white_preaparc_file = subjects_dir / subject_id / "surf" / "lh.white.preaparc"
     rh_white_preaparc_file = subjects_dir / subject_id / "surf" / "rh.white.preaparc"
 
-    Inflated_Sphere_node = Node(InflatedSphere(), f'{subject_id}_Inflated_Sphere_node')
+    Inflated_Sphere_node = Node(InflatedSphere(), f'{subject_id}_recon_InflatedSphere_node')
     Inflated_Sphere_node.inputs.threads = 1
     Inflated_Sphere_node.inputs.subjects_dir = subjects_dir
     Inflated_Sphere_node.inputs.subject_id = subject_id
@@ -299,6 +320,8 @@ def create_InflatedSphere_node(subject_id: str):
 
     Inflated_Sphere_node.base_dir = workflow_cached_dir
     Inflated_Sphere_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=500)
+
+    Inflated_Sphere_node.interface.recon_only = os.environ['RECON_ONLY']
 
     return Inflated_Sphere_node
 
@@ -314,7 +337,7 @@ def create_FeatReg_node(subject_id: str):
     python_interpret = sys.executable
     featreg_py = featreg_home / "featreg" / 'predict.py'  # inference script
 
-    featreg_node = Node(FeatReg(), f'{subject_id}_featreg_node')
+    featreg_node = Node(FeatReg(), f'{subject_id}_recon_FeatReg_node')
     featreg_node.inputs.featreg_py = featreg_py
     featreg_node.inputs.python_interpret = python_interpret
     featreg_node.inputs.device = device
@@ -332,6 +355,8 @@ def create_FeatReg_node(subject_id: str):
     featreg_node.base_dir = workflow_cached_dir
     featreg_node.source = Source(CPU_n=0, GPU_MB=7000, RAM_MB=10000)
 
+    featreg_node.interface.recon_only = os.environ['RECON_ONLY']
+
     return featreg_node
 
 
@@ -347,6 +372,8 @@ def create_JacobianAvgcurvCortparc_node(subject_id: str):
     JacobianAvgcurvCortparc_node.base_dir = workflow_cached_dir
     JacobianAvgcurvCortparc_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=500)
 
+    JacobianAvgcurvCortparc_node.interface.recon_only = os.environ['RECON_ONLY']
+
     return JacobianAvgcurvCortparc_node
 
 
@@ -355,7 +382,7 @@ def create_WhitePialThickness1_node(subject_id: str):
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
     threads = 1
 
-    white_pial_thickness1 = Node(WhitePialThickness1(), name=f'{subject_id}_white_pial_thickness1')
+    white_pial_thickness1 = Node(WhitePialThickness1(), name=f'{subject_id}_recon_WhitePialThickness1_node')
     white_pial_thickness1.inputs.subjects_dir = subjects_dir
     white_pial_thickness1.inputs.subject_id = subject_id
     white_pial_thickness1.inputs.threads = threads
@@ -372,6 +399,8 @@ def create_WhitePialThickness1_node(subject_id: str):
     white_pial_thickness1.base_dir = workflow_cached_dir
     white_pial_thickness1.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=1500)
 
+    white_pial_thickness1.interface.recon_only = os.environ['RECON_ONLY']
+
     return white_pial_thickness1
 
 
@@ -380,7 +409,7 @@ def create_Curvstats_node(subject_id: str):
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
     threads = 8
 
-    Curvstats_node = Node(Curvstats(), name=f'{subject_id}_Curvstats_node')
+    Curvstats_node = Node(Curvstats(), name=f'{subject_id}_recon_Curvstats_node')
     Curvstats_node.inputs.subjects_dir = subjects_dir
     Curvstats_node.inputs.subject_id = subject_id
     subject_surf_dir = subjects_dir / subject_id / "surf"
@@ -392,8 +421,11 @@ def create_Curvstats_node(subject_id: str):
     Curvstats_node.inputs.lh_sulc = subject_surf_dir / f'lh.sulc'
     Curvstats_node.inputs.rh_sulc = subject_surf_dir / f'rh.sulc'
     Curvstats_node.inputs.threads = threads
+
     Curvstats_node.base_dir = workflow_cached_dir
     Curvstats_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=250)
+
+    Curvstats_node.interface.recon_only = os.environ['RECON_ONLY']
 
     return Curvstats_node
 
@@ -404,7 +436,7 @@ def create_BalabelsMult_node(subject_id: str):
     subject_surf_dir = subjects_dir / subject_id / 'surf'
     threads = 1
 
-    BalabelsMult_node = Node(BalabelsMult(), name=f'{subject_id}_BalabelsMult_node')
+    BalabelsMult_node = Node(BalabelsMult(), name=f'{subject_id}_recon_BalabelsMult_node')
     BalabelsMult_node.inputs.subjects_dir = subjects_dir
     BalabelsMult_node.inputs.subject_id = subject_id
     BalabelsMult_node.inputs.threads = threads
@@ -415,8 +447,11 @@ def create_BalabelsMult_node(subject_id: str):
     BalabelsMult_node.inputs.lh_white = subject_surf_dir / f'lh.white'
     BalabelsMult_node.inputs.rh_white = subject_surf_dir / f'rh.white'
     BalabelsMult_node.inputs.fsaverage_label_dir = Path(os.environ['FREESURFER_HOME']) / "subjects/fsaverage/label"
+
     BalabelsMult_node.base_dir = workflow_cached_dir
     BalabelsMult_node.source = Source(CPU_n=2, GPU_MB=0, RAM_MB=1500)
+
+    BalabelsMult_node.interface.recon_only = os.environ['RECON_ONLY']
 
     return BalabelsMult_node
 
@@ -428,7 +463,7 @@ def create_Cortribbon_node(subject_id: str):
     subject_surf_dir = subjects_dir / subject_id / 'surf'
     threads = 1
 
-    Cortribbon_node = Node(Cortribbon(), name=f'{subject_id}_Cortribbon_node')
+    Cortribbon_node = Node(Cortribbon(), name=f'{subject_id}_recon_Cortribbon_node')
     Cortribbon_node.inputs.subjects_dir = subjects_dir
     Cortribbon_node.inputs.subject_id = subject_id
     Cortribbon_node.inputs.threads = threads
@@ -442,6 +477,8 @@ def create_Cortribbon_node(subject_id: str):
     Cortribbon_node.base_dir = workflow_cached_dir
     Cortribbon_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=1000)
 
+    Cortribbon_node.interface.recon_only = os.environ['RECON_ONLY']
+
     return Cortribbon_node
 
 
@@ -454,7 +491,7 @@ def create_Parcstats_node(subject_id: str):
     subject_label_dir = subjects_dir / subject_id / 'label'
     threads = 1
 
-    Parcstats_node = Node(Parcstats(), name=f'{subject_id}_Parcstats_node')
+    Parcstats_node = Node(Parcstats(), name=f'{subject_id}_recon_Parcstats_node')
     Parcstats_node.inputs.subjects_dir = subjects_dir
     Parcstats_node.inputs.subject_id = subject_id
     Parcstats_node.inputs.threads = threads
@@ -469,8 +506,11 @@ def create_Parcstats_node(subject_id: str):
     Parcstats_node.inputs.rh_pial = subject_surf_dir / f'rh.pial'
     Parcstats_node.inputs.lh_thickness = subject_surf_dir / f'lh.thickness'
     Parcstats_node.inputs.rh_thickness = subject_surf_dir / f'rh.thickness'
+
     Parcstats_node.base_dir = workflow_cached_dir
     Parcstats_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=500)
+
+    Parcstats_node.interface.recon_only = os.environ['RECON_ONLY']
 
     return Parcstats_node
 
@@ -487,7 +527,7 @@ def create_Aseg7_node(subject_id: str):
     subject_label_dir = subjects_dir / subject_id / 'label'
     threads = 1
 
-    Aseg7_node = Node(Aseg7(), name=f'{subject_id}_Aseg7_node')
+    Aseg7_node = Node(Aseg7(), name=f'{subject_id}_recon_Aseg7_node')
     Aseg7_node.inputs.subjects_dir = subjects_dir
     Aseg7_node.inputs.subject_id = subject_id
     Aseg7_node.inputs.threads = threads
@@ -506,6 +546,8 @@ def create_Aseg7_node(subject_id: str):
     Aseg7_node.interface.atlas_type = atlas_type
     Aseg7_node.interface.task = task
     Aseg7_node.interface.preprocess_method = preprocess_method
+
+    Aseg7_node.interface.recon_only = os.environ['RECON_ONLY']
 
     return Aseg7_node
 
