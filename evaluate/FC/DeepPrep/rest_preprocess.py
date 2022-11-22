@@ -1,3 +1,5 @@
+import os
+
 import bids
 import ants
 
@@ -172,12 +174,12 @@ def compile_regressors(func_path: Path, subject, bold_path: Path, bpss_path: Pat
     return all_regressors_path
 
 
-def rest_preprocess(bids_path, bold_preprocess_dir: Path, subject_id):
+def rest_preprocess(bids_dir, bold_preprocess_dir: Path, subject_id):
     task = 'rest'
 
     subject_dir = Path(bold_preprocess_dir) / subject_id
     subj = subject_id.split('-')[1]
-    layout = bids.BIDSLayout(str(bids_path), derivatives=False)
+    layout = bids.BIDSLayout(str(bids_dir), derivatives=False)
     subj_func_dir = Path(subject_dir) / 'func'
     subj_func_dir.mkdir(parents=True, exist_ok=True)
 
@@ -191,25 +193,213 @@ def rest_preprocess(bids_path, bold_preprocess_dir: Path, subject_id):
         bold_file = Path(bids_bold.path)
         print(f'<<< {bold_file}')
         mc_path = subj_func_dir / bold_file.name.replace('.nii.gz', '_skip_reorient_faln_mc.nii.gz')
+        if not mc_path.exists():
+            print(f'Exists Error: {mc_path}')
+            continue
+
         bpss_path = subj_func_dir / mc_path.name.replace('.nii.gz', '_bpss.nii.gz')
 
         if not bpss_path.exists():
             bold = ants.image_read(str(bold_file))
             TR = bold.spacing[3]
             bandpass_nifti(str(mc_path), TR)
+            print(f'>>> {bpss_path}')
 
         all_regressors = compile_regressors(subj_func_dir, subject_id, bold_file, bpss_path)
-        regression(str(bpss_path), all_regressors)
+        if not all_regressors.exists():
+            regression(str(bpss_path), all_regressors)
+            print(f'>>> {all_regressors}')
 
         bold_files.append(bold_file)
         args.append([subj_func_dir, bold_file])
 
 
+def native_project_to_fs6(input_path, out_path, reg_path, hemi):
+    """
+    Project a volume (e.g., residuals) in native space onto the
+    fsaverage6 surface.
+
+    subject     - str. Subject ID.
+    input_path  - Path. Volume to project.
+    reg_path    - Path. Registaration .dat file.
+    hemi        - str from {'lh', 'rh'}.
+
+    Output file created at $DATA_DIR/surf/
+     input_path.name.replace(input_path.ext, '_fsaverage6' + input_path.ext))
+    Path object pointing to this file is returned.
+    """
+    sh.mri_vol2surf(
+        '--mov', input_path,
+        '--reg', reg_path,
+        '--hemi', hemi,
+        '--projfrac', 0.5,
+        '--trgsubject', 'fsaverage6',
+        '--o', out_path,
+        '--reshape',
+        '--interp', 'trilinear',
+        _out=sys.stdout
+    )
+    return out_path
+
+
+def native_project_to_native(input_path, out_path, reg_path, hemi):
+    """
+    Project a volume (e.g., residuals) in native space onto the
+    native surface.
+
+    input_path  - Path. Volume to project.
+    reg_path    - Path. Registaration .dat file.
+    hemi        - str from {'lh', 'rh'}.
+
+    Output file created at $DATA_DIR/surf/
+     input_path.name.replace(input_path.ext, '_fsaverage6' + input_path.ext))
+    Path object pointing to this file is returned.
+    """
+    sh.mri_vol2surf(
+        '--mov', input_path,
+        '--reg', reg_path,
+        '--hemi', hemi,
+        '--projfrac', 0.5,
+        '--o', out_path,
+        '--reshape',
+        '--interp', 'trilinear',
+        _out=sys.stdout
+    )
+    return out_path
+
+
+def mni152reg_project_to_fsaverage6(input_path, out_path, hemi):
+    """
+    Project a volume (e.g., residuals) in native space onto the
+    native surface.
+
+    input_path  - Path. Volume to project.
+    reg_path    - Path. Registaration .dat file.
+    hemi        - str from {'lh', 'rh'}.
+
+    Output file created at $DATA_DIR/surf/
+     input_path.name.replace(input_path.ext, '_fsaverage6' + input_path.ext))
+    Path object pointing to this file is returned.
+    """
+    sh.mri_vol2surf(
+        '--mov', input_path,
+        '--mni152reg',
+        '--hemi', hemi,
+        '--projfrac', 0.5,
+        '--trgsubject', 'fsaverage6',
+        '--o', out_path,
+        '--reshape',
+        '--interp', 'trilinear',
+        _out=sys.stdout
+    )
+    return out_path
+
+
+def mni152reg_project_to_native(input_path, out_path, subject_id, hemi):
+    """
+    Project a volume (e.g., residuals) in native space onto the
+    native surface.
+
+    input_path  - Path. Volume to project.
+    reg_path    - Path. Registaration .dat file.
+    hemi        - str from {'lh', 'rh'}.
+
+    Output file created at $DATA_DIR/surf/
+     input_path.name.replace(input_path.ext, '_fsaverage6' + input_path.ext))
+    Path object pointing to this file is returned.
+    """
+    sh.mri_vol2surf(
+        '--mov', input_path,
+        '--mni152reg',
+        '--hemi', hemi,
+        '--projfrac', 0.5,
+        '--trgsubject', subject_id,
+        '--o', out_path,
+        '--reshape',
+        '--interp', 'trilinear',
+        _out=sys.stdout
+    )
+    return out_path
+
+
+def project(bids_dir, bold_preprocess_dir: Path, subject_id,
+            bold_ext: str = '_skip_reorient_faln_mc_bpss_resid.nii.gz'):
+    """
+    投影都是已mc为基础，加载register.dat文件，配准到T1空间
+    默认采样到native空间
+    指定trgsubject为fsaverage6，则project to fsaverage6 空间
+    """
+    from app.surface_projection.surface_projection import smooth_fs6, downsample_fs6_to_fs4
+    task = 'rest'
+
+    subject_dir = Path(bold_preprocess_dir) / subject_id
+    subj = subject_id.split('-')[1]
+    layout = bids.BIDSLayout(str(bids_dir), derivatives=False)
+    subj_func_dir = Path(subject_dir) / 'func'
+    subj_func_dir.mkdir(parents=True, exist_ok=True)
+    subj_surf_dir = Path(subject_dir) / 'surf'
+    subj_surf_dir.mkdir(parents=True, exist_ok=True)
+
+    args = []
+    bold_files = []
+    if task is None:
+        bids_bolds = layout.get(subject=subj, suffix='bold', extension='.nii.gz')
+    else:
+        bids_bolds = layout.get(subject=subj, task=task, suffix='bold', extension='.nii.gz')
+    for idx, bids_bold in enumerate(bids_bolds):
+        bold_file = Path(bids_bold.path)
+        print(f'<<< {bold_file}')
+        # register.dat 包含了 subject_id 信息
+        register_dat_path = subj_func_dir / bold_file.name.replace('.nii.gz',
+                                                                   '_skip_reorient_faln_mc_bbregister.register.dat')
+        bold_path = subj_func_dir / bold_file.name.replace('.nii.gz', bold_ext)
+
+        if not register_dat_path.exists():
+            print(f'Exists Error: {register_dat_path}')
+            continue
+        if not bold_path.exists():
+            print(f'Exists Error: {bold_path}')
+            continue
+
+        for hemi in ['lh', 'rh']:
+            # project to fsaverage6
+            fs6_surf_path = subj_surf_dir / f'{hemi}.{bold_path.name.replace(".nii.gz", "_fsaverage6.nii.gz")}'
+            if not fs6_surf_path.exists():
+                native_project_to_fs6(bold_path, fs6_surf_path, register_dat_path, hemi)
+                print(f'>>> {fs6_surf_path}')
+            # smooth
+            sm6_path = subj_surf_dir / fs6_surf_path.name.replace(".nii.gz", "_sm6.nii.gz")
+            if not sm6_path.exists():
+                smooth_fs6(fs6_surf_path, hemi)
+                print(f'>>> {fs6_surf_path}')
+            # down_sample
+            fs5_surf_path = subj_surf_dir / sm6_path.name.replace(".nii.gz", "_fsaverage5.nii.gz")
+            fs4_surf_path = subj_surf_dir / sm6_path.name.replace(".nii.gz", "_fsaverage4.nii.gz")
+            if not (fs5_surf_path.exists() and fs4_surf_path.exists()):
+                downsample_fs6_to_fs4(sm6_path, hemi)
+                print(f'>>> {fs5_surf_path}')
+                print(f'>>> {fs4_surf_path}')
+
+            # project to native
+            # surf_path = subj_surf_dir / f'{hemi}.{bold_path.name.replace(".nii.gz", "_native.nii.gz")}'
+            # native_project_to_native(bold_path, surf_path, register_dat_path, hemi)
+
+
 def main():
-    bids_path = Path('/mnt/ngshare/DeepPrep_workflow_test/UKB_BIDS')
+    from interface.run import set_envrion
+    set_envrion()
+
+    recon_dir = '/mnt/ngshare/DeepPrep_workflow_test/UKB_Recon'
+    bids_dir = Path('/mnt/ngshare/DeepPrep_workflow_test/UKB_BIDS')
     bold_preprocess_dir = Path('/mnt/ngshare/DeepPrep_workflow_test/UKB_BoldPreprocess')
-    subject_id = 'sub-1000037-ses-02'
-    rest_preprocess(bids_path, bold_preprocess_dir, subject_id)
+
+    os.environ['SUBJECTS_DIR'] = recon_dir
+    # subject_id = 'sub-1000037'
+    for subject_id in os.listdir(recon_dir):
+        if not 'sub' in subject_id:
+            continue
+        rest_preprocess(bids_dir, bold_preprocess_dir, subject_id)
+        project(bids_dir, bold_preprocess_dir, subject_id)
 
 
 if __name__ == '__main__':
