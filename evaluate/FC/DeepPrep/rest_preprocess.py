@@ -200,15 +200,110 @@ def rest_preprocess(bids_dir, bold_preprocess_dir: Path, subject_id):
         bpss_path = subj_func_dir / mc_path.name.replace('.nii.gz', '_bpss.nii.gz')
 
         if not bpss_path.exists():
-            bold = ants.image_read(str(bold_file))
-            TR = bold.spacing[3]
+            bold_img = nib.load(bold_file)
+            TR = bold_img.header.get_zooms()[3]
             bandpass_nifti(str(mc_path), TR)
             print(f'>>> {bpss_path}')
 
         all_regressors = compile_regressors(subj_func_dir, subject_id, bold_file, bpss_path)
-        if not all_regressors.exists():
-            regression(str(bpss_path), all_regressors)
+
+        # regression orig_space bold
+        resid_path = bpss_path.parent / bpss_path.name.replace('.nii.gz', '_resid.nii.gz')
+        if not resid_path.exists():
+            glm_nifti(str(bpss_path), all_regressors)
             print(f'>>> {all_regressors}')
+
+        bold_files.append(bold_file)
+        args.append([subj_func_dir, bold_file])
+
+
+def rest_preprocess_MNI152(bids_dir, bold_preprocess_dir: Path, subject_id):
+    task = 'rest'
+
+    subject_dir = Path(bold_preprocess_dir) / subject_id
+    subj = subject_id.split('-')[1]
+    layout = bids.BIDSLayout(str(bids_dir), derivatives=False)
+    subj_func_dir = Path(subject_dir) / 'func'
+    subj_func_dir.mkdir(parents=True, exist_ok=True)
+
+    args = []
+    bold_files = []
+    if task is None:
+        bids_bolds = layout.get(subject=subj, suffix='bold', extension='.nii.gz')
+    else:
+        bids_bolds = layout.get(subject=subj, task=task, suffix='bold', extension='.nii.gz')
+    for idx, bids_bold in enumerate(bids_bolds):
+        bold_file = Path(bids_bold.path)
+        print(f'<<< {bold_file}')
+        mc_152_path = subj_func_dir / bold_file.name.replace('.nii.gz', '_skip_reorient_faln_mc_native_T1_2mm_MNI152_T1_2mm.nii.gz')
+        if not mc_152_path.exists():
+            print(f'Exists Error: {mc_152_path}')
+            continue
+
+        bpss_path = subj_func_dir / mc_152_path.name.replace('.nii.gz', '_bpss.nii.gz')
+
+        if not bpss_path.exists():
+            bold_img = nib.load(mc_152_path)
+            TR = bold_img.header.get_zooms()[3]
+            bandpass_nifti(str(mc_152_path), TR)
+            print(f'>>> {bpss_path}')
+
+        all_regressors = subj_func_dir / 'fcmri' / ('%s_regressors.dat' % subject_id)
+
+        # regression orig_space bold
+        resid_path = bpss_path.parent / bpss_path.name.replace('.nii.gz', '_resid.nii.gz')
+        if not resid_path.exists():
+            glm_nifti(str(bpss_path), all_regressors)
+            print(f'>>> {resid_path}')
+
+        bold_files.append(bold_file)
+        args.append([subj_func_dir, bold_file])
+
+
+def rest_preprocess_surface(bids_dir, bold_preprocess_dir: Path, subject_id):
+    task = 'rest'
+
+    subject_dir = Path(bold_preprocess_dir) / subject_id
+    subj = subject_id.split('-')[1]
+    layout = bids.BIDSLayout(str(bids_dir), derivatives=False)
+    subj_func_dir = Path(subject_dir) / 'func'
+    subj_func_dir.mkdir(parents=True, exist_ok=True)
+
+    subj_surf_dir = Path(subject_dir) / 'surf'
+    subj_surf_dir.mkdir(parents=True, exist_ok=True)
+
+    args = []
+    bold_files = []
+    if task is None:
+        bids_bolds = layout.get(subject=subj, suffix='bold', extension='.nii.gz')
+    else:
+        bids_bolds = layout.get(subject=subj, task=task, suffix='bold', extension='.nii.gz')
+    for idx, bids_bold in enumerate(bids_bolds):
+        bold_file = Path(bids_bold.path)
+        print(f'<<< {bold_file}')
+
+        hemi = 'lh'
+        surf_file_name = f'{hemi}.' + str(bold_file.name.replace('.nii.gz', '_skip_reorient_faln_mc_bpss_resid_fsaverage6.nii.gz'))
+        surf_path = subj_surf_dir / surf_file_name
+        if not surf_path.exists():
+            print(f'Exists Error: {surf_path}')
+            continue
+
+        bpss_path = subj_surf_dir / surf_file_name.replace('.nii.gz', '_bpss.nii.gz')
+
+        if not bpss_path.exists():
+            bold_img = nib.load(surf_path)
+            TR = bold_img.header.get_zooms()[3]
+            bandpass_nifti(str(surf_path), TR)
+            print(f'>>> {bpss_path}')
+
+        all_regressors = subj_func_dir / 'fcmri' / ('%s_regressors.dat' % subject_id)
+
+        # regression orig_space bold
+        resid_path = bpss_path.parent / bpss_path.name.replace('.nii.gz', '_resid.nii.gz')
+        if not resid_path.exists():
+            glm_nifti(str(bpss_path), all_regressors)
+            print(f'>>> {resid_path}')
 
         bold_files.append(bold_file)
         args.append([subj_func_dir, bold_file])
@@ -398,8 +493,11 @@ def main():
     for subject_id in os.listdir(recon_dir):
         if not 'sub' in subject_id:
             continue
-        rest_preprocess(bids_dir, bold_preprocess_dir, subject_id)
-        project(bids_dir, bold_preprocess_dir, subject_id)
+        # rest_preprocess(bids_dir, bold_preprocess_dir, subject_id)
+        # project(bids_dir, bold_preprocess_dir, subject_id)
+
+        # rest_preprocess_MNI152(bids_dir, bold_preprocess_dir, subject_id)
+        rest_preprocess_surface(bids_dir, bold_preprocess_dir, subject_id)
 
 
 if __name__ == '__main__':
