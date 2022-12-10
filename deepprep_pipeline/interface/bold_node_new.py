@@ -48,6 +48,7 @@ class VxmRegistraion(BaseInterface):
         subject_id = self.inputs.subject_id
         atlas_type = self.inputs.atlas_type
         VxmRegistraion_output_files = [f'{subject_id}_norm_norigid_vxm_{atlas_type}.nii.gz',
+                                       f'{subject_id}_norm_norigid_{atlas_type}.nii.gz',
                                        f'{subject_id}_vxm_deformation_field_from_norm_to_vxm_{atlas_type}.nii.gz',
                                        f'{subject_id}_norm_affined_vxm_{atlas_type}.npz',
                                        f'{subject_id}_ants_affine_trf_from_norm_to_vxm_{atlas_type}.mat']
