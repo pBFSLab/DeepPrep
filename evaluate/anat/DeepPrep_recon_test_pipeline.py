@@ -604,7 +604,7 @@ class ScreenShot:
 
             data_concat = None
             for subject_path in subjects:
-                if '_ses' not in os.path.basename(subject_path):
+                if 'ses' not in os.path.basename(subject_path):
                     continue
                 feature_file = subject_path / 'surf' / f'{hemi}.{feature}'
                 data = np.expand_dims(nib.freesurfer.read_morph_data(str(feature_file)), 1)
@@ -613,8 +613,8 @@ class ScreenShot:
                 else:
                     data_concat = np.concatenate([data_concat, data], axis=1)
 
-            data_mean = np.nanmean(data_concat, axis=1)
-            data_std = np.nanstd(data_concat, axis=1)
+            data_mean = np.mean(data_concat, axis=1)
+            data_std = np.std(data_concat, axis=1)
 
             out_dir = individual_dir / sub_name / 'surf'
             out_dir.mkdir(parents=True, exist_ok=True)
@@ -864,10 +864,9 @@ class PValue:
 
         folders1 = os.listdir(str(input_dir1))
         folders2 = os.listdir(str(input_dir2))
-        try:
-            len(folders1) == len(folders2)
-        except:
-            raise SyntaxError(f"subject numbers are not equivalent")
+        if len(folders1) != len(folders2):
+            folders1 = list(set(folders1) & set(folders2))
+            folders2 = list(set(folders1) & set(folders2))
 
         method1_data = None
         method2_data = None
@@ -938,13 +937,17 @@ class PValue:
                 method2_data = np.concatenate([method2_data, data], axis=1)
 
         p_value = []
+        p_value_log = []
         for i in range(method1_data.shape[0]):
             _, p = ztest(method1_data[i], method2_data[i], alternative='two-sided')
-            p_value.append(-np.log10(p))
+            p_value.append(p)
+            p_value_log.append(-np.log10(p))
         p_value = np.asarray(p_value)
+        p_value_log = np.asarray(p_value_log)
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
         nib.freesurfer.write_morph_data(os.path.join(output_dir, f'{hemi}_pvalue.{feature}'), p_value)
+        nib.freesurfer.write_morph_data(os.path.join(output_dir, f'{hemi}_pvalue_log.{feature}'), p_value_log)
         print(os.path.join(output_dir, f'{hemi}_pvalue.{feature}'))
 
     def p_value_screenshot(self, feature='thickness', vmin1='2.0', vmax1='5.0', surf='inflated'):
@@ -954,6 +957,102 @@ class PValue:
         """
         p_value_dir = Path(self.feature_dir, f'recon_interp_fsaverage6_{self.method1}_{self.method2}_pvalue')
         out_dir = Path(self.feature_dir, f'recon_interp_fsaverage6_{self.method1}_{self.method2}_pvalue_screenshot_{surf}')
+
+        args_list1 = []
+        args_list2 = []
+        args_list3 = []
+        args_list4 = []
+        if not os.path.exists(out_dir):
+            os.mkdir(out_dir)
+        for hemi in ['lh', 'rh']:
+            if hemi == 'rh':
+                continue
+
+            if surf == 'inflated':
+                surf_file = f'/usr/local/freesurfer/subjects/fsaverage6/surf/{hemi}.inflated'
+            else:
+                surf_file = f'/usr/local/freesurfer/subjects/fsaverage6/surf/{hemi}.pial'
+
+            overlay_file = os.path.join(p_value_dir, f'{hemi}_pvalue.{feature}')
+            save_file = os.path.join(out_dir, f'{hemi}_pvalue_{feature}_lateral.png')
+            args_list1.append([surf_file, overlay_file, save_file, vmin1, vmax1, 'heat', hemi, surf])
+            save_file = os.path.join(out_dir, f'{hemi}_pvalue_{feature}_medial.png')
+            args_list2.append([surf_file, overlay_file, save_file, vmin1, vmax1, 'heat', hemi, surf])
+        else:
+            if surf == 'inflated':
+                surf_file = f'/usr/local/freesurfer/subjects/fsaverage6/surf/{hemi}.inflated'
+            else:
+                surf_file = f'/usr/local/freesurfer/subjects/fsaverage6/surf/{hemi}.pial'
+
+            overlay_file = os.path.join(p_value_dir, f'{hemi}_pvalue.{feature}')
+            save_file = os.path.join(out_dir, f'{hemi}_pvalue_{feature}_medial.png')
+            args_list4.append([surf_file, overlay_file, save_file, vmin1, vmax1, 'heat', hemi, surf])
+            save_file = os.path.join(out_dir, f'{hemi}_pvalue_{feature}_lateral.png')
+            args_list3.append([surf_file, overlay_file, save_file, vmin1, vmax1, 'heat', hemi, surf])
+        pool = Pool(self.Multi_CPU_Num)
+        pool.starmap(self.pvalue_image_screenshot, args_list1)
+        pool.starmap(self.pvalue_image_screenshot_azimuth_180, args_list2)
+        pool.starmap(self.pvalue_image_screenshot, args_list4)
+        pool.starmap(self.pvalue_image_screenshot_azimuth_180, args_list3)
+        pool.close()
+        pool.join()
+
+        self.concat_pvalue_screenshot(out_dir, feature=feature)
+
+    def cal_stability_pvalue(self, feature='thickness', hemi='lh'):
+        """
+        p_value of intra-sub stability
+
+        input: surf/?h.<feature>
+        output: ?h_pvalue.<feature>
+        """
+        input_dir1 = Path(self.feature_dir, f'recon_stability_fsaverage6/{self.method1}')
+        input_dir2 = Path(self.feature_dir, f'recon_stability_fsaverage6/{self.method2}')
+        output_dir = Path(self.feature_dir, f'recon_stability_fsaverage6_{self.method1}_{self.method2}_pvalue')
+
+        # folders1 = os.listdir(str(input_dir1))
+        # folders2 = os.listdir(str(input_dir2))
+        # if len(folders1) != len(folders2):
+        #     folders1 = list(set(folders1) & set(folders2))
+        #     folders2 = list(set(folders1) & set(folders2))
+
+        # method1_data = None
+        # method2_data = None
+        # for folder in folders1:  # foldre1 = 'MSC', folder = 'sub-xxx_ses-struct0x-run-0x'
+        file1 = Path(input_dir1, 'surf',
+                     f'{hemi}.{feature}')  # 'DeepPrep': folder='sub-xxx'
+        # data = np.expand_dims(nib.freesurfer.read_morph_data(file1), 1)
+        method1_data = nib.freesurfer.read_morph_data(file1)
+        # if method1_data is None:
+        #     method1_data = data
+        # else:
+        #     method1_data = np.concatenate([method1_data, data], axis=1)
+
+        file2 = Path(input_dir2, 'surf', f'{hemi}.{feature}')  # 'fMRIPrep': folder='sub-xxx'
+        # data = np.expand_dims(nib.freesurfer.read_morph_data(file2), 1)
+        method2_data = nib.freesurfer.read_morph_data(file2)
+        # if method2_data is None:
+        #     method2_data = data
+        # else:
+        #     method2_data = np.concatenate([method2_data, data], axis=1)
+
+        p_value = []
+        for i in range(method1_data.shape[0]):
+            _, p = ztest(method1_data[i], method2_data[i], alternative='two-sided')
+            p_value.append(-np.log10(p))
+        p_value = np.asarray(p_value)
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
+        nib.freesurfer.write_morph_data(os.path.join(output_dir, f'{hemi}_pvalue.{feature}'), p_value)
+        print(os.path.join(output_dir, f'{hemi}_pvalue.{feature}'))
+
+    def p_value_stability_screenshot(self, feature='thickness', vmin1='2.0', vmax1='5.0', surf='inflated'):
+        """
+        读取p_value路径，并对fs6的p_value进行截图
+        需要 ?h.sulc, ?h.curv, ?h.thickness
+        """
+        p_value_dir = Path(self.feature_dir, f'recon_stability_fsaverage6_{self.method1}_{self.method2}_pvalue')
+        out_dir = Path(self.feature_dir, f'recon_stability_fsaverage6_{self.method1}_{self.method2}_pvalue_screenshot_{surf}')
 
         args_list1 = []
         args_list2 = []
@@ -1295,16 +1394,124 @@ if __name__ == '__main__':
     # diff.MSC_allrun_diff()
     # diff.MSC_allrun_screenshot(surf='inflated')
 
-    ######################## MSC intra-subject stability ##########################
-    recon_dir2 = '/mnt/ngshare/FreeSurfer_MSC/FreeSurfer'  # rsync -arv youjia@30.30.30.141:/mnt/ngshare/public/share/ProjData/DeepPrep/MSC/FreeSurfer
-    method2 = 'FreeSurfer'
+    # ######################## MSC intra-subject stability ##########################
+    # recon_dir2 = '/mnt/ngshare/FreeSurfer_MSC/FreeSurfer'  # rsync -arv youjia@30.30.30.141:/mnt/ngshare/public/share/ProjData/DeepPrep/MSC/FreeSurfer
+    # method2 = 'FreeSurfer'
+    #
+    # recon_dir1 = '/mnt/ngshare/Data_Mirror/FreeSurferFeatReg/MSC/derivatives/deepprep/Recon'
+    # method1 = 'FreeSurferFeatReg'
+    #
+    # dataset = 'MSC'
+    # screenshot1 = ScreenShot(recon_dir1, dataset, method1)
+    # screenshot2 = ScreenShot(recon_dir2, dataset, method2)
+    # pvalue = PValue(dataset, method1, method2)
+    #
+    # for feature, (vmin, vmax), (vmin2, vmax2), (vmin3, vmax3) in zip(['thickness', 'curv', 'sulc'],
+    #                                                                  [('1', '3.5'), ('-0.5', '0.25'),
+    #                                                                   ('-13', '13'), ],
+    #                                                                  [('0', '0.8'), ('0', '0.15'), ('0', '4'), ],
+    #                                                                  [('0', '0.6'), ('0', '0.08'), ('0', '1.3')], ):
+    #     for hemi in ['lh', 'rh']:
+    #         screenshot1.project_fsaverage6(recon_dir1, feature=feature, hemi=hemi)
+    #         screenshot2.project_fsaverage6(recon_dir2, feature=feature, hemi=hemi)
+    #         screenshot1.cal_individual_fsaverage6(feature=feature, hemi=hemi)
+    #         screenshot2.cal_individual_fsaverage6(feature=feature, hemi=hemi)
+    #         screenshot1.cal_stability_fsaverage6(feature=feature, hemi=hemi)
+    #         screenshot2.cal_stability_fsaverage6(feature=feature, hemi=hemi)
+    #         pvalue.cal_MSC_group_difference(feature=feature, hemi=hemi)
+    #     pvalue.p_value_screenshot(feature=feature, vmin1='2.0', vmax1='5.0', surf='inflated')
+    #     screenshot1.stability_screenshot(feature=feature, vmin=vmin3, vmax=vmax3)
+    #     screenshot2.stability_screenshot(feature=feature, vmin=vmin3, vmax=vmax3)
 
-    recon_dir1 = '/mnt/ngshare/Data_Mirror/FreeSurferFeatReg/MSC/derivatives/deepprep/Recon'
-    method1 = 'FreeSurferFeatReg'
+    ######################## Feature Difference ##########################
+    # ############# UKB_150 #############
+    # recon_dir1 = '/mnt/ngshare/fMRIPrep_UKB_150/UKB_150_Recon_FreeSurfer600'
+    # recon_dir2 = '/mnt/ngshare/fMRIPrep_UKB_150/UKB_150_Recon'
+    # method1 = 'FreeSurfer600'
+    # method2 = 'FreeSurfer'
+    # dataset = 'UKB_150'
+    #
+    # screenshot1 = ScreenShot(recon_dir1, dataset, method1)
+    # screenshot2 = ScreenShot(recon_dir2, dataset, method2)
+    # pvalue = PValue(dataset, method1, method2)
+    #
+    # for feature, (vmin, vmax), (vmin2, vmax2), (vmin3, vmax3) in zip(['thickness', 'curv', 'sulc'],
+    #                                                                  [('1', '3.5'), ('-0.5', '0.25'),
+    #                                                                   ('-13', '13'), ],
+    #                                                                  [('0', '0.8'), ('0', '0.15'), ('0', '4'), ],
+    #                                                                  [('0', '0.6'), ('0', '0.08'), ('0', '1.3')], ):
+    #     for hemi in ['lh', 'rh']:
+    #         screenshot1.project_fsaverage6(recon_dir1, feature=feature, hemi=hemi)
+    #         screenshot2.project_fsaverage6(recon_dir2, feature=feature, hemi=hemi)
+    #         screenshot1.cal_group_fsaverage6(feature=feature, hemi=hemi)
+    #         screenshot2.cal_group_fsaverage6(feature=feature, hemi=hemi)
+    #         pvalue.cal_group_difference(feature=feature, hemi=hemi)
+    #     pvalue.p_value_screenshot(feature=feature, vmin1='2.0', vmax1='5.0', surf='inflated')
+    #     screenshot1.group_screenshot(feature=feature, vmin1=vmin, vmax1=vmax, vmin2=vmin2, vmax2=vmax2)
+    #     screenshot2.group_screenshot(feature=feature, vmin1=vmin, vmax1=vmax, vmin2=vmin2, vmax2=vmax2)
 
+    # ############# HNU_1_combine #############
+    # recon_dir1 = '/mnt/ngshare/DeepPrep/HNU_1_combine/FreeSurfer'
+    # recon_dir2 = '/mnt/ngshare/DeepPrep/HNU_1_combine/FreeSurfer720'
+    # method1 = 'FreeSurfer600'
+    # method2 = 'FreeSurfer'
+    # dataset = 'HNU_1_combine'
+    #
+    # screenshot1 = ScreenShot(recon_dir1, dataset, method1)
+    # screenshot2 = ScreenShot(recon_dir2, dataset, method2)
+    # pvalue = PValue(dataset, method1, method2)
+    #
+    # for feature, (vmin, vmax), (vmin2, vmax2), (vmin3, vmax3) in zip(['thickness', 'curv', 'sulc'],
+    #                                                                  [('1', '3.5'), ('-0.5', '0.25'),
+    #                                                                   ('-13', '13'), ],
+    #                                                                  [('0', '0.8'), ('0', '0.15'), ('0', '4'), ],
+    #                                                                  [('0', '0.6'), ('0', '0.08'), ('0', '1.3')], ):
+    #     # for hemi in ['lh', 'rh']:
+    #         # screenshot1.project_fsaverage6(recon_dir1, feature=feature, hemi=hemi)
+    #         # screenshot2.project_fsaverage6(recon_dir2, feature=feature, hemi=hemi)
+    #         # screenshot1.cal_group_fsaverage6(feature=feature, hemi=hemi)
+    #         # screenshot2.cal_group_fsaverage6(feature=feature, hemi=hemi)
+    #         # pvalue.cal_group_difference(feature=feature, hemi=hemi)
+    #     pvalue.p_value_screenshot(feature=feature, vmin1='2.0', vmax1='5.0', surf='inflated')
+    #     screenshot1.group_screenshot(feature=feature, vmin1=vmin, vmax1=vmax, vmin2=vmin2, vmax2=vmax2)
+    #     screenshot2.group_screenshot(feature=feature, vmin1=vmin, vmax1=vmax, vmin2=vmin2, vmax2=vmax2)
+
+    # ############# MSC #############
+    # recon_dir1 = '/mnt/ngshare/DeepPrep/MSC_combine/FreeSurfer'
+    # recon_dir2 = '/mnt/ngshare/DeepPrep/MSC_combine/FreeSurfer720'
+    # method1 = 'FreeSurfer600'
+    # method2 = 'FreeSurfer'
+    # dataset = 'MSC_combine'
+    # screenshot1 = ScreenShot(recon_dir1, dataset, method1)
+    # screenshot2 = ScreenShot(recon_dir2, dataset, method2)
+    # pvalue = PValue(dataset, method1, method2)
+    #
+    # for feature, (vmin, vmax), (vmin2, vmax2), (vmin3, vmax3) in zip(['thickness', 'curv', 'sulc'],
+    #                                                                  [('1', '3.5'), ('-0.5', '0.25'),
+    #                                                                   ('-13', '13'), ],
+    #                                                                  [('0', '0.8'), ('0', '0.15'), ('0', '4'), ],
+    #                                                                  [('0', '0.6'), ('0', '0.08'), ('0', '1.3')], ):
+    #     for hemi in ['lh', 'rh']:
+    #         screenshot1.project_fsaverage6(recon_dir1, feature=feature, hemi=hemi)
+    #         screenshot2.project_fsaverage6(recon_dir2, feature=feature, hemi=hemi)
+    #         screenshot1.cal_group_fsaverage6(feature=feature, hemi=hemi)
+    #         screenshot2.cal_group_fsaverage6(feature=feature, hemi=hemi)
+    #         pvalue.cal_MSC_group_difference(feature=feature, hemi=hemi)
+    #     pvalue.p_value_screenshot(feature=feature, vmin1='2.0', vmax1='5.0', surf='inflated')
+    #     screenshot1.group_screenshot(feature=feature, vmin1=vmin, vmax1=vmax, vmin2=vmin2, vmax2=vmax2)
+    #     screenshot2.group_screenshot(feature=feature, vmin1=vmin, vmax1=vmax, vmin2=vmin2, vmax2=vmax2)
+
+    ########################## MSC ReatReg smooth ##########################
+    ################## MSC p_value
+    recon_dir1 = '/mnt/ngshare/DeepPrep/MSC_combine/FreeSurfer720'
+    recon_dir2 = '/mnt/ngshare2/MSC_all/MSC_Recon' # sshfs pbfs19:/mnt/...
+    # # recon_dir2 = '/mnt/ngshare/DeepPrep/ReatReg/MSC_ReatReg_smooth'
+    method1 = 'FreeSurfer720'  # MSC_combine
+    method2 = 'ReatReg_old'
+    # # method2 = 'ReatReg_new'
     dataset = 'MSC'
-    screenshot1 = ScreenShot(recon_dir1, dataset, method1)
-    screenshot2 = ScreenShot(recon_dir2, dataset, method2)
+    # screenshot1 = ScreenShot(recon_dir1, dataset, method1)
+    # screenshot2 = ScreenShot(recon_dir2, dataset, method2)
     pvalue = PValue(dataset, method1, method2)
 
     for feature, (vmin, vmax), (vmin2, vmax2), (vmin3, vmax3) in zip(['thickness', 'curv', 'sulc'],
@@ -1313,16 +1520,50 @@ if __name__ == '__main__':
                                                                      [('0', '0.8'), ('0', '0.15'), ('0', '4'), ],
                                                                      [('0', '0.6'), ('0', '0.08'), ('0', '1.3')], ):
         for hemi in ['lh', 'rh']:
-            screenshot1.project_fsaverage6(recon_dir1, feature=feature, hemi=hemi)
-            screenshot2.project_fsaverage6(recon_dir2, feature=feature, hemi=hemi)
-            screenshot1.cal_individual_fsaverage6(feature=feature, hemi=hemi)
-            screenshot2.cal_individual_fsaverage6(feature=feature, hemi=hemi)
-            screenshot1.cal_stability_fsaverage6(feature=feature, hemi=hemi)
-            screenshot2.cal_stability_fsaverage6(feature=feature, hemi=hemi)
+    #         screenshot1.project_fsaverage6(recon_dir1, feature=feature, hemi=hemi)
+    #         screenshot2.project_fsaverage6(recon_dir2, feature=feature, hemi=hemi)
+    #         screenshot1.cal_group_fsaverage6(feature=feature, hemi=hemi)
+    #         screenshot2.cal_group_fsaverage6(feature=feature, hemi=hemi)
             pvalue.cal_MSC_group_difference(feature=feature, hemi=hemi)
-        pvalue.p_value_screenshot(feature=feature, vmin1='2.0', vmax1='5.0', surf='inflated')
-        screenshot1.stability_screenshot(feature=feature, vmin=vmin3, vmax=vmax3)
-        screenshot2.stability_screenshot(feature=feature, vmin=vmin3, vmax=vmax3)
+        # pvalue.p_value_screenshot(feature=feature, vmin1='2.0', vmax1='5.0', surf='inflated')
+    #     screenshot1.group_screenshot(feature=feature, vmin1=vmin, vmax1=vmax, vmin2=vmin2, vmax2=vmax2)
+    #     screenshot2.group_screenshot(feature=feature, vmin1=vmin, vmax1=vmax, vmin2=vmin2, vmax2=vmax2)
 
+    ################## MSC intra-subject stability
+    # recon_dir2 = '/mnt/ngshare/DeepPrep/ReatReg/MSC_ReatReg_smooth'
+    # method2 = 'ReatReg_new'
 
+    # recon_dir2 = '/mnt/ngshare/FreeSurfer_MSC/FreeSurfer'  # rsync -arv youjia@30.30.30.141:/mnt/ngshare/public/share/ProjData/DeepPrep/MSC/FreeSurfer
+    # method2 = 'FreeSurfer'
 
+    # recon_dir2 = '/mnt/ngshare/DeepPrep/ReatReg/MSC_ReatReg_fsavreage6'
+    # method2 = 'ReatReg_fsaverage6'
+
+    # dataset = 'MSC'
+    # screenshot2 = ScreenShot(recon_dir2, dataset, method2)
+    #
+    # for feature, (vmin, vmax), (vmin2, vmax2), (vmin3, vmax3) in zip(['curv', 'sulc'],
+    #                                                                  [('-0.5', '0.25'),
+    #                                                                   ('-13', '13'), ],
+    #                                                                  [('0', '0.15'), ('0', '4'), ],
+    #                                                                  [('0', '0.08'), ('0', '1.3')], ):
+        # for hemi in ['lh', 'rh']:
+            # screenshot2.project_fsaverage6(recon_dir2, feature=feature, hemi=hemi)
+            # screenshot2.cal_individual_fsaverage6(feature=feature, hemi=hemi)
+            # screenshot2.cal_stability_fsaverage6(feature=feature, hemi=hemi)
+        # screenshot2.stability_screenshot(feature=feature, vmin=vmin3, vmax=vmax3)
+
+    # ################## MSC p_value of intra-sub stability
+    # method1 = 'FreeSurfer'  # MSC_combine
+    # method2 = 'ReatReg_fsaverage6'
+    # dataset = 'MSC'
+    # pvalue = PValue(dataset, method1, method2)
+    #
+    # for feature, (vmin, vmax), (vmin2, vmax2), (vmin3, vmax3) in zip(['curv', 'sulc'],
+    #                                                                  [('-0.5', '0.25'),
+    #                                                                   ('-13', '13'), ],
+    #                                                                  [('0', '0.15'), ('0', '4'), ],
+    #                                                                  [('0', '0.08'), ('0', '1.3')], ):
+    #     for hemi in ['lh', 'rh']:
+    #         pvalue.cal_stability_pvalue(feature=feature, hemi=hemi) # ?
+    #     pvalue.p_value_stability_screenshot(feature=feature, vmin1='2.0', vmax1='5.0', surf='inflated') # ?
