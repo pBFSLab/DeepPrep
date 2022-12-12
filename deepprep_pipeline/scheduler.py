@@ -245,6 +245,24 @@ python3 deepprep_pipeline.py
 /mnt/ngshare2/DeepPrep_UKB/UKB_BoldPreprocess
 --cache_dir
 /mnt/ngshare2/DeepPrep_UKB/UKB_Workflow
+
+--bids_dir
+/mnt/ngshare2/MSC_all/MSC
+--recon_output_dir
+/mnt/ngshare2/MSC_all/MSC_Recon
+--bold_output_dir
+/mnt/ngshare2/MSC_all/MSC_BoldPreprocess
+--cache_dir
+/mnt/ngshare2/MSC_all/MSC_Workflow
+--bold_task_type
+motor
+--bold_preprocess_method
+task
+--bold_only
+True
+--single_sub_multi_t1
+True
+
 """
 
     parser = argparse.ArgumentParser(
@@ -276,7 +294,7 @@ python3 deepprep_pipeline.py
 
 
 def main():
-    set_envrion(threads=1)
+    set_envrion(threads=8)
     args = parse_args()
     bids_data_path = Path(args.bids_dir)
     subjects_dir = Path(args.recon_output_dir)
@@ -427,6 +445,7 @@ def main():
 
         scheduler.run(lock)
         logging_wf.info(f'subject_success {len(scheduler.subject_success)}: {scheduler.subject_success}')
+        logging_wf.info(f'subject_start_datetime  {scheduler.start_datetime}')
         logging_wf.info(f'subject_success_datetime {len(scheduler.subject_success_datetime)}:'
                         f' {scheduler.subject_success_datetime}')
         logging_wf.error(f'nodes_error {len(scheduler.s_nodes_error)}: {scheduler.s_nodes_error}')

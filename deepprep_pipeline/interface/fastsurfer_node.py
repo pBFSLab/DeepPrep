@@ -167,7 +167,6 @@ class TalairachAndNu(BaseInterface):
         subjects_dir = Path(self.inputs.subjects_dir)
         subject_id = self.inputs.subject_id
         sub_mri_dir = subjects_dir / subject_id / "mri"
-        talairach_lta = subjects_dir / subject_id / 'mri' / 'transforms' / 'talairach.lta'
         nu_file = subjects_dir / subject_id / 'mri' / 'nu.mgz'
 
         if self.inputs.threads is None:
@@ -175,7 +174,6 @@ class TalairachAndNu(BaseInterface):
         talairach_auto_xfm = sub_mri_dir / "transforms" / "talairach.auto.xfm"
         talairach_xfm = sub_mri_dir / "transforms" / "talairach.xfm"
         talairach_xfm_lta = sub_mri_dir / "transforms" / "talairach.xfm.lta"
-        talairach_skull_lta = sub_mri_dir / "transforms" / "talairach_with_skull.lta"
 
         # talairach.xfm: compute talairach full head (25sec)
         cmd = f'cd {sub_mri_dir} && ' \
@@ -191,6 +189,8 @@ class TalairachAndNu(BaseInterface):
         run_cmd_with_timing(cmd)
 
         # Since we do not run mri_em_register we sym-link other talairach transform files here
+        talairach_skull_lta = sub_mri_dir / "transforms" / "talairach_with_skull.lta"
+        talairach_lta = subjects_dir / subject_id / 'mri' / 'transforms' / 'talairach.lta'
         cmd = f"cp {talairach_xfm_lta} {talairach_skull_lta}"
         run_cmd_with_timing(cmd)
         cmd = f"cp {talairach_xfm_lta} {talairach_lta}"
