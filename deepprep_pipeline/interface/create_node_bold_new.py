@@ -273,7 +273,7 @@ def create_node_t():
     if not bold_preprocess_dir_test.exists():
         bold_preprocess_dir_test.mkdir(parents=True, exist_ok=True)
 
-    subject_id_test = 'sub-1000037-ses-02'
+    subject_id_test = 'sub-1000037'
 
     # t1w_files = ['/mnt/ngshare/DeepPrep_workflow_test/UKB_BIDS/sub-1000037/ses-02/anat/sub-1000037_ses-02_T1w.nii.gz']
 
@@ -298,7 +298,10 @@ def create_node_t():
     os.environ['DEEPPREP_TASK'] = task_test
     os.environ['DEEPPREP_PREPROCESS_METHOD'] = preprocess_method_test
 
-    node = create_VxmRegNormMNI152_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
+    os.environ['RECON_ONLY'] = 'False'
+    os.environ['BOLD_ONLY'] = 'False'
+
+    node = create_Register_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
                              preprocess_method=preprocess_method_test)
     node.run()
     exit()

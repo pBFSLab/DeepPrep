@@ -208,9 +208,6 @@ class WhitePreaparc1OutputSpec(TraitedSpec):
     autodet_gw_stats_lh_dat = File(exists=True, desc="surf/autodet.gw.stats.lh.dat")
     autodet_gw_stats_rh_dat = File(exists=True, desc="surf/autodet.gw.stats.rh.dat")
 
-    # pre wf result
-    aparc_aseg_file = File(exists=True, desc="mri/aparc.DKTatlas+aseg.deep.withCC.mgz", mandatory=True)
-
 
 class WhitePreaparc1(BaseInterface):
     input_spec = WhitePreaparc1InputSpec
@@ -256,8 +253,6 @@ class WhitePreaparc1(BaseInterface):
         outputs["autodet_gw_stats_lh_dat"] = subjects_dir / subject_id / "surf/autodet.gw.stats.lh.dat"
         outputs["autodet_gw_stats_rh_dat"] = subjects_dir / subject_id / "surf/autodet.gw.stats.rh.dat"
 
-        # pre part wf result
-        outputs["aparc_aseg_file"] = subjects_dir / subject_id / "mri/aparc.DKTatlas+aseg.deep.withCC.mgz"
         return outputs
 
     def create_sub_node(self):
@@ -351,21 +346,18 @@ class InflatedSphere(BaseInterface):
         os.environ['FS_OMP_NUM_THREADS'] = str(threads)
         os.environ['ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS'] = str(threads)
 
+        hemi_white_preaparc = Path(self.inputs.subjects_dir) / self.inputs.subject_id / 'surf' / f'{hemi}.white.preaparc'
+        hemi_smoothwm = Path(self.inputs.subjects_dir) / self.inputs.subject_id / 'surf' / f'{hemi}.smoothwm'
+        _cmd = f'mris_smooth -n 3 -nw  {hemi_white_preaparc} {hemi_smoothwm}'
+        run_cmd_with_timing(_cmd)
         hemi_inflate = Path(self.inputs.subjects_dir) / self.inputs.subject_id / 'surf' / f'{hemi}.inflated'
+        _cmd = f'mris_inflate {hemi_smoothwm} {hemi_inflate}'
+        run_cmd_with_timing(_cmd)
         hemi_sphere = Path(self.inputs.subjects_dir) / self.inputs.subject_id / 'surf' / f'{hemi}.sphere'
         _cmd = f'mris_sphere -seed 1234 {hemi_inflate} {hemi_sphere}'
         run_cmd_with_timing(_cmd)
 
     def _run_interface(self, runtime):
-        threads = self.inputs.threads if self.inputs.threads else 0
-        fsthreads = get_freesurfer_threads(threads)
-        # create nicer inflated surface from topo fixed (not needed, just later for visualization)
-        cmd = f"recon-all -subject {self.inputs.subject_id} -smooth2 -no-isrunning {fsthreads}"
-        run_cmd_with_timing(cmd)
-
-        cmd = f"recon-all -subject {self.inputs.subject_id} -inflate2 -no-isrunning {fsthreads}"
-        run_cmd_with_timing(cmd)
-
         multipool(self.cmd, Multi_Num=2)
         return runtime
 
@@ -384,8 +376,9 @@ class InflatedSphere(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node_structure import create_FeatReg_node
-        node = create_FeatReg_node(self.inputs.subject_id)
+        from interface.create_node_structure import create_FeatReg_node, create_Curvstats_node
+        node = [create_FeatReg_node(self.inputs.subject_id),
+                create_Curvstats_node(self.inputs.subject_id)]
         return node
 
 
@@ -484,11 +477,9 @@ class WhitePialThickness1(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node_structure import create_Curvstats_node, create_BalabelsMult_node, \
-            create_Cortribbon_node
+        from interface.create_node_structure import create_BalabelsMult_node, create_Cortribbon_node
 
-        node = [create_Curvstats_node(self.inputs.subject_id),
-                create_BalabelsMult_node(self.inputs.subject_id),
+        node = [create_BalabelsMult_node(self.inputs.subject_id),
                 create_Cortribbon_node(self.inputs.subject_id),
                 ]
 
@@ -653,7 +644,7 @@ class Parcstats(BaseInterface):
         threads = self.inputs.threads if self.inputs.threads else 0
         fsthreads = get_freesurfer_threads(threads)
 
-        cmd = f"recon-all -subject {subject_id} -parcstats {fsthreads} -pctsurfcon -hyporelabel -apas2aseg {fsthreads}"
+        cmd = f"recon-all -subject {subject_id} -parcstats -pctsurfcon -hyporelabel -apas2aseg {fsthreads}"
         run_cmd_with_timing(cmd)
 
         return runtime
@@ -789,22 +780,6 @@ class JacobianAvgcurvCortparcThresholdOutputSpec(TraitedSpec):
     lh_aparc_annot = File(exists=True, desc="surf/lh.aparc.annot")
     rh_aparc_annot = File(exists=True, desc="surf/rh.aparc.annot")
 
-    aseg_presurf_file = File(exists=True, desc="mri/aseg.presurf.mgz")  # output of filled_node
-    brain_finalsurfs_file = File(exists=True, desc="mri/brain.finalsurfs.mgz")  # output of filled_node
-    wm_file = File(exists=True, desc='mri/wm.mgz')  # output of filled_node
-    lh_white_preaparc = File(exists=True, desc='surf/lh.white.preaparc')  # output of white_preaparc1_node
-    rh_white_preaparc = File(exists=True, desc='surf/rh.white.preaparc')  # output of white_preaparc1_node
-    lh_cortex_label = File(exists=True, desc="label/lh.cortex.label")  # output of white_preaparc1_node
-    rh_cortex_label = File(exists=True, desc="label/rh.cortex.label")  # output of white_preaparc1_node
-
-    lh_smoothwm = File(exists=True, desc='surf/lh.smoothwm')  # output of inflated_node
-    rh_smoothwm = File(exists=True, desc='surf/rh.smoothwm')  # output of inflated_node
-    lh_sulc = File(exists=True, desc="surf/lh.sulc")  # output of inflated_node
-    rh_sulc = File(exists=True, desc="surf/rh.sulc")  # output of inflated_node
-
-    lh_sphere_reg = File(exists=True, desc='the output seg image: surf/lh.sphere.reg')  # output of featreg_node
-    rh_sphere_reg = File(exists=True, desc='the output seg image: surf/rh.sphere.reg')  # output of featreg_node
-
     subject_id = Str(desc='subject id')
 
 
@@ -836,25 +811,6 @@ class JacobianAvgcurvCortparc(BaseInterface):
         outputs['rh_avg_curv'] = subjects_dir / subject_id / 'surf/rh.avg_curv'
         outputs['lh_aparc_annot'] = subjects_dir / subject_id / 'label/lh.aparc.annot'
         outputs['rh_aparc_annot'] = subjects_dir / subject_id / 'label/rh.aparc.annot'
-
-        outputs['aseg_presurf_file'] = subjects_dir / subject_id / 'mri/aseg.presurf.mgz'  # output of inflated_node
-        outputs[
-            'brain_finalsurfs_file'] = subjects_dir / subject_id / 'mri/brain.finalsurfs.mgz'  # output of inflated_node
-        outputs['wm_file'] = subjects_dir / subject_id / 'mri/wm.mgz'  # output of inflated_node
-        outputs[
-            'lh_white_preaparc'] = subjects_dir / subject_id / f"surf/lh.white.preaparc"  # output of white_preaparc1_node
-        outputs[
-            'rh_white_preaparc'] = subjects_dir / subject_id / f"surf/rh.white.preaparc"  # output of white_preaparc1_node
-        outputs[
-            'lh_cortex_label'] = subjects_dir / subject_id / f"label/lh.cortex.label"  # output of white_preaparc1_node
-        outputs[
-            'rh_cortex_label'] = subjects_dir / subject_id / f"label/rh.cortex.label"  # output of white_preaparc1_node
-        outputs['lh_smoothwm'] = subjects_dir / subject_id / f'surf/lh.smoothwm'  # output of inflated_sphere_node
-        outputs['rh_smoothwm'] = subjects_dir / subject_id / f'surf/rh.smoothwm'  # output of inflated_sphere_node
-        outputs['lh_sulc'] = subjects_dir / subject_id / f'surf/lh.sulc'  # output of inflated_sphere_node
-        outputs['rh_sulc'] = subjects_dir / subject_id / f'surf/rh.sulc'  # output of inflated_sphere_node
-        outputs['lh_sphere_reg'] = subjects_dir / subject_id / 'surf' / f'lh.sphere.reg'  # output of featreg_node
-        outputs['rh_sphere_reg'] = subjects_dir / subject_id / 'surf' / f'rh.sphere.reg'  # output of featreg_node
 
         outputs['subject_id'] = subject_id
 

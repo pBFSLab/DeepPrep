@@ -17,6 +17,8 @@ featreg_home = Path(os.environ['FEATREG_HOME'])
 python_interpret = sys.executable
 """
 
+THREAD = 8
+
 
 def create_OrigAndRawavg_node(subject_id: str, t1w_files: list):
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
@@ -26,7 +28,7 @@ def create_OrigAndRawavg_node(subject_id: str, t1w_files: list):
     origandrawavg_node.inputs.t1w_files = t1w_files
     origandrawavg_node.inputs.subjects_dir = subjects_dir
     origandrawavg_node.inputs.subject_id = subject_id
-    origandrawavg_node.inputs.threads = 1
+    origandrawavg_node.inputs.threads = THREAD
 
     origandrawavg_node.base_dir = workflow_cached_dir
     origandrawavg_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=500)
@@ -104,9 +106,9 @@ def create_N4BiasCorrect_node(subject_id: str):
     N4_bias_correct_node.inputs.subjects_dir = subjects_dir
     N4_bias_correct_node.inputs.python_interpret = python_interpret
     N4_bias_correct_node.inputs.correct_py = correct_py
-    N4_bias_correct_node.inputs.orig_file = orig_file
     N4_bias_correct_node.inputs.mask_file = mask_file
-    N4_bias_correct_node.inputs.threads = 1
+    N4_bias_correct_node.inputs.orig_file = orig_file
+    N4_bias_correct_node.inputs.threads = THREAD
 
     N4_bias_correct_node.base_dir = workflow_cached_dir
     N4_bias_correct_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=500)
@@ -128,7 +130,7 @@ def create_TalairachAndNu_node(subject_id: str):
     talairach_and_nu_node = Node(TalairachAndNu(), name=f'{subject_id}_recon_TalairachAndNu_node')
     talairach_and_nu_node.inputs.subjects_dir = subjects_dir
     talairach_and_nu_node.inputs.subject_id = subject_id
-    talairach_and_nu_node.inputs.threads = 1
+    talairach_and_nu_node.inputs.threads = THREAD
     talairach_and_nu_node.inputs.mni305 = mni305
     talairach_and_nu_node.inputs.orig_nu_file = orig_nu_file
     talairach_and_nu_node.inputs.orig_file = orig_file
@@ -199,7 +201,7 @@ def create_Filled_node(subject_id: str):
     filled_node = Node(Filled(), name=f'{subject_id}_recon_Filled_node')
     filled_node.inputs.subjects_dir = subjects_dir
     filled_node.inputs.subject_id = subject_id
-    filled_node.inputs.threads = 1
+    filled_node.inputs.threads = THREAD
     filled_node.inputs.aseg_auto_file = subjects_dir / subject_id / 'mri/aseg.auto.mgz'
     filled_node.inputs.norm_file = subjects_dir / subject_id / 'mri/norm.mgz'
     filled_node.inputs.brainmask_file = subjects_dir / subject_id / 'mri/brainmask.mgz'
@@ -224,7 +226,7 @@ def create_FastCSR_node(subject_id: str):
     fastcsr_node = Node(FastCSR(), name=f'{subject_id}_recon_FastCSR_node')
     fastcsr_node.inputs.python_interpret = python_interpret
     fastcsr_node.inputs.fastcsr_py = fastcsr_py
-    fastcsr_node.inputs.parallel_scheduling = 'off'
+    fastcsr_node.inputs.parallel_scheduling = 'on'
     fastcsr_node.inputs.subjects_dir = subjects_dir
     fastcsr_node.inputs.subject_id = subject_id
     fastcsr_node.inputs.orig_file = Path(subjects_dir) / subject_id / 'mri/orig.mgz'
@@ -253,7 +255,7 @@ def create_WhitePreaparc1_node(subject_id: str):
     white_preaparc1 = Node(WhitePreaparc1(), name=f'{subject_id}_recon_WhitePreaparc1_node')
     white_preaparc1.inputs.subjects_dir = subjects_dir
     white_preaparc1.inputs.subject_id = subject_id
-    white_preaparc1.inputs.threads = 1
+    white_preaparc1.inputs.threads = THREAD
 
     white_preaparc1.base_dir = workflow_cached_dir
     white_preaparc1.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=1500)
@@ -312,7 +314,7 @@ def create_InflatedSphere_node(subject_id: str):
     rh_white_preaparc_file = subjects_dir / subject_id / "surf" / "rh.white.preaparc"
 
     Inflated_Sphere_node = Node(InflatedSphere(), f'{subject_id}_recon_InflatedSphere_node')
-    Inflated_Sphere_node.inputs.threads = 1
+    Inflated_Sphere_node.inputs.threads = THREAD
     Inflated_Sphere_node.inputs.subjects_dir = subjects_dir
     Inflated_Sphere_node.inputs.subject_id = subject_id
     Inflated_Sphere_node.inputs.lh_white_preaparc_file = lh_white_preaparc_file
@@ -367,7 +369,7 @@ def create_JacobianAvgcurvCortparc_node(subject_id: str):
     JacobianAvgcurvCortparc_node = Node(JacobianAvgcurvCortparc(), f'{subject_id}_JacobianAvgcurvCortparc_node')
     JacobianAvgcurvCortparc_node.inputs.subjects_dir = subjects_dir
     JacobianAvgcurvCortparc_node.inputs.subject_id = subject_id
-    JacobianAvgcurvCortparc_node.inputs.threads = 1
+    JacobianAvgcurvCortparc_node.inputs.threads = THREAD
 
     JacobianAvgcurvCortparc_node.base_dir = workflow_cached_dir
     JacobianAvgcurvCortparc_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=500)
@@ -563,10 +565,10 @@ def create_node_t():
     fastcsr_home = pwd / "FastCSR"
     featreg_home = pwd / "FeatReg"
 
-    bids_data_dir_test = '/mnt/ngshare/DeepPrep_workflow_test/UKB_BIDS'
-    subjects_dir_test = Path('/mnt/ngshare/DeepPrep_workflow_test/UKB_Recon')
+    bids_data_dir_test = '/mnt/ngshare/test_Time_one_sub/UKB'
+    subjects_dir_test = Path('/mnt/ngshare/temp/UKB_DeepPrep_Recon')
     bold_preprocess_dir_test = Path('/mnt/ngshare/DeepPrep_workflow_test/UKB_BoldPreprocess')
-    workflow_cached_dir_test = '/mnt/ngshare/DeepPrep_workflow_test/UKB_Workflow'
+    workflow_cached_dir_test = '/mnt/ngshare/DeepPrep_workflow_test/UKB_WorkflowfsT1'
     vxm_model_path_test = '/home/anning/workspace/DeepPrep/deepprep_pipeline/model/voxelmorph'
     mni152_brain_mask_test = '/usr/local/fsl/data/standard/MNI152_T1_2mm_brain_mask.nii.gz'
     resource_dir_test = '/home/anning/workspace/DeepPrep/deepprep_pipeline/resource'
@@ -576,9 +578,6 @@ def create_node_t():
 
     if not bold_preprocess_dir_test.exists():
         bold_preprocess_dir_test.mkdir(parents=True, exist_ok=True)
-
-    subject_id_test = 'sub-1000037-ses-02'
-    # t1w_files = ['/mnt/ngshare/DeepPrep_workflow_test/UKB_BIDS/sub-1000037/ses-02/anat/sub-1000037_ses-02_T1w.nii.gz']
 
     os.environ['SUBJECTS_DIR'] = str(subjects_dir_test)
     os.environ['BOLD_PREPROCESS_DIR'] = str(bold_preprocess_dir_test)
@@ -595,19 +594,71 @@ def create_node_t():
 
     atlas_type_test = 'MNI152_T1_2mm'
     task_test = 'rest'
-    preprocess_method_test = 'rest'
+    preprocess_method_test = 'task'
 
     os.environ['DEEPPREP_ATLAS_TYPE'] = atlas_type_test
     os.environ['DEEPPREP_TASK'] = task_test
     os.environ['DEEPPREP_PREPROCESS_METHOD'] = preprocess_method_test
 
+    os.environ['RECON_ONLY'] = 'True'
+    os.environ['BOLD_ONLY'] = 'False'
+
+    subject_id_test = 'sub-1000037-ses-02'
+    t1w_files = ['/mnt/ngshare/DeepPrep_workflow_test/UKB_BIDS/sub-R07/ses-01/anat/sub-R07_ses-01_T1w.nii.gz']
+    # t1w_files = ['/mnt/ngshare/DeepPrep_workflow_test/sub-R07T1_ses-01_T1w.nii.gz']
+
     # 测试
+    # node = create_WhitePreaparc1_node(subject_id=subject_id_test)
+    # node.run()
+
+
+    # 测试
+    # node = create_OrigAndRawavg_node(subject_id=subject_id_test, t1w_files=t1w_files)
+    # node.run()
+
+    node = create_N4BiasCorrect_node(subject_id=subject_id_test)
+    node.run()
+
+    node = create_TalairachAndNu_node(subject_id=subject_id_test)
+    node.run()
+
+    node = create_Segment_node(subject_id=subject_id_test)
+    node.run()
+
+    node = create_Noccseg_node(subject_id=subject_id_test)
+    node.run()
+
+    node = create_Brainmask_node(subject_id=subject_id_test)
+    node.run()
+
+    node = create_UpdateAseg_node(subject_id=subject_id_test)
+    node.run()
+
+    node = create_Filled_node(subject_id=subject_id_test)
+    node.run()
+
     node = create_FastCSR_node(subject_id=subject_id_test)
     node.run()
+
+    node = create_WhitePreaparc1_node(subject_id=subject_id_test)
+    node.run()
+
+    node = create_InflatedSphere_node(subject_id=subject_id_test)
+    node.run()
+
+    node = create_FeatReg_node(subject_id=subject_id_test)
+    node.run()
+
+    node = create_JacobianAvgcurvCortparc_node(subject_id=subject_id_test)
+    node.run()
+
+    node = create_WhitePialThickness1_node(subject_id=subject_id_test)
+    node.run()
+
     exit()
-    # sub_node = node.interface.create_sub_node()
-    # sub_node.run()
-    # sub_node.interface.create_sub_node()
+
+    node = create_Curvstats_node(subject_id=subject_id_test)
+    node.run()
 
     node = create_Aseg7_node(subject_id=subject_id_test)
     node.run()
