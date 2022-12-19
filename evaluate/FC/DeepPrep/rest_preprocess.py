@@ -106,10 +106,10 @@ def build_movement_regressors(subject, movement_path: Path, fcmri_path: Path, mc
 def compile_regressors(func_path: Path, subject, bold_path: Path, bpss_path: Path, all_regressors_path):
     # Compile the regressors.
     movement_path = func_path / 'movement' / bold_path.name.replace('.nii.gz', '')
-    movement_path.mkdir(exist_ok=True)
+    movement_path.mkdir(parents=True, exist_ok=True)
 
     fcmri_path = func_path / 'fcmri' / bold_path.name.replace('.nii.gz', '')
-    fcmri_path.mkdir(exist_ok=True)
+    fcmri_path.mkdir(parents=True, exist_ok=True)
 
     # wipe mov regressors, if there
     mcdat_file = func_path / bold_path.name.replace('.nii.gz', '_skip_reorient_faln_mc.mcdat')
@@ -205,7 +205,7 @@ def rest_cal_confounds(bids_dir, bold_preprocess_dir: Path, subject_id):
 
         bold_name = bold_file.name.replace('.nii.gz', '')
         subj_fcmri_dir = Path(bold_preprocess_dir) / subject_id / 'func' / 'fcmri'
-        all_regressors = subj_fcmri_dir / bold_name / f'{subject_id}_regressors.dat'
+        all_regressors = subj_fcmri_dir / bold_name / f'{bold_name}_regressors.dat'
         if not all_regressors.exists():
             all_regressors = compile_regressors(subj_func_dir, subject_id, bold_file, bpss_path, all_regressors)
             print(f'>>> {all_regressors}')
@@ -242,7 +242,8 @@ def regression_MNI152(bids_dir, bold_preprocess_dir: Path, subject_id):
             bandpass_nifti(str(mc_152_path), TR)
             print(f'>>> {bpss_path}')
 
-        all_regressors = subj_func_dir / 'fcmri' / bold_file.name.replace('.nii.gz', '') / f'{subject_id}_regressors.dat'
+        bold_name = bold_file.name.replace('.nii.gz', '')
+        all_regressors = subj_func_dir / 'fcmri' / bold_name / f'{bold_name}_regressors.dat'
         print(f'<<< {all_regressors}')
         # regression orig_space bold
         resid_path = bpss_path.parent / bpss_path.name.replace('.nii.gz', '_resid.nii.gz')
@@ -290,7 +291,8 @@ def regression_surface(bids_dir, bold_preprocess_dir: Path, subject_id):
                 print(f'>>> {bpss_path}')
 
             # regression orig_space bold
-            all_regressors = subj_func_dir / 'fcmri' / bold_file.name.replace('.nii.gz', '') / f'{subject_id}_regressors.dat'
+            bold_name = bold_file.name.replace('.nii.gz', '')
+            all_regressors = subj_func_dir / 'fcmri' / bold_name / f'{bold_name}_regressors.dat'
             resid_path = bpss_path.parent / bpss_path.name.replace('.nii.gz', '_resid.nii.gz')
             if not resid_path.exists():
                 assert all_regressors.exists()
@@ -558,14 +560,14 @@ def main():
     from interface.run import set_envrion
     set_envrion()
 
-    bids_dir = Path('/mnt/ngshare/fMRIPrep_UKB_150/BIDS')
-    recon_dir = '/mnt/ngshare/DeepPrep_UKB_100/UKB_Recon'
-    bold_preprocess_dir = Path('/mnt/ngshare/DeepPrep_UKB_100/UKB_BoldPreprocess')
+    bids_dir = Path('/mnt/ngshare2/UKB_150/BIDS')
+    recon_dir = '/mnt/ngshare2/UKB_150/UKB_DeepPrep_Recon'
+    bold_preprocess_dir = Path('/mnt/ngshare2/UKB_150/UKB_DeepPrep_BoldPreprocess')
 
-    subject_list_file = '/home/anning/Downloads/UKB50sub.txt'
-    with open(subject_list_file, 'r') as f:
-        subject_id_list = f.readlines()
-    subject_id_list = [i.strip() for i in subject_id_list]
+    # subject_list_file = '/home/anning/Downloads/UKB50sub.txt'
+    # with open(subject_list_file, 'r') as f:
+    #     subject_id_list = f.readlines()
+    # subject_id_list = [i.strip() for i in subject_id_list]
 
     os.environ['SUBJECTS_DIR'] = recon_dir
     # subject_id = 'sub-1000037'
@@ -573,19 +575,20 @@ def main():
     for subject_id in os.listdir(recon_dir):
         if not 'sub' in subject_id:
             continue
-        if subject_id not in subject_id_list:
-            continue
+        # if subject_id not in subject_id_list:
+        #     continue
         # if 'ses' in subject_id:
         #     continue
         # if 'run' in subject_id:
         #     continue
-        rest_cal_confounds(bids_dir, bold_preprocess_dir, subject_id)
-        project(bids_dir, bold_preprocess_dir, subject_id)
+        # rest_cal_confounds(bids_dir, bold_preprocess_dir, subject_id)
+        # project(bids_dir, bold_preprocess_dir, subject_id)
 
-        regression_MNI152(bids_dir, bold_preprocess_dir, subject_id)
-        regression_surface(bids_dir, bold_preprocess_dir, subject_id)
+        # regression_MNI152(bids_dir, bold_preprocess_dir, subject_id)
+        # regression_surface(bids_dir, bold_preprocess_dir, subject_id)
         # fwhm(bids_dir, bold_preprocess_dir, subject_id)
         args.append([bids_dir, bold_preprocess_dir, subject_id])
+        # break
 
     from multiprocessing.pool import Pool
     pool = Pool(10)
