@@ -254,10 +254,11 @@ def regression_MNI152_by_DeepPrep_confounds(bids_dir, bold_preprocess_dir: Path,
 
             bold_name = Path(bids_bold).name.replace('.nii.gz', '')
             subj_fcmri_dir = Path(bold_preprocess_confounds) / subject_id / 'func' / 'fcmri'
-            confounds_file = subj_fcmri_dir / bold_name / f'{subject_id}_regressors.dat'
+            confounds_file = subj_fcmri_dir / bold_name / f'{bold_name}_regressors.dat'
 
             preprocess_func_path_dir = bold_preprocess_dir / f'sub-{subj}' / f'ses-{ses}' / 'func'
-            bold_preproc_file = preprocess_func_path_dir / f'sub-{subj}_ses-{ses}_task-rest_space-MNI152NLin6Asym_res-02_desc-preproc_bold.nii.gz'
+            bold_name_id = Path(bids_bold).name.replace('_bold.nii.gz', '')
+            bold_preproc_file = preprocess_func_path_dir / f'{bold_name_id}_space-MNI152NLin6Asym_res-02_desc-preproc_bold.nii.gz'
 
             smooth_preprocess_func_path_dir = bold_smooth_dir / f'sub-{subj}' / f'ses-{ses}' / 'func'
             # bandpass
@@ -509,13 +510,13 @@ if __name__ == '__main__':
     # fMRIPrep_bold_preprocess_smooth_result_path = Path('/mnt/ngshare2/weiweiMSC_all/MSC_output_BoldPreprocess_bpss_resid_smooth')
     # DeepPrep_confounds_path = Path('/mnt/ngshare2/MSC_all/MSC_BoldPreprocess')
 
-    bids_path = Path('/mnt/ngshare/Data_Orig/HNU_1')
-    DeepPrep_bold_preprocess_result_path = Path('/mnt/ngshare2/MSC_all/MSC_output')
-    fMRIPrep_bold_fsaverage6_result_path = Path('/mnt/ngshare/testfMRIPrep_space/Bold_Preprocess')
-    fMRIPrep_bold_preprocess_result_path = Path('/mnt/ngshare2/weiweiMSC_all/MSC_output')
+    bids_path = Path('/mnt/ngshare/UKB_150_BIDS')
+    DeepPrep_bold_preprocess_result_path = Path('/mnt/ngshare/DeepPrep_UKB_150/UKB_DeepPrep_BoldPreprocess')
+    fMRIPrep_bold_fsaverage6_result_path = Path('/mnt/ngshare/fMRIPrep_UKB_150/UKB_150_BoldPreprocess')
+    fMRIPrep_bold_preprocess_result_path = Path('/mnt/ngshare/fMRIPrep_UKB_150/UKB_150_BoldPreprocess')
     fMRIPrep_bold_preprocess_smooth_result_path = Path(
-        '/mnt/ngshare2/weiweiMSC_all/MSC_output_BoldPreprocess_bpss_resid_smooth')
-    DeepPrep_confounds_path = Path('/mnt/ngshare2/MSC_all/MSC_BoldPreprocess')
+        '/mnt/ngshare/fMRIPrep_UKB_150/UKB_150_BoldPreprocess_bpss_resid_smooth')
+    DeepPrep_confounds_path = Path('/mnt/ngshare/DeepPrep_UKB_150/UKB_DeepPrep_BoldPreprocess')
 
     layout = bids.BIDSLayout(str(bids_path))
     subjects = sorted(layout.get_subjects())
@@ -526,8 +527,8 @@ if __name__ == '__main__':
         regression_MNI152_by_DeepPrep_confounds(bids_path, fMRIPrep_bold_preprocess_result_path, fMRIPrep_bold_preprocess_smooth_result_path, subject_id, DeepPrep_confounds_path)
         args.append([bids_path, fMRIPrep_bold_preprocess_result_path, fMRIPrep_bold_preprocess_smooth_result_path, subject_id, DeepPrep_confounds_path])
 
-        regression_fsaverage6_by_DeepPrep_confounds(bids_path, fMRIPrep_bold_preprocess_result_path, fMRIPrep_bold_preprocess_smooth_result_path, subject_id, DeepPrep_confounds_path)
-        args.append([bids_path, fMRIPrep_bold_preprocess_result_path, fMRIPrep_bold_preprocess_smooth_result_path, subject_id, DeepPrep_confounds_path])
+        # regression_fsaverage6_by_DeepPrep_confounds(bids_path, fMRIPrep_bold_preprocess_result_path, fMRIPrep_bold_preprocess_smooth_result_path, subject_id, DeepPrep_confounds_path)
+        # args.append([bids_path, fMRIPrep_bold_preprocess_result_path, fMRIPrep_bold_preprocess_smooth_result_path, subject_id, DeepPrep_confounds_path])
 
         # cal_regression(bids_path, fMRIPrep_bold_preprocess_result_path, fMRIPrep_bold_preprocess_smooth_result_path, subject_id)
         # args.append([bids_path, fMRIPrep_bold_preprocess_result_path, fMRIPrep_bold_preprocess_smooth_result_path, subject_id])
@@ -546,7 +547,7 @@ if __name__ == '__main__':
     # pool.close()
     # pool.join()
 
-    # pool = Pool(5)
-    # pool.starmap(regression_fsaverage6, args)
-    # pool.close()
-    # pool.join()
+    pool = Pool(5)
+    pool.starmap(regression_MNI152_by_DeepPrep_confounds, args)
+    pool.close()
+    pool.join()
