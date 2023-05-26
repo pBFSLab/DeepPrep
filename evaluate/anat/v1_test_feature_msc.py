@@ -440,12 +440,12 @@ if __name__ == '__main__':
         ln_subject(deepprep_recon_dir, freesurfer_recon_dir, concat_dp_and_fs_dir)
 
         # # ############# 将结果投影到fs6
-        # for hemi in ['lh', 'rh']:
-        #     # ## 投影到fs6
-        #     native_interp_fsaverage6_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/'
-        #                                         f'recon_interp_fsaverage6')
-        #     project_fsaverage6(concat_dp_and_fs_dir, native_interp_fsaverage6_dir, feature, hemi=hemi)
-        #
+        for hemi in ['lh', 'rh']:
+            # ## 投影到fs6
+            native_interp_fsaverage6_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/'
+                                                f'recon_interp_fsaverage6')
+            project_fsaverage6(concat_dp_and_fs_dir, native_interp_fsaverage6_dir, feature, hemi=hemi)
+
         #     # ## 在fs6 space计算组水平
         #     individual_dir = Path(f'/mnt/ngshare/DeepPrep/Validation/MSC/v1_feature/recon_individual_fsaverage6')
         #     cal_individual_fsaverage6(interp_dir=native_interp_fsaverage6_dir, individual_dir=individual_dir, feature=feature, hemi=hemi)

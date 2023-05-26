@@ -136,8 +136,9 @@ def screenshot_surf_fc(data_path, pipeline):
 
 # /usr/local/fsl/data/standard/MNI152_T1_2mm.nii.gz
 if __name__ == '__main__':
-    # data_path = Path('/mnt/ngshare/DeepPrep/MSC')
-    data_path = Path('/mnt/ngshare/DeepPrep/HNU_1')
-    pipeline = 'deepprep'
+    data_path = Path('/mnt/ngshare/DeepPrep/MSC')
+    # data_path = Path('/mnt/ngshare/DeepPrep/HNU_1')
+    # data_path = Path('/mnt/ngshare/Data_Mirror/SDCFlows/MSC')
+    pipeline = 'DeepPrep-SDC'
     screenshot_vol_fc(data_path, pipeline)
     screenshot_surf_fc(data_path, pipeline)

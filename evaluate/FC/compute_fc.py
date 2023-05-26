@@ -107,7 +107,7 @@ def compute_surf_fc(seed: np.ndarray, surf_bold: np.ndarray):
     return surf_fc
 
 
-def batch_vol_fc(data_path: Path, pipeline, bold_num):
+def batch_vol_fc(data_path: Path, pipeline:str, bold_num:int):
     save_path = data_path / 'derivatives' / 'analysis' / pipeline
     save_path.mkdir(parents=True, exist_ok=True)
     layout = bids.BIDSLayout(str(data_path))
@@ -122,8 +122,8 @@ def batch_vol_fc(data_path: Path, pipeline, bold_num):
         subj_path = data_path / 'derivatives' / pipeline / f'sub-{subj}'
         subj_save_path = save_path / f'sub-{subj}'
         subj_save_path.mkdir(exist_ok=True)
-        if pipeline == 'deepprep':
-            vol_bold_files = sorted(subj_path.glob('ses-*/func/*task-rest_*bold_resid_MIN2mm_sm6.nii.gz'))[:bold_num]
+        if 'DeepPrep' in pipeline:
+            vol_bold_files = sorted(subj_path.glob('ses-*/func/*task-rest_*_resid_MIN2mm_sm6.nii.gz'))[:bold_num]
         elif pipeline == 'app':
             vol_bold_files = sorted(subj_path.glob('*/Preprocess/vol/*_resid_FS1mm_MNI1mm_MNI2mm_sm6_*.nii.gz'))
             bld_ids = list()
@@ -161,7 +161,7 @@ def batch_vol_fc(data_path: Path, pipeline, bold_num):
         # exit()
 
 
-def batch_surf_fc(data_path: Path, pipeline):
+def batch_surf_fc(data_path: Path, pipeline:str, bold_num:int):
     save_path = data_path / 'derivatives' / 'analysis' / pipeline
     save_path.mkdir(parents=True, exist_ok=True)
     layout = bids.BIDSLayout(str(data_path))
@@ -193,7 +193,7 @@ def batch_surf_fc(data_path: Path, pipeline):
         subj_path = data_path / 'derivatives' / pipeline / f'sub-{subj}'
         subj_save_path = save_path / f'sub-{subj}'
         subj_save_path.mkdir(exist_ok=True)
-        if pipeline == 'deepprep':
+        if 'DeepPrep' in pipeline:
             lh_surf_bold_files = sorted(
                 subj_path.glob('*/surf/lh.*_task-rest*_resid_fsaverage6_sm6_fsaverage4.nii.gz'))[:bold_num]
             rh_surf_bold_files = sorted(
@@ -256,9 +256,10 @@ def batch_surf_fc(data_path: Path, pipeline):
 
 
 if __name__ == '__main__':
-    # data_path = Path('/mnt/ngshare/DeepPrep/MSC')
-    data_path = Path('/mnt/ngshare/DeepPrep/HNU_1')
-    pipeline = 'deepprep'
-    bold_num = 1
-    batch_vol_fc(data_path, pipeline, bold_num)
-    batch_surf_fc(data_path, pipeline)
+    data_path = Path('/mnt/ngshare/DeepPrep/MSC')
+    # data_path = Path('/mnt/ngshare/DeepPrep/HNU_1')
+    # data_path = Path('/mnt/ngshare/Data_Mirror/SDCFlows/MSC')
+    pipeline = 'DeepPrep-SDC'
+    bold_num = 2
+    # batch_vol_fc(data_path, pipeline, bold_num)
+    batch_surf_fc(data_path, pipeline, bold_num)

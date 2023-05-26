@@ -152,7 +152,7 @@ def project_fsaverage6(recon_dir: Path, output_dir: Path, feature='thickness', h
 
         if not tfile.exists():
             cmd = f'mri_surf2surf --srcsubject {subject_id} --sval {sfile} ' \
-                  f'--trgsubject fsaverage6 --tval {tfile} --tfmt curv --hemi {hemi}'
+                  f'--trgsubject fsaverage6 --tval {tfile} --tfmt curv --hemi {hemi} --nsmooth-in 6 --nsmooth-out 6'
             # print(f'shell_run : {cmd}')
             # os.system(cmd)
             # print('*' * 40)
@@ -849,8 +849,6 @@ if __name__ == '__main__':
     output_dir = '/mnt/ngshare2/App/csv/92'
     # aparc_stability(input_dir, output_dir, parc=92, aseg=False, pipline='App')
 
-
-
     # ############# 分区截图
     # for feature in ['thickness', 'sulc', 'curv']:
     # for feature, (vmin, vmax) in zip(['thickness'], [('1', '3.5')]):
@@ -858,86 +856,83 @@ if __name__ == '__main__':
                                      [('1', '3.5'), ('-0.5', '0.25'), ('-13', '13'),],
                                      [('0', '0.35'), ('0', '0.05'), ('0', '1.3'),],
                                      [('0', '0.35'), ('0', '0.05'), ('0', '1.3')],):
-        # if feature in ['thickness', 'curv']:
-        #     continue
+        if feature in ['thickness', 'sulc']:
+            continue
 
         method = 'DeepPrep'
-        src_dir = f'/mnt/ngshare/Data_Mirror/FreeSurferFastSurferFastCSRFeatReg/MSC/derivatives/deepprep/Recon'
-        screenshot_result_dir = f'/mnt/ngshare/Data_Mirror/FreeSurferFastSurferFastCSRFeatReg/Validation/MSC/v1_feature/{feature}/feature_map_image_{method}'
+        src_dir = f'/mnt/ngshare/Data_Mirror/FreeSurferFeatRegRNAT/MSC/derivatives/deepprep/Recon'
+        screenshot_result_dir = f'/mnt/ngshare/Data_Mirror/FreeSurferFeatRegRNAT/Validation/MSC/v1_feature/{feature}/feature_map_image_{method}'
         # feature_screenshot(src_dir, screenshot_result_dir, feature=feature, vmin=vmin, vmax=vmax)
 
         method = 'FreeSurfer'
-        src_dir = f'/mnt/ngshare/Data_Mirror/FreeSurferFastSurferFastCSRFeatReg/MSC/derivatives/FreeSurfer'
-        screenshot_result_dir = f'/mnt/ngshare/Data_Mirror/FreeSurferFastSurferFastCSRFeatReg/Validation/MSC/v1_feature/{feature}/feature_map_image_{method}'
+        src_dir = f'/mnt/ngshare/Data_Mirror/FreeSurferFeatRegRNAT/MSC/derivatives/FreeSurfer'
+        screenshot_result_dir = f'/mnt/ngshare/Data_Mirror/FreeSurferFeatRegRNAT/Validation/MSC/v1_feature/{feature}/feature_map_image_{method}'
         # feature_screenshot(src_dir, screenshot_result_dir, feature=feature, vmin=vmin, vmax=vmax)
 
         # ############# cat screenshot
-        # concat_screenshot(f'/mnt/ngshare/Data_Mirror/FreeSurferFastSurferFastCSRFeatReg/Validation/MSC/v1_feature/{feature}')
+        # concat_screenshot(f'/mnt/ngshare/Data_Mirror/FreeSurferFeatRegRNAT/Validation/MSC/v1_feature/{feature}')
 
         # # # ############# cal DICE, save to csv
         # # 将DeepPrep的Recon结果和FreeSurfer的Recon结果link到一个目录下（mris_surf2surf需要）
-        deepprep_recon_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFastSurferFastCSRFeatReg/MSC/derivatives/deepprep/Recon')
-        freesurfer_recon_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFastSurferFastCSRFeatReg/MSC/derivatives/FreeSurfer')
-        concat_dp_and_fs_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFastSurferFastCSRFeatReg/Validation/MSC/v1_feature/recon_dir_concat_DeepPrep_and_FreeSurfer')
-        # ln_subject(deepprep_recon_dir, freesurfer_recon_dir, concat_dp_and_fs_dir)
+        deepprep_recon_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFeatRegRNAT/MSC/derivatives/deepprep/Recon')
+        freesurfer_recon_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFeatRegRNAT/MSC/derivatives/FreeSurfer')
+        concat_dp_and_fs_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFeatRegRNAT/Validation/MSC/v1_feature/recon_dir_concat_DeepPrep_and_FreeSurfer')
+        ln_subject(deepprep_recon_dir, freesurfer_recon_dir, concat_dp_and_fs_dir)
 
-        ############# 将结果投影到fs6
+        # ############# 将结果投影到fs6
         for hemi in ['lh', 'rh']:
             # ## 投影到fs6
-            native_interp_fsaverage6_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFastSurferFastCSRFeatReg/Validation/MSC/v1_feature/'
+            native_interp_fsaverage6_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFeatRegRNAT/Validation/MSC/v1_feature/'
                                                 f'recon_interp_fsaverage6')
-            # project_fsaverage6(concat_dp_and_fs_dir, native_interp_fsaverage6_dir, feature, hemi=hemi)
+            project_fsaverage6(concat_dp_and_fs_dir, native_interp_fsaverage6_dir, feature, hemi=hemi)
 
             # # ## 在fs6 space计算个体水平
-            individual_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFastSurferFastCSRFeatReg/Validation/MSC/v1_feature/recon_individual_fsaverage6')
-            # cal_individual_fsaverage6(interp_dir=native_interp_fsaverage6_dir, individual_dir=individual_dir, feature=feature, hemi=hemi)
+            individual_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFeatRegRNAT/Validation/MSC/v1_feature/recon_individual_fsaverage6')
+            cal_individual_fsaverage6(interp_dir=native_interp_fsaverage6_dir, individual_dir=individual_dir, feature=feature, hemi=hemi)
 
             # # ## 在fs6 space计算稳定性
-            stability_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFastSurferFastCSRFeatReg/Validation/MSC/v1_feature/recon_stability_fsaverage6')
-            # cal_stability_fsaverage6(individual_dir, stability_dir, feature=feature, hemi=hemi)
+            stability_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFeatRegRNAT/Validation/MSC/v1_feature/recon_stability_fsaverage6')
+            cal_stability_fsaverage6(individual_dir, stability_dir, feature=feature, hemi=hemi)
 
             # # ## 在fs6 space计算组水平
-            group_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFastSurferFastCSRFeatReg/Validation/MSC/v1_feature/recon_group_fsaverage6')
-            # cal_group_fsaverage6(interp_dir=native_interp_fsaverage6_dir, group_dir=group_dir, feature=feature, hemi=hemi)
+            group_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFeatRegRNAT/Validation/MSC/v1_feature/recon_group_fsaverage6')
+            cal_group_fsaverage6(interp_dir=native_interp_fsaverage6_dir, group_dir=group_dir, feature=feature, hemi=hemi)
 
             # 计算差异组水平显著性p_value
-            fs6_deepprep_freesurfer = '/mnt/ngshare/Data_Mirror/FreeSurferFastCSR/Validation/MSC/v1_feature/recon_interp_fsaverage6'
-            output_dir = '/mnt/ngshare/Data_Mirror/FreeSurferFastCSR/Validation/MSC/v1_feature/recon_interp_fsaverage6_pvalue'
+            fs6_deepprep_freesurfer = '/mnt/ngshare/Data_Mirror/FreeSurferFeatRegRNAT/Validation/MSC/v1_feature/recon_interp_fsaverage6'
+            output_dir = '/mnt/ngshare/Data_Mirror/FreeSurferFeatRegRNAT/Validation/MSC/v1_feature/recon_interp_fsaverage6_pvalue'
 
-            # cal_group_difference(fs6_deepprep_freesurfer, output_dir, feature=feature, hemi=hemi)
-
+            cal_group_difference(fs6_deepprep_freesurfer, output_dir, feature=feature, hemi=hemi)
 
         # ## individual_screenshot
         for project in ['DeepPrep', 'FreeSurfer']:
-            individual_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFastSurferFastCSRFeatReg/Validation/MSC/v1_feature/recon_individual_fsaverage6/{project}')
-            individual_screenshot_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFastSurferFastCSRFeatReg/Validation/MSC/v1_feature/recon_individual_fsaverage6_screenshot/{project}')
-            # group_screenshot(individual_dir, individual_screenshot_dir, feature=feature, vmin1=vmin, vmax1=vmax, vmin2=vmin2,vmax2=vmax2)
+            individual_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFeatRegRNAT/Validation/MSC/v1_feature/recon_individual_fsaverage6/{project}')
+            individual_screenshot_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFeatRegRNAT/Validation/MSC/v1_feature/recon_individual_fsaverage6_screenshot/{project}')
+            # group_screenshot(individual_dir, individual_screenshot_dir, feature=feature, vmin1=vmin, vmax1=vmax, vmin2=vmin2, vmax2=vmax2)
 
-        # TODO 个体水平的拼接
+        # ## group_screenshot
+        group_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFeatRegRNAT/Validation/MSC/v1_feature/recon_group_fsaverage6')
+        group_screenshot_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFeatRegRNAT/Validation/MSC/v1_feature/recon_group_fsaverage6_screenshot')
+        group_screenshot(group_dir, group_screenshot_dir, feature=feature, vmin1=vmin, vmax1=vmax, vmin2=vmin2, vmax2=vmax2)
 
-        ## group_screenshot
-        group_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFastSurferFastCSRFeatReg/Validation/MSC/v1_feature/recon_group_fsaverage6')
-        group_screenshot_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFastSurferFastCSRFeatReg/Validation/MSC/v1_feature/recon_group_fsaverage6_screenshot')
-        # group_screenshot(group_dir, group_screenshot_dir, feature=feature, vmin1=vmin, vmax1=vmax, vmin2=vmin2, vmax2=vmax2)
-
-        group_screenshot_concat_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFastSurferFastCSRFeatReg/Validation/MSC/v1_feature/recon_group_fsaverage6_screenshot_concat')
-        # concat_group_screenshot(group_screenshot_dir, group_screenshot_concat_dir, feature=feature)
+        group_screenshot_concat_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFeatRegRNAT/Validation/MSC/v1_feature/recon_group_fsaverage6_screenshot_concat')
+        concat_group_screenshot(group_screenshot_dir, group_screenshot_concat_dir, feature=feature)
 
         # ## stability_screenshot
-        stability_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFastSurferFastCSRFeatReg/Validation/MSC/v1_feature/recon_stability_fsaverage6')
-        stability_screenshot_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFastSurferFastCSRFeatReg/Validation/MSC/v1_feature/recon_stability_fsaverage6_screenshot')
-        # stability_screenshot(stability_dir, stability_screenshot_dir, feature=feature, vmin=vmin3, vmax=vmax3)
+        stability_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFeatRegRNAT/Validation/MSC/v1_feature/recon_stability_fsaverage6')
+        stability_screenshot_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFeatRegRNAT/Validation/MSC/v1_feature/recon_stability_fsaverage6_screenshot')
+        stability_screenshot(stability_dir, stability_screenshot_dir, feature=feature, vmin=vmin3, vmax=vmax3)
 
-        stability_screenshot_concat_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFastSurferFastCSRFeatReg/Validation/MSC/v1_feature/recon_stability_fsaverage6_screenshot_concat')
-        # concat_stability_screenshot(stability_screenshot_dir, stability_screenshot_concat_dir, feature=feature)
+        stability_screenshot_concat_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFeatRegRNAT/Validation/MSC/v1_feature/recon_stability_fsaverage6_screenshot_concat')
+        concat_stability_screenshot(stability_screenshot_dir, stability_screenshot_concat_dir, feature=feature)
 
-        ## p_value screenshot
-        p_value_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFastCSR/Validation/MSC/v1_feature/recon_interp_fsaverage6_pvalue')
-        p_value_dir_screenshot_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFastCSR/Validation/MSC/v1_feature/recon_interp_fsaverage6_pvalue_screenshot')
-        # p_value_screenshot(p_value_dir, p_value_dir_screenshot_dir, feature=feature)
+        # ## p_value screenshot
+        p_value_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFeatRegRNAT/Validation/MSC/v1_feature/recon_interp_fsaverage6_pvalue')
+        p_value_dir_screenshot_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFeatRegRNAT/Validation/MSC/v1_feature/recon_interp_fsaverage6_pvalue_screenshot')
+        p_value_screenshot(p_value_dir, p_value_dir_screenshot_dir, feature=feature)
         # print("DONE")
 
-        p_value_dir_screenshot_concat_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFastCSR/Validation/MSC/v1_feature/recon_interp_fsaverage6_pvalue_screenshot')
+        p_value_dir_screenshot_concat_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFeatRegRNAT/Validation/MSC/v1_feature/recon_interp_fsaverage6_pvalue_screenshot')
         concat_pvalue_screenshot(p_value_dir_screenshot_concat_dir, feature=feature)
 
     # break

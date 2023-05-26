@@ -560,9 +560,9 @@ def main():
     from interface.run import set_envrion
     set_envrion()
 
-    bids_dir = Path('/mnt/ngshare2/UKB_150/BIDS')
-    recon_dir = '/mnt/ngshare2/UKB_150/UKB_DeepPrep_Recon'
-    bold_preprocess_dir = Path('/mnt/ngshare2/UKB_150/UKB_DeepPrep_BoldPreprocess')
+    bids_dir = Path('/mnt/ngshare/Data_Orig/HNU_1')
+    recon_dir = '/mnt/ngshare2/DeepPrep_HNU_1/HNU_1_Recon'
+    bold_preprocess_dir = Path('/mnt/ngshare2/DeepPrep_HNU_1/HNU_1_BoldPreprocess')
 
     # subject_list_file = '/home/anning/Downloads/UKB50sub.txt'
     # with open(subject_list_file, 'r') as f:

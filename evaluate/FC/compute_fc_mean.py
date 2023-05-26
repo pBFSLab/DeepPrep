@@ -90,7 +90,7 @@ def surf_fc_mean(data_path):
 
 if __name__ == '__main__':
     dataset = 'MSC'
-    pipeline = 'app'
+    pipeline = 'DeepPrep-SDC'
     data_path = Path(f'/mnt/ngshare/DeepPrep/{dataset}/derivatives/analysis/{pipeline}')
     vol_fc_mean(data_path, pipeline)
     surf_fc_mean(data_path)

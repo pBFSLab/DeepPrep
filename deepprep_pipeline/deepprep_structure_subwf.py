@@ -496,7 +496,7 @@ def pipeline():
     featreg_home = pwd.parent / "deepprep_pipeline/FeatReg"
 
     # python_interpret = Path('/home/youjia/anaconda3/envs/3.8/bin/python3')
-    python_interpret = Path('/home/lincong/miniconda3/envs/pytorch3.8/bin/python3')
+    python_interpret = Path('/home/anning/miniconda3/envs/3.8/bin/python3')
 
     # t1w_filess = [
     #     ['/mnt/ngshare/DeepPrep_flowtest/MSC_Data/sub-MSC01/ses-struct01/anat/sub-MSC01_ses-struct01_run-01_T1w.nii.gz'],
@@ -504,19 +504,30 @@ def pipeline():
     # ]
     # subject_ids = ['sub-MSC01', 'sub-MSC02']
 
-    data_path = Path("/mnt/ngshare/Data_Orig/HNU_1")  # Raw Data BIDS dir
-    subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/HNU_1_Recon")  # Recon result dir
-    workflow_cache_dir = Path("/mnt/ngshare/DeepPrep_flowtest/HNU_1_Workflow")  # workflow tmp cache dir
+    # data_path = Path("/mnt/ngshare/Data_Orig/HNU_1")  # Raw Data BIDS dir
+    # subjects_dir = Path("/mnt/ngshare/DeepPrep_flowtest/HNU_1_Recon")  # Recon result dir
+    # workflow_cache_dir = Path("/mnt/ngshare/DeepPrep_flowtest/HNU_1_Workflow")  # workflow tmp cache dir
+
+    data_path = Path("/mnt/ngshare/DeepPrep_Data/glioma_ChineseAcadem_bids")  # Raw Data BIDS dir
+    subjects_dir = Path("/mnt/ngshare/DeepPrep/glioma_ChineseAcadem/Recon")  # Recon result dir
+    workflow_cache_dir = Path("/mnt/ngshare/DeepPrep/glioma_ChineseAcadem/Workflow")  # workflow tmp cache dir
 
     layout = bids.BIDSLayout(str(data_path), derivatives=False)
+
+    ################ glioma ##################
+    nonexist_files = ['sub-R05-ses-01']
 
     t1w_filess = list()
     subject_ids = list()
     for t1w_file in layout.get(return_type='filename', suffix="T1w"):
         sub_info = layout.parse_file_entities(t1w_file)
         subject_id = f"sub-{sub_info['subject']}-ses-{sub_info['session']}"
-        t1w_filess.append([t1w_file])
-        subject_ids.append(subject_id)
+        # t1w_filess.append([t1w_file])
+        # subject_ids.append(subject_id)
+        ################ glioma ##################
+        if subject_id in nonexist_files:
+            t1w_filess.append([t1w_file])
+            subject_ids.append(subject_id)
 
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
 
@@ -524,8 +535,8 @@ def pipeline():
     # tmp_dir = subjects_dir / 'tmp'
     # tmp_dir.mkdir(parents=True, exist_ok=True)
 
-    t1w_filess = t1w_filess[30:31]
-    subject_ids = subject_ids[30:31]
+    # t1w_filess = t1w_filess[30:31]
+    # subject_ids = subject_ids[30:31]
 
     # 设置log目录位置
     log_dir = workflow_cache_dir / 'log'
@@ -548,7 +559,7 @@ def pipeline():
                                                  python_interpret=python_interpret,
                                                  fastsurfer_home=fastsurfer_home)
     structure_part2_wf.base_dir = workflow_cache_dir
-    structure_part2_wf.run('MultiProc', plugin_args={'n_procs': 3})
+    structure_part2_wf.run('MultiProc', plugin_args={'n_procs': 1})
 
     structure_part3_wf = init_structure_part3_wf(subjects_dir=subjects_dir,
                                                  subject_ids=subject_ids,
@@ -556,14 +567,14 @@ def pipeline():
                                                  fastsurfer_home=fastsurfer_home,
                                                  freesurfer_home=freesurfer_home)
     structure_part3_wf.base_dir = workflow_cache_dir
-    structure_part3_wf.run('MultiProc', plugin_args={'n_procs': 30})
+    structure_part3_wf.run('MultiProc', plugin_args={'n_procs': 10})
 
     structure_part4_1_wf = init_structure_part4_1_wf(subjects_dir=subjects_dir,
                                                      subject_ids=subject_ids,
                                                      python_interpret=python_interpret,
                                                      fastcsr_home=fastcsr_home)
     structure_part4_1_wf.base_dir = workflow_cache_dir
-    structure_part4_1_wf.run('MultiProc', plugin_args={'n_procs': 3})
+    structure_part4_1_wf.run('MultiProc', plugin_args={'n_procs': 1})
 
     structure_part4_2_wf = init_structure_part4_2_wf(subjects_dir=subjects_dir,
                                                      subject_ids=subject_ids,
@@ -579,7 +590,7 @@ def pipeline():
                                                  freesurfer_home=freesurfer_home
                                                  )
     structure_part5_wf.base_dir = workflow_cache_dir
-    structure_part5_wf.run('MultiProc', plugin_args={'n_procs': 18})
+    structure_part5_wf.run('MultiProc', plugin_args={'n_procs': 10})
 
     structure_part6_wf = init_structure_part6_wf(subjects_dir=subjects_dir,
                                                  subject_ids=subject_ids,

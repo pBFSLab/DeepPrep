@@ -510,13 +510,13 @@ if __name__ == '__main__':
     # fMRIPrep_bold_preprocess_smooth_result_path = Path('/mnt/ngshare2/weiweiMSC_all/MSC_output_BoldPreprocess_bpss_resid_smooth')
     # DeepPrep_confounds_path = Path('/mnt/ngshare2/MSC_all/MSC_BoldPreprocess')
 
-    bids_path = Path('/mnt/ngshare/UKB_150_BIDS')
-    DeepPrep_bold_preprocess_result_path = Path('/mnt/ngshare/DeepPrep_UKB_150/UKB_DeepPrep_BoldPreprocess')
-    fMRIPrep_bold_fsaverage6_result_path = Path('/mnt/ngshare/fMRIPrep_UKB_150/UKB_150_BoldPreprocess')
-    fMRIPrep_bold_preprocess_result_path = Path('/mnt/ngshare/fMRIPrep_UKB_150/UKB_150_BoldPreprocess')
+    bids_path = Path('/mnt/ngshare2/HNU_1_all/HNU_1')
+    DeepPrep_bold_preprocess_result_path = Path('/mnt/ngshare2/DeepPrep_HNU_1/HNU_1_BoldPreprocess')
+    fMRIPrep_bold_fsaverage6_result_path = Path('/mnt/ngshare2/HNU_1_all/HNU_1_output')
+    fMRIPrep_bold_preprocess_result_path = Path('/mnt/ngshare2/HNU_1_all/HNU_1_output')
     fMRIPrep_bold_preprocess_smooth_result_path = Path(
-        '/mnt/ngshare/fMRIPrep_UKB_150/UKB_150_BoldPreprocess_bpss_resid_smooth')
-    DeepPrep_confounds_path = Path('/mnt/ngshare/DeepPrep_UKB_150/UKB_DeepPrep_BoldPreprocess')
+        '/mnt/ngshare2/HNU_1_all/HNU_1_output_BoldPreprocess_bpss_resid_smooth')
+    DeepPrep_confounds_path = Path('/mnt/ngshare2/DeepPrep_HNU_1/HNU_1_BoldPreprocess')
 
     layout = bids.BIDSLayout(str(bids_path))
     subjects = sorted(layout.get_subjects())
@@ -524,7 +524,7 @@ if __name__ == '__main__':
     args = []
     for subj in subjects:
         subject_id = f'sub-{subj}'
-        regression_MNI152_by_DeepPrep_confounds(bids_path, fMRIPrep_bold_preprocess_result_path, fMRIPrep_bold_preprocess_smooth_result_path, subject_id, DeepPrep_confounds_path)
+        # regression_MNI152_by_DeepPrep_confounds(bids_path, fMRIPrep_bold_preprocess_result_path, fMRIPrep_bold_preprocess_smooth_result_path, subject_id, DeepPrep_confounds_path)
         args.append([bids_path, fMRIPrep_bold_preprocess_result_path, fMRIPrep_bold_preprocess_smooth_result_path, subject_id, DeepPrep_confounds_path])
 
         # regression_fsaverage6_by_DeepPrep_confounds(bids_path, fMRIPrep_bold_preprocess_result_path, fMRIPrep_bold_preprocess_smooth_result_path, subject_id, DeepPrep_confounds_path)
