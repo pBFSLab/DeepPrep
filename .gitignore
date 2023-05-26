@@ -1,7 +1,11 @@
-/app_pipeline/data/
-/app_pipeline/resources/
-/deepprep_pipeline/workdir/
-/deepprep_pipeline/FastCSR/model/
+data/
+resources/
+workdir/
+# FastCSR
+model/
+# SageReg
+auxi_data/
+model_files/
 
 .idea
 
