@@ -9,7 +9,7 @@ from multiprocessing import Lock, Manager, Process
 from nipype import config, logging
 from interface.run import set_envrion
 from interface.node_source import Source
-from interface.create_node_structure import create_OrigAndRawavg_node
+from interface.create_node_structure_hard import create_OrigAndRawavg_node
 
 logging_wf = logging.getLogger("nipype.workflow")
 
@@ -30,7 +30,7 @@ def clear_subject_bold_tmp_dir(bold_preprocess_dir: Path, subject_ids: list, tas
 
 class Scheduler:
     def __init__(self, share_manager: Manager, subject_ids: list, last_node_name=None, auto_schedule=True):
-        self.source_res = Source(CPU_n=36, GPU_MB=23000, RAM_MB=100000, IO_write_MB=100, IO_read_MB=200)
+        self.source_res = Source(CPU_n=36, GPU_MB=24000, RAM_MB=100000, IO_write_MB=120, IO_read_MB=240)
         self.last_node_name = last_node_name
         self.auto_schedule = auto_schedule  # 是否开启自动调度
 
