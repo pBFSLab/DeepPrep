@@ -18,6 +18,3 @@ model_files/
 __pycache__/
 *.py[cod]
 *$py.class
-
-model_files/
-auxi_data/
