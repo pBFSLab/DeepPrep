@@ -120,9 +120,6 @@ class Scheduler:
     def run_node(node, node_error: list, node_success: list, node_running: list, node_done: list, subject_error: list,
                  lock: Lock):
         try:
-            import sys
-            f = open(os.devnull, 'w')
-            sys.stdout = f
             print(f'run start {node.name}')
             node.run()
             print(f'run over {node.name}')
@@ -201,7 +198,7 @@ class Scheduler:
                     self.s_nodes_running.append(node.name)
                     self.source_res -= node.source
                     print(f'Source SUB -    {node.name} :   {self.source_res}')
-                    # 不能用pool
+                    # 不能用pool,只能用Process
                     # self.pool.apply_async(run_node, (node, self.s_nodes_error, self.s_nodes_success,
                     #                                  self.s_nodes_done, lock))  # 子进程 run
                     if self.auto_schedule:
@@ -236,34 +233,34 @@ class Scheduler:
 
 def parse_args():
     """
-python3 deepprep_pipeline.py
---bids_dir
-/mnt/ngshare2/UKB/BIDS
---recon_output_dir
-/mnt/ngshare2/DeepPrep_UKB/UKB_Recon
---bold_output_dir
-/mnt/ngshare2/DeepPrep_UKB/UKB_BoldPreprocess
---cache_dir
-/mnt/ngshare2/DeepPrep_UKB/UKB_Workflow
+    python3 deepprep_pipeline.py
+    --bids_dir
+    /mnt/ngshare2/UKB/BIDS
+    --recon_output_dir
+    /mnt/ngshare2/DeepPrep_UKB/UKB_Recon
+    --bold_output_dir
+    /mnt/ngshare2/DeepPrep_UKB/UKB_BoldPreprocess
+    --cache_dir
+    /mnt/ngshare2/DeepPrep_UKB/UKB_Workflow
 
---bids_dir
-/mnt/ngshare2/MSC_all/MSC
---recon_output_dir
-/mnt/ngshare2/MSC_all/MSC_Recon
---bold_output_dir
-/mnt/ngshare2/MSC_all/MSC_BoldPreprocess
---cache_dir
-/mnt/ngshare2/MSC_all/MSC_Workflow
---bold_task_type
-motor
---bold_preprocess_method
-task
---bold_only
-True
---single_sub_multi_t1
-True
+    --bids_dir
+    /mnt/ngshare2/MSC_all/MSC
+    --recon_output_dir
+    /mnt/ngshare2/MSC_all/MSC_Recon
+    --bold_output_dir
+    /mnt/ngshare2/MSC_all/MSC_BoldPreprocess
+    --cache_dir
+    /mnt/ngshare2/MSC_all/MSC_Workflow
+    --bold_task_type
+    motor
+    --bold_preprocess_method
+    task
+    --bold_only
+    True
+    --single_sub_multi_t1
+    True
 
-"""
+    """
 
     parser = argparse.ArgumentParser(
         description="DeepPrep: sMRI and fMRI PreProcessing workflows"
@@ -311,7 +308,7 @@ def main():
     featreg_home = pwd / "FeatReg"
 
     # ############### BOLD
-    mni152_brain_mask = Path('/usr/local/fsl/data/standard/MNI152_T1_2mm_brain_mask.nii.gz')
+    mni152_brain_mask = Path('/usr/local/fsl/data/standard/MNI152_T1_2mm_brain_mask.nii.gz')  # TODO 改为config参数
     vxm_model_path = pwd / 'model' / 'voxelmorph'
     resource_dir = pwd / 'resource'
     atlas_type = args.bold_atlas_type
@@ -410,8 +407,11 @@ def main():
                                       'log_to_file': True}})
     logging.update_logging(config)
 
-    clear_is_running(subjects_dir=subjects_dir,
-                     subject_ids=subject_ids)
+    # TODO force_recon 如果开启这个参数，强制重新跑recon结果，清理 'IsRunning.lh+rh' 文件
+    force_recon = True
+    if force_recon:
+        clear_is_running(subjects_dir=subjects_dir,
+                         subject_ids=subject_ids)
 
     lock = Lock()
     with Manager() as share_manager:

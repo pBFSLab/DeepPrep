@@ -7,16 +7,6 @@ from pathlib import Path
 import argparse
 from utils.negative_area_triangle import single_remove_negative_area
 
-def set_environ():
-    # FreeSurfer
-    value = os.environ.get('FREESURFER_HOME')
-    if value is None:
-        os.environ['FREESURFER_HOME'] = '/usr/local/freesurfer720'
-        # os.environ['SUBJECTS_DIR'] = '/usr/local/freesurfer720/subjects'
-        os.environ['PATH'] = '/usr/local/freesurfer720/bin:/usr/local/workbench/bin_linux64:' + os.environ['PATH']
-
-
-set_environ()
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -49,8 +39,6 @@ def parse_args():
         args_dict['fsd'] = '/usr/local/freesurfer'
 
     return argparse.Namespace(**args_dict)
-
-
 
 
 if __name__ == '__main__':
