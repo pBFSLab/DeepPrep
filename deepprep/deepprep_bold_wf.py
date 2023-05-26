@@ -23,9 +23,9 @@ def init_single_bold_common_wf(subject_id: str, subj: str, task: str,
     VxmRegistraion_node.inputs.preprocess_dir = preprocess_dir
     VxmRegistraion_node.inputs.norm = subjects_dir / subject_id / 'mri' / 'norm.mgz'  # TODO 用workflow_connect
     VxmRegistraion_node.inputs.model_file = Path(
-        __file__).parent.parent / 'src' / 'model' / 'voxelmorph' / atlas_type / 'model.h5'
+        __file__).parent.parent / 'deepprep' / 'model' / 'voxelmorph' / atlas_type / 'model.h5'
     VxmRegistraion_node.inputs.atlas_type = atlas_type
-    VxmRegistraion_node.inputs.model_path = Path(__file__).parent.parent / 'src' / 'model' / 'voxelmorph' / atlas_type
+    VxmRegistraion_node.inputs.model_path = Path(__file__).parent.parent / 'deepprep' / 'model' / 'voxelmorph' / atlas_type
 
 
     VxmRegistraion_node.inputs.vxm_warp = deepprep_subj_path / 'tmp' / 'warp.nii.gz'
@@ -99,7 +99,7 @@ def init_single_bold_rest_wf(subject_id: str, subj: str, task: str, mni152_targe
     # VxmRegistraion_node.inputs.deepprep_subj_path = derivative_deepprep_path / subject_id
     # VxmRegistraion_node.inputs.norm = subjects_dir / subject_id / 'mri' / 'norm.mgz'
     # VxmRegistraion_node.inputs.model_file = Path(
-    #     __file__).parent.parent / 'src' / 'model' / 'voxelmorph' / atlas_type / 'model.h5'
+    #     __file__).parent.parent / 'deepprep' / 'model' / 'voxelmorph' / atlas_type / 'model.h5'
     # VxmRegistraion_node.inputs.atlas_type = atlas_type
     #
     # VxmRegistraion_node.inputs.vxm_warp = derivative_deepprep_path / 'tmp' / 'warp.nii.gz'

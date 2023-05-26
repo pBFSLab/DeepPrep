@@ -492,8 +492,8 @@ def pipeline():
     pwd = Path.cwd()
     fastsurfer_home = pwd / "FastSurfer"
     freesurfer_home = Path('/usr/local/freesurfer720')
-    fastcsr_home = pwd.parent / "src/FastCSR"
-    featreg_home = pwd.parent / "src/FeatReg"
+    fastcsr_home = pwd.parent / "deepprep/FastCSR"
+    featreg_home = pwd.parent / "deepprep/FeatReg"
 
     # python_interpret = Path('/home/youjia/anaconda3/envs/3.8/bin/python3')
     python_interpret = Path('/home/anning/miniconda3/envs/3.8/bin/python3')
