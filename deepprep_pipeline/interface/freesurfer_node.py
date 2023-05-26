@@ -224,6 +224,13 @@ class WhitePreaparc1(BaseInterface):
               f"-noaparc -mgz -T1 brain.finalsurfs {self.inputs.subject_id} {hemi} threads {threads}"
         run_cmd_with_timing(cmd)
 
+        # TODO issue: use white.preaparc replace white
+        white_preaparc_file = Path(self.inputs.subjects_dir) / self.inputs.subject_id / 'surf' / f'{hemi}.white.preaparc'
+        white_file = Path(self.inputs.subjects_dir) / self.inputs.subject_id / 'surf' / f'{hemi}.white'
+        cmd = f"cp {white_preaparc_file} {white_file}"
+
+        run_cmd_with_timing(cmd)
+
     def _run_interface(self, runtime):
         multipool(self.cmd, Multi_Num=2)
         threads = self.inputs.threads if self.inputs.threads else 0
@@ -376,8 +383,8 @@ class InflatedSphere(BaseInterface):
         return outputs
 
     def create_sub_node(self):
-        from interface.create_node_structure import create_FeatReg_node, create_Curvstats_node
-        node = [create_FeatReg_node(self.inputs.subject_id),
+        from interface.create_node_structure import create_SageReg_node, create_Curvstats_node
+        node = [create_SageReg_node(self.inputs.subject_id),
                 create_Curvstats_node(self.inputs.subject_id)]
         return node
 
@@ -443,9 +450,10 @@ class WhitePialThickness1(BaseInterface):
         threads = self.inputs.threads if self.inputs.threads else 0
         fsthreads = get_freesurfer_threads(threads)
 
-        # TODO 这里使用lh.smoothwm生成了lh.white,调用了lh.aparc.annot
-        cmd = f"recon-all -subject {subject_id} -white -no-isrunning {fsthreads}"
-        run_cmd_with_timing(cmd)
+        # TODO 这里使用lh.smoothwm生成了lh.white,调用了lh.aparc.annot, 暂时去除，使用white.preaparc
+        # TODO issue: use white.preaparc replace white
+        # cmd = f"recon-all -subject {subject_id} -white -no-isrunning {fsthreads}"
+        # run_cmd_with_timing(cmd)
 
         cmd = f"recon-all -subject {subject_id} -pial -no-isrunning {fsthreads}"
         run_cmd_with_timing(cmd)
