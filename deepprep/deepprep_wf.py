@@ -365,8 +365,8 @@ def pipeline(t1w_files, subjects_dir, subject_id):
     python_interpret = Path('/home/youjia/anaconda3/envs/3.8/bin/python3')
     fastsurfer_home = pwd / "FastSurfer"
     freesurfer_home = Path('/usr/local/freesurfer')
-    fastcsr_home = pwd.parent / "src/FastCSR"
-    featreg_home = pwd.parent / "src/FeatReg"
+    fastcsr_home = pwd.parent / "deepprep/FastCSR"
+    featreg_home = pwd.parent / "deepprep/FeatReg"
 
     # subjects_dir = Path('/mnt/ngshare/DeepPrep_flowtest/V001/derivatives/deepprep/Recon')
     # subject_id = 'sub-001'
@@ -392,8 +392,8 @@ def pipeline(t1w_files, subjects_dir, subject_id):
     python_interpret = Path('/home/anning/miniconda3/envs/3.8/bin/python3')
     fastsurfer_home = pwd / "FastSurfer"
     freesurfer_home = Path('/usr/local/freesurfer')
-    fastcsr_home = pwd.parent / "src/FastCSR"
-    featreg_home = pwd.parent / "src/FeatReg"
+    fastcsr_home = pwd.parent / "deepprep/FastCSR"
+    featreg_home = pwd.parent / "deepprep/FeatReg"
 
     # subjects_dir = Path('/mnt/ngshare/Data_Mirror/pipeline_test')
     # subject_id = 'sub-guomeihui'

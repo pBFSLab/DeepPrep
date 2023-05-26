@@ -33,9 +33,9 @@ def set_envrion(threads: int = 1):
     # subjects dir
     os.environ['SUBJECTS_DIR'] = "/mnt/ngshare2/DeepPrep_UKB/UKB_Recon"
     os.environ['WORKFLOW_CACHED_DIR'] = "/mnt/ngshare2/DeepPrep_UKB/UKB_Workflow"
-    os.environ['FASTSURFER_HOME'] = "/home/youjia/workspace/DeepPrep/src/FastSurfer"
-    os.environ['FASTCSR_HOME'] = "/home/youjia/workspace/DeepPrep/src/FastCSR"
-    os.environ['FEATREG_HOME'] = "/home/youjia/workspace/DeepPrep/src/FeatReg"
+    os.environ['FASTSURFER_HOME'] = "/home/youjia/workspace/DeepPrep/deepprep/FastSurfer"
+    os.environ['FASTCSR_HOME'] = "/home/youjia/workspace/DeepPrep/deepprep/FastCSR"
+    os.environ['FEATREG_HOME'] = "/home/youjia/workspace/DeepPrep/deepprep/FeatReg"
 
 
 if __name__ == '__main__':
