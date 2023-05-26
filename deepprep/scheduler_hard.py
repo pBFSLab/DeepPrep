@@ -236,7 +236,7 @@ class Scheduler:
 
 def parse_args():
     """
-python3 src.py
+python3 deepprep.py
 --bids_dir
 /mnt/ngshare2/UKB/BIDS
 --recon_output_dir
@@ -286,7 +286,7 @@ def main():
     multi_t1 = args.single_sub_multi_t1
 
     # ############### Structure
-    pwd = Path.cwd()  # src/
+    pwd = Path.cwd()  # deepprep/
     fastsurfer_home = pwd / "FastSurfer"
     freesurfer_home = Path('/usr/local/freesurfer720')
     fastcsr_home = pwd / "FastCSR"

@@ -7,7 +7,7 @@ import numpy as np
 from app_pipeline.filters.filters import gauss_nifti
 from app_pipeline.filters.filters import _bandpass_nifti
 from app_pipeline.regressors.regressors import regression, compile_regressors
-# from src.bold_preprocess import bold_smooth_6_ants
+# from deepprep.bold_preprocess import bold_smooth_6_ants
 import pandas as pd
 import nibabel as nib
 from sklearn.decomposition import PCA

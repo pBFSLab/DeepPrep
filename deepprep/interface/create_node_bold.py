@@ -281,9 +281,9 @@ def create_node_t():
     subjects_dir_test = Path('/mnt/ngshare/DeepPrep_workflow_test/UKB_Recon')
     bold_preprocess_dir_test = Path('/mnt/ngshare/DeepPrep_workflow_test/UKB_BoldPreprocess')
     workflow_cached_dir_test = '/mnt/ngshare/DeepPrep_workflow_test/UKB_Workflow'
-    vxm_model_path_test = '/home/pbfs19/workspace/DeepPrep/src/model/voxelmorph'
+    vxm_model_path_test = '/home/pbfs19/workspace/DeepPrep/deepprep/model/voxelmorph'
     mni152_brain_mask_test = '/usr/local/fsl/data/standard/MNI152_T1_2mm_brain_mask.nii.gz'
-    resource_dir_test = '/home/pbfs19/workspace/DeepPrep/src/resource'
+    resource_dir_test = '/home/pbfs19/workspace/DeepPrep/deepprep/resource'
 
     if not subjects_dir_test.exists():
         subjects_dir_test.mkdir(parents=True, exist_ok=True)

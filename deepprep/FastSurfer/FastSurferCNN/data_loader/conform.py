@@ -79,7 +79,7 @@ def map_image(img, out_affine, out_shape, ras2ras=np.array([[1.0, 0, 0, 0], [0, 
     """
     Function to map image to new voxel space (RAS orientation)
 
-    :param nibabel.MGHImage img: the src 3D image with data and affine set
+    :param nibabel.MGHImage img: the deepprep 3D image with data and affine set
     :param np.ndarray out_affine: trg image affine
     :param np.ndarray out_shape: the trg shape information
     :param np.ndarray ras2ras: ras2ras an additional maping that should be applied (default=id to just reslice)
@@ -89,10 +89,10 @@ def map_image(img, out_affine, out_shape, ras2ras=np.array([[1.0, 0, 0, 0], [0, 
     from scipy.ndimage import affine_transform
     from numpy.linalg import inv
 
-    # compute vox2vox from src to trg
+    # compute vox2vox from deepprep to trg
     vox2vox = inv(out_affine) @ ras2ras @ img.affine
 
-    # here we apply the inverse vox2vox (to pull back the src info to the target image)
+    # here we apply the inverse vox2vox (to pull back the deepprep info to the target image)
     image_data = np.asanyarray(img.dataobj)
     # convert frames to single image
     if len(image_data.shape) > 3:

@@ -171,13 +171,13 @@ class VxmDense(LoadableModel):
 
     def register(self, src, trg):
         """
-        Predicts the transform from src to trg tensors.
+        Predicts the transform from deepprep to trg tensors.
         """
         return self.get_registration_model().predict([src, trg])
 
     def apply_transform(self, src, trg, img, interp_method='linear'):
         """
-        Predicts the transform from src to trg and applies it to the img tensor.
+        Predicts the transform from deepprep to trg and applies it to the img tensor.
         """
         warp_model = self.get_registration_model()
         img_input = tf.keras.Input(shape=img.shape[1:])
@@ -239,13 +239,13 @@ class VxmDenseSemiSupervisedSeg(LoadableModel):
 
     def register(self, src, trg):
         """
-        Predicts the transform from src to trg tensors.
+        Predicts the transform from deepprep to trg tensors.
         """
         return self.get_registration_model().predict([src, trg])
 
     def apply_transform(self, src, trg, img, interp_method='linear'):
         """
-        Predicts the transform from src to trg and applies it to the img tensor.
+        Predicts the transform from deepprep to trg and applies it to the img tensor.
         """
         warp_model = self.get_registration_model()
         img_input = tf.keras.Input(shape=img.shape[1:])
@@ -328,13 +328,13 @@ class VxmDenseSemiSupervisedPointCloud(LoadableModel):
 
     def register(self, src, trg):
         """
-        Predicts the transform from src to trg tensors.
+        Predicts the transform from deepprep to trg tensors.
         """
         return self.get_registration_model().predict([src, trg])
 
     def apply_transform(self, src, trg, img, interp_method='linear'):
         """
-        Predicts the transform from src to trg and applies it to the img tensor.
+        Predicts the transform from deepprep to trg and applies it to the img tensor.
         """
         warp_model = self.get_registration_model()
         img_input = tf.keras.Input(shape=img.shape[1:])
@@ -468,7 +468,7 @@ class InstanceDense(LoadableModel):
 
     def register(self, src):
         """
-        Predicts the transform from src to trg tensors.
+        Predicts the transform from deepprep to trg tensors.
         """
         return self.get_registration_model().predict(src)
 

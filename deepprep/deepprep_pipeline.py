@@ -11,7 +11,7 @@ from interface.run import set_envrion
 
 
 """
-python3 src.py
+python3 deepprep.py
 --bids_dir
 /mnt/ngshare2/UKB/BIDS
 --recon_output_dir
@@ -50,8 +50,8 @@ def pipeline():
     # ############### Structure
     fastsurfer_home = pwd / "FastSurfer"
     freesurfer_home = Path('/usr/local/freesurfer720')
-    fastcsr_home = pwd.parent / "src/FastCSR"
-    featreg_home = pwd.parent / "src/FeatReg"
+    fastcsr_home = pwd.parent / "deepprep/FastCSR"
+    featreg_home = pwd.parent / "deepprep/FeatReg"
 
     # ############### BOLD
     mni152_brain_mask = Path('/usr/local/fsl/data/standard/MNI152_T1_2mm_brain_mask.nii.gz')

@@ -56,8 +56,8 @@ Date: Jun-8-2022
 # In the future, maybe add a way to specify what labels to align as a list or 
 # txt file to pass to the routine. 
 
-h_srcsphere = 'path to src ?h.sphere'
-h_srcaparc  = 'path to src corresponding cortical parcellation'
+h_srcsphere = 'path to deepprep ?h.sphere'
+h_srcaparc  = 'path to deepprep corresponding cortical parcellation'
 h_trgsphere = 'path to trg ?h.sphere'
 h_trgaparc  = 'path to trg corresponding cortical parcellation'
 h_out       = 'path to output txt files for angles'
@@ -75,7 +75,7 @@ def options_parse():
     (options, args) = parser.parse_args()
 
     if options.srcsphere is None or options.srcaparc is None or options.trgsphere is None or options.trgaparc is None or options.out is None:
-        sys.exit('\nERROR: Please specify src and target sphere and parcellation files as well as output txt file\n   Use --help to see all options.\n')
+        sys.exit('\nERROR: Please specify deepprep and target sphere and parcellation files as well as output txt file\n   Use --help to see all options.\n')
 
     return options
 
@@ -118,8 +118,8 @@ if __name__ == "__main__":
     print()
     print("Rotate Sphere Parameters:")
     print()
-    print("- src sphere {}".format(options.srcsphere))
-    print("- src aparc: {}".format(options.srcaparc))
+    print("- deepprep sphere {}".format(options.srcsphere))
+    print("- deepprep aparc: {}".format(options.srcaparc))
     print("- trg sphere {}".format(options.trgsphere))
     print("- trg aparc: {}".format(options.trgaparc))
     print("- out txt {}".format(options.out))

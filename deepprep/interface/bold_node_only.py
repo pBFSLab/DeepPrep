@@ -57,7 +57,7 @@ class VxmRegistraion(BaseInterface):
         # import tensorflow as tf
         # import ants
         # import shutil
-        # import src.voxelmorph as vxm
+        # import deepprep.voxelmorph as vxm
         subject_id = self.inputs.subject_id
         deepprep_subj_path = Path(self.inputs.derivative_deepprep_path) / subject_id
 
@@ -1123,7 +1123,7 @@ class RestRegression(BaseInterface):
 
     # smooth_downsampling
     # def cmd(self, hemi, subj_surf_path, dst_resid_file, dst_reg_file):
-    #     from src.app.surface_projection import surface_projection as sp
+    #     from deepprep.app.surface_projection import surface_projection as sp
     #     fs6_path = sp.indi_to_fs6(subj_surf_path, f'{self.inputs.subject_id}', dst_resid_file, dst_reg_file,
     #                               hemi)
     #     sm6_path = sp.smooth_fs6(fs6_path, hemi)
