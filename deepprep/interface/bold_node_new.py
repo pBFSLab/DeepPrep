@@ -21,6 +21,7 @@ class BoldSkipReorientInputSpec(BaseInterfaceInputSpec):
     task = Str(exists=True, desc="task", mandatory=True)
     preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
     atlas_type = Str(exists=True, desc='MNI152_T1_2mm', mandatory=True)
+    nskip_frame = Str(default_value=0, desc='skip n frames', mandatory=False)
 
 
 class BoldSkipReorientOutputSpec(TraitedSpec):
@@ -48,57 +49,31 @@ class BoldSkipReorient(BaseInterface):
                 if not file_path.exists():
                     raise FileExistsError(file_path)
 
-    def dimstr2dimno(self, dimstr):
-        if 'x' in dimstr:
-            return 0
+    def reorient_to_ras(self, input_path, output_path):
+        img = nib.load(input_path)
+        orig_ornt = nib.orientations.io_orientation(img.header.get_sform())
+        RAS_ornt = nib.orientations.axcodes2ornt('RAS')
+        if np.array_equal(orig_ornt, RAS_ornt) is True:
+            print(f"{input_path} is already in RAS orientation. Copying to {output_path}.")
+            shutil.copy(input_path, output_path)
+        else:
+            newimg = img.as_reoriented(orig_ornt)
+            nib.save(newimg, output_path)
+            print(f"Successfully reorient {input_path} to RAS orientation and saved to {output_path}.")
 
-        if 'y' in dimstr:
-            return 1
+    def cmd(self, subj_func_dir: Path, bold: Path, nskip_frame: int):
 
-        if 'z' in dimstr:
-            return 2
-
-    def swapdim(self, infile, a, b, c, outfile):
-        '''
-        infile  - str. Path to file to read and swap dimensions of.
-        a       - str. New x dimension.
-        b       - str. New y dimension.
-        c       - str. New z dimension.
-        outfile - str. Path to file to create.
-
-        Returns None.
-        '''
-
-        # Read original file.
-        img = nib.load(infile)
-
-        # Build orientation matrix.
-        ornt = np.zeros((3, 2))
-        order_strs = [a, b, c]
-        dim_order = list(map(self.dimstr2dimno, order_strs))
-        i_dim = np.argsort(dim_order)
-        for i, dim in enumerate(i_dim):
-            ornt[i, 1] = -1 if '-' in order_strs[dim] else 1
-
-        ornt[:, 0] = i_dim
-
-        # Transform and save.
-        newimg = img.as_reoriented(ornt)
-        nib.save(newimg, outfile)
-
-    def cmd(self, subj_func_dir: Path, bold: Path):
+        skip_bold = subj_func_dir / bold.name.replace('.nii.gz', '_skip.nii.gz')
+        reorient_skip_bold = subj_func_dir / bold.name.replace('.nii.gz', '_skip_reorient.nii.gz')
 
         # skip 0 frame
-        nskip = 0
-        if nskip > 0:
-            skip_bold = subj_func_dir / bold.name.replace('.nii.gz', '_skip.nii.gz')
-            sh.mri_convert('-i', bold, '--nskip', nskip, '-o', skip_bold, _out=sys.stdout)
-            bold = skip_bold
+        if nskip_frame > 0:
+            sh.mri_convert('-i', bold, '--nskip', nskip_frame, '-o', skip_bold, _out=sys.stdout)
+        else:
+            skip_bold = bold
 
         # reorient
-        reorient_skip_bold = subj_func_dir / bold.name.replace('.nii.gz', '_skip_reorient.nii.gz')
-        self.swapdim(str(bold), 'x', '-y', 'z', str(reorient_skip_bold))
-        # shutil.copy(bold, reorient_skip_bold)
+        self.reorient_to_ras(skip_bold, reorient_skip_bold)
 
     def _run_interface(self, runtime):
         preprocess_dir = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id
@@ -116,12 +91,14 @@ class BoldSkipReorient(BaseInterface):
         for idx, bids_bold in enumerate(bids_bolds):
             bold_file = Path(bids_bold.path)
             bold_files.append(bold_file)
-            args.append([subj_func_dir, bold_file])
+            args.append([subj_func_dir, bold_file, int(self.inputs.nskip_frame)])
 
-        pool = Pool(2)
-        pool.starmap(self.cmd, args)
-        pool.close()
-        pool.join()
+        # pool = Pool(2)
+        # pool.starmap(self.cmd, args)
+        # pool.close()
+        # pool.join()
+        for arg in args:
+            self.cmd(*arg)
 
         self.check_output(subj_func_dir, bold_files)
         return runtime
