@@ -94,13 +94,14 @@ def create_Register_node(subject_id: str, task: str, atlas_type: str, preprocess
     derivative_deepprep_path = Path(os.environ['BOLD_PREPROCESS_DIR'])
     data_path = Path(os.environ['BIDS_DIR'])
 
-    Register_node = Node(Register(), name=f'{subject_id}_bold_register_node')
+    Register_node = Node(Register(), name=f'{subject_id}_bold_Register_node')
     Register_node.inputs.subject_id = subject_id
     Register_node.inputs.task = task
     Register_node.inputs.data_path = data_path
     Register_node.inputs.derivative_deepprep_path = derivative_deepprep_path
     Register_node.inputs.atlas_type = atlas_type
     Register_node.inputs.preprocess_method = preprocess_method
+    Register_node.inputs.multiprocess = "1"
 
     Register_node.base_dir = workflow_cached_dir
     Register_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=1000, IO_write_MB=20, IO_read_MB=40)
@@ -116,7 +117,7 @@ def create_Mkbrainmask_node(subject_id: str, task: str, atlas_type: str, preproc
     data_path = Path(os.environ['BIDS_DIR'])
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
 
-    Mkbrainmask_node = Node(MkBrainmask(), name=f'{subject_id}_bold_mkbrainmask_node')
+    Mkbrainmask_node = Node(MkBrainmask(), name=f'{subject_id}_bold_MkBrainmask_node')
     Mkbrainmask_node.inputs.subject_id = subject_id
     Mkbrainmask_node.inputs.subjects_dir = subjects_dir
     Mkbrainmask_node.inputs.task = task
@@ -124,6 +125,7 @@ def create_Mkbrainmask_node(subject_id: str, task: str, atlas_type: str, preproc
     Mkbrainmask_node.inputs.derivative_deepprep_path = derivative_deepprep_path
     Mkbrainmask_node.inputs.atlas_type = atlas_type
     Mkbrainmask_node.inputs.preprocess_method = preprocess_method
+    Mkbrainmask_node.inputs.multiprocess = "1"
 
     Mkbrainmask_node.base_dir = workflow_cached_dir
     Mkbrainmask_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=1000, IO_write_MB=20, IO_read_MB=40)
@@ -319,20 +321,21 @@ def create_node_t():
     node.run()
     # sub_node = node.interface.create_sub_node()
     # sub_node.run()
-    return
+
     print('#####################################################3#####################################################')
     node = create_Register_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
                                 preprocess_method=preprocess_method_test)
     node.run()
     # sub_node = node.interface.create_sub_node()
     # sub_node.run()
+
     print('#####################################################4#####################################################')
     node = create_Mkbrainmask_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
                                    preprocess_method=preprocess_method_test)
     node.run()
     # sub_node = node.interface.create_sub_node()
     # sub_node.run()
-
+    return
     print('#####################################################5#####################################################')
     node = create_VxmRegistraion_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
                              preprocess_method=preprocess_method_test)
