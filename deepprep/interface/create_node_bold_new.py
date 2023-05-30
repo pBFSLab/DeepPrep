@@ -57,6 +57,7 @@ def create_BoldSkipReorient_node(subject_id: str, task: str, atlas_type: str, pr
     BoldSkipReorient_node.inputs.atlas_type = atlas_type
     BoldSkipReorient_node.inputs.preprocess_method = preprocess_method
     BoldSkipReorient_node.inputs.nskip_frame = "0"
+    BoldSkipReorient_node.inputs.multiprocess = "1"
 
     BoldSkipReorient_node.base_dir = workflow_cached_dir
     BoldSkipReorient_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=1000, IO_write_MB=20, IO_read_MB=40)
@@ -78,6 +79,7 @@ def create_StcMc_node(subject_id: str, task: str, atlas_type: str, preprocess_me
     StcMc_node.inputs.derivative_deepprep_path = derivative_deepprep_path
     StcMc_node.inputs.atlas_type = atlas_type
     StcMc_node.inputs.preprocess_method = preprocess_method
+    StcMc_node.inputs.multiprocess = "1"
 
     StcMc_node.base_dir = workflow_cached_dir
     StcMc_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=1000, IO_write_MB=20, IO_read_MB=40)
@@ -252,7 +254,7 @@ def create_Smooth_node(subject_id: str, task: str, atlas_type: str, preprocess_m
 
 def create_node_t():
     from interface.run import set_envrion
-    set_envrion()
+    set_envrion(threads=8)
 
     pwd = Path.cwd()
     pwd = pwd.parent
@@ -310,13 +312,14 @@ def create_node_t():
     node.run()
     # sub_node = node.interface.create_sub_node()
     # sub_node.run()
-    return
+
     print('#####################################################2#####################################################')
     node = create_StcMc_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
                              preprocess_method=preprocess_method_test)
     node.run()
     # sub_node = node.interface.create_sub_node()
     # sub_node.run()
+    return
     print('#####################################################3#####################################################')
     node = create_Register_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
                                 preprocess_method=preprocess_method_test)
