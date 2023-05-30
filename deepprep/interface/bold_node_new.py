@@ -313,6 +313,7 @@ class RegisterInputSpec(BaseInterfaceInputSpec):
     derivative_deepprep_path = Directory(exists=True, desc="derivative_deepprep_path", mandatory=True)
     preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
     atlas_type = Str(exists=True, desc='MNI152_T1_2mm', mandatory=True)
+    multiprocess = Str(default_value="1", desc="using for pool threads set", mandatory=False)
 
 
 class RegisterOutputSpec(TraitedSpec):
@@ -369,10 +370,15 @@ class Register(BaseInterface):
             bold_files.append(bold_file)
             args.append([subj_func_dir, bold_file])
 
-        pool = Pool(2)
-        pool.starmap(self.cmd, args)
-        pool.close()
-        pool.join()
+        cpu_threads = int(self.inputs.multiprocess)
+        if cpu_threads > 1:
+            pool = Pool(cpu_threads)
+            pool.starmap(self.cmd, args)
+            pool.close()
+            pool.join()
+        else:
+            for arg in args:
+                self.cmd(*arg)
 
         self.check_output(subj_func_dir, bold_files)
         return runtime
@@ -401,6 +407,7 @@ class MkBrainmaskInputSpec(BaseInterfaceInputSpec):
     derivative_deepprep_path = Directory(exists=True, desc="derivative_deepprep_path", mandatory=True)
     preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
     atlas_type = Str(exists=True, desc='MNI152_T1_2mm', mandatory=True)
+    multiprocess = Str(default_value="1", desc="using for pool threads set", mandatory=False)
 
 
 class MkBrainmaskOutputSpec(TraitedSpec):
@@ -420,11 +427,11 @@ class MkBrainmask(BaseInterface):
         super(MkBrainmask, self).__init__()
 
     def check_output(self, subj_func_dir: Path, bolds: list):
-        filenames = ['.func.aseg.nii.gz',
-                     '.func.wm.nii.gz',
-                     '.func.ventricles.nii.gz',
-                     '.brainmask.nii.gz',
-                     '.brainmask.bin.nii.gz',
+        filenames = ['_skip_reorient_faln_mc.anat.aseg.nii.gz',
+                     '_skip_reorient_faln_mc.anat.wm.nii.gz',
+                     '_skip_reorient_faln_mc.anat.ventricles.nii.gz',
+                     '_skip_reorient_faln_mc.anat.brainmask.nii.gz',
+                     '_skip_reorient_faln_mc.anat.brainmask.bin.nii.gz',
                      ]
         for bold in bolds:
             for filename in filenames:
@@ -433,17 +440,19 @@ class MkBrainmask(BaseInterface):
                     raise FileExistsError(file_path)
 
     def cmd(self, subj_func_dir: Path, bold: Path):
-        # project aparc+aseg to mc
-        seg = Path(self.inputs.subjects_dir) / self.inputs.subject_id / 'mri/aparc+aseg.mgz'  # Recon
         mov = subj_func_dir / bold.name.replace('.nii.gz', '_skip_reorient_faln_mc.nii.gz')
         reg = subj_func_dir / bold.name.replace('.nii.gz', '_skip_reorient_faln_mc_bbregister.register.dat')
-        func = subj_func_dir / bold.name.replace('.nii.gz', '.func.aseg.nii.gz')
-        wm = subj_func_dir / bold.name.replace('.nii.gz', '.func.wm.nii.gz')
-        vent = subj_func_dir / bold.name.replace('.nii.gz', '.func.ventricles.nii.gz')
-        # project bold to brainmask.mgz
-        targ = Path(self.inputs.subjects_dir) / self.inputs.subject_id / 'mri/brainmask.mgz'  # Recon
-        mask = subj_func_dir / bold.name.replace('.nii.gz', '.brainmask.nii.gz')
-        binmask = subj_func_dir / bold.name.replace('.nii.gz', '.brainmask.bin.nii.gz')
+
+        # project aparc+aseg to mc
+        seg = Path(self.inputs.subjects_dir) / self.inputs.subject_id / 'mri' / 'aparc+aseg.mgz'  # Recon
+        func = subj_func_dir / bold.name.replace('.nii.gz', '_skip_reorient_faln_mc.anat.aseg.nii.gz')
+        wm = subj_func_dir / bold.name.replace('.nii.gz', '_skip_reorient_faln_mc.anat.wm.nii.gz')
+        vent = subj_func_dir / bold.name.replace('.nii.gz', '_skip_reorient_faln_mc.anat.ventricles.nii.gz')
+
+        # project brainmask.mgz to mc
+        targ = Path(self.inputs.subjects_dir) / self.inputs.subject_id / 'mri' / 'brainmask.mgz'  # Recon
+        mask = subj_func_dir / bold.name.replace('.nii.gz', '_skip_reorient_faln_mc.anat.brainmask.nii.gz')
+        binmask = subj_func_dir / bold.name.replace('.nii.gz', '_skip_reorient_faln_mc.anat.brainmask.bin.nii.gz')
 
         shargs = [
             '--seg', seg,
@@ -497,10 +506,15 @@ class MkBrainmask(BaseInterface):
             bold_files.append(bold_file)
             args.append([subj_func_dir, bold_file])
 
-        pool = Pool(2)
-        pool.starmap(self.cmd, args)
-        pool.close()
-        pool.join()
+        cpu_threads = int(self.inputs.multiprocess)
+        if cpu_threads > 1:
+            pool = Pool(cpu_threads)
+            pool.starmap(self.cmd, args)
+            pool.close()
+            pool.join()
+        else:
+            for arg in args:
+                self.cmd(*arg)
 
         self.check_output(subj_func_dir, bold_files)
         return runtime
