@@ -21,7 +21,8 @@ class BoldSkipReorientInputSpec(BaseInterfaceInputSpec):
     task = Str(exists=True, desc="task", mandatory=True)
     preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
     atlas_type = Str(exists=True, desc='MNI152_T1_2mm', mandatory=True)
-    nskip_frame = Str(default_value=0, desc='skip n frames', mandatory=False)
+    nskip_frame = Str(default_value="0", desc='skip n frames', mandatory=False)
+    multiprocess = Str(default_value="1", desc="using for pool threads set", mandatory=False)
 
 
 class BoldSkipReorientOutputSpec(TraitedSpec):
@@ -93,12 +94,15 @@ class BoldSkipReorient(BaseInterface):
             bold_files.append(bold_file)
             args.append([subj_func_dir, bold_file, int(self.inputs.nskip_frame)])
 
-        # pool = Pool(2)
-        # pool.starmap(self.cmd, args)
-        # pool.close()
-        # pool.join()
-        for arg in args:
-            self.cmd(*arg)
+        cpu_threads = int(self.inputs.multiprocess)
+        if cpu_threads > 1:
+            pool = Pool(cpu_threads)
+            pool.starmap(self.cmd, args)
+            pool.close()
+            pool.join()
+        else:
+            for arg in args:
+                self.cmd(*arg)
 
         self.check_output(subj_func_dir, bold_files)
         return runtime
@@ -127,6 +131,7 @@ class StcMcInputSpec(BaseInterfaceInputSpec):
     derivative_deepprep_path = Directory(exists=True, desc="derivative_deepprep_path", mandatory=True)
     preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
     atlas_type = Str(exists=True, desc='MNI152_T1_2mm', mandatory=True)
+    multiprocess = Str(default_value="1", desc="using for pool threads set", mandatory=False)
 
 
 class StcMcOutputSpec(TraitedSpec):
@@ -167,8 +172,9 @@ class StcMc(BaseInterface):
         link_files.remove(run)
         for link_file in link_files:
             try:
-                os.symlink(subj_func_dir / link_file,
-                           link_dir / link_file)
+                src_file = subj_func_dir / link_file
+                dst_file = link_dir / link_file
+                dst_file.symlink_to(src_file)
             except:
                 continue
 
@@ -188,13 +194,27 @@ class StcMc(BaseInterface):
         sh.stc_sess(*shargs, _out=sys.stdout)
 
         # MkTemplate
-        shargs = [
-            '-s', self.inputs.subject_id,
-            '-d', tmp_run,
-            '-fsd', 'bold',
-            '-funcstem', faln_fname,
-            '-nolog']
-        sh.mktemplate_sess(*shargs, _out=sys.stdout)
+        dst_template_file = subj_func_dir / 'template.nii.gz'
+        if run == '001' and (not dst_template_file.exists()):
+            shargs = [
+                '-s', self.inputs.subject_id,
+                '-d', tmp_run,
+                '-fsd', 'bold',
+                '-funcstem', faln_fname,
+                '-nolog']
+            sh.mktemplate_sess(*shargs, _out=sys.stdout)
+
+            src_template_file = subj_func_dir / run / self.inputs.subject_id / 'bold' / 'template.nii.gz'
+            dst_template_file = subj_func_dir / 'template_mc.nii.gz'
+            shutil.copyfile(src_template_file, dst_template_file)
+            src_template_file = subj_func_dir / run / self.inputs.subject_id / 'bold' / 'template.log'
+            dst_template_file = subj_func_dir / 'template_mc.log'
+            shutil.copyfile(src_template_file, dst_template_file)
+
+        else:
+            src_template_file = subj_func_dir / 'template_mc.nii.gz'
+            dst_template_file = subj_func_dir / run / self.inputs.subject_id / 'bold' / 'template.nii.gz'
+            dst_template_file.symlink_to(src_template_file)
 
         # Mc
         shargs = [
@@ -210,20 +230,12 @@ class StcMc(BaseInterface):
         ori_path = subj_func_dir
         try:
             # Stc
-            shutil.move(link_dir / f'{faln_fname}.nii.gz',
-                        ori_path / f'{faln_fname}.nii.gz')
-            shutil.move(link_dir / f'{faln_fname}.nii.gz.log',
-                        ori_path / f'{faln_fname}.nii.gz.log')
-
-            # bold template
-            shutil.move(link_dir.parent / f'template.nii.gz',
-                        ori_path / f'template_frame0.nii.gz')
-            shutil.move(link_dir.parent / f'template.log',
-                        ori_path / f'template_frame0.log')
-            shutil.move(link_dir / f'template.nii.gz',
-                        ori_path / f'template_frame_mid.nii.gz')
-            shutil.move(link_dir / f'template.log',
-                        ori_path / f'template_frame_mid.log')
+            DEBUG = True
+            if DEBUG:
+                shutil.move(link_dir / f'{faln_fname}.nii.gz',
+                            ori_path / f'{faln_fname}.nii.gz')
+                shutil.move(link_dir / f'{faln_fname}.nii.gz.log',
+                            ori_path / f'{faln_fname}.nii.gz.log')
 
             # Mc
             shutil.move(link_dir / f'{mc_fname}.nii.gz',
@@ -259,10 +271,21 @@ class StcMc(BaseInterface):
             bold_files.append(bold_file)
             args.append([subj_func_dir, bold_file, run])
 
-        pool = Pool(2)
-        pool.starmap(self.cmd, args)
-        pool.close()
-        pool.join()
+        # 单独运行第一个，制作template的需求
+        template_file = subj_func_dir / 'template_mc.nii.gz'
+        if not template_file.exists():
+            self.cmd(*args[0])
+            args = args[1:]
+
+        cpu_threads = int(self.inputs.multiprocess)
+        if cpu_threads > 1:
+            pool = Pool(cpu_threads)
+            pool.starmap(self.cmd, args)
+            pool.close()
+            pool.join()
+        else:
+            for arg in args:
+                self.cmd(*arg)
 
         self.check_output(subj_func_dir, bold_files)
         return runtime
