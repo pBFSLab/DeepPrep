@@ -193,34 +193,19 @@ class StcMc(BaseInterface):
             '-nolog']
         sh.stc_sess(*shargs, _out=sys.stdout)
 
-        # MkTemplate
-        dst_template_file = subj_func_dir / 'template.nii.gz'
-        if run == '001' and (not dst_template_file.exists()):
-            shargs = [
-                '-s', self.inputs.subject_id,
-                '-d', tmp_run,
-                '-fsd', 'bold',
-                '-funcstem', faln_fname,
-                '-nolog']
-            sh.mktemplate_sess(*shargs, _out=sys.stdout)
-
-            src_template_file = subj_func_dir / run / self.inputs.subject_id / 'bold' / 'template.nii.gz'
-            dst_template_file = subj_func_dir / 'template_mc.nii.gz'
-            shutil.copyfile(src_template_file, dst_template_file)
-            src_template_file = subj_func_dir / run / self.inputs.subject_id / 'bold' / 'template.log'
-            dst_template_file = subj_func_dir / 'template_mc.log'
-            shutil.copyfile(src_template_file, dst_template_file)
-
-        else:
-            src_template_file = subj_func_dir / 'template_mc.nii.gz'
-            dst_template_file = subj_func_dir / run / self.inputs.subject_id / 'bold' / 'template.nii.gz'
-            dst_template_file.symlink_to(src_template_file)
+        shargs = [
+            '-s', self.inputs.subject_id,
+            '-d', tmp_run,
+            '-fsd', 'bold',
+            '-funcstem', faln_fname,
+            '-nolog']
+        sh.mktemplate_sess(*shargs, _out=sys.stdout)
 
         # Mc
         shargs = [
             '-s', self.inputs.subject_id,
             '-d', tmp_run,
-            '-per-session',
+            '-per-run',
             '-fsd', 'bold',
             '-fstem', faln_fname,
             '-fmcstem', mc_fname,
@@ -236,6 +221,12 @@ class StcMc(BaseInterface):
                             ori_path / f'{faln_fname}.nii.gz')
                 shutil.move(link_dir / f'{faln_fname}.nii.gz.log',
                             ori_path / f'{faln_fname}.nii.gz.log')
+
+            # Template reference for mc
+            shutil.copyfile(link_dir / 'template.nii.gz',
+                            ori_path / f'{faln_fname}_boldref.nii.gz')
+            shutil.copyfile(link_dir / 'template.log',
+                            ori_path / f'{faln_fname}_boldref.log')
 
             # Mc
             shutil.move(link_dir / f'{mc_fname}.nii.gz',
@@ -270,12 +261,6 @@ class StcMc(BaseInterface):
             bold_file = Path(bids_bold.path)
             bold_files.append(bold_file)
             args.append([subj_func_dir, bold_file, run])
-
-        # 单独运行第一个，制作template的需求
-        template_file = subj_func_dir / 'template_mc.nii.gz'
-        if not template_file.exists():
-            self.cmd(*args[0])
-            args = args[1:]
 
         cpu_threads = int(self.inputs.multiprocess)
         if cpu_threads > 1:
