@@ -8,20 +8,20 @@ import sys
 from nipype import Node
 
 """环境变量
-subjects_dir = Path(os.environ['SUBJECTS_DIR'])
-bold_preprocess_dir = Path(os.environ['BOLD_PREPROCESS_DIR'])
-workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-fastsurfer_home = Path(os.environ['FASTSURFER_HOME'])
-freesurfer_home = Path(os.environ['FREESURFER_HOME'])
-fastcsr_home = Path(os.environ['FASTCSR_HOME'])
-featreg_home = Path(os.environ['FEATREG_HOME'])
+subjects_dir = Path(settings.SUBJECTS_DIR)
+bold_preprocess_dir = Path(settings.BOLD_PREPROCESS_DIR)
+workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
+fastsurfer_home = Path(settings.FASTSURFER_HOME)
+freesurfer_home = Path(settings.FREESURFER_HOME)
+fastcsr_home = Path(settings.FASTCSR_HOME)
+featreg_home = Path(settings.FEATREG_HOME)
 python_interpret = sys.executable
 """
 
 THREAD = 8
 
 
-def create_OrigAndRawavg_node(subject_id: str, t1w_files: list):
+def create_OrigAndRawavg_node(subject_id: str, t1w_files: list, settings):
     """Use ``Recon-all`` in Freesurfer to get Orig And Rawavg files
 
         Inputs
@@ -47,8 +47,8 @@ def create_OrigAndRawavg_node(subject_id: str, t1w_files: list):
         * :py:func:`deepprep.interface.freesurfer_node.OrigAndRawavg`
 
     """
-    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
-    workflow_cached_dir = os.environ['WORKFLOW_CACHED_DIR']
+    subjects_dir = Path(settings.SUBJECTS_DIR)
+    workflow_cached_dir = settings.WORKFLOW_CACHED_DIR
 
     origandrawavg_node = Node(OrigAndRawavg(), f'{subject_id}_recon_OrigAndRawavg_node')
     origandrawavg_node.inputs.t1w_files = t1w_files
@@ -59,12 +59,12 @@ def create_OrigAndRawavg_node(subject_id: str, t1w_files: list):
     origandrawavg_node.base_dir = workflow_cached_dir
     origandrawavg_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=500)
 
-    origandrawavg_node.interface.recon_only = os.environ['RECON_ONLY']
+    origandrawavg_node.interface.recon_only = settings.RECON_ONLY
 
     return origandrawavg_node
 
 
-def create_Segment_node(subject_id: str):
+def create_Segment_node(subject_id: str, settings):
     """Segment MRI images into multiple distinct tissue and structural regions
 
         Inputs
@@ -100,9 +100,9 @@ def create_Segment_node(subject_id: str):
         * :py:func:`deepprep.interface.fastsurfer_node.Segment`
 
     """
-    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
-    fastsurfer_home = Path(os.environ['FASTSURFER_HOME'])
-    workflow_cached_dir = os.environ['WORKFLOW_CACHED_DIR']
+    subjects_dir = Path(settings.SUBJECTS_DIR)
+    fastsurfer_home = Path(settings.FASTSURFER_HOME)
+    workflow_cached_dir = settings.WORKFLOW_CACHED_DIR
     python_interpret = sys.executable
 
     fastsurfer_eval = fastsurfer_home / 'FastSurferCNN' / 'eval.py'  # inference script
@@ -124,12 +124,12 @@ def create_Segment_node(subject_id: str):
     segment_node.base_dir = workflow_cached_dir
     segment_node.source = Source(CPU_n=0, GPU_MB=8500, RAM_MB=7500)
 
-    segment_node.interface.recon_only = os.environ['RECON_ONLY']
+    segment_node.interface.recon_only = settings.RECON_ONLY
 
     return segment_node
 
 
-def create_Noccseg_node(subject_id: str):
+def create_Noccseg_node(subject_id: str, settings):
     """Removal of the orbital region in MRI images ======temp
 
         Inputs
@@ -142,13 +142,13 @@ def create_Noccseg_node(subject_id: str):
             The python interpret to use
         reduce_to_aseg_py
             Reduce to aseg program
-        in_file
-            Full Segmentation File of the Brain
+        aparc_DKTatlas_aseg_deep
+            Generated tag file for deep
 
         Outputs
         -------
         aseg_noCCseg_file
-            Remove the segmented files for the orbital region
+            Segmentation result without corpus callosum label
         mask_file
             Mask file
 
@@ -158,9 +158,9 @@ def create_Noccseg_node(subject_id: str):
 
 
     """
-    fastsurfer_home = Path(os.environ['FASTSURFER_HOME'])
-    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
-    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
+    fastsurfer_home = Path(settings.FASTSURFER_HOME)
+    subjects_dir = Path(settings.SUBJECTS_DIR)
+    workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
     python_interpret = sys.executable
 
     reduce_to_aseg_py = fastsurfer_home / 'recon_surf' / 'reduce_to_aseg.py'
@@ -174,12 +174,12 @@ def create_Noccseg_node(subject_id: str):
     noccseg_node.base_dir = workflow_cached_dir
     noccseg_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=500)
 
-    noccseg_node.interface.recon_only = os.environ['RECON_ONLY']
+    noccseg_node.interface.recon_only = settings.RECON_ONLY
 
     return noccseg_node
 
 
-def create_N4BiasCorrect_node(subject_id: str):
+def create_N4BiasCorrect_node(subject_id: str, settings):
     """Bias corrected
 
         Inputs
@@ -208,9 +208,9 @@ def create_N4BiasCorrect_node(subject_id: str):
 
 
     """
-    fastsurfer_home = Path(os.environ['FASTSURFER_HOME'])
-    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
-    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
+    fastsurfer_home = Path(settings.FASTSURFER_HOME)
+    subjects_dir = Path(settings.SUBJECTS_DIR)
+    workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
     python_interpret = sys.executable
     sub_mri_dir = subjects_dir / subject_id / "mri"
     correct_py = fastsurfer_home / "recon_surf" / "N4_bias_correct.py"
@@ -230,12 +230,12 @@ def create_N4BiasCorrect_node(subject_id: str):
     N4_bias_correct_node.base_dir = workflow_cached_dir
     N4_bias_correct_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=500)
 
-    N4_bias_correct_node.interface.recon_only = os.environ['RECON_ONLY']
+    N4_bias_correct_node.interface.recon_only = settings.RECON_ONLY
 
     return N4_bias_correct_node
 
 
-def create_TalairachAndNu_node(subject_id: str):
+def create_TalairachAndNu_node(subject_id: str, settings):
     """Computing Talairach Transform and NU
 
         Inputs
@@ -266,12 +266,12 @@ def create_TalairachAndNu_node(subject_id: str):
 
 
     """
-    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
-    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
+    subjects_dir = Path(settings.SUBJECTS_DIR)
+    workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
     sub_mri_dir = subjects_dir / subject_id / "mri"
     orig_nu_file = sub_mri_dir / "orig_nu.mgz"
     orig_file = sub_mri_dir / "orig.mgz"
-    freesurfer_home = Path(os.environ['FREESURFER_HOME'])
+    freesurfer_home = Path(settings.FREESURFER_HOME)
     mni305 = freesurfer_home / "average" / "mni305.cor.mgz"
 
     talairach_and_nu_node = Node(TalairachAndNu(), name=f'{subject_id}_recon_TalairachAndNu_node')
@@ -285,12 +285,12 @@ def create_TalairachAndNu_node(subject_id: str):
     talairach_and_nu_node.base_dir = workflow_cached_dir
     talairach_and_nu_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=500)
 
-    talairach_and_nu_node.interface.recon_only = os.environ['RECON_ONLY']
+    talairach_and_nu_node.interface.recon_only = settings.RECON_ONLY
 
     return talairach_and_nu_node
 
 
-def create_Brainmask_node(subject_id: str):
+def create_Brainmask_node(subject_id: str, settings):
     """Brainmask applies a mask volume ( typically skull stripped ) ref:freesurfer
 
         Inputs
@@ -318,12 +318,13 @@ def create_Brainmask_node(subject_id: str):
         See also
         --------
         * :py:func:`deepprep.interface.freesurfer_node.Brainmask`
+
        """
-    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
-    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-    atlas_type = os.environ['DEEPPREP_ATLAS_TYPE']
-    task = os.environ['DEEPPREP_TASK']
-    preprocess_method = os.environ['DEEPPREP_PREPROCESS_METHOD']
+    subjects_dir = Path(settings.SUBJECTS_DIR)
+    workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
+    atlas_type = settings.FMRI.ATLAS_SPACE
+    task = settings.DEEPPREP_TASK
+    preprocess_method = settings.DEEPPREP_PREPROCESS_METHOD
 
     brainmask_node = Node(Brainmask(), name=f'{subject_id}_recon_Brainmask_node')
     brainmask_node.inputs.subjects_dir = subjects_dir
@@ -338,12 +339,12 @@ def create_Brainmask_node(subject_id: str):
     brainmask_node.interface.atlas_type = atlas_type
     brainmask_node.interface.task = task
     brainmask_node.interface.preprocess_method = preprocess_method
-    brainmask_node.interface.recon_only = os.environ['RECON_ONLY']
+    brainmask_node.interface.recon_only = settings.RECON_ONLY
 
     return brainmask_node
 
 
-def create_UpdateAseg_node(subject_id: str):
+def create_UpdateAseg_node(subject_id: str, settings):
     """Update aseg
 
         Inputs
@@ -376,9 +377,9 @@ def create_UpdateAseg_node(subject_id: str):
 
 
     """
-    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
-    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-    fastsurfer_home = Path(os.environ['FASTSURFER_HOME'])
+    subjects_dir = Path(settings.SUBJECTS_DIR)
+    workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
+    fastsurfer_home = Path(settings.FASTSURFER_HOME)
     python_interpret = sys.executable
     subject_mri_dir = subjects_dir / subject_id / 'mri'
 
@@ -394,12 +395,12 @@ def create_UpdateAseg_node(subject_id: str):
     updateaseg_node.base_dir = workflow_cached_dir
     updateaseg_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=500)
 
-    updateaseg_node.interface.recon_only = os.environ['RECON_ONLY']
+    updateaseg_node.interface.recon_only = settings.RECON_ONLY
 
     return updateaseg_node
 
 
-def create_Filled_node(subject_id: str):
+def create_Filled_node(subject_id: str, settings):
     """Creating filled from brain
 
         Inputs
@@ -437,10 +438,10 @@ def create_Filled_node(subject_id: str):
         * :py:func:`deepprep.interface.freesurfer_node.Filled`
 
     """
-    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
-    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
+    subjects_dir = Path(settings.SUBJECTS_DIR)
+    workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
 
-    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+    settings.SUBJECTS_DIR = str(subjects_dir)
 
     filled_node = Node(Filled(), name=f'{subject_id}_recon_Filled_node')
     filled_node.inputs.subjects_dir = subjects_dir
@@ -454,12 +455,12 @@ def create_Filled_node(subject_id: str):
     filled_node.base_dir = workflow_cached_dir
     filled_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=500)
 
-    filled_node.interface.recon_only = os.environ['RECON_ONLY']
+    filled_node.interface.recon_only = settings.RECON_ONLY
 
     return filled_node
 
 
-def create_FastCSR_node(subject_id: str):
+def create_FastCSR_node(subject_id: str, settings):
     """Fast cortical surface reconstruction using FastCSR
 
         Inputs
@@ -498,11 +499,11 @@ def create_FastCSR_node(subject_id: str):
         * :py:func:`deepprep.interface.fastcsr_node.FastCSR`
 
     """
-    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
-    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
+    subjects_dir = Path(settings.SUBJECTS_DIR)
+    workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
     python_interpret = sys.executable
-    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
-    fastcsr_home = Path(os.environ['FASTCSR_HOME'])
+    settings.SUBJECTS_DIR = str(subjects_dir)
+    fastcsr_home = Path(settings.FASTCSR_HOME)
     fastcsr_py = fastcsr_home / 'pipeline.py'  # inference script
 
     fastcsr_node = Node(FastCSR(), name=f'{subject_id}_recon_FastCSR_node')
@@ -521,12 +522,12 @@ def create_FastCSR_node(subject_id: str):
     fastcsr_node.base_dir = workflow_cached_dir
     fastcsr_node.source = Source(CPU_n=0, GPU_MB=7000, RAM_MB=6500)
 
-    fastcsr_node.interface.recon_only = os.environ['RECON_ONLY']
+    fastcsr_node.interface.recon_only = settings.RECON_ONLY
 
     return fastcsr_node
 
 
-def create_WhitePreaparc1_node(subject_id: str):
+def create_WhitePreaparc1_node(subject_id: str, settings):
     """Generates surface files for cortical and white matter surfaces, curvature file for cortical thickness and surface
         file estimate for layer IV of cortical sheet.
 
@@ -566,12 +567,12 @@ def create_WhitePreaparc1_node(subject_id: str):
         * :py:func:`deepprep.interface.freesurfer_node.WhitePreaparc1`
 
     """
-    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
-    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
-    atlas_type = os.environ['DEEPPREP_ATLAS_TYPE']
-    task = os.environ['DEEPPREP_TASK']
-    preprocess_method = os.environ['DEEPPREP_PREPROCESS_METHOD']
+    subjects_dir = Path(settings.SUBJECTS_DIR)
+    workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
+    settings.SUBJECTS_DIR = str(subjects_dir)
+    atlas_type = settings.FMRI.ATLAS_SPACE
+    task = settings.DEEPPREP_TASK
+    preprocess_method = settings.DEEPPREP_PREPROCESS_METHOD
 
     white_preaparc1 = Node(WhitePreaparc1(), name=f'{subject_id}_recon_WhitePreaparc1_node')
     white_preaparc1.inputs.subjects_dir = subjects_dir
@@ -584,12 +585,12 @@ def create_WhitePreaparc1_node(subject_id: str):
     white_preaparc1.interface.atlas_type = atlas_type
     white_preaparc1.interface.task = task
     white_preaparc1.interface.preprocess_method = preprocess_method
-    white_preaparc1.interface.recon_only = os.environ['RECON_ONLY']
+    white_preaparc1.interface.recon_only = settings.RECON_ONLY
 
     return white_preaparc1
 
 
-def create_SampleSegmentationToSurface_node(subject_id: str):
+def create_SampleSegmentationToSurface_node(subject_id: str, settings):
     """Sample segmentation to surface
 
         Inputs
@@ -624,11 +625,11 @@ def create_SampleSegmentationToSurface_node(subject_id: str):
         * :py:func:`deepprep.interface.fastsurfer_node.SampleSegmentationToSurface`
 
     """
-    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
-    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
+    subjects_dir = Path(settings.SUBJECTS_DIR)
+    workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
     python_interpret = sys.executable
-    freesurfer_home = Path(os.environ['FREESURFER_HOME'])
-    fastsurfer_home = Path(os.environ['FASTSURFER_HOME'])
+    freesurfer_home = Path(settings.FREESURFER_HOME)
+    fastsurfer_home = Path(settings.FASTSURFER_HOME)
 
     subject_mri_dir = subjects_dir / subject_id / 'mri'
     subject_surf_dir = subjects_dir / subject_id / 'surf'
@@ -636,7 +637,7 @@ def create_SampleSegmentationToSurface_node(subject_id: str):
     smooth_aparc_file = fastsurfer_home / 'recon_surf' / 'smooth_aparc.py'
     lh_DKTatlaslookup_file = fastsurfer_home / 'recon_surf' / f'lh.DKTatlaslookup.txt'
     rh_DKTatlaslookup_file = fastsurfer_home / 'recon_surf' / f'rh.DKTatlaslookup.txt'
-    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
+    settings.SUBJECTS_DIR = str(subjects_dir)
 
     SampleSegmentationToSurfave_node = Node(SampleSegmentationToSurface(),
                                             name=f'{subject_id}_recon_SampleSegmentationToSurface_node')
@@ -656,12 +657,12 @@ def create_SampleSegmentationToSurface_node(subject_id: str):
     SampleSegmentationToSurfave_node.base_dir = workflow_cached_dir
     SampleSegmentationToSurfave_node.source = Source(CPU_n=2, GPU_MB=0, RAM_MB=4000)
 
-    SampleSegmentationToSurfave_node.interface.recon_only = os.environ['RECON_ONLY']
+    SampleSegmentationToSurfave_node.interface.recon_only = settings.RECON_ONLY
 
     return SampleSegmentationToSurfave_node
 
 
-def create_InflatedSphere_node(subject_id: str):
+def create_InflatedSphere_node(subject_id: str, settings):
     """Generate inflated file
 
         Inputs
@@ -692,8 +693,8 @@ def create_InflatedSphere_node(subject_id: str):
 
 
     """
-    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
-    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
+    subjects_dir = Path(settings.SUBJECTS_DIR)
+    workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
 
     lh_white_preaparc_file = subjects_dir / subject_id / "surf" / "lh.white.preaparc"
     rh_white_preaparc_file = subjects_dir / subject_id / "surf" / "rh.white.preaparc"
@@ -708,18 +709,18 @@ def create_InflatedSphere_node(subject_id: str):
     Inflated_Sphere_node.base_dir = workflow_cached_dir
     Inflated_Sphere_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=500)
 
-    Inflated_Sphere_node.interface.recon_only = os.environ['RECON_ONLY']
+    Inflated_Sphere_node.interface.recon_only = settings.RECON_ONLY
 
     return Inflated_Sphere_node
 
 
-def create_FeatReg_node(subject_id: str):
-    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
-    featreg_home = Path(os.environ["FEATREG_HOME"])
-    freesurfer_home = Path(os.environ['FREESURFER_HOME'])
+def create_FeatReg_node(subject_id: str, settings):
+    subjects_dir = Path(settings.SUBJECTS_DIR)
+    featreg_home = Path(settings.FEATREG_HOME)
+    freesurfer_home = Path(settings.FREESURFER_HOME)
 
-    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-    device = os.environ['DEEPPREP_DEVICES']
+    workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
+    device = settings.DEVICE
 
     python_interpret = sys.executable
     featreg_py = featreg_home / "featreg" / 'predict.py'  # inference script
@@ -742,12 +743,12 @@ def create_FeatReg_node(subject_id: str):
     featreg_node.base_dir = workflow_cached_dir
     featreg_node.source = Source(CPU_n=0, GPU_MB=7000, RAM_MB=10000)
 
-    featreg_node.interface.recon_only = os.environ['RECON_ONLY']
+    featreg_node.interface.recon_only = settings.RECON_ONLY
 
     return featreg_node
 
 
-def create_SageReg_node(subject_id: str):
+def create_SageReg_node(subject_id: str, settings):
     """Cortical surface registration
 
         Inputs
@@ -781,12 +782,12 @@ def create_SageReg_node(subject_id: str):
         * :py:func:`deepprep.interface.sagereg_node.SageReg`
 
     """
-    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
-    sagereg_home = Path(os.environ["SAGEREG_HOME"])
-    freesurfer_home = Path(os.environ['FREESURFER_HOME'])
+    subjects_dir = Path(settings.SUBJECTS_DIR)
+    sagereg_home = Path(settings.SAGEREG_HOME)
+    freesurfer_home = Path(settings.FREESURFER_HOME)
 
-    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-    device = os.environ['DEEPPREP_DEVICES']
+    workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
+    device = settings.DEVICE
 
     python_interpret = sys.executable
     sagereg_py = sagereg_home / 'predict.py'  # inference script
@@ -809,12 +810,12 @@ def create_SageReg_node(subject_id: str):
     sagereg_node.base_dir = workflow_cached_dir
     sagereg_node.source = Source(CPU_n=0, GPU_MB=7000, RAM_MB=10000)
 
-    sagereg_node.interface.recon_only = os.environ['RECON_ONLY']
+    sagereg_node.interface.recon_only = settings.RECON_ONLY
 
     return sagereg_node
 
 
-def create_JacobianAvgcurvCortparc_node(subject_id: str):
+def create_JacobianAvgcurvCortparc_node(subject_id: str, settings):
     """Computes how much the white surface was distorted,resamples the average curvature from the atlas to that of
         the subject and assigns a neuroanatomical label to each location on the cortical surface.
 
@@ -849,8 +850,8 @@ def create_JacobianAvgcurvCortparc_node(subject_id: str):
         * :py:func:`deepprep.interface.freesurfer_node.JacobianAvgcurvCortparc`
 
     """
-    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
-    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
+    subjects_dir = Path(settings.SUBJECTS_DIR)
+    workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
 
     JacobianAvgcurvCortparc_node = Node(JacobianAvgcurvCortparc(), f'{subject_id}_JacobianAvgcurvCortparc_node')
     JacobianAvgcurvCortparc_node.inputs.subjects_dir = subjects_dir
@@ -860,12 +861,12 @@ def create_JacobianAvgcurvCortparc_node(subject_id: str):
     JacobianAvgcurvCortparc_node.base_dir = workflow_cached_dir
     JacobianAvgcurvCortparc_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=500)
 
-    JacobianAvgcurvCortparc_node.interface.recon_only = os.environ['RECON_ONLY']
+    JacobianAvgcurvCortparc_node.interface.recon_only = settings.RECON_ONLY
 
     return JacobianAvgcurvCortparc_node
 
 
-def create_WhitePialThickness1_node(subject_id: str):
+def create_WhitePialThickness1_node(subject_id: str, settings):
     """Generate white,pial and thickness
 
         Inputs
@@ -896,8 +897,8 @@ def create_WhitePialThickness1_node(subject_id: str):
 
 
     """
-    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
-    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
+    subjects_dir = Path(settings.SUBJECTS_DIR)
+    workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
 
     white_pial_thickness1 = Node(WhitePialThickness1(), name=f'{subject_id}_recon_WhitePialThickness1_node')
     white_pial_thickness1.inputs.subjects_dir = subjects_dir
@@ -916,12 +917,12 @@ def create_WhitePialThickness1_node(subject_id: str):
     white_pial_thickness1.base_dir = workflow_cached_dir
     white_pial_thickness1.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=1500)
 
-    white_pial_thickness1.interface.recon_only = os.environ['RECON_ONLY']
+    white_pial_thickness1.interface.recon_only = settings.RECON_ONLY
 
     return white_pial_thickness1
 
 
-def create_Curvstats_node(subject_id: str):
+def create_Curvstats_node(subject_id: str, settings):
     """Compute the mean and variances for a curvature file
 
         Inputs
@@ -949,8 +950,8 @@ def create_Curvstats_node(subject_id: str):
         * :py:func:`deepprep.interface.freesurfer_node.Curvstats`
 
     """
-    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
-    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
+    subjects_dir = Path(settings.SUBJECTS_DIR)
+    workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
 
     Curvstats_node = Node(Curvstats(), name=f'{subject_id}_recon_Curvstats_node')
     Curvstats_node.inputs.subjects_dir = subjects_dir
@@ -968,41 +969,41 @@ def create_Curvstats_node(subject_id: str):
     Curvstats_node.base_dir = workflow_cached_dir
     Curvstats_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=250)
 
-    Curvstats_node.interface.recon_only = os.environ['RECON_ONLY']
+    Curvstats_node.interface.recon_only = settings.RECON_ONLY
 
     return Curvstats_node
 
 
-def create_BalabelsMult_node(subject_id: str):
+def create_BalabelsMult_node(subject_id: str, settings):
     """ !!!Too much inputs and outputs
 
 
     """
-    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
-    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
+    subjects_dir = Path(settings.SUBJECTS_DIR)
+    workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
     subject_surf_dir = subjects_dir / subject_id / 'surf'
 
     BalabelsMult_node = Node(BalabelsMult(), name=f'{subject_id}_recon_BalabelsMult_node')
     BalabelsMult_node.inputs.subjects_dir = subjects_dir
     BalabelsMult_node.inputs.subject_id = subject_id
     BalabelsMult_node.inputs.threads = THREAD
-    BalabelsMult_node.inputs.freesurfer_dir = os.environ['FREESURFER_HOME']
+    BalabelsMult_node.inputs.freesurfer_dir = settings.FREESURFER_HOME
 
     BalabelsMult_node.inputs.lh_sphere_reg = subject_surf_dir / f'lh.sphere.reg'
     BalabelsMult_node.inputs.rh_sphere_reg = subject_surf_dir / f'rh.sphere.reg'
     BalabelsMult_node.inputs.lh_white = subject_surf_dir / f'lh.white'
     BalabelsMult_node.inputs.rh_white = subject_surf_dir / f'rh.white'
-    BalabelsMult_node.inputs.fsaverage_label_dir = Path(os.environ['FREESURFER_HOME']) / "subjects/fsaverage/label"
+    BalabelsMult_node.inputs.fsaverage_label_dir = Path(settings.FREESURFER_HOME) / "subjects/fsaverage/label"
 
     BalabelsMult_node.base_dir = workflow_cached_dir
     BalabelsMult_node.source = Source(CPU_n=2, GPU_MB=0, RAM_MB=1500)
 
-    BalabelsMult_node.interface.recon_only = os.environ['RECON_ONLY']
+    BalabelsMult_node.interface.recon_only = settings.RECON_ONLY
 
     return BalabelsMult_node
 
 
-def create_Cortribbon_node(subject_id: str):
+def create_Cortribbon_node(subject_id: str, settings):
     """Creates binary volume masks of the cortical ribbon
 
         Inputs
@@ -1032,8 +1033,8 @@ def create_Cortribbon_node(subject_id: str):
         * :py:func:`deepprep.interface.freesurfer_node.Cortribbon`
 
     """
-    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
-    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
+    subjects_dir = Path(settings.SUBJECTS_DIR)
+    workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
     subject_mri_dir = subjects_dir / subject_id / 'mri'
     subject_surf_dir = subjects_dir / subject_id / 'surf'
 
@@ -1051,12 +1052,12 @@ def create_Cortribbon_node(subject_id: str):
     Cortribbon_node.base_dir = workflow_cached_dir
     Cortribbon_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=1000)
 
-    Cortribbon_node.interface.recon_only = os.environ['RECON_ONLY']
+    Cortribbon_node.interface.recon_only = settings.RECON_ONLY
 
     return Cortribbon_node
 
 
-def create_Parcstats_node(subject_id: str):
+def create_Parcstats_node(subject_id: str, settings):
     """Compute statistics of cortical partitions and register cortical partition models with other anatomical structures
         to generate new partition models
 
@@ -1101,8 +1102,8 @@ def create_Parcstats_node(subject_id: str):
         * :py:func:`deepprep.interface.freesurfer_node.Parcstats`
 
     """
-    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
-    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
+    subjects_dir = Path(settings.SUBJECTS_DIR)
+    workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
 
     subject_mri_dir = subjects_dir / subject_id / 'mri'
     subject_surf_dir = subjects_dir / subject_id / 'surf'
@@ -1127,21 +1128,21 @@ def create_Parcstats_node(subject_id: str):
     Parcstats_node.base_dir = workflow_cached_dir
     Parcstats_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=500)
 
-    Parcstats_node.interface.recon_only = os.environ['RECON_ONLY']
+    Parcstats_node.interface.recon_only = settings.RECON_ONLY
 
     return Parcstats_node
 
 
-def create_Aseg7_node(subject_id: str):
+def create_Aseg7_node(subject_id: str, settings):
     """
 
 
     """
-    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
-    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-    atlas_type = os.environ['DEEPPREP_ATLAS_TYPE']
-    task = os.environ['DEEPPREP_TASK']
-    preprocess_method = os.environ['DEEPPREP_PREPROCESS_METHOD']
+    subjects_dir = Path(settings.SUBJECTS_DIR)
+    workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
+    atlas_type = settings.FMRI.ATLAS_SPACE
+    task = settings.DEEPPREP_TASK
+    preprocess_method = settings.DEEPPREP_PREPROCESS_METHOD
 
     subject_mri_dir = subjects_dir / subject_id / 'mri'
     subject_surf_dir = subjects_dir / subject_id / 'surf'
@@ -1167,12 +1168,12 @@ def create_Aseg7_node(subject_id: str):
     Aseg7_node.interface.task = task
     Aseg7_node.interface.preprocess_method = preprocess_method
 
-    Aseg7_node.interface.recon_only = os.environ['RECON_ONLY']
+    Aseg7_node.interface.recon_only = settings.RECON_ONLY
 
     return Aseg7_node
 
 
-def create_node_t():
+def create_node_t(settings):
     from interface.run import set_envrion
     set_envrion()
 
@@ -1197,29 +1198,29 @@ def create_node_t():
     if not bold_preprocess_dir_test.exists():
         bold_preprocess_dir_test.mkdir(parents=True, exist_ok=True)
 
-    os.environ['SUBJECTS_DIR'] = str(subjects_dir_test)
-    os.environ['BOLD_PREPROCESS_DIR'] = str(bold_preprocess_dir_test)
-    os.environ['WORKFLOW_CACHED_DIR'] = str(workflow_cached_dir_test)
-    os.environ['FASTSURFER_HOME'] = str(fastsurfer_home)
-    os.environ['FREESURFER_HOME'] = str(freesurfer_home)
-    os.environ['FASTCSR_HOME'] = str(fastcsr_home)
-    os.environ['SAGEREG_HOME'] = str(sagereg_home)
-    os.environ['BIDS_DIR'] = bids_data_dir_test
-    os.environ['VXM_MODEL_PATH'] = str(vxm_model_path_test)
-    os.environ['MNI152_BRAIN_MASK'] = str(mni152_brain_mask_test)
-    os.environ['RESOURCE_DIR'] = str(resource_dir_test)
-    os.environ['DEEPPREP_DEVICES'] = 'cuda'
+    settings.SUBJECTS_DIR = str(subjects_dir_test)
+    settings.BOLD_PREPROCESS_DIR = str(bold_preprocess_dir_test)
+    settings.WORKFLOW_CACHED_DIR = str(workflow_cached_dir_test)
+    settings.FASTSURFER_HOME = str(fastsurfer_home)
+    settings.FREESURFER_HOME = str(freesurfer_home)
+    settings.FASTCSR_HOME = str(fastcsr_home)
+    settings.SAGEREG_HOME = str(sagereg_home)
+    settings.BIDS_DIR = bids_data_dir_test
+    settings.VXM_MODEL_PATH = str(vxm_model_path_test)
+    settings.MNI152_BRAIN_MASK = str(mni152_brain_mask_test)
+    settings.RESOURCE_DIR = str(resource_dir_test)
+    settings.DEVICE = 'cuda'
 
     atlas_type_test = 'MNI152_T1_2mm'
     task_test = 'rest'
     preprocess_method_test = 'task'
 
-    os.environ['DEEPPREP_ATLAS_TYPE'] = atlas_type_test
-    os.environ['DEEPPREP_TASK'] = task_test
-    os.environ['DEEPPREP_PREPROCESS_METHOD'] = preprocess_method_test
+    settings.FMRI.ATLAS_SPACE = atlas_type_test
+    settings.DEEPPREP_TASK = task_test
+    settings.DEEPPREP_PREPROCESS_METHOD = preprocess_method_test
 
-    os.environ['RECON_ONLY'] = 'True'
-    os.environ['BOLD_ONLY'] = 'False'
+    settings.RECON_ONLY = 'True'
+    settings.BOLD_ONLY = 'False'
 
     subject_id_test = 'sub-1000037-ses-02'
     t1w_files = ['/mnt/ngshare/DeepPrep_workflow_test/UKB_BIDS/sub-R07/ses-01/anat/sub-R07_ses-01_T1w.nii.gz']
