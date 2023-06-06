@@ -2,7 +2,6 @@ import nibabel as nib
 import numpy as np
 import numpy
 from typing import Iterable
-from numpy.core.multiarray import normalize_axis_index
 from . import butt1d
 from scipy.ndimage import gaussian_filter
 
@@ -111,3 +110,4 @@ def bandpass_nifti(gauss_path, tr):
     bpss_path = gauss_path.replace('.nii.gz', '_bpss.nii.gz')
     _bandpass_nifti(gauss_path, bpss_path, nskip, order, band, tr)
     return bpss_path
+
