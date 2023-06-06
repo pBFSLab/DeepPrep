@@ -1,6 +1,6 @@
 from nipype.interfaces.base import BaseInterface, \
     BaseInterfaceInputSpec, File, TraitedSpec, Directory, Str
-from interface.run import multipool_run, multipool_BidsBolds, multipool_BidsBolds_2, Pool
+from deepprep.interface.run import multipool_run, multipool_BidsBolds, multipool_BidsBolds_2, Pool
 import sys
 import sh
 import nibabel as nib
@@ -11,8 +11,7 @@ import os
 import ants
 import shutil
 
-from app.filters.filters import bandpass_nifti
-
+# from deepprep.app.filters.filters import bandpass_nifti
 
 class BoldSkipReorientInputSpec(BaseInterfaceInputSpec):
     subject_id = Str(exists=True, desc="subject id", mandatory=True)
@@ -542,170 +541,170 @@ class MkBrainmask(BaseInterface):
         return node
 
 
-class RestGaussInputSpec(BaseInterfaceInputSpec):
-    subject_id = Str(exists=True, desc="subject id", mandatory=True)
-    subjects_dir = Directory(exists=True, desc='subjects_dir', mandatory=True)
-    data_path = Directory(exists=True, desc='data path', mandatory=True)
-    task = Str(exists=True, desc="task", mandatory=True)
-    derivative_deepprep_path = Directory(exists=True, desc='derivative_deepprep_path', mandatory=True)
-    preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
-    atlas_type = Str(exists=True, desc='MNI152_T1_2mm', mandatory=True)
+# class RestGaussInputSpec(BaseInterfaceInputSpec):
+#     subject_id = Str(exists=True, desc="subject id", mandatory=True)
+#     subjects_dir = Directory(exists=True, desc='subjects_dir', mandatory=True)
+#     data_path = Directory(exists=True, desc='data path', mandatory=True)
+#     task = Str(exists=True, desc="task", mandatory=True)
+#     derivative_deepprep_path = Directory(exists=True, desc='derivative_deepprep_path', mandatory=True)
+#     preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
+#     atlas_type = Str(exists=True, desc='MNI152_T1_2mm', mandatory=True)
+#
+#
+# class RestGaussOutputSpec(TraitedSpec):
+#     subject_id = Str(exists=True, desc="subject id")
+#
+#
+# class RestGauss(BaseInterface):
+#     input_spec = RestGaussInputSpec
+#     output_spec = RestGaussOutputSpec
+#
+#     time = 11 / 60  # 运行时间：分钟
+#     cpu = 0  # 最大cpu占用：个
+#     gpu = 0  # 最大gpu占用：MB
+#
+#     def __init__(self):
+#         super(RestGauss, self).__init__()
+#
+#     def check_output(self, runs):
+#         sub = self.inputs.subject_id
+#         task = self.inputs.task
+#
+#         for run in runs:
+#             RestGauss_output_files = [f'{sub}_bld_rest_reorient_skip_faln_mc_g1000000000.nii.gz']
+#             output_list = os.listdir(
+#                 Path(self.inputs.derivative_deepprep_path) / sub / 'tmp' / f'task-{task}' / sub / 'bold' / run)
+#             check_result = set(RestGauss_output_files) <= set(output_list)
+#             if not check_result:
+#                 return FileExistsError
+#
+#     def cmd(self, run):
+#         from app.filters.filters import gauss_nifti
+#
+#         preprocess_dir = Path(
+#             self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
+#         mc = Path(
+#             preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
+#         fcmri_dir = Path(preprocess_dir) / self.inputs.subject_id / 'fcmri'
+#         Path(fcmri_dir).mkdir(parents=True, exist_ok=True)
+#         gauss_nifti(str(mc), 1000000000)
+#
+#     def _run_interface(self, runtime):
+#         preprocess_dir = Path(
+#             self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
+#         runs = sorted(
+#             [d.name for d in (Path(preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if d.is_dir()])
+#         multipool_run(self.cmd, runs, Multi_Num=8)
+#
+#         self.check_output(runs)
+#
+#         return runtime
+#
+#     def _list_outputs(self):
+#         outputs = self._outputs().get()
+#         outputs["subject_id"] = self.inputs.subject_id
+#         return outputs
+#
+#     def create_sub_node(self):
+#         from interface.create_node_bold_new import create_RestBandpass_node
+#         node = create_RestBandpass_node(self.inputs.subject_id,
+#                                         self.inputs.task,
+#                                         self.inputs.atlas_type,
+#                                         self.inputs.preprocess_method)
+#
+#         return node
 
 
-class RestGaussOutputSpec(TraitedSpec):
-    subject_id = Str(exists=True, desc="subject id")
-
-
-class RestGauss(BaseInterface):
-    input_spec = RestGaussInputSpec
-    output_spec = RestGaussOutputSpec
-
-    time = 11 / 60  # 运行时间：分钟
-    cpu = 0  # 最大cpu占用：个
-    gpu = 0  # 最大gpu占用：MB
-
-    def __init__(self):
-        super(RestGauss, self).__init__()
-
-    def check_output(self, runs):
-        sub = self.inputs.subject_id
-        task = self.inputs.task
-
-        for run in runs:
-            RestGauss_output_files = [f'{sub}_bld_rest_reorient_skip_faln_mc_g1000000000.nii.gz']
-            output_list = os.listdir(
-                Path(self.inputs.derivative_deepprep_path) / sub / 'tmp' / f'task-{task}' / sub / 'bold' / run)
-            check_result = set(RestGauss_output_files) <= set(output_list)
-            if not check_result:
-                return FileExistsError
-
-    def cmd(self, run):
-        from app.filters.filters import gauss_nifti
-
-        preprocess_dir = Path(
-            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
-        mc = Path(
-            preprocess_dir) / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz'
-        fcmri_dir = Path(preprocess_dir) / self.inputs.subject_id / 'fcmri'
-        Path(fcmri_dir).mkdir(parents=True, exist_ok=True)
-        gauss_nifti(str(mc), 1000000000)
-
-    def _run_interface(self, runtime):
-        preprocess_dir = Path(
-            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
-        runs = sorted(
-            [d.name for d in (Path(preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if d.is_dir()])
-        multipool_run(self.cmd, runs, Multi_Num=8)
-
-        self.check_output(runs)
-
-        return runtime
-
-    def _list_outputs(self):
-        outputs = self._outputs().get()
-        outputs["subject_id"] = self.inputs.subject_id
-        return outputs
-
-    def create_sub_node(self):
-        from interface.create_node_bold_new import create_RestBandpass_node
-        node = create_RestBandpass_node(self.inputs.subject_id,
-                                        self.inputs.task,
-                                        self.inputs.atlas_type,
-                                        self.inputs.preprocess_method)
-
-        return node
-
-
-class RestBandpassInputSpec(BaseInterfaceInputSpec):
-    subject_id = Str(exists=True, desc='subject', mandatory=True)
-    task = Str(exists=True, desc='task', mandatory=True)
-    data_path = Directory(exists=True, desc='data path', mandatory=True)
-    derivative_deepprep_path = Directory(exists=True, desc='derivative_deepprep_path', mandatory=True)
-    preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
-    atlas_type = Str(exists=True, desc='MNI152_T1_2mm', mandatory=True)
-
-
-class RestBandpassOutputSpec(TraitedSpec):
-    subject_id = Str(exists=True, desc='subject')
-    data_path = Directory(exists=True, desc='data path')
-
-
-class RestBandpass(BaseInterface):
-    input_spec = RestBandpassInputSpec
-    output_spec = RestBandpassOutputSpec
-
-    time = 120 / 60  # 运行时间：分钟
-    cpu = 2  # 最大cpu占用：个
-    gpu = 0  # 最大gpu占用：MB
-
-    def __init__(self):
-        super(RestBandpass, self).__init__()
-
-    def check_output(self, runs):
-        sub = self.inputs.subject_id
-        task = self.inputs.task
-
-        for run in runs:
-            RestBandpass_output_files = [f'{sub}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss.nii.gz']
-            output_list = os.listdir(
-                Path(self.inputs.derivative_deepprep_path) / sub / 'tmp' / f'task-{task}' / sub / 'bold' / run)
-            check_result = set(RestBandpass_output_files) <= set(output_list)
-            if not check_result:
-                return FileExistsError
-
-    def cmd(self, idx, bids_entities, bids_path):
-        preprocess_dir = Path(
-            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
-        entities = dict(bids_entities)
-        if 'RepetitionTime' in entities:
-            TR = entities['RepetitionTime']
-        else:
-            bold = ants.image_read(bids_path)
-            TR = bold.spacing[3]
-        run = f'{idx + 1:03}'
-        gauss_path = preprocess_dir / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc_g1000000000.nii.gz'
-        bandpass_nifti(str(gauss_path), TR)
-
-    def _run_interface(self, runtime):
-        preprocess_dir = Path(
-            self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
-        layout = bids.BIDSLayout(str(self.inputs.data_path), derivatives=False)
-        subj = self.inputs.subject_id.split('-')[1:]
-        if self.inputs.task is None:
-            bids_bolds = layout.get(subject=subj, suffix='bold', extension='.nii.gz')
-        else:
-            bids_bolds = layout.get(subject=subj, task=self.inputs.task, suffix='bold', extension='.nii.gz')
-        all_idx = []
-        all_bids_entities = []
-        all_bids_path = []
-        for idx, bids_bold in enumerate(bids_bolds):
-            all_idx.append(idx)
-            all_bids_entities.append(bids_bold.entities)
-            all_bids_path.append(bids_bold.path)
-        multipool_BidsBolds(self.cmd, all_idx, all_bids_entities, all_bids_path, Multi_Num=8)
-        runs = sorted(
-            [d.name for d in (Path(preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if d.is_dir()])
-
-        self.check_output(runs)
-
-        return runtime
-
-    def _list_outputs(self):
-        outputs = self._outputs().get()
-        outputs["subject_id"] = self.inputs.subject_id
-        outputs["data_path"] = self.inputs.data_path
-
-        return outputs
-
-    def create_sub_node(self):
-        from interface.create_node_bold_new import create_RestRegression_node
-        node = create_RestRegression_node(self.inputs.subject_id,
-                                          self.inputs.task,
-                                          self.inputs.atlas_type,
-                                          self.inputs.preprocess_method)
-
-        return node
-
+# class RestBandpassInputSpec(BaseInterfaceInputSpec):
+#     subject_id = Str(exists=True, desc='subject', mandatory=True)
+#     task = Str(exists=True, desc='task', mandatory=True)
+#     data_path = Directory(exists=True, desc='data path', mandatory=True)
+#     derivative_deepprep_path = Directory(exists=True, desc='derivative_deepprep_path', mandatory=True)
+#     preprocess_method = Str(exists=True, desc='preprocess method', mandatory=True)
+#     atlas_type = Str(exists=True, desc='MNI152_T1_2mm', mandatory=True)
+#
+#
+# class RestBandpassOutputSpec(TraitedSpec):
+#     subject_id = Str(exists=True, desc='subject')
+#     data_path = Directory(exists=True, desc='data path')
+#
+#
+# class RestBandpass(BaseInterface):
+#     input_spec = RestBandpassInputSpec
+#     output_spec = RestBandpassOutputSpec
+#
+#     time = 120 / 60  # 运行时间：分钟
+#     cpu = 2  # 最大cpu占用：个
+#     gpu = 0  # 最大gpu占用：MB
+#
+#     def __init__(self):
+#         super(RestBandpass, self).__init__()
+#
+#     def check_output(self, runs):
+#         sub = self.inputs.subject_id
+#         task = self.inputs.task
+#
+#         for run in runs:
+#             RestBandpass_output_files = [f'{sub}_bld_rest_reorient_skip_faln_mc_g1000000000_bpss.nii.gz']
+#             output_list = os.listdir(
+#                 Path(self.inputs.derivative_deepprep_path) / sub / 'tmp' / f'task-{task}' / sub / 'bold' / run)
+#             check_result = set(RestBandpass_output_files) <= set(output_list)
+#             if not check_result:
+#                 return FileExistsError
+#
+#     def cmd(self, idx, bids_entities, bids_path):
+#         preprocess_dir = Path(
+#             self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
+#         entities = dict(bids_entities)
+#         if 'RepetitionTime' in entities:
+#             TR = entities['RepetitionTime']
+#         else:
+#             bold = ants.image_read(bids_path)
+#             TR = bold.spacing[3]
+#         run = f'{idx + 1:03}'
+#         gauss_path = preprocess_dir / self.inputs.subject_id / 'bold' / run / f'{self.inputs.subject_id}_bld_rest_reorient_skip_faln_mc_g1000000000.nii.gz'
+#         bandpass_nifti(str(gauss_path), TR)
+#
+#     def _run_interface(self, runtime):
+#         preprocess_dir = Path(
+#             self.inputs.derivative_deepprep_path) / self.inputs.subject_id / 'tmp' / f'task-{self.inputs.task}'
+#         layout = bids.BIDSLayout(str(self.inputs.data_path), derivatives=False)
+#         subj = self.inputs.subject_id.split('-')[1:]
+#         if self.inputs.task is None:
+#             bids_bolds = layout.get(subject=subj, suffix='bold', extension='.nii.gz')
+#         else:
+#             bids_bolds = layout.get(subject=subj, task=self.inputs.task, suffix='bold', extension='.nii.gz')
+#         all_idx = []
+#         all_bids_entities = []
+#         all_bids_path = []
+#         for idx, bids_bold in enumerate(bids_bolds):
+#             all_idx.append(idx)
+#             all_bids_entities.append(bids_bold.entities)
+#             all_bids_path.append(bids_bold.path)
+#         multipool_BidsBolds(self.cmd, all_idx, all_bids_entities, all_bids_path, Multi_Num=8)
+#         runs = sorted(
+#             [d.name for d in (Path(preprocess_dir) / self.inputs.subject_id / 'bold').iterdir() if d.is_dir()])
+#
+#         self.check_output(runs)
+#
+#         return runtime
+#
+#     def _list_outputs(self):
+#         outputs = self._outputs().get()
+#         outputs["subject_id"] = self.inputs.subject_id
+#         outputs["data_path"] = self.inputs.data_path
+#
+#         return outputs
+#
+#     def create_sub_node(self):
+#         from interface.create_node_bold_new import create_RestRegression_node
+#         node = create_RestRegression_node(self.inputs.subject_id,
+#                                           self.inputs.task,
+#                                           self.inputs.atlas_type,
+#                                           self.inputs.preprocess_method)
+#
+#         return node
+#
 
 class RestRegressionInputSpec(BaseInterfaceInputSpec):
     subject_id = Str(exists=True, desc='subject', mandatory=True)
