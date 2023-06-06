@@ -16,11 +16,11 @@ if backend == 'pytorch':
         import torch
     except ImportError:
         raise ImportError('Please install pytorch to use this voxelmorph backend')
-
-    from . import torch
-    from .torch import layers
-    from .torch import networks
-    from .torch import losses
+    #
+    # from . import torch
+    # from .torch import layers
+    # from .torch import networks
+    # from .torch import losses
 
 else:
     # tensorflow is default backend

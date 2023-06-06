@@ -1,7 +1,7 @@
 from pathlib import Path
 from nipype.interfaces.base import BaseInterfaceInputSpec, BaseInterface, File, TraitedSpec, Directory, \
     traits, traits_extension, Str
-from interface.run import run_cmd_with_timing, multipool
+from deepprep.interface.run import run_cmd_with_timing, multipool
 
 
 class SegmentInputSpec(BaseInterfaceInputSpec):
