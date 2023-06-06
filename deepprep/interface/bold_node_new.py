@@ -150,7 +150,7 @@ class StcMc(BaseInterface):
         super(StcMc, self).__init__()
 
     def check_output(self, subj_func_dir: Path, bolds: list):
-        filenames = ['_skip_reorient_faln.nii.gz',
+        filenames = [
                      '_skip_reorient_faln_mc.nii.gz',
                      '_skip_reorient_faln_mc.mcdat',
                      ]
@@ -192,34 +192,24 @@ class StcMc(BaseInterface):
             '-nolog']
         sh.stc_sess(*shargs, _out=sys.stdout)
 
-        # MkTemplate
-        dst_template_file = subj_func_dir / 'template.nii.gz'
-        if run == '001' and (not dst_template_file.exists()):
-            shargs = [
-                '-s', self.inputs.subject_id,
-                '-d', tmp_run,
-                '-fsd', 'bold',
-                '-funcstem', faln_fname,
-                '-nolog']
-            sh.mktemplate_sess(*shargs, _out=sys.stdout)
-
-            src_template_file = subj_func_dir / run / self.inputs.subject_id / 'bold' / 'template.nii.gz'
-            dst_template_file = subj_func_dir / 'template_mc.nii.gz'
-            shutil.copyfile(src_template_file, dst_template_file)
-            src_template_file = subj_func_dir / run / self.inputs.subject_id / 'bold' / 'template.log'
-            dst_template_file = subj_func_dir / 'template_mc.log'
-            shutil.copyfile(src_template_file, dst_template_file)
-
-        else:
-            src_template_file = subj_func_dir / 'template_mc.nii.gz'
-            dst_template_file = subj_func_dir / run / self.inputs.subject_id / 'bold' / 'template.nii.gz'
-            dst_template_file.symlink_to(src_template_file)
+        """
+        mktemplate-sess 会生成两个template
+        1. 一个放到 bold/template.nii.gz，使用的是run 001的first frame，供mc-sess --per-session使用
+        2. 一个放到 bold/run/template.nii.gz 使用的是每个run的mid frame，供mc-sess --per-run参数使用(default)
+        """
+        shargs = [
+            '-s', self.inputs.subject_id,
+            '-d', tmp_run,
+            '-fsd', 'bold',
+            '-funcstem', faln_fname,
+            '-nolog']
+        sh.mktemplate_sess(*shargs, _out=sys.stdout)
 
         # Mc
         shargs = [
             '-s', self.inputs.subject_id,
             '-d', tmp_run,
-            '-per-session',
+            '-per-run',
             '-fsd', 'bold',
             '-fstem', faln_fname,
             '-fmcstem', mc_fname,
@@ -229,24 +219,37 @@ class StcMc(BaseInterface):
         ori_path = subj_func_dir
         try:
             # Stc
-            DEBUG = True
+            DEBUG = False
             if DEBUG:
                 shutil.move(link_dir / f'{faln_fname}.nii.gz',
                             ori_path / f'{faln_fname}.nii.gz')
                 shutil.move(link_dir / f'{faln_fname}.nii.gz.log',
                             ori_path / f'{faln_fname}.nii.gz.log')
+            else:
+                (ori_path / f'{input_fname}.nii.gz').unlink(missing_ok=True)
+
+            # Template reference for mc
+            shutil.copyfile(link_dir / 'template.nii.gz',
+                            ori_path / f'{faln_fname}_boldref.nii.gz')
+            shutil.copyfile(link_dir / 'template.log',
+                            ori_path / f'{faln_fname}_boldref.log')
 
             # Mc
             shutil.move(link_dir / f'{mc_fname}.nii.gz',
                         ori_path / f'{mc_fname}.nii.gz')
-            shutil.move(link_dir / f'{mc_fname}.mat.aff12.1D',
-                        ori_path / f'{mc_fname}.mat.aff12.1D')
-            shutil.move(link_dir / f'{mc_fname}.nii.gz.mclog',
-                        ori_path / f'{mc_fname}.nii.gz.mclog')
+
             shutil.move(link_dir / f'{mc_fname}.mcdat',
                         ori_path / f'{mc_fname}.mcdat')
-            shutil.move(link_dir / 'mcextreg', ori_path / f'{mc_fname}.mcextreg')
-            shutil.move(link_dir / 'mcdat2extreg.log', ori_path / f'{mc_fname}.mcdat2extreg.log')
+
+            if DEBUG:
+                shutil.move(link_dir / f'{mc_fname}.mat.aff12.1D',
+                            ori_path / f'{mc_fname}.mat.aff12.1D')
+                shutil.move(link_dir / f'{mc_fname}.nii.gz.mclog',
+                            ori_path / f'{mc_fname}.nii.gz.mclog')
+                shutil.move(link_dir / 'mcextreg',
+                            ori_path / f'{mc_fname}.mcextreg')
+                shutil.move(link_dir / 'mcdat2extreg.log',
+                            ori_path / f'{mc_fname}.mcdat2extreg.log')
         except:
             pass
         shutil.rmtree(ori_path / run)
@@ -269,12 +272,6 @@ class StcMc(BaseInterface):
             bold_file = Path(bids_bold.path)
             bold_files.append(bold_file)
             args.append([subj_func_dir, bold_file, run])
-
-        # 单独运行第一个，制作template的需求
-        template_file = subj_func_dir / 'template_mc.nii.gz'
-        if not template_file.exists():
-            self.cmd(*args[0])
-            args = args[1:]
 
         cpu_threads = int(self.inputs.multiprocess)
         if cpu_threads > 1:
@@ -332,7 +329,7 @@ class Register(BaseInterface):
         super(Register, self).__init__()
 
     def check_output(self, subj_func_dir: Path, bolds: list):
-        filenames = ['_skip_reorient_faln_mc_bbregister.register.dat',
+        filenames = ['_skip_reorient_faln_mc_from_mc_to_fsnative_bbregister_rigid.dat',  # _skip_reorient_faln_mc_from_mc_to_fsnative_bbregister_rigid.dat
                      ]
         for bold in bolds:
             for filename in filenames:
@@ -342,7 +339,7 @@ class Register(BaseInterface):
 
     def cmd(self, subj_func_dir: Path, bold: Path):
         mov = subj_func_dir / bold.name.replace('.nii.gz', '_skip_reorient_faln_mc.nii.gz')
-        reg = subj_func_dir / bold.name.replace('.nii.gz', '_skip_reorient_faln_mc_bbregister.register.dat')
+        reg = subj_func_dir / bold.name.replace('.nii.gz', '_skip_reorient_faln_mc_from_mc_to_fsnative_bbregister_rigid.dat')
         print(os.environ["SUBJECTS_DIR"])
         shargs = [
             '--bold',
@@ -350,6 +347,12 @@ class Register(BaseInterface):
             '--mov', mov,
             '--reg', reg]
         sh.bbregister(*shargs, _out=sys.stdout)
+
+        DEBUG = False
+        if not DEBUG:
+            (subj_func_dir / reg.name.replace('.dat', '.dat.mincost')).unlink(missing_ok=True)
+            (subj_func_dir / reg.name.replace('.dat', '.dat.param')).unlink(missing_ok=True)
+            (subj_func_dir / reg.name.replace('.dat', '.dat.sum')).unlink(missing_ok=True)
 
     def _run_interface(self, runtime):
         preprocess_dir = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id
@@ -440,7 +443,7 @@ class MkBrainmask(BaseInterface):
 
     def cmd(self, subj_func_dir: Path, bold: Path):
         mov = subj_func_dir / bold.name.replace('.nii.gz', '_skip_reorient_faln_mc.nii.gz')
-        reg = subj_func_dir / bold.name.replace('.nii.gz', '_skip_reorient_faln_mc_bbregister.register.dat')
+        reg = subj_func_dir / bold.name.replace('.nii.gz', '_skip_reorient_faln_mc_from_mc_to_fsnative_bbregister_rigid.dat')
 
         # project aparc+aseg to mc
         seg = Path(self.inputs.subjects_dir) / self.inputs.subject_id / 'mri' / 'aparc+aseg.mgz'  # Recon
