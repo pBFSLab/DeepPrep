@@ -118,20 +118,21 @@ def MkBrainmask_test():
 
 def VxmRegistraion_test():
     task = 'motor'
-    subject_id = 'sub-MSC01'
-    data_path = Path(f'/mnt/DATA/lincong/temp/DeepPrep/MSC')
-    derivative_deepprep_path = data_path / 'derivatives' / 'deepprep'
-    tmpdir = derivative_deepprep_path / subject_id / 'tmp'
-    subjects_dir = derivative_deepprep_path / 'Recon'
+    subject_id = 'sub-0025427'
+    data_path = Path(f'/mnt/ngshare/deepprep_test/HNU')
+    # derivative_deepprep_path = data_path / 'derivatives' / 'deepprep'
+    # tmpdir = derivative_deepprep_path / subject_id / 'tmp'
+    # subjects_dir = derivative_deepprep_path / 'Recon'
 
-    data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')  # BIDS path
-    data_path = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/MSC_bold_test')  # BIDS path
-    preprocess_dir = data_path / 'derivatives' / 'deepprep_wftest' / subject_id / 'tmp' / f'task-{task}'
-    preprocess_dir = data_path / 'derivatives' / 'deepprep_bold_test' / subject_id / 'tmp' / f'task-{task}'
-    subjects_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep_wftest/Recon')
-    subjects_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/MSC_bold_test/derivatives/deepprep_bold_test/Recon')
-    derivative_deepprep_path = data_path / 'derivatives' / 'deepprep_wftest'
-    derivative_deepprep_path = data_path / 'derivatives' / 'deepprep_bold_test'
+    # data_path = Path(f'/mnt/ngshare/DeepPrep/MSC')  # BIDS path
+    # data_path = Path(f'/mnt/ngshare/DeepPrep/MSC/derivatives/MSC_bold_test')  # BIDS path
+    # preprocess_dir = data_path / 'derivatives' / 'deepprep_wftest' / subject_id / 'tmp' / f'task-{task}'
+    preprocess_dir = data_path / subject_id / 'tmp' / f'task-{task}'
+    # subjects_dir = Path('/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep_wftest/Recon')
+    subjects_dir = data_path
+    # derivative_deepprep_path = data_path / 'derivatives' / 'deepprep_wftest'
+    # derivative_deepprep_path = data_path / 'derivatives' / 'deepprep_bold_test'
+    derivative_deepprep_path = Path(f'/mnt/ngshare/deepprep_test/HNU')
     tmpdir = derivative_deepprep_path / subject_id / 'tmp'
 
 
@@ -356,11 +357,11 @@ if __name__ == '__main__':
 
     ######## rest #########
 
-    # VxmRegistraion_test()
+    VxmRegistraion_test()
 
     # RestGauss_test()
 
-    RestBandpass_test()
+    # RestBandpass_test()
 
     # RestRegression_test()
 
