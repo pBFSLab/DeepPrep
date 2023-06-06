@@ -1,6 +1,6 @@
 from nipype.interfaces.base import BaseInterface, \
     BaseInterfaceInputSpec, File, TraitedSpec, Directory, Str
-from interface.run import multipool_run, multipool_BidsBolds, multipool_BidsBolds_2
+from deepprep.interface.run import multipool_run, multipool_BidsBolds, multipool_BidsBolds_2
 import sys
 import sh
 import nibabel as nib

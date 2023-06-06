@@ -2,7 +2,7 @@ import os
 from nipype.interfaces.base import BaseInterface, \
     BaseInterfaceInputSpec, traits, File, TraitedSpec, Directory, Str
 
-from interface.run import run_cmd_with_timing, get_freesurfer_threads, multipool
+from deepprep.interface.run import run_cmd_with_timing, get_freesurfer_threads, multipool
 from pathlib import Path
 
 from threading import Thread
@@ -25,6 +25,7 @@ class BrainmaskOutputSpec(TraitedSpec):
 
 
 class Brainmask(BaseInterface):
+
     input_spec = BrainmaskInputSpec
     output_spec = BrainmaskOutputSpec
 
