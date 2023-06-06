@@ -149,7 +149,7 @@ class VxmRegistraion(BaseInterface):
 
     def create_sub_node(self):
         if self.bold_only == 'True':
-            from interface.create_node_bold_new import create_VxmRegNormMNI152_node
+            from deepprep.interface.create_node_bold_new import create_VxmRegNormMNI152_node
             node = create_VxmRegNormMNI152_node(self.inputs.subject_id,
                                                 self.inputs.task,
                                                 self.inputs.atlas_type,
@@ -250,7 +250,6 @@ class VxmRegNormMNI152(BaseInterface):
     def vxm_warp_bold_2mm(self, bold_fsnative2mm, bold_fsnative2mm_file,
                           trt_ants_affine_file, trt_vxm_norigid_file, warped_file, verbose=True):
         import voxelmorph as vxm
-        import tensorflow as tf
 
         vxm_model_path = Path(self.inputs.vxm_model_path)
         atlas_type = self.inputs.atlas_type
