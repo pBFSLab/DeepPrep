@@ -5,17 +5,17 @@ from deepprep.interface.node_source import Source
 from nipype import Node
 
 """环境变量
-subjects_dir = Path(os.environ['SUBJECTS_DIR'])
-bold_preprocess_dir = Path(os.environ['BOLD_PREPROCESS_DIR'])
-workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-fastsurfer_home = Path(os.environ['FASTSURFER_HOME'])
-freesurfer_home = Path(os.environ['FREESURFER_HOME'])
-fastcsr_home = Path(os.environ['FASTCSR_HOME'])
-featreg_home = Path(os.environ['FEATREG_HOME'])
+subjects_dir = Path(settings.SUBJECTS_DIR)
+bold_preprocess_dir = Path(settings.BOLD_PREPROCESS_DIR)
+workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
+fastsurfer_home = Path(settings.FASTSURFER_HOME)
+freesurfer_home = Path(settings.FREESURFER_HOME)
+fastcsr_home = Path(settings.FASTCSR_HOME)
+featreg_home = Path(settings.FEATREG_HOME)
 python_interpret = sys.executable
 """
 
-def create_VxmRegistraion_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str):
+def create_VxmRegistraion_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str, settings):
     """Voxelmorph registration
 
         Inputs
@@ -68,12 +68,12 @@ def create_VxmRegistraion_node(subject_id: str, task: str, atlas_type: str, prep
 
     """
 
-    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
-    derivative_deepprep_path = os.environ['BOLD_PREPROCESS_DIR']
-    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-    data_path = Path(os.environ['BIDS_DIR'])
-    vxm_model_path = Path(os.environ['VXM_MODEL_PATH'])
-    gpuid = os.environ['DEEPPREP_DEVICES']
+    subjects_dir = Path(settings.SUBJECTS_DIR)
+    derivative_deepprep_path = settings.BOLD_PREPROCESS_DIR
+    workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
+    data_path = Path(settings.BIDS_DIR)
+    vxm_model_path = Path(settings.VXM_MODEL_PATH)
+    gpuid = settings.DEVICE
 
     VxmRegistraion_node = Node(VxmRegistraion(), name=f'{subject_id}_bold_VxmRegistraion_node')
     VxmRegistraion_node.inputs.subject_id = subject_id
@@ -90,12 +90,12 @@ def create_VxmRegistraion_node(subject_id: str, task: str, atlas_type: str, prep
     VxmRegistraion_node.base_dir = workflow_cached_dir
     VxmRegistraion_node.source = Source(CPU_n=1, GPU_MB=2715, RAM_MB=3000, IO_write_MB=0, IO_read_MB=0)
 
-    VxmRegistraion_node.interface.bold_only = os.environ['BOLD_ONLY']
+    VxmRegistraion_node.interface.bold_only = settings.BOLD_ONLY
 
     return VxmRegistraion_node
 
 
-def create_BoldSkipReorient_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str):
+def create_BoldSkipReorient_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str, settings):
     """Skip the first n frames
 
         Inputs
@@ -128,9 +128,9 @@ def create_BoldSkipReorient_node(subject_id: str, task: str, atlas_type: str, pr
         * :py:func:`deepprep.interface.bold_node_new.BoldSkipReorient`
 
     """
-    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-    derivative_deepprep_path = Path(os.environ['BOLD_PREPROCESS_DIR'])
-    data_path = Path(os.environ['BIDS_DIR'])
+    workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
+    derivative_deepprep_path = Path(settings.BOLD_PREPROCESS_DIR)
+    data_path = Path(settings.BIDS_DIR)
 
     BoldSkipReorient_node = Node(BoldSkipReorient(), name=f'{subject_id}_bold_BoldSkipReorient_node')
     BoldSkipReorient_node.inputs.subject_id = subject_id
@@ -145,12 +145,12 @@ def create_BoldSkipReorient_node(subject_id: str, task: str, atlas_type: str, pr
     BoldSkipReorient_node.base_dir = workflow_cached_dir
     BoldSkipReorient_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=1000, IO_write_MB=20, IO_read_MB=40)
 
-    BoldSkipReorient_node.interface.bold_only = os.environ['BOLD_ONLY']
+    BoldSkipReorient_node.interface.bold_only = settings.BOLD_ONLY
 
     return BoldSkipReorient_node
 
 
-def create_StcMc_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str):
+def create_StcMc_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str, settings):
     """Slice-timing correction and Motion correction
 
         Inputs
@@ -180,9 +180,9 @@ def create_StcMc_node(subject_id: str, task: str, atlas_type: str, preprocess_me
         * :py:func:`deepprep.interface.bold_node_new.StcMc`
 
     """
-    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-    derivative_deepprep_path = Path(os.environ['BOLD_PREPROCESS_DIR'])
-    data_path = Path(os.environ['BIDS_DIR'])
+    workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
+    derivative_deepprep_path = Path(settings.BOLD_PREPROCESS_DIR)
+    data_path = Path(settings.BIDS_DIR)
 
     StcMc_node = Node(StcMc(), name=f'{subject_id}_bold_StcMc_node')
     StcMc_node.inputs.subject_id = subject_id
@@ -196,12 +196,12 @@ def create_StcMc_node(subject_id: str, task: str, atlas_type: str, preprocess_me
     StcMc_node.base_dir = workflow_cached_dir
     StcMc_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=1000, IO_write_MB=20, IO_read_MB=40)
 
-    StcMc_node.interface.bold_only = os.environ['BOLD_ONLY']
+    StcMc_node.interface.bold_only = settings.BOLD_ONLY
 
     return StcMc_node
 
 
-def create_Register_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str):
+def create_Register_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str, settings):
     """Registration of functional MRI images to structural MRI images
 
         Inputs
@@ -231,9 +231,9 @@ def create_Register_node(subject_id: str, task: str, atlas_type: str, preprocess
         * :py:func:`deepprep.interface.bold_node_new.Register`
 
     """
-    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-    derivative_deepprep_path = Path(os.environ['BOLD_PREPROCESS_DIR'])
-    data_path = Path(os.environ['BIDS_DIR'])
+    workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
+    derivative_deepprep_path = Path(settings.BOLD_PREPROCESS_DIR)
+    data_path = Path(settings.BIDS_DIR)
 
     Register_node = Node(Register(), name=f'{subject_id}_bold_Register_node')
     Register_node.inputs.subject_id = subject_id
@@ -247,12 +247,12 @@ def create_Register_node(subject_id: str, task: str, atlas_type: str, preprocess
     Register_node.base_dir = workflow_cached_dir
     Register_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=1000, IO_write_MB=20, IO_read_MB=40)
 
-    Register_node.interface.bold_only = os.environ['BOLD_ONLY']
+    Register_node.interface.bold_only = settings.BOLD_ONLY
 
     return Register_node
 
 
-def create_Mkbrainmask_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str):
+def create_Mkbrainmask_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str, settings):
     """ Make brainmask
 
         Inputs
@@ -284,10 +284,10 @@ def create_Mkbrainmask_node(subject_id: str, task: str, atlas_type: str, preproc
 
 
     """
-    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-    derivative_deepprep_path = Path(os.environ['BOLD_PREPROCESS_DIR'])
-    data_path = Path(os.environ['BIDS_DIR'])
-    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
+    workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
+    derivative_deepprep_path = Path(settings.BOLD_PREPROCESS_DIR)
+    data_path = Path(settings.BIDS_DIR)
+    subjects_dir = Path(settings.SUBJECTS_DIR)
 
     Mkbrainmask_node = Node(MkBrainmask(), name=f'{subject_id}_bold_MkBrainmask_node')
     Mkbrainmask_node.inputs.subject_id = subject_id
@@ -302,16 +302,16 @@ def create_Mkbrainmask_node(subject_id: str, task: str, atlas_type: str, preproc
     Mkbrainmask_node.base_dir = workflow_cached_dir
     Mkbrainmask_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=1000, IO_write_MB=20, IO_read_MB=40)
 
-    Mkbrainmask_node.interface.bold_only = os.environ['BOLD_ONLY']
+    Mkbrainmask_node.interface.bold_only = settings.BOLD_ONLY
 
     return Mkbrainmask_node
 
 
-# def create_RestGauss_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str):
-#     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-#     derivative_deepprep_path = Path(os.environ['BOLD_PREPROCESS_DIR'])
-#     data_path = Path(os.environ['BIDS_DIR'])
-#     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
+# def create_RestGauss_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str, settings):
+#     workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
+#     derivative_deepprep_path = Path(settings.BOLD_PREPROCESS_DIR)
+#     data_path = Path(settings.BIDS_DIR)
+#     subjects_dir = Path(settings.SUBJECTS_DIR)
 #
 #     RestGauss_node = Node(RestGauss(), name=f'{subject_id}_bold_RestGauss_node')
 #     RestGauss_node.inputs.subject_id = subject_id
@@ -325,15 +325,15 @@ def create_Mkbrainmask_node(subject_id: str, task: str, atlas_type: str, preproc
 #     RestGauss_node.base_dir = workflow_cached_dir
 #     RestGauss_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=2000, IO_write_MB=0, IO_read_MB=0)
 #
-#     RestGauss_node.interface.bold_only = os.environ['BOLD_ONLY']
+#     RestGauss_node.interface.bold_only = settings.BOLD_ONLY
 #
 #     return RestGauss_node
 
 
-# def create_RestBandpass_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str):
-#     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-#     derivative_deepprep_path = Path(os.environ['BOLD_PREPROCESS_DIR'])
-#     data_path = Path(os.environ['BIDS_DIR'])
+# def create_RestBandpass_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str, settings):
+#     workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
+#     derivative_deepprep_path = Path(settings.BOLD_PREPROCESS_DIR)
+#     data_path = Path(settings.BIDS_DIR)
 #
 #     RestBandpass_node = Node(RestBandpass(), name=f'{subject_id}_bold_RestBandpass_node')
 #     RestBandpass_node.inputs.subject_id = subject_id
@@ -346,16 +346,16 @@ def create_Mkbrainmask_node(subject_id: str, task: str, atlas_type: str, preproc
 #     RestBandpass_node.base_dir = workflow_cached_dir
 #     RestBandpass_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=3000, IO_write_MB=0, IO_read_MB=0)
 #
-#     RestBandpass_node.interface.bold_only = os.environ['BOLD_ONLY']
+#     RestBandpass_node.interface.bold_only = settings.BOLD_ONLY
 #
 #     return RestBandpass_node
 
 
-def create_RestRegression_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str):
-    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-    derivative_deepprep_path = Path(os.environ['BOLD_PREPROCESS_DIR'])
-    data_path = Path(os.environ['BIDS_DIR'])
-    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
+def create_RestRegression_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str, settings):
+    workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
+    derivative_deepprep_path = Path(settings.BOLD_PREPROCESS_DIR)
+    data_path = Path(settings.BIDS_DIR)
+    subjects_dir = Path(settings.SUBJECTS_DIR)
 
     RestRegression_node = Node(RestRegression(), name=f'{subject_id}_bold_RestRegression_node')
     RestRegression_node.inputs.subject_id = subject_id
@@ -369,19 +369,19 @@ def create_RestRegression_node(subject_id: str, task: str, atlas_type: str, prep
     RestRegression_node.base_dir = workflow_cached_dir
     RestRegression_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=4000, IO_write_MB=20, IO_read_MB=40)
 
-    RestRegression_node.interface.bold_only = os.environ['BOLD_ONLY']
+    RestRegression_node.interface.bold_only = settings.BOLD_ONLY
 
     return RestRegression_node
 
 
-def create_VxmRegNormMNI152_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str):
-    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-    derivative_deepprep_path = Path(os.environ['BOLD_PREPROCESS_DIR'])
-    data_path = Path(os.environ['BIDS_DIR'])
-    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
-    vxm_model_path = Path(os.environ['VXM_MODEL_PATH'])
-    resource_dir = Path(os.environ['RESOURCE_DIR'])
-    gpuid = os.environ['DEEPPREP_DEVICES']
+def create_VxmRegNormMNI152_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str, settings):
+    workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
+    derivative_deepprep_path = Path(settings.BOLD_PREPROCESS_DIR)
+    data_path = Path(settings.BIDS_DIR)
+    subjects_dir = Path(settings.SUBJECTS_DIR)
+    vxm_model_path = Path(settings.VXM_MODEL_PATH)
+    resource_dir = Path(settings.RESOURCE_DIR)
+    gpuid = settings.DEVICE
 
     VxmRegNormMNI152_node = Node(VxmRegNormMNI152(), name=f'{subject_id}_bold_VxmRegNormMNI152_node')
     VxmRegNormMNI152_node.inputs.subjects_dir = subjects_dir
@@ -398,16 +398,16 @@ def create_VxmRegNormMNI152_node(subject_id: str, task: str, atlas_type: str, pr
     VxmRegNormMNI152_node.base_dir = workflow_cached_dir
     VxmRegNormMNI152_node.source = Source(CPU_n=0, GPU_MB=4529, RAM_MB=15000, IO_write_MB=0, IO_read_MB=0)
 
-    VxmRegNormMNI152_node.interface.bold_only = os.environ['BOLD_ONLY']
+    VxmRegNormMNI152_node.interface.bold_only = settings.BOLD_ONLY
 
     return VxmRegNormMNI152_node
 
 
-def create_Smooth_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str):
-    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-    derivative_deepprep_path = Path(os.environ['BOLD_PREPROCESS_DIR'])
-    data_path = Path(os.environ['BIDS_DIR'])
-    mni152_brain_mask = Path(os.environ['MNI152_BRAIN_MASK'])
+def create_Smooth_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str, settings):
+    workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
+    derivative_deepprep_path = Path(settings.BOLD_PREPROCESS_DIR)
+    data_path = Path(settings.BIDS_DIR)
+    mni152_brain_mask = Path(settings.BRAIN_MASK)
 
     Smooth_node = Node(Smooth(), name=f'{subject_id}_Smooth_node')
     Smooth_node.inputs.subject_id = subject_id
@@ -421,12 +421,12 @@ def create_Smooth_node(subject_id: str, task: str, atlas_type: str, preprocess_m
     Smooth_node.base_dir = workflow_cached_dir
     Smooth_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=7500, IO_write_MB=0, IO_read_MB=0)
 
-    Smooth_node.interface.bold_only = os.environ['BOLD_ONLY']
+    Smooth_node.interface.bold_only = settings.BOLD_ONLY
 
     return Smooth_node
 
 
-def create_node_t():
+def create_node_t(settings):
     from interface.run import set_envrion
     set_envrion(threads=8)
 
@@ -455,29 +455,29 @@ def create_node_t():
 
     # t1w_files = ['/mnt/ngshare/DeepPrep_workflow_test/UKB_BIDS/sub-1000037/ses-02/anat/sub-1000037_ses-02_T1w.nii.gz']
 
-    os.environ['SUBJECTS_DIR'] = str(subjects_dir_test)
-    os.environ['BOLD_PREPROCESS_DIR'] = str(bold_preprocess_dir_test)
-    os.environ['WORKFLOW_CACHED_DIR'] = str(workflow_cached_dir_test)
-    os.environ['FASTSURFER_HOME'] = str(fastsurfer_home)
-    os.environ['FREESURFER_HOME'] = str(freesurfer_home)
-    os.environ['FASTCSR_HOME'] = str(fastcsr_home)
-    os.environ['FEATREG_HOME'] = str(featreg_home)
-    os.environ['BIDS_DIR'] = bids_data_dir_test
-    os.environ['VXM_MODEL_PATH'] = str(vxm_model_path_test)
-    os.environ['MNI152_BRAIN_MASK'] = str(mni152_brain_mask_test)
-    os.environ['RESOURCE_DIR'] = str(resource_dir_test)
-    os.environ['DEEPPREP_DEVICES'] = 'cuda'
+    settings.SUBJECTS_DIR = str(subjects_dir_test)
+    settings.BOLD_PREPROCESS_DIR = str(bold_preprocess_dir_test)
+    settings.WORKFLOW_CACHED_DIR = str(workflow_cached_dir_test)
+    settings.FASTSURFER_HOME = str(fastsurfer_home)
+    settings.FREESURFER_HOME = str(freesurfer_home)
+    settings.FASTCSR_HOME = str(fastcsr_home)
+    settings.FEATREG_HOME = str(featreg_home)
+    settings.BIDS_DIR = bids_data_dir_test
+    settings.VXM_MODEL_PATH = str(vxm_model_path_test)
+    settings.BRAIN_MASK = str(mni152_brain_mask_test)
+    settings.RESOURCE_DIR = str(resource_dir_test)
+    settings.DEVICE = 'cuda'
 
     atlas_type_test = 'MNI152_T1_2mm'
     task_test = 'rest'
     preprocess_method_test = 'task'
 
-    os.environ['DEEPPREP_ATLAS_TYPE'] = atlas_type_test
-    os.environ['DEEPPREP_TASK'] = task_test
-    os.environ['DEEPPREP_PREPROCESS_METHOD'] = preprocess_method_test
+    settings.FMRI.ATLAS_SPACE = atlas_type_test
+    settings.DEEPPREP_TASK = task_test
+    settings.DEEPPREP_PREPROCESS_METHOD = preprocess_method_test
 
-    os.environ['RECON_ONLY'] = 'False'
-    os.environ['BOLD_ONLY'] = 'False'
+    settings.RECON_ONLY = 'False'
+    settings.BOLD_ONLY = 'False'
 
     print('#####################################################1#####################################################')
 
