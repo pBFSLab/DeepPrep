@@ -1,6 +1,6 @@
-from interface.bold_node_new import *
-from interface.vxm_node import *
-from interface.node_source import Source
+from deepprep.interface.bold_node_new import *
+from deepprep.interface.vxm_node import *
+from deepprep.interface.node_source import Source
 
 from nipype import Node
 
@@ -15,8 +15,59 @@ featreg_home = Path(os.environ['FEATREG_HOME'])
 python_interpret = sys.executable
 """
 
-
 def create_VxmRegistraion_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str):
+    """Voxelmorph registration
+
+        Inputs
+        ------
+        subject_id
+           Subject id
+        subjects_dir
+           Recon dir
+        data_path
+            BIDS dir
+        derivative_deepprep_path
+            Bold preprocessing dir
+        model_file
+            Voxelmorph model
+        vxm_model_path
+            The address for save Voxelmorph model
+        atlas_type
+            Atlas tyle (eg: ``MNI152_T1_2mm``)
+        task
+            ``motor`` or ``rest``
+        preprocess_method
+            ``task`` or ``rest``
+        norm
+            Normalization file
+        atlas
+            MNI152 template
+        vxm_atlas
+            Vxm_MNI152 template
+        vxm_atlas_npz
+            Vxm_MNI152 template npz form
+        vxm2atlas_trf
+            Trf from vxm_MNI152 to MNI152
+
+        Outputs
+        -------
+        vxm_warped
+            Norm_norigid_vxm file
+        warped
+            Norm_norigid file
+        vxm_warp
+            Vxm_deformation_field_from_norm_to_vxm file
+        vxm_input_npz
+            Norm_affined_vxm file
+        trf
+            Ants_affine_trf_from_norm_to_vxm file
+
+        See also
+        --------
+        * :py:func:`deepprep.interface.vxm_node.VxmRegistraion`
+
+    """
+
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     derivative_deepprep_path = os.environ['BOLD_PREPROCESS_DIR']
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
@@ -45,6 +96,38 @@ def create_VxmRegistraion_node(subject_id: str, task: str, atlas_type: str, prep
 
 
 def create_BoldSkipReorient_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str):
+    """Skip the first n frames
+
+        Inputs
+        ------
+        subject_id
+            Subject id
+        data_path
+            BIDS dir
+        derivative_deepprep_path
+            Bold preprocessing dir
+        task
+            ``motor`` or ``rest``
+        preprocess_method
+            ``task`` or ``rest``
+        atlas_type
+            Atlas tyle (eg: ``MNI152_T1_2mm``)
+        nskip_frame
+            Skip from the first n frames
+        multiprocess
+            Using for pool threads set
+
+
+        Outputs
+        -------
+        skip_reorient
+            Remove the files of the first n frames
+
+        See also
+        --------
+        * :py:func:`deepprep.interface.bold_node_new.BoldSkipReorient`
+
+    """
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
     derivative_deepprep_path = Path(os.environ['BOLD_PREPROCESS_DIR'])
     data_path = Path(os.environ['BIDS_DIR'])
@@ -68,6 +151,35 @@ def create_BoldSkipReorient_node(subject_id: str, task: str, atlas_type: str, pr
 
 
 def create_StcMc_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str):
+    """Slice-timing correction and Motion correction
+
+        Inputs
+        ------
+        subject_id
+            Subject id
+        data_path
+            BIDS dir
+        derivative_deepprep_path
+            Bold preprocessing dir
+        task
+            ``motor`` or ``rest``
+        preprocess_method
+            ``task`` or ``rest``
+        atlas_type
+            Atlas tyle (eg: ``MNI152_T1_2mm``)
+
+        Outputs
+        -------
+        faln_fname
+            File of functional to anatomical alignment
+        mc_fname
+            File of Motion Correction
+
+        See also
+        --------
+        * :py:func:`deepprep.interface.bold_node_new.StcMc`
+
+    """
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
     derivative_deepprep_path = Path(os.environ['BOLD_PREPROCESS_DIR'])
     data_path = Path(os.environ['BIDS_DIR'])
@@ -90,6 +202,35 @@ def create_StcMc_node(subject_id: str, task: str, atlas_type: str, preprocess_me
 
 
 def create_Register_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str):
+    """Registration of functional MRI images to structural MRI images
+
+        Inputs
+        ------
+        subject_id
+            Subject id
+        data_path
+            BIDS dir
+        derivative_deepprep_path
+            Bold preprocessing dir
+        task
+            ``motor`` or ``rest``
+        preprocess_method
+            ``task`` or ``rest``
+        atlas_type
+            Atlas tyle (eg: ``MNI152_T1_2mm``)
+        mov
+            File of Motion Correction
+
+        Outputs
+        -------
+        reg
+            Registration result file
+
+        See also
+        --------
+        * :py:func:`deepprep.interface.bold_node_new.Register`
+
+    """
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
     derivative_deepprep_path = Path(os.environ['BOLD_PREPROCESS_DIR'])
     data_path = Path(os.environ['BIDS_DIR'])
@@ -112,6 +253,37 @@ def create_Register_node(subject_id: str, task: str, atlas_type: str, preprocess
 
 
 def create_Mkbrainmask_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str):
+    """ Make brainmask
+
+        Inputs
+        ------
+        subject_id
+            Subject id
+        subjects_dir
+            Recon dir
+        data_path
+            BIDS dir
+        derivative_deepprep_path
+            Bold preprocessing dir
+        task
+            ``motor`` or ``rest``
+        preprocess_method
+            ``task`` or ``rest``
+        atlas_type
+            Atlas tyle (eg: ``MNI152_T1_2mm``)
+        mov
+            File of Motion Correction
+        reg
+            Registration result file
+        seg
+            aparc+aseg file
+
+        Outputs
+        -------
+        func
+
+
+    """
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
     derivative_deepprep_path = Path(os.environ['BOLD_PREPROCESS_DIR'])
     data_path = Path(os.environ['BIDS_DIR'])
@@ -135,48 +307,48 @@ def create_Mkbrainmask_node(subject_id: str, task: str, atlas_type: str, preproc
     return Mkbrainmask_node
 
 
-def create_RestGauss_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str):
-    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-    derivative_deepprep_path = Path(os.environ['BOLD_PREPROCESS_DIR'])
-    data_path = Path(os.environ['BIDS_DIR'])
-    subjects_dir = Path(os.environ['SUBJECTS_DIR'])
+# def create_RestGauss_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str):
+#     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
+#     derivative_deepprep_path = Path(os.environ['BOLD_PREPROCESS_DIR'])
+#     data_path = Path(os.environ['BIDS_DIR'])
+#     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
+#
+#     RestGauss_node = Node(RestGauss(), name=f'{subject_id}_bold_RestGauss_node')
+#     RestGauss_node.inputs.subject_id = subject_id
+#     RestGauss_node.inputs.subjects_dir = subjects_dir
+#     RestGauss_node.inputs.data_path = data_path
+#     RestGauss_node.inputs.task = task
+#     RestGauss_node.inputs.derivative_deepprep_path = derivative_deepprep_path
+#     RestGauss_node.inputs.atlas_type = atlas_type
+#     RestGauss_node.inputs.preprocess_method = preprocess_method
+#
+#     RestGauss_node.base_dir = workflow_cached_dir
+#     RestGauss_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=2000, IO_write_MB=0, IO_read_MB=0)
+#
+#     RestGauss_node.interface.bold_only = os.environ['BOLD_ONLY']
+#
+#     return RestGauss_node
 
-    RestGauss_node = Node(RestGauss(), name=f'{subject_id}_bold_RestGauss_node')
-    RestGauss_node.inputs.subject_id = subject_id
-    RestGauss_node.inputs.subjects_dir = subjects_dir
-    RestGauss_node.inputs.data_path = data_path
-    RestGauss_node.inputs.task = task
-    RestGauss_node.inputs.derivative_deepprep_path = derivative_deepprep_path
-    RestGauss_node.inputs.atlas_type = atlas_type
-    RestGauss_node.inputs.preprocess_method = preprocess_method
 
-    RestGauss_node.base_dir = workflow_cached_dir
-    RestGauss_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=2000, IO_write_MB=0, IO_read_MB=0)
-
-    RestGauss_node.interface.bold_only = os.environ['BOLD_ONLY']
-
-    return RestGauss_node
-
-
-def create_RestBandpass_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str):
-    workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
-    derivative_deepprep_path = Path(os.environ['BOLD_PREPROCESS_DIR'])
-    data_path = Path(os.environ['BIDS_DIR'])
-
-    RestBandpass_node = Node(RestBandpass(), name=f'{subject_id}_bold_RestBandpass_node')
-    RestBandpass_node.inputs.subject_id = subject_id
-    RestBandpass_node.inputs.data_path = data_path
-    RestBandpass_node.inputs.task = task
-    RestBandpass_node.inputs.derivative_deepprep_path = derivative_deepprep_path
-    RestBandpass_node.inputs.atlas_type = atlas_type
-    RestBandpass_node.inputs.preprocess_method = preprocess_method
-
-    RestBandpass_node.base_dir = workflow_cached_dir
-    RestBandpass_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=3000, IO_write_MB=0, IO_read_MB=0)
-
-    RestBandpass_node.interface.bold_only = os.environ['BOLD_ONLY']
-
-    return RestBandpass_node
+# def create_RestBandpass_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str):
+#     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
+#     derivative_deepprep_path = Path(os.environ['BOLD_PREPROCESS_DIR'])
+#     data_path = Path(os.environ['BIDS_DIR'])
+#
+#     RestBandpass_node = Node(RestBandpass(), name=f'{subject_id}_bold_RestBandpass_node')
+#     RestBandpass_node.inputs.subject_id = subject_id
+#     RestBandpass_node.inputs.data_path = data_path
+#     RestBandpass_node.inputs.task = task
+#     RestBandpass_node.inputs.derivative_deepprep_path = derivative_deepprep_path
+#     RestBandpass_node.inputs.atlas_type = atlas_type
+#     RestBandpass_node.inputs.preprocess_method = preprocess_method
+#
+#     RestBandpass_node.base_dir = workflow_cached_dir
+#     RestBandpass_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=3000, IO_write_MB=0, IO_read_MB=0)
+#
+#     RestBandpass_node.interface.bold_only = os.environ['BOLD_ONLY']
+#
+#     return RestBandpass_node
 
 
 def create_RestRegression_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str):

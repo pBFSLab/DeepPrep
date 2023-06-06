@@ -1,9 +1,9 @@
-from interface.freesurfer_node import *
-from interface.fastcsr_node import *
-from interface.fastsurfer_node import *
-from interface.featreg_node import *
-from interface.sagereg_node import *
-from interface.node_source import Source
+from deepprep.interface.freesurfer_node import *
+from deepprep.interface.fastcsr_node import *
+from deepprep.interface.fastsurfer_node import *
+from deepprep.interface.featreg_node import *
+from deepprep.interface.sagereg_node import *
+from deepprep.interface.node_source import Source
 import sys
 from nipype import Node
 
@@ -22,6 +22,31 @@ THREAD = 8
 
 
 def create_OrigAndRawavg_node(subject_id: str, t1w_files: list):
+    """Use ``Recon-all`` in Freesurfer to get Orig And Rawavg files
+
+        Inputs
+        ------
+        subjects_id
+           Subject id
+        subjects_dir
+           Recon dir
+        t1w_files
+            Path and filename of the structural MRI image file to analyze
+        threads
+            Number of threads used in recon-all
+
+        Outputs
+        -------
+        orig_file
+            Raw T1-weighted MRI image
+        rawavg_file
+            Mean image of raw T1-weighted MRI image
+
+        See also
+        --------
+        * :py:func:`deepprep.interface.freesurfer_node.OrigAndRawavg`
+
+    """
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     workflow_cached_dir = os.environ['WORKFLOW_CACHED_DIR']
 
@@ -40,6 +65,41 @@ def create_OrigAndRawavg_node(subject_id: str, t1w_files: list):
 
 
 def create_Segment_node(subject_id: str):
+    """Segment MRI images into multiple distinct tissue and structural regions
+
+        Inputs
+        ------
+        subjects_id
+           Subject id
+        subjects_dir
+           Recon dir
+        python_interpret
+            The python interpret to use
+        eval_py
+            FastSurfer segmentation script program
+        network_sagittal_path
+            Path to pre-trained weights of sagittal network
+        network_coronal_path
+            Pre-trained weights of coronal network
+        network_axial_path
+            Pre-trained weights of axial network
+        orig_file
+            Raw T1-weighted MRI image
+        conformed_file
+            Conformed file
+
+        Outputs
+        -------
+        aparc_DKTatlas_aseg_deep
+            Generated tag file for deep
+        aparc_DKTatlas_aseg_orig
+            Generated tag file
+
+        See also
+        --------
+        * :py:func:`deepprep.interface.fastsurfer_node.Segment`
+
+    """
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     fastsurfer_home = Path(os.environ['FASTSURFER_HOME'])
     workflow_cached_dir = os.environ['WORKFLOW_CACHED_DIR']
@@ -70,6 +130,34 @@ def create_Segment_node(subject_id: str):
 
 
 def create_Noccseg_node(subject_id: str):
+    """Removal of the orbital region in MRI images ======temp
+
+        Inputs
+        ------
+        subjects_id
+           Subject id
+        subjects_dir
+           Recon dir
+        python_interpret
+            The python interpret to use
+        reduce_to_aseg_py
+            Reduce to aseg program
+        in_file
+            Full Segmentation File of the Brain
+
+        Outputs
+        -------
+        aseg_noCCseg_file
+            Remove the segmented files for the orbital region
+        mask_file
+            Mask file
+
+        See also
+        --------
+        * :py:func:`deepprep.interface.fastsurfer_node.Noccseg`
+
+
+    """
     fastsurfer_home = Path(os.environ['FASTSURFER_HOME'])
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
@@ -92,6 +180,34 @@ def create_Noccseg_node(subject_id: str):
 
 
 def create_N4BiasCorrect_node(subject_id: str):
+    """Bias corrected
+
+        Inputs
+        ------
+        subjects_id
+           Subject id
+        subjects_dir
+           Recon dir
+        python_interpret
+            The python interpret to use
+        correct_py
+                N4 bias correct program
+        orig_file
+            Raw T1-weighted MRI image
+        mask_file
+            Mask file
+
+        Outputs
+        -------
+        orig_nu_file
+            Orig nu file
+
+        See also
+        --------
+        * :py:func:`deepprep.interface.fastsurfer_node.N4BiasCorrect`
+
+
+    """
     fastsurfer_home = Path(os.environ['FASTSURFER_HOME'])
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
@@ -120,6 +236,36 @@ def create_N4BiasCorrect_node(subject_id: str):
 
 
 def create_TalairachAndNu_node(subject_id: str):
+    """Computing Talairach Transform and NU
+
+        Inputs
+        ------
+        subjects_id
+           Subject id
+        subjects_dir
+           Recon dir
+        threads
+            Number of threads
+        orig_nu_file
+            Orig nu file
+        orig_file
+            Raw T1-weighted MRI image
+        mni305
+            MNI305 templet
+
+        Outputs
+        -------
+        talairach_lta
+            Transformation matrix from raw MRI image to Talairach space
+        nu_file
+            NU intensity corrected result
+
+        See also
+        --------
+        * :py:func:`deepprep.interface.fastsurfer_node.TalairachAndNu`
+
+
+    """
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
     sub_mri_dir = subjects_dir / subject_id / "mri"
@@ -145,6 +291,34 @@ def create_TalairachAndNu_node(subject_id: str):
 
 
 def create_Brainmask_node(subject_id: str):
+    """Brainmask applies a mask volume ( typically skull stripped ) ref:freesurfer
+
+        Inputs
+        ------
+        subjects_id
+           Subject id
+        subjects_dir
+           Recon dir
+        need_t1
+           Whether need T1 file
+        nu_file
+           Intensity normalized volume
+        mask_file
+           Mask volume
+
+        Outputs
+        -------
+        brainmask_file
+           Brainmask file
+        norm_file
+           Brain normalized result
+        T1_file
+           If ``need_t1==Ture`` ,T1 file will be generated
+
+        See also
+        --------
+        * :py:func:`deepprep.interface.freesurfer_node.Brainmask`
+       """
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
     atlas_type = os.environ['DEEPPREP_ATLAS_TYPE']
@@ -170,6 +344,38 @@ def create_Brainmask_node(subject_id: str):
 
 
 def create_UpdateAseg_node(subject_id: str):
+    """Update aseg
+
+        Inputs
+        ------
+        subjects_id
+           Subject id
+        subjects_dir
+           Recon dir
+        python_interpret
+            The python interpret to use
+        paint_cc_file
+            Paint cc into pred program
+        aseg_noCCseg_file
+            Remove the segmented files for the orbital region
+        seg_file
+            Generated tag file for deep
+
+        Outputs
+        -------
+        aseg_auto_file
+            Aseg including CC
+        cc_up_file ?? output?
+
+        aparc_aseg_file
+            Generated tag file with cc for deep
+
+        See also
+        --------
+        * :py:func:`deepprep.interface.freesurfer_node.UpdateAseg`
+
+
+    """
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
     fastsurfer_home = Path(os.environ['FASTSURFER_HOME'])
@@ -194,6 +400,43 @@ def create_UpdateAseg_node(subject_id: str):
 
 
 def create_Filled_node(subject_id: str):
+    """Creating filled from brain
+
+        Inputs
+        ------
+        subjects_id
+           Subject id
+        subjects_dir
+           Recon dir
+        threads
+            Number of threads
+        aseg_auto_file
+            Aseg including CC
+        norm_file
+            Brain normalized result
+        brainmask_file
+            Brainmask file
+        talairach_lta
+            Transformation matrix from raw MRI image to Talairach space
+
+        Outputs
+        -------
+        aseg_presurf_file
+
+        brain_file
+            File after the second intensity correction
+        brain_finalsurfs_file
+            A file containing information about the cortical surface model of the entire brain
+        wm_file
+            White Matter file
+        wm_filled
+            The filled volume for the cortical reconstruction
+
+        See also
+        --------
+        * :py:func:`deepprep.interface.freesurfer_node.Filled`
+
+    """
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
 
@@ -217,6 +460,44 @@ def create_Filled_node(subject_id: str):
 
 
 def create_FastCSR_node(subject_id: str):
+    """Fast cortical surface reconstruction using FastCSR
+
+        Inputs
+        ------
+        subjects_id
+           Subject id
+        subjects_dir
+           Recon dir
+        python_interpret
+            The python interpret to use
+        fastcsr_py
+            FastCSR script
+        parallel_scheduling
+            Parallel scheduling, ``on`` or ``off``
+        orig_file
+            Raw T1-weighted MRI image
+        filled_file
+            The filled volume for the cortical reconstruction
+        aseg_presurf_file
+
+        brainmask_file
+            Brainmask file
+        wm_file
+            White Matter file
+        brain_finalsurfs_file
+            A file containing information about the cortical surface model of the entire brain
+
+        Outputs
+        -------
+        hemi_orig_file
+            Raw cortical surface model file
+        hemi_orig_premesh_file
+
+        See also
+        --------
+        * :py:func:`deepprep.interface.fastcsr_node.FastCSR`
+
+    """
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
     python_interpret = sys.executable
@@ -246,6 +527,45 @@ def create_FastCSR_node(subject_id: str):
 
 
 def create_WhitePreaparc1_node(subject_id: str):
+    """Generates surface files for cortical and white matter surfaces, curvature file for cortical thickness and surface
+        file estimate for layer IV of cortical sheet.
+
+        Inputs
+        ------
+        subjects_id
+           Subject id
+        subjects_dir
+           Recon dir
+        aseg_presurf_file
+
+        brain_finalsurfs_file
+            A file containing information about the cortical surface model of the entire brain
+        filled_file
+            The filled volume for the cortical reconstruction
+        wm_file
+            White Matter file
+        hemi_orig_file
+            Raw cortical surface model file
+
+        Outputs
+        -------
+        hemi_white_preaparc
+            Hemi white matter surface file
+        hemi_curv
+            Hemi curvature
+        hemi_area
+            Hemi surface area
+        hemi_cortex_label
+            Hemi cortex label
+        hemi_cortex_hipamyglabel
+            Hemi cortex hipamyglabel
+        autodet_gw_stats_hemi_dat
+
+        See also
+        --------
+        * :py:func:`deepprep.interface.freesurfer_node.WhitePreaparc1`
+
+    """
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
     os.environ['SUBJECTS_DIR'] = str(subjects_dir)
@@ -270,6 +590,40 @@ def create_WhitePreaparc1_node(subject_id: str):
 
 
 def create_SampleSegmentationToSurface_node(subject_id: str):
+    """Sample segmentation to surface
+
+        Inputs
+        ------
+        subjects_id
+           Subject id
+        subjects_dir
+           Recon dir
+        python_interpret
+            The python interpret to use
+        freesurfer_home
+            Freesurfer home
+        hemi_DKTatlaslookup_file
+
+        smooth_aparc_file
+            smooth_aparc script
+        aparc_aseg_file
+            Generated tag file with cc for deep
+        hemi_white_preaparc_file
+            Hemi white matter surface file
+        hemi_cortex_label_file
+            Hemi cortex label
+
+        Outputs
+        -------
+        hemi_aparc_DKTatlas_mapped_prefix_file
+
+        hemi_aparc_DKTatlas_mapped_file
+
+        See also
+        --------
+        * :py:func:`deepprep.interface.fastsurfer_node.SampleSegmentationToSurface`
+
+    """
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
     python_interpret = sys.executable
@@ -308,6 +662,36 @@ def create_SampleSegmentationToSurface_node(subject_id: str):
 
 
 def create_InflatedSphere_node(subject_id: str):
+    """Generate inflated file
+
+        Inputs
+        ------
+        subjects_id
+           Subject id
+        subjects_dir
+           Recon dir
+        threads
+            Number of threads
+        hemi_white_preaparc_file
+            Hemi white matter surface file
+
+        Outputs
+        -------
+        hemi_smoothwm
+            Hemi smoothwm
+        hemi_inflated
+            Hemi inflated
+        hemi_sulc
+            Hemi sulcal depth
+        hemi_sphere
+            Hemi sphere
+
+        See also
+        --------
+        * :py:func:`deepprep.interface.freesurfer_node.InflatedSphere`
+
+
+    """
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
 
@@ -364,6 +748,39 @@ def create_FeatReg_node(subject_id: str):
 
 
 def create_SageReg_node(subject_id: str):
+    """Cortical surface registration
+
+        Inputs
+        ------
+        subjects_id
+           Subject id
+        subjects_dir
+           Recon dir
+        python_interpret
+            The python interpret to use
+        sagereg_py
+            Registration script
+        device
+            GPU set
+        freesurfer_home
+            Freesurfer home
+        hemi_sulc
+            Hemi sulcal depth
+        hemi_curv
+            Hemi curvature
+        hemi_sphere
+            Hemi sphere
+
+        Outputs
+        -------
+        hemi_sphere_reg
+            Registered sphere
+
+        See also
+        --------
+        * :py:func:`deepprep.interface.sagereg_node.SageReg`
+
+    """
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     sagereg_home = Path(os.environ["SAGEREG_HOME"])
     freesurfer_home = Path(os.environ['FREESURFER_HOME'])
@@ -398,6 +815,40 @@ def create_SageReg_node(subject_id: str):
 
 
 def create_JacobianAvgcurvCortparc_node(subject_id: str):
+    """Computes how much the white surface was distorted,resamples the average curvature from the atlas to that of
+        the subject and assigns a neuroanatomical label to each location on the cortical surface.
+
+        Inputs
+        ------
+        subjects_id
+           Subject id
+        subjects_dir
+           Recon dir
+        threads
+            Number of threads
+        hemi_white_preaparc_file
+            Hemi white matter surface file
+        hemi_sphere_reg
+            Registered sphere
+        aseg_presurf_file
+
+        hemi_cortex_label_file
+            Hemi cortex label
+
+        Outputs
+        -------
+        hemi_jacobian_white
+            Hemi jacobian white
+        hemi_avg_curv
+            Hemi average curvature
+        hemi_aparc_annot
+            Hemi aparc annot
+
+        See also
+        --------
+        * :py:func:`deepprep.interface.freesurfer_node.JacobianAvgcurvCortparc`
+
+    """
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
 
@@ -415,6 +866,36 @@ def create_JacobianAvgcurvCortparc_node(subject_id: str):
 
 
 def create_WhitePialThickness1_node(subject_id: str):
+    """Generate white,pial and thickness
+
+        Inputs
+        ------
+        subjects_id
+           Subject id
+        subjects_dir
+           Recon dir
+        threads
+            Number of threads
+        hemi_white_preaparc
+            Hemi white matter surface file
+        aseg_presurf_file
+
+        brain_finalsurfs
+            A file containing information about the cortical surface model of the entire brain
+        wm_file
+            White Matter file
+        hemi_aparc_annot
+            Hemi aparc annot
+        hemi_cortex_label
+            Hemi cortex label
+
+        Outputs
+        -------
+
+
+
+
+    """
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
 
@@ -441,6 +922,33 @@ def create_WhitePialThickness1_node(subject_id: str):
 
 
 def create_Curvstats_node(subject_id: str):
+    """Compute the mean and variances for a curvature file
+
+        Inputs
+        ------
+        subjects_id
+           Subject id
+        subjects_dir
+           Recon dir
+        threads
+            Number of threads
+        hemi_curv
+            Hemi curvature
+        hemi_sulc
+            Hemi sulcal depth
+        hemi_smoothwm
+            Hemi smoothwm
+
+        Outputs
+        -------
+        hemi_curv_stats
+            The mean and variances for a curvature file
+
+        See also
+        --------
+        * :py:func:`deepprep.interface.freesurfer_node.Curvstats`
+
+    """
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
 
@@ -466,6 +974,10 @@ def create_Curvstats_node(subject_id: str):
 
 
 def create_BalabelsMult_node(subject_id: str):
+    """ !!!Too much inputs and outputs
+
+
+    """
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
     subject_surf_dir = subjects_dir / subject_id / 'surf'
@@ -491,6 +1003,35 @@ def create_BalabelsMult_node(subject_id: str):
 
 
 def create_Cortribbon_node(subject_id: str):
+    """Creates binary volume masks of the cortical ribbon
+
+        Inputs
+        ------
+        subjects_id
+           Subject id
+        subjects_dir
+           Recon dir
+        threads
+            Number of threads
+        aseg_presurf_file
+
+        hemi_white
+            Hemi white
+        hemi_pial
+            Hemi pial
+
+        Outputs
+        -------
+        hemi_ribbon
+            Hemi cortical ribbon
+        ribbon
+            Ribbon file
+
+        See also
+        --------
+        * :py:func:`deepprep.interface.freesurfer_node.Cortribbon`
+
+    """
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
     subject_mri_dir = subjects_dir / subject_id / 'mri'
@@ -516,6 +1057,50 @@ def create_Cortribbon_node(subject_id: str):
 
 
 def create_Parcstats_node(subject_id: str):
+    """Compute statistics of cortical partitions and register cortical partition models with other anatomical structures
+        to generate new partition models
+
+        Inputs
+        ------
+        subjects_id
+           Subject id
+        subjects_dir
+           Recon dir
+        threads
+            Number of threads
+        hemi_aparc_annot
+            Hemi aparc annot
+        wm_file
+            White Matter file
+        ribbon_file
+            Ribbon file
+        hemi_white
+            Hemi white
+        hemi_pial
+            Hemi pial
+        hemi_thickness
+            Hemi thickness
+
+        Outputs
+        -------
+        aseg_file
+            Volume information of each region in the MRI image
+        hemi_aparc_stats
+            Statistics for the hemi cerebral cortex
+        hemi_aparc_pial_stats
+            Statistics of the pial surface of the hemi cerebral cortex
+        aparc_annot_ctab
+            File containing color and label information
+        aseg_presurf_hypos
+            File of volume information for various regions in the MRI image
+        hemi_wg_pct_stats
+            Statistics of hemi brain white matter and gray matter
+
+        See also
+        --------
+        * :py:func:`deepprep.interface.freesurfer_node.Parcstats`
+
+    """
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
 
@@ -548,6 +1133,10 @@ def create_Parcstats_node(subject_id: str):
 
 
 def create_Aseg7_node(subject_id: str):
+    """
+
+
+    """
     subjects_dir = Path(os.environ['SUBJECTS_DIR'])
     workflow_cached_dir = Path(os.environ['WORKFLOW_CACHED_DIR'])
     atlas_type = os.environ['DEEPPREP_ATLAS_TYPE']

@@ -21,7 +21,7 @@ def interp_dir_single(dir_recon: str, dir_rigid: str, dir_fixed: str, ico_level:
     surf_dir_recon = os.path.join(dir_recon, 'surf')
     surf_dir_rigid = os.path.join(dir_rigid, 'surf')
     if not os.path.exists(surf_dir_rigid):
-        os.makedirs(surf_dir_rigid)
+        os.makedirs(surf_dir_rigid, exist_ok=True)
     for hemisphere in ['lh', 'rh']:
         sphere_fixed_file = os.path.join(dir_fixed, ico_level, 'surf', f'{hemisphere}.sphere')
 

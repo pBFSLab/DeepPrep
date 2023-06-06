@@ -1,4 +1,4 @@
-from interface.run import run_cmd_with_timing
+from deepprep.interface.run import run_cmd_with_timing
 from pathlib import Path
 from multiprocessing import Pool
 import logging
