@@ -269,9 +269,9 @@ def create_node_t():
     subjects_dir_test = Path('/mnt/ngshare/temp/UKB_Recon')
     bold_preprocess_dir_test = Path('/mnt/ngshare/temp/UKB_BoldPreprocess')
     workflow_cached_dir_test = '/mnt/ngshare/temp/UKB_Workflow'
-    vxm_model_path_test = '../model/voxelmorph'
+    vxm_model_path_test = '/home/anning/workspace/DeepPrep/deepprep/model/voxelmorph'
     mni152_brain_mask_test = '/usr/local/fsl/data/standard/MNI152_T1_2mm_brain_mask.nii.gz'
-    resource_dir_test = '../resource'
+    resource_dir_test = '/home/anning/workspace/DeepPrep/deepprep/resource'
 
     if not subjects_dir_test.exists():
         subjects_dir_test.mkdir(parents=True, exist_ok=True)
@@ -335,20 +335,22 @@ def create_node_t():
     node.run()
     # sub_node = node.interface.create_sub_node()
     # sub_node.run()
-    return
+
     print('#####################################################5#####################################################')
     node = create_VxmRegistraion_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
                              preprocess_method=preprocess_method_test)
     node.run()
     # sub_node = node.interface.create_sub_node()
     # sub_node.run()
+
     print('####################################################6####################################################')
     node = create_VxmRegNormMNI152_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
                                         preprocess_method=preprocess_method_test)
     node.run()
     # sub_node = node.interface.create_sub_node()
     # sub_node.run()
-    exit()
+
+    return
     print('#####################################################7#####################################################')
     node = create_RestGauss_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
                                  preprocess_method=preprocess_method_test)
