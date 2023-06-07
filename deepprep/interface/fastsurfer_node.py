@@ -80,7 +80,7 @@ class Segment(BaseInterface):
 
     def create_sub_node(self):
         from interface.create_node_structure import create_Noccseg_node
-        node = create_Noccseg_node(self.inputs.subject_id)
+        node = create_Noccseg_node(self.inputs.subject_id, self.inputs.settings)
         return node
 
 
@@ -133,7 +133,7 @@ class N4BiasCorrect(BaseInterface):
 
     def create_sub_node(self):
         from interface.create_node_structure import create_TalairachAndNu_node
-        node = create_TalairachAndNu_node(self.inputs.subject_id)
+        node = create_TalairachAndNu_node(self.inputs.subject_id, self.inputs.settings)
         return node
 
 
@@ -213,7 +213,7 @@ class TalairachAndNu(BaseInterface):
 
     def create_sub_node(self):
         from interface.create_node_structure import create_Brainmask_node
-        node = create_Brainmask_node(self.inputs.subject_id)
+        node = create_Brainmask_node(self.inputs.subject_id, self.inputs.settings)
         return node
 
 
@@ -278,7 +278,7 @@ class Noccseg(BaseInterface):
 
     def create_sub_node(self):
         from interface.create_node_structure import create_N4BiasCorrect_node
-        node = create_N4BiasCorrect_node(self.inputs.subject_id)
+        node = create_N4BiasCorrect_node(self.inputs.subject_id, self.inputs.settings)
         return node
 
 
@@ -344,7 +344,7 @@ class UpdateAseg(BaseInterface):
 
     def create_sub_node(self):
         from interface.create_node_structure import create_Filled_node
-        node = create_Filled_node(self.inputs.subject_id)
+        node = create_Filled_node(self.inputs.subject_id, self.inputs.settings)
         return node
 
 

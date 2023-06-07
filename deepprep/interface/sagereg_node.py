@@ -56,5 +56,5 @@ class SageReg(BaseInterface):
 
     def create_sub_node(self):
         from interface.create_node_structure import create_JacobianAvgcurvCortparc_node
-        node = create_JacobianAvgcurvCortparc_node(self.inputs.subject_id)
+        node = create_JacobianAvgcurvCortparc_node(self.inputs.subject_id, self.inputs.settings)
         return node
