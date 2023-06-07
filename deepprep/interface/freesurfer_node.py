@@ -72,8 +72,8 @@ class Brainmask(BaseInterface):
     def create_sub_node(self):
         from interface.create_node_structure import create_UpdateAseg_node
         from interface.create_node_bold_new import create_VxmRegistraion_node
-        node = [create_UpdateAseg_node(self.inputs.subject_id),
-                create_VxmRegistraion_node(self.inputs.subject_id, self.task, self.atlas_type, self.preprocess_method)]
+        node = [create_UpdateAseg_node(self.inputs.subject_id, self.inputs.settings),
+                create_VxmRegistraion_node(self.inputs.subject_id, self.task, self.atlas_type, self.preprocess_method, self.inputs.settings)]
         if self.recon_only == 'True':
             node = create_UpdateAseg_node(self.inputs.subject_id)
         return node
@@ -114,7 +114,7 @@ class OrigAndRawavg(BaseInterface):
 
     def create_sub_node(self):
         from interface.create_node_structure import create_Segment_node
-        node = [create_Segment_node(self.inputs.subject_id)]
+        node = [create_Segment_node(self.inputs.subject_id, self.inputs.settings)]
         return node
 
 
@@ -176,7 +176,7 @@ class Filled(BaseInterface):
 
     def create_sub_node(self):
         from interface.create_node_structure import create_FastCSR_node
-        node = create_FastCSR_node(self.inputs.subject_id)
+        node = create_FastCSR_node(self.inputs.subject_id, self.inputs.settings)
         return node
 
 
@@ -265,7 +265,7 @@ class WhitePreaparc1(BaseInterface):
 
     def create_sub_node(self):
         from interface.create_node_structure import create_InflatedSphere_node
-        node = create_InflatedSphere_node(self.inputs.subject_id)
+        node = create_InflatedSphere_node(self.inputs.subject_id, self.inputs.settings)
         return node
 
 
@@ -385,8 +385,8 @@ class InflatedSphere(BaseInterface):
 
     def create_sub_node(self):
         from interface.create_node_structure import create_SageReg_node, create_Curvstats_node
-        node = [create_SageReg_node(self.inputs.subject_id),
-                create_Curvstats_node(self.inputs.subject_id)]
+        node = [create_SageReg_node(self.inputs.subject_id, self.inputs.settings),
+                create_Curvstats_node(self.inputs.subject_id, self.inputs.settings)]
         return node
 
 
@@ -488,8 +488,8 @@ class WhitePialThickness1(BaseInterface):
     def create_sub_node(self):
         from interface.create_node_structure import create_BalabelsMult_node, create_Cortribbon_node
 
-        node = [create_BalabelsMult_node(self.inputs.subject_id),
-                create_Cortribbon_node(self.inputs.subject_id),
+        node = [create_BalabelsMult_node(self.inputs.subject_id, self.inputs.settings),
+                create_Cortribbon_node(self.inputs.subject_id, self.inputs.settings),
                 ]
 
         return node  # node list
@@ -606,7 +606,7 @@ class Cortribbon(BaseInterface):
 
     def create_sub_node(self):
         from interface.create_node_structure import create_Parcstats_node
-        node = create_Parcstats_node(self.inputs.subject_id)
+        node = create_Parcstats_node(self.inputs.subject_id, self.inputs.settings)
         return node
 
 
@@ -676,7 +676,7 @@ class Parcstats(BaseInterface):
 
     def create_sub_node(self):
         from interface.create_node_structure import create_Aseg7_node
-        node = create_Aseg7_node(self.inputs.subject_id)
+        node = create_Aseg7_node(self.inputs.subject_id, self.inputs.settings)
         return node
 
 
@@ -827,7 +827,7 @@ class JacobianAvgcurvCortparc(BaseInterface):
 
     def create_sub_node(self):
         from interface.create_node_structure import create_WhitePialThickness1_node
-        node = create_WhitePialThickness1_node(self.inputs.subject_id)
+        node = create_WhitePialThickness1_node(self.inputs.subject_id, self.inputs.settings)
         return node
 
 
@@ -943,7 +943,8 @@ class Aseg7(BaseInterface):
         node = create_Register_node(self.inputs.subject_id,
                                     self.task,
                                     self.atlas_type,
-                                    self.preprocess_method)
+                                    self.preprocess_method,
+                                    self.inputs.settings)
         if self.recon_only == 'True':
             node = []
         return node
