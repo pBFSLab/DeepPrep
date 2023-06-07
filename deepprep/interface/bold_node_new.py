@@ -118,7 +118,8 @@ class BoldSkipReorient(BaseInterface):
         node = create_StcMc_node(self.inputs.subject_id,
                                  self.inputs.task,
                                  self.inputs.atlas_type,
-                                 self.inputs.preprocess_method)
+                                 self.inputs.preprocess_method,
+                                 self.inputs.settings)
 
         return node
 
@@ -298,7 +299,8 @@ class StcMc(BaseInterface):
             return create_Register_node(self.inputs.subject_id,
                                         self.inputs.task,
                                         self.inputs.atlas_type,
-                                        self.inputs.preprocess_method)
+                                        self.inputs.preprocess_method,
+                                        self.inputs.settings)
         return []
 
 
@@ -396,7 +398,8 @@ class Register(BaseInterface):
         node = create_Mkbrainmask_node(self.inputs.subject_id,
                                        self.inputs.task,
                                        self.inputs.atlas_type,
-                                       self.inputs.preprocess_method)
+                                       self.inputs.preprocess_method,
+                                       self.inputs.settings)
 
         return node
 
@@ -533,13 +536,15 @@ class MkBrainmask(BaseInterface):
             node = create_VxmRegistraion_node(self.inputs.subject_id,
                                                 self.inputs.task,
                                                 self.inputs.atlas_type,
-                                                self.inputs.preprocess_method)
+                                                self.inputs.preprocess_method,
+                                                self.inputs.settings)
         else:
             from interface.create_node_bold_new import create_VxmRegNormMNI152_node
             node = create_VxmRegNormMNI152_node(self.inputs.subject_id,
                                                 self.inputs.task,
                                                 self.inputs.atlas_type,
-                                                self.inputs.preprocess_method)
+                                                self.inputs.preprocess_method,
+                                                self.inputs.settings)
 
         return node
 
@@ -873,7 +878,8 @@ class RestRegression(BaseInterface):
         node = create_VxmRegNormMNI152_node(self.inputs.subject_id,
                                             self.inputs.task,
                                             self.inputs.atlas_type,
-                                            self.inputs.preprocess_method)
+                                            self.inputs.preprocess_method,
+                                            self.inputs.settings)
 
         return node
 
