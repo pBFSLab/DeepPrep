@@ -69,13 +69,13 @@ class Brainmask(BaseInterface):
         outputs['subject_id'] = subject_id
         return outputs
 
-    def create_sub_node(self):
+    def create_sub_node(self, settings):
         from interface.create_node_structure import create_UpdateAseg_node
         from interface.create_node_bold_new import create_VxmRegistraion_node
-        node = [create_UpdateAseg_node(self.inputs.subject_id, self.inputs.settings),
-                create_VxmRegistraion_node(self.inputs.subject_id, self.task, self.atlas_type, self.preprocess_method, self.inputs.settings)]
-        if self.recon_only == 'True':
-            node = create_UpdateAseg_node(self.inputs.subject_id)
+        node = [create_UpdateAseg_node(self.inputs.subject_id, settings),
+                create_VxmRegistraion_node(self.inputs.subject_id, self.task, self.atlas_type, self.preprocess_method, settings)]
+        if settings.RECON_ONLY:
+            node = create_UpdateAseg_node(self.inputs.subject_id, settings)
         return node
 
 
@@ -112,9 +112,9 @@ class OrigAndRawavg(BaseInterface):
         outputs['rawavg_file'] = subjects_dir / subject_id / "mri" / "rawavg.mgz"
         return outputs
 
-    def create_sub_node(self):
+    def create_sub_node(self, settings):
         from interface.create_node_structure import create_Segment_node
-        node = [create_Segment_node(self.inputs.subject_id, self.inputs.settings)]
+        node = [create_Segment_node(self.inputs.subject_id, settings)]
         return node
 
 
@@ -174,9 +174,9 @@ class Filled(BaseInterface):
         outputs['subject_id'] = subject_id
         return outputs
 
-    def create_sub_node(self):
+    def create_sub_node(self, settings):
         from interface.create_node_structure import create_FastCSR_node
-        node = create_FastCSR_node(self.inputs.subject_id, self.inputs.settings)
+        node = create_FastCSR_node(self.inputs.subject_id, settings)
         return node
 
 
@@ -263,9 +263,9 @@ class WhitePreaparc1(BaseInterface):
 
         return outputs
 
-    def create_sub_node(self):
+    def create_sub_node(self, settings):
         from interface.create_node_structure import create_InflatedSphere_node
-        node = create_InflatedSphere_node(self.inputs.subject_id, self.inputs.settings)
+        node = create_InflatedSphere_node(self.inputs.subject_id, settings)
         return node
 
 
@@ -383,10 +383,10 @@ class InflatedSphere(BaseInterface):
         outputs['rh_sphere'] = subjects_dir / subject_id / f'surf/rh.sphere'
         return outputs
 
-    def create_sub_node(self):
+    def create_sub_node(self, settings):
         from interface.create_node_structure import create_SageReg_node, create_Curvstats_node
-        node = [create_SageReg_node(self.inputs.subject_id, self.inputs.settings),
-                create_Curvstats_node(self.inputs.subject_id, self.inputs.settings)]
+        node = [create_SageReg_node(self.inputs.subject_id, settings),
+                create_Curvstats_node(self.inputs.subject_id, settings)]
         return node
 
 
@@ -485,11 +485,11 @@ class WhitePialThickness1(BaseInterface):
 
         return outputs
 
-    def create_sub_node(self):
+    def create_sub_node(self, settings):
         from interface.create_node_structure import create_BalabelsMult_node, create_Cortribbon_node
 
-        node = [create_BalabelsMult_node(self.inputs.subject_id, self.inputs.settings),
-                create_Cortribbon_node(self.inputs.subject_id, self.inputs.settings),
+        node = [create_BalabelsMult_node(self.inputs.subject_id, settings),
+                create_Cortribbon_node(self.inputs.subject_id, settings),
                 ]
 
         return node  # node list
@@ -548,7 +548,7 @@ class Curvstats(BaseInterface):
 
         return outputs
 
-    def create_sub_node(self):
+    def create_sub_node(self, settings):
         return []
 
 
@@ -604,9 +604,9 @@ class Cortribbon(BaseInterface):
 
         return outputs
 
-    def create_sub_node(self):
+    def create_sub_node(self, settings):
         from interface.create_node_structure import create_Parcstats_node
-        node = create_Parcstats_node(self.inputs.subject_id, self.inputs.settings)
+        node = create_Parcstats_node(self.inputs.subject_id, settings)
         return node
 
 
@@ -674,9 +674,9 @@ class Parcstats(BaseInterface):
         outputs['subject_id'] = subject_id
         return outputs
 
-    def create_sub_node(self):
+    def create_sub_node(self, settings):
         from interface.create_node_structure import create_Aseg7_node
-        node = create_Aseg7_node(self.inputs.subject_id, self.inputs.settings)
+        node = create_Aseg7_node(self.inputs.subject_id, settings)
         return node
 
 
@@ -825,9 +825,9 @@ class JacobianAvgcurvCortparc(BaseInterface):
 
         return outputs
 
-    def create_sub_node(self):
+    def create_sub_node(self, settings):
         from interface.create_node_structure import create_WhitePialThickness1_node
-        node = create_WhitePialThickness1_node(self.inputs.subject_id, self.inputs.settings)
+        node = create_WhitePialThickness1_node(self.inputs.subject_id, settings)
         return node
 
 
@@ -882,7 +882,7 @@ class Segstats(BaseInterface):
         outputs['subject_id'] = subject_id
         return outputs
 
-    def create_sub_node(self):
+    def create_sub_node(self, settings):
         return []
 
 
@@ -938,14 +938,14 @@ class Aseg7(BaseInterface):
         outputs['subject_id'] = subject_id
         return outputs
 
-    def create_sub_node(self):
+    def create_sub_node(self, settings):
         from interface.create_node_bold_new import create_Register_node
         node = create_Register_node(self.inputs.subject_id,
                                     self.task,
                                     self.atlas_type,
                                     self.preprocess_method,
-                                    self.inputs.settings)
-        if self.recon_only == 'True':
+                                    settings)
+        if settings.RECON_ONLY:
             node = []
         return node
 
@@ -1164,5 +1164,5 @@ class BalabelsMult(BaseInterface):
 
         return outputs
 
-    def create_sub_node(self):
+    def create_sub_node(self, settings):
         return []

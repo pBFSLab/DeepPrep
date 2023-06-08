@@ -113,13 +113,13 @@ class BoldSkipReorient(BaseInterface):
 
         return outputs
 
-    def create_sub_node(self):
+    def create_sub_node(self, settings):
         from interface.create_node_bold_new import create_StcMc_node
         node = create_StcMc_node(self.inputs.subject_id,
                                  self.inputs.task,
                                  self.inputs.atlas_type,
                                  self.inputs.preprocess_method,
-                                 self.inputs.settings)
+                                 settings)
 
         return node
 
@@ -293,14 +293,14 @@ class StcMc(BaseInterface):
         outputs["subject_id"] = self.inputs.subject_id
         return outputs
 
-    def create_sub_node(self):
-        if self.bold_only == 'True':
+    def create_sub_node(self, settings):
+        if settings.BOLD_ONLY:
             from interface.create_node_bold_new import create_Register_node
             return create_Register_node(self.inputs.subject_id,
                                         self.inputs.task,
                                         self.inputs.atlas_type,
                                         self.inputs.preprocess_method,
-                                        self.inputs.settings)
+                                        settings)
         return []
 
 
@@ -393,13 +393,13 @@ class Register(BaseInterface):
         outputs["subject_id"] = self.inputs.subject_id
         return outputs
 
-    def create_sub_node(self):
+    def create_sub_node(self, settings):
         from interface.create_node_bold_new import create_Mkbrainmask_node
         node = create_Mkbrainmask_node(self.inputs.subject_id,
                                        self.inputs.task,
                                        self.inputs.atlas_type,
                                        self.inputs.preprocess_method,
-                                       self.inputs.settings)
+                                       settings)
 
         return node
 
@@ -530,21 +530,21 @@ class MkBrainmask(BaseInterface):
         outputs["subject_id"] = self.inputs.subject_id
         return outputs
 
-    def create_sub_node(self):
-        if self.bold_only == 'True':
+    def create_sub_node(self, settings):
+        if settings.BOLD_ONLY:
             from interface.create_node_bold_new import create_VxmRegistraion_node
             node = create_VxmRegistraion_node(self.inputs.subject_id,
                                                 self.inputs.task,
                                                 self.inputs.atlas_type,
                                                 self.inputs.preprocess_method,
-                                                self.inputs.settings)
+                                                settings)
         else:
             from interface.create_node_bold_new import create_VxmRegNormMNI152_node
             node = create_VxmRegNormMNI152_node(self.inputs.subject_id,
                                                 self.inputs.task,
                                                 self.inputs.atlas_type,
                                                 self.inputs.preprocess_method,
-                                                self.inputs.settings)
+                                                settings)
 
         return node
 
@@ -613,7 +613,7 @@ class MkBrainmask(BaseInterface):
 #         outputs["subject_id"] = self.inputs.subject_id
 #         return outputs
 #
-#     def create_sub_node(self):
+#     def create_sub_node(self, settings):
 #         from interface.create_node_bold_new import create_RestBandpass_node
 #         node = create_RestBandpass_node(self.inputs.subject_id,
 #                                         self.inputs.task,
@@ -704,7 +704,7 @@ class MkBrainmask(BaseInterface):
 #
 #         return outputs
 #
-#     def create_sub_node(self):
+#     def create_sub_node(self, settings):
 #         from interface.create_node_bold_new import create_RestRegression_node
 #         node = create_RestRegression_node(self.inputs.subject_id,
 #                                           self.inputs.task,
@@ -873,13 +873,13 @@ class RestRegression(BaseInterface):
 
         return outputs
 
-    def create_sub_node(self):
+    def create_sub_node(self, settings):
         from interface.create_node_bold_new import create_VxmRegNormMNI152_node
         node = create_VxmRegNormMNI152_node(self.inputs.subject_id,
                                             self.inputs.task,
                                             self.inputs.atlas_type,
                                             self.inputs.preprocess_method,
-                                            self.inputs.settings)
+                                            settings)
 
         return node
 
