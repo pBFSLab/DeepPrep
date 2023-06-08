@@ -147,13 +147,14 @@ class VxmRegistraion(BaseInterface):
         outputs["subjects_dir"] = self.inputs.subjects_dir
         return outputs
 
-    def create_sub_node(self):
-        if self.bold_only == 'True':
+    def create_sub_node(self, settings):
+        if settings.BOLD_ONLY:
             from deepprep.interface.create_node_bold_new import create_VxmRegNormMNI152_node
             node = create_VxmRegNormMNI152_node(self.inputs.subject_id,
                                                 self.inputs.task,
                                                 self.inputs.atlas_type,
-                                                self.inputs.preprocess_method)
+                                                self.inputs.preprocess_method,
+                                                settings)
             return node
         return []
 
@@ -224,7 +225,7 @@ class VxmRegNormMNI152(BaseInterface):
         shutil.rmtree(tmp_dir)
 
     def bold_mc_to_fsnative2mm_ants(self, bold_mc_file: Path, norm_fsnative2mm_file, register_dat_file,
-                                    bold_fsnative2mm_file: str, func_dir: Path, verbose=False):
+                                    bold_fsnative2mm_file: str, func_dir: Path, output_bolds, verbose=False):
         """
         bold_mc_file : moving
         norm_fsnative_file : norm.mgz
@@ -244,11 +245,12 @@ class VxmRegNormMNI152(BaseInterface):
             header_info = nib.load(bold_mc_file).header
             affined_nib_img = nib.Nifti1Image(affined_bold_img.numpy().astype(int), affine=affine_info, header=header_info)
             nib.save(affined_nib_img, bold_fsnative2mm_file)
+            output_bolds.append(bold_fsnative2mm_file)
 
         return affined_bold_img
 
     def vxm_warp_bold_2mm(self, bold_fsnative2mm, bold_fsnative2mm_file,
-                          trt_ants_affine_file, trt_vxm_norigid_file, warped_file, verbose=True):
+                          trt_ants_affine_file, trt_vxm_norigid_file, warped_file, output_bolds, verbose=True):
         import voxelmorph as vxm
 
         vxm_model_path = Path(self.inputs.vxm_model_path)
@@ -324,6 +326,7 @@ class VxmRegNormMNI152(BaseInterface):
             header_info = nib.load(bold_fsnative2mm_file).header
             nib_img = nib.Nifti1Image(moved_img.numpy().astype(int), affine=affine_info, header=header_info)
             nib.save(nib_img, warped_file)
+            output_bolds.append(warped_file)
         return moved_img
 
     def _run_interface(self, runtime):
@@ -365,16 +368,15 @@ class VxmRegNormMNI152(BaseInterface):
 
             bold_fsnative2mm_img = self.bold_mc_to_fsnative2mm_ants(bold_mc_file, norm_fsnative2mm_file, register_dat_file,
                                                                     str(bold_fsnative2mm_file), subj_func_dir,
-                                                                    verbose=False)
+                                                                    output_bolds, verbose=False)
 
             ants_affine_trt_file = subj_anat_dir / f'{subject_id}_from_fsnative_to_vxm{atlas_type}_ants_affine.mat'
             vxm_nonrigid_trt_file = subj_anat_dir / f'{subject_id}_from_fsnative_to_vxm{atlas_type}_vxm_nonrigid.nii.gz'
             bold_atlas_file = subj_func_dir / bold_file.name.replace('.nii.gz',
                                                                      f'_skip_reorient_faln_mc_space-{atlas_type}.nii.gz')  # save reg to MNI152 result file
             self.vxm_warp_bold_2mm(bold_fsnative2mm_img, bold_mc_file,
-                                   ants_affine_trt_file, vxm_nonrigid_trt_file, bold_atlas_file, verbose=True)
-            output_bolds.append(bold_fsnative2mm_file)
-            output_bolds.append(bold_atlas_file)
+                                   ants_affine_trt_file, vxm_nonrigid_trt_file, bold_atlas_file,
+                                   output_bolds, verbose=True)
 
         self.check_output(output_bolds)
 

@@ -54,7 +54,7 @@ class SageReg(BaseInterface):
         outputs['rh_sphere_reg'] = subjects_dir / 'surf' / f'rh.sphere.reg'
         return outputs
 
-    def create_sub_node(self):
+    def create_sub_node(self, settings):
         from interface.create_node_structure import create_JacobianAvgcurvCortparc_node
-        node = create_JacobianAvgcurvCortparc_node(self.inputs.subject_id, self.inputs.settings)
+        node = create_JacobianAvgcurvCortparc_node(self.inputs.subject_id, settings)
         return node

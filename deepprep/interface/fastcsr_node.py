@@ -73,9 +73,9 @@ class FastCSR(BaseInterface):
         outputs['rh_orig_premesh_file'] = subject_dir / 'surf' / 'rh.orig.premesh'
         return outputs
 
-    def create_sub_node(self):
+    def create_sub_node(self, settings):
         from interface.create_node_structure import create_WhitePreaparc1_node
-        node = create_WhitePreaparc1_node(self.inputs.subject_id, self.inputs.settings)
+        node = create_WhitePreaparc1_node(self.inputs.subject_id, settings)
         return node
 
 
