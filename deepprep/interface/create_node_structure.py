@@ -55,12 +55,9 @@ def create_OrigAndRawavg_node(subject_id: str, t1w_files: list, settings):
     Origandrawavg_node.inputs.subjects_dir = subjects_dir
     Origandrawavg_node.inputs.subject_id = subject_id
     Origandrawavg_node.inputs.threads = THREAD
-    Origandrawavg_node.inputs.settings = settings
 
     Origandrawavg_node.base_dir = workflow_cached_dir
     Origandrawavg_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=500)
-
-    Origandrawavg_node.interface.recon_only = settings.RECON_ONLY
 
     return Origandrawavg_node
 
@@ -121,12 +118,9 @@ def create_Segment_node(subject_id: str, settings):
     Segment_node.inputs.network_sagittal_path = network_sagittal_path
     Segment_node.inputs.network_coronal_path = network_coronal_path
     Segment_node.inputs.network_axial_path = network_axial_path
-    Segment_node.inputs.settings = settings
 
     Segment_node.base_dir = workflow_cached_dir
     Segment_node.source = Source(CPU_n=0, GPU_MB=8500, RAM_MB=7500)
-
-    Segment_node.interface.recon_only = settings.RECON_ONLY
 
     return Segment_node
 
@@ -172,12 +166,9 @@ def create_Noccseg_node(subject_id: str, settings):
     Noccseg_node.inputs.reduce_to_aseg_py = reduce_to_aseg_py
     Noccseg_node.inputs.subject_id = subject_id
     Noccseg_node.inputs.subjects_dir = subjects_dir
-    Noccseg_node.inputs.settings = settings
 
     Noccseg_node.base_dir = workflow_cached_dir
     Noccseg_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=500)
-
-    Noccseg_node.interface.recon_only = settings.RECON_ONLY
 
     return Noccseg_node
 
@@ -229,12 +220,9 @@ def create_N4BiasCorrect_node(subject_id: str, settings):
     N4_bias_correct_node.inputs.mask_file = mask_file
     N4_bias_correct_node.inputs.orig_file = orig_file
     N4_bias_correct_node.inputs.threads = THREAD
-    N4_bias_correct_node.inputs.settings = settings
 
     N4_bias_correct_node.base_dir = workflow_cached_dir
     N4_bias_correct_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=500)
-
-    N4_bias_correct_node.interface.recon_only = settings.RECON_ONLY
 
     return N4_bias_correct_node
 
@@ -285,12 +273,9 @@ def create_TalairachAndNu_node(subject_id: str, settings):
     Talairach_and_nu_node.inputs.mni305 = mni305
     Talairach_and_nu_node.inputs.orig_nu_file = orig_nu_file
     Talairach_and_nu_node.inputs.orig_file = orig_file
-    Talairach_and_nu_node.inputs.settings = settings
 
     Talairach_and_nu_node.base_dir = workflow_cached_dir
     Talairach_and_nu_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=500)
-
-    Talairach_and_nu_node.interface.recon_only = settings.RECON_ONLY
 
     return Talairach_and_nu_node
 
@@ -328,8 +313,8 @@ def create_Brainmask_node(subject_id: str, settings):
     subjects_dir = Path(settings.SUBJECTS_DIR)
     workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
     atlas_type = settings.FMRI.ATLAS_SPACE
-    task = settings.DEEPPREP_TASK
-    preprocess_method = settings.DEEPPREP_PREPROCESS_METHOD
+    task = settings.FMRI.TASK
+    preprocess_method = settings.FMRI.PREPROCESS_TYPE
 
     Brainmask_node = Node(Brainmask(), name=f'{subject_id}_recon_Brainmask_node')
     Brainmask_node.inputs.subjects_dir = subjects_dir
@@ -340,12 +325,10 @@ def create_Brainmask_node(subject_id: str, settings):
 
     Brainmask_node.base_dir = workflow_cached_dir
     Brainmask_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=1000)
-    Brainmask_node.inputs.settings = settings
 
     Brainmask_node.interface.atlas_type = atlas_type
     Brainmask_node.interface.task = task
     Brainmask_node.interface.preprocess_method = preprocess_method
-    Brainmask_node.interface.recon_only = settings.RECON_ONLY
 
     return Brainmask_node
 
@@ -397,12 +380,9 @@ def create_UpdateAseg_node(subject_id: str, settings):
     Updateaseg_node.inputs.python_interpret = python_interpret
     Updateaseg_node.inputs.seg_file = subject_mri_dir / 'aparc.DKTatlas+aseg.deep.mgz'
     Updateaseg_node.inputs.aseg_noCCseg_file = subject_mri_dir / 'aseg.auto_noCCseg.mgz'
-    Updateaseg_node.inputs.settings = settings
 
     Updateaseg_node.base_dir = workflow_cached_dir
     Updateaseg_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=500)
-
-    Updateaseg_node.interface.recon_only = settings.RECON_ONLY
 
     return Updateaseg_node
 
@@ -458,12 +438,9 @@ def create_Filled_node(subject_id: str, settings):
     Filled_node.inputs.norm_file = subjects_dir / subject_id / 'mri/norm.mgz'
     Filled_node.inputs.brainmask_file = subjects_dir / subject_id / 'mri/brainmask.mgz'
     Filled_node.inputs.talairach_lta = subjects_dir / subject_id / 'mri/transforms/talairach.lta'
-    Filled_node.inputs.settings = settings
 
     Filled_node.base_dir = workflow_cached_dir
     Filled_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=500)
-
-    Filled_node.interface.recon_only = settings.RECON_ONLY
 
     return Filled_node
 
@@ -526,12 +503,9 @@ def create_FastCSR_node(subject_id: str, settings):
     Fastcsr_node.inputs.brainmask_file = Path(subjects_dir) / subject_id / 'mri/brainmask.mgz'
     Fastcsr_node.inputs.wm_file = Path(subjects_dir) / subject_id / 'mri/wm.mgz'
     Fastcsr_node.inputs.brain_finalsurfs_file = Path(subjects_dir) / subject_id / 'mri/brain.finalsurfs.mgz'
-    Fastcsr_node.inputs.settings = settings
-    
+
     Fastcsr_node.base_dir = workflow_cached_dir
     Fastcsr_node.source = Source(CPU_n=0, GPU_MB=7000, RAM_MB=6500)
-
-    Fastcsr_node.interface.recon_only = settings.RECON_ONLY
 
     return Fastcsr_node
 
@@ -580,14 +554,13 @@ def create_WhitePreaparc1_node(subject_id: str, settings):
     workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
     settings.SUBJECTS_DIR = str(subjects_dir)
     atlas_type = settings.FMRI.ATLAS_SPACE
-    task = settings.DEEPPREP_TASK
-    preprocess_method = settings.DEEPPREP_PREPROCESS_METHOD
+    task = settings.FMRI.TASK
+    preprocess_method = settings.FMRI.PREPROCESS_TYPE
 
     White_preaparc1_node = Node(WhitePreaparc1(), name=f'{subject_id}_recon_WhitePreaparc1_node')
     White_preaparc1_node.inputs.subjects_dir = subjects_dir
     White_preaparc1_node.inputs.subject_id = subject_id
     White_preaparc1_node.inputs.threads = THREAD
-    White_preaparc1_node.inputs.settings = settings
 
     White_preaparc1_node.base_dir = workflow_cached_dir
     White_preaparc1_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=1500)
@@ -595,7 +568,6 @@ def create_WhitePreaparc1_node(subject_id: str, settings):
     White_preaparc1_node.interface.atlas_type = atlas_type
     White_preaparc1_node.interface.task = task
     White_preaparc1_node.interface.preprocess_method = preprocess_method
-    White_preaparc1_node.interface.recon_only = settings.RECON_ONLY
 
     return White_preaparc1_node
 
@@ -663,12 +635,9 @@ def create_SampleSegmentationToSurface_node(subject_id: str, settings):
     SampleSegmentationToSurfave_node.inputs.rh_white_preaparc_file = subject_surf_dir / f'rh.white.preaparc'
     SampleSegmentationToSurfave_node.inputs.lh_cortex_label_file = subject_label_dir / f'lh.cortex.label'
     SampleSegmentationToSurfave_node.inputs.rh_cortex_label_file = subject_label_dir / f'rh.cortex.label'
-    SampleSegmentationToSurfave_node.inputs.settings = settings
-    
+
     SampleSegmentationToSurfave_node.base_dir = workflow_cached_dir
     SampleSegmentationToSurfave_node.source = Source(CPU_n=2, GPU_MB=0, RAM_MB=4000)
-
-    SampleSegmentationToSurfave_node.interface.recon_only = settings.RECON_ONLY
 
     return SampleSegmentationToSurfave_node
 
@@ -716,12 +685,9 @@ def create_InflatedSphere_node(subject_id: str, settings):
     Inflated_Sphere_node.inputs.subject_id = subject_id
     Inflated_Sphere_node.inputs.lh_white_preaparc_file = lh_white_preaparc_file
     Inflated_Sphere_node.inputs.rh_white_preaparc_file = rh_white_preaparc_file
-    Inflated_Sphere_node.inputs.settings = settings
 
     Inflated_Sphere_node.base_dir = workflow_cached_dir
     Inflated_Sphere_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=500)
-
-    Inflated_Sphere_node.interface.recon_only = settings.RECON_ONLY
 
     return Inflated_Sphere_node
 
@@ -751,12 +717,9 @@ def create_FeatReg_node(subject_id: str, settings):
     Featreg_node.inputs.rh_curv = Path(subjects_dir) / subject_id / f'surf/rh.curv'
     Featreg_node.inputs.lh_sphere = Path(subjects_dir) / subject_id / f'surf/lh.sphere'
     Featreg_node.inputs.rh_sphere = Path(subjects_dir) / subject_id / f'surf/rh.sphere'
-    Featreg_node.inputs.settings = settings
 
     Featreg_node.base_dir = workflow_cached_dir
     Featreg_node.source = Source(CPU_n=0, GPU_MB=7000, RAM_MB=10000)
-
-    Featreg_node.interface.recon_only = settings.RECON_ONLY
 
     return Featreg_node
 
@@ -819,12 +782,9 @@ def create_SageReg_node(subject_id: str, settings):
     Sagereg_node.inputs.rh_curv = Path(subjects_dir) / subject_id / f'surf/rh.curv'
     Sagereg_node.inputs.lh_sphere = Path(subjects_dir) / subject_id / f'surf/lh.sphere'
     Sagereg_node.inputs.rh_sphere = Path(subjects_dir) / subject_id / f'surf/rh.sphere'
-    Sagereg_node.inputs.settings = settings
 
     Sagereg_node.base_dir = workflow_cached_dir
     Sagereg_node.source = Source(CPU_n=0, GPU_MB=7000, RAM_MB=10000)
-
-    Sagereg_node.interface.recon_only = settings.RECON_ONLY
 
     return Sagereg_node
 
@@ -871,12 +831,9 @@ def create_JacobianAvgcurvCortparc_node(subject_id: str, settings):
     JacobianAvgcurvCortparc_node.inputs.subjects_dir = subjects_dir
     JacobianAvgcurvCortparc_node.inputs.subject_id = subject_id
     JacobianAvgcurvCortparc_node.inputs.threads = THREAD
-    JacobianAvgcurvCortparc_node.inputs.settings = settings
 
     JacobianAvgcurvCortparc_node.base_dir = workflow_cached_dir
     JacobianAvgcurvCortparc_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=500)
-
-    JacobianAvgcurvCortparc_node.interface.recon_only = settings.RECON_ONLY
 
     return JacobianAvgcurvCortparc_node
 
@@ -928,12 +885,9 @@ def create_WhitePialThickness1_node(subject_id: str, settings):
     White_pial_thickness1_node.inputs.rh_aparc_annot = subjects_dir / subject_id / "label" / "rh.aparc.annot"
     White_pial_thickness1_node.inputs.lh_cortex_label = subjects_dir / subject_id / "label" / "lh.cortex.label"
     White_pial_thickness1_node.inputs.rh_cortex_label = subjects_dir / subject_id / "label" / "rh.cortex.label"
-    White_pial_thickness1_node.inputs.settings = settings
-    
+
     White_pial_thickness1_node.base_dir = workflow_cached_dir
     White_pial_thickness1_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=1500)
-
-    White_pial_thickness1_node.interface.recon_only = settings.RECON_ONLY
 
     return White_pial_thickness1_node
 
@@ -981,12 +935,9 @@ def create_Curvstats_node(subject_id: str, settings):
     Curvstats_node.inputs.lh_sulc = subject_surf_dir / f'lh.sulc'
     Curvstats_node.inputs.rh_sulc = subject_surf_dir / f'rh.sulc'
     Curvstats_node.inputs.threads = THREAD
-    Curvstats_node.inputs.settings = settings
-    
+
     Curvstats_node.base_dir = workflow_cached_dir
     Curvstats_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=250)
-
-    Curvstats_node.interface.recon_only = settings.RECON_ONLY
 
     return Curvstats_node
 
@@ -1011,12 +962,9 @@ def create_BalabelsMult_node(subject_id: str, settings):
     BalabelsMult_node.inputs.lh_white = subject_surf_dir / f'lh.white'
     BalabelsMult_node.inputs.rh_white = subject_surf_dir / f'rh.white'
     BalabelsMult_node.inputs.fsaverage_label_dir = Path(settings.FREESURFER_HOME) / "subjects/fsaverage/label"
-    BalabelsMult_node.inputs.settings = settings
-    
+
     BalabelsMult_node.base_dir = workflow_cached_dir
     BalabelsMult_node.source = Source(CPU_n=2, GPU_MB=0, RAM_MB=1500)
-
-    BalabelsMult_node.interface.recon_only = settings.RECON_ONLY
 
     return BalabelsMult_node
 
@@ -1066,12 +1014,9 @@ def create_Cortribbon_node(subject_id: str, settings):
     Cortribbon_node.inputs.rh_white = subject_surf_dir / f'rh.white'
     Cortribbon_node.inputs.lh_pial = subject_surf_dir / f'lh.pial'
     Cortribbon_node.inputs.rh_pial = subject_surf_dir / f'rh.pial'
-    Cortribbon_node.inputs.settings = settings
-    
+
     Cortribbon_node.base_dir = workflow_cached_dir
     Cortribbon_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=1000)
-
-    Cortribbon_node.interface.recon_only = settings.RECON_ONLY
 
     return Cortribbon_node
 
@@ -1143,12 +1088,9 @@ def create_Parcstats_node(subject_id: str, settings):
     Parcstats_node.inputs.rh_pial = subject_surf_dir / f'rh.pial'
     Parcstats_node.inputs.lh_thickness = subject_surf_dir / f'lh.thickness'
     Parcstats_node.inputs.rh_thickness = subject_surf_dir / f'rh.thickness'
-    Parcstats_node.inputs.settings = settings
 
     Parcstats_node.base_dir = workflow_cached_dir
     Parcstats_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=500)
-
-    Parcstats_node.interface.recon_only = settings.RECON_ONLY
 
     return Parcstats_node
 
@@ -1161,8 +1103,8 @@ def create_Aseg7_node(subject_id: str, settings):
     subjects_dir = Path(settings.SUBJECTS_DIR)
     workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
     atlas_type = settings.FMRI.ATLAS_SPACE
-    task = settings.DEEPPREP_TASK
-    preprocess_method = settings.DEEPPREP_PREPROCESS_METHOD
+    task = settings.FMRI.TASK
+    preprocess_method = settings.FMRI.PREPROCESS_TYPE
 
     subject_mri_dir = subjects_dir / subject_id / 'mri'
     subject_surf_dir = subjects_dir / subject_id / 'surf'
@@ -1183,13 +1125,10 @@ def create_Aseg7_node(subject_id: str, settings):
     Aseg7_node.inputs.rh_aparc_annot = subject_label_dir / 'rh.aparc.annot'
     Aseg7_node.base_dir = workflow_cached_dir
     Aseg7_node.source = Source(CPU_n=1, GPU_MB=0, RAM_MB=800)
-    Aseg7_node.inputs.settings = settings
 
     Aseg7_node.interface.atlas_type = atlas_type
     Aseg7_node.interface.task = task
     Aseg7_node.interface.preprocess_method = preprocess_method
-
-    Aseg7_node.interface.recon_only = settings.RECON_ONLY
 
     return Aseg7_node
 
@@ -1237,8 +1176,8 @@ def create_node_t(settings):
     preprocess_method_test = 'task'
 
     settings.FMRI.ATLAS_SPACE = atlas_type_test
-    settings.DEEPPREP_TASK = task_test
-    settings.DEEPPREP_PREPROCESS_METHOD = preprocess_method_test
+    settings.FMRI.TASK = task_test
+    settings.FMRI.PREPROCESS_TYPE = preprocess_method_test
 
     settings.RECON_ONLY = 'True'
     settings.BOLD_ONLY = 'False'

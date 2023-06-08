@@ -29,10 +29,12 @@ def clear_subject_bold_tmp_dir(bold_preprocess_dir: Path, subject_ids: list, tas
 
 
 class Scheduler:
-    def __init__(self, share_manager: Manager, subject_ids: list, last_node_name=None, auto_schedule=True):
+    def __init__(self, share_manager: Manager, subject_ids: list, last_node_name=None, auto_schedule=True,
+                 settings=None):
         self.source_res = Source(CPU_n=36, GPU_MB=23000, RAM_MB=100000, IO_write_MB=100, IO_read_MB=200)
         self.last_node_name = last_node_name
         self.auto_schedule = auto_schedule  # 是否开启自动调度
+        self.settings = settings
 
         self.start_datetime = datetime.now().strftime('%Y-%m-%d-%H:%M:%S')
 
@@ -176,7 +178,7 @@ class Scheduler:
                         self.subject_error.append(node.inputs.subject_id)
                 else:
                     try:
-                        sub_nodes = node.interface.create_sub_node()
+                        sub_nodes = node.interface.create_sub_node(self.settings)
                         if isinstance(sub_nodes, list):
                             self.nodes_ready.extend([i.name for i in sub_nodes])
                         else:
@@ -231,7 +233,7 @@ class Scheduler:
             self.iter_count += 1
 
 
-def parse_args():
+def parse_args(settings):
     """
     python3 deepprep.py
     --bids_dir
@@ -290,9 +292,10 @@ def parse_args():
     return args
 
 
-def main():
-    set_envrion(threads=8)
-    args = parse_args()
+def main(settings):
+
+    # TODO 命令行的内容会覆盖setting中的内容
+    args = parse_args(settings)
     bids_data_path = Path(args.bids_dir)
     subjects_dir = Path(args.recon_output_dir)
     bold_preprocess_dir = Path(args.bold_output_dir)
@@ -300,17 +303,7 @@ def main():
     max_batch_size = int(args.subject_nums)
     multi_t1 = args.single_sub_multi_t1
 
-    # ############### Structure
-    pwd = Path.cwd()  # deepprep/
-    fastsurfer_home = pwd / "FastSurfer"
-    freesurfer_home = Path('/usr/local/freesurfer720')
-    fastcsr_home = pwd / "FastCSR"
-    featreg_home = pwd / "FeatReg"
-
     # ############### BOLD
-    mni152_brain_mask = Path('/usr/local/fsl/data/standard/MNI152_T1_2mm_brain_mask.nii.gz')  # TODO 改为config参数
-    vxm_model_path = pwd / 'model' / 'voxelmorph'
-    resource_dir = pwd / 'resource'
     atlas_type = args.bold_atlas_type
     task = args.bold_task_type  # 'motor' or 'rest' or '...'
     if args.bold_preprocess_method is None:
@@ -324,8 +317,21 @@ def main():
     # ############### Common
     # python_interpret = Path(sys.executable)  # 获取当前的Python解析器地址
     last_node_name = 'VxmRegNormMNI152_node'  # workflow的最后一个node的名字,VxmRegNormMNI152_node or Smooth_node or ...
-    auto_schedule = True  # 是否开启自动调度
-    clear_bold_tmp_dir = False
+    auto_schedule = settings.AUTO_SCHEDULE  # 是否开启自动调度
+    clear_bold_tmp_dir = settings.CHEAR_BOLD_CACHE_DIR
+
+    set_envrion(
+        freesurfer_home=settings.FREESURFER_HOME,
+        java_home=settings.JAVA_HOME,
+        fsl_home=settings.FSL_HOME,
+        subjects_dir=str(subjects_dir),
+        threads=8
+    )
+    # update dir info in settings
+    settings.BIDS_DIR = bids_data_path
+    settings.SUBJECTS_DIR = subjects_dir
+    settings.BOLD_PREPROCESS_DIR = bold_preprocess_dir
+    settings.WORKFLOW_CACHED_DIR = workflow_cached_dir
 
     # ############### filter subjects by subjects_filter_file
     if args.subject_filter is not None:
@@ -335,28 +341,6 @@ def main():
             subject_filter_ids = set(subject_filter_ids)
     else:
         subject_filter_ids = None
-
-    # ############### ENV
-    os.environ['SUBJECTS_DIR'] = str(subjects_dir)
-    os.environ['BOLD_PREPROCESS_DIR'] = str(bold_preprocess_dir)
-    os.environ['WORKFLOW_CACHED_DIR'] = str(workflow_cached_dir)
-    os.environ['FASTSURFER_HOME'] = str(fastsurfer_home)
-    os.environ['FREESURFER_HOME'] = str(freesurfer_home)
-    os.environ['FASTCSR_HOME'] = str(fastcsr_home)
-    os.environ['FEATREG_HOME'] = str(featreg_home)
-    os.environ['BIDS_DIR'] = str(bids_data_path)
-    os.environ['VXM_MODEL_PATH'] = str(vxm_model_path)
-    os.environ['MNI152_BRAIN_MASK'] = str(mni152_brain_mask)
-    os.environ['RESOURCE_DIR'] = str(resource_dir)
-    os.environ['DEEPPREP_DEVICES'] = 'cuda'
-
-    os.environ['DEEPPREP_ATLAS_TYPE'] = atlas_type
-    os.environ['DEEPPREP_TASK'] = task
-    os.environ['DEEPPREP_PREPROCESS_METHOD'] = preprocess_method
-    os.environ['DEEPPREP_DEVICES'] = 'cuda'
-
-    os.environ['RECON_ONLY'] = str(args.recon_only)
-    os.environ['BOLD_ONLY'] = str(args.bold_only)
 
     subjects_dir.mkdir(parents=True, exist_ok=True)
     bold_preprocess_dir.mkdir(parents=True, exist_ok=True)
@@ -408,7 +392,7 @@ def main():
     logging.update_logging(config)
 
     # TODO force_recon 如果开启这个参数，强制重新跑recon结果，清理 'IsRunning.lh+rh' 文件
-    force_recon = True
+    force_recon = settings.FORCE_RECON
     if force_recon:
         clear_is_running(subjects_dir=subjects_dir,
                          subject_ids=subject_ids)
@@ -417,29 +401,30 @@ def main():
     with Manager() as share_manager:
         scheduler = Scheduler(share_manager, subject_ids,
                               last_node_name=last_node_name,
-                              auto_schedule=auto_schedule)
+                              auto_schedule=auto_schedule,
+                              settings=settings)
         if args.bold_only:
             scheduler.last_node_name = 'VxmRegNormMNI152_node'
             from interface.create_node_bold_new import create_BoldSkipReorient_node
             for subject_id in subject_ids:
                 node = create_BoldSkipReorient_node(subject_id=subject_id, task=task, atlas_type=atlas_type,
-                                                    preprocess_method=preprocess_method)
+                                                    preprocess_method=preprocess_method, settings=settings)
                 scheduler.node_all[node.name] = node
                 scheduler.nodes_ready.append(node.name)
 
         elif args.recon_only:
             scheduler.last_node_name = 'Aseg7_node'
             for subject_id, t1w_files in zip(subject_ids, t1w_filess):
-                node = create_OrigAndRawavg_node(subject_id=subject_id, t1w_files=t1w_files)
+                node = create_OrigAndRawavg_node(subject_id=subject_id, t1w_files=t1w_files, settings=settings)
                 scheduler.node_all[node.name] = node
                 scheduler.nodes_ready.append(node.name)
         else:
             from interface.create_node_bold_new import create_BoldSkipReorient_node
             for subject_id, t1w_files in zip(subject_ids, t1w_filess):
-                node = create_OrigAndRawavg_node(subject_id=subject_id, t1w_files=t1w_files)
+                node = create_OrigAndRawavg_node(subject_id=subject_id, t1w_files=t1w_files, settings=settings)
                 scheduler.node_all[node.name] = node
                 scheduler.nodes_ready.append(node.name)
-                node = create_BoldSkipReorient_node(subject_id, task, atlas_type, preprocess_method)
+                node = create_BoldSkipReorient_node(subject_id, task, atlas_type, preprocess_method, settings=settings)
                 scheduler.node_all[node.name] = node
                 scheduler.nodes_ready.append(node.name)
 
@@ -458,4 +443,6 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    from config import settings as main_settings
+
+    main(main_settings)
