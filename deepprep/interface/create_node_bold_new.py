@@ -80,7 +80,7 @@ def create_VxmRegistraion_node(subject_id: str, task: str, atlas_type: str, prep
     VxmRegistraion_node.inputs.data_path = data_path
     VxmRegistraion_node.inputs.derivative_deepprep_path = derivative_deepprep_path
     VxmRegistraion_node.inputs.subjects_dir = subjects_dir
-    VxmRegistraion_node.inputs.model_file = vxm_model_path / atlas_type / 'model.h5'
+    VxmRegistraion_node.inputs.model_file = vxm_model_path / atlas_type / 'model.h5'  # TODO settings
     VxmRegistraion_node.inputs.vxm_model_path = vxm_model_path
     VxmRegistraion_node.inputs.atlas_type = atlas_type
     VxmRegistraion_node.inputs.task = task
@@ -137,8 +137,8 @@ def create_BoldSkipReorient_node(subject_id: str, task: str, atlas_type: str, pr
     BoldSkipReorient_node.inputs.task = task
     BoldSkipReorient_node.inputs.atlas_type = atlas_type
     BoldSkipReorient_node.inputs.preprocess_method = preprocess_method
-    BoldSkipReorient_node.inputs.nskip_frame = "0"
-    BoldSkipReorient_node.inputs.multiprocess = "1"
+    BoldSkipReorient_node.inputs.nskip_frame = "0"  # TODO settings
+    BoldSkipReorient_node.inputs.multiprocess = "1"  # TODO settings
 
     BoldSkipReorient_node.base_dir = workflow_cached_dir
     BoldSkipReorient_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=1000, IO_write_MB=20, IO_read_MB=40)
@@ -187,7 +187,7 @@ def create_StcMc_node(subject_id: str, task: str, atlas_type: str, preprocess_me
     StcMc_node.inputs.derivative_deepprep_path = derivative_deepprep_path
     StcMc_node.inputs.atlas_type = atlas_type
     StcMc_node.inputs.preprocess_method = preprocess_method
-    StcMc_node.inputs.multiprocess = "1"
+    StcMc_node.inputs.multiprocess = "1"  # TODO settings
 
     StcMc_node.base_dir = workflow_cached_dir
     StcMc_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=1000, IO_write_MB=20, IO_read_MB=40)
@@ -236,7 +236,7 @@ def create_Register_node(subject_id: str, task: str, atlas_type: str, preprocess
     Register_node.inputs.derivative_deepprep_path = derivative_deepprep_path
     Register_node.inputs.atlas_type = atlas_type
     Register_node.inputs.preprocess_method = preprocess_method
-    Register_node.inputs.multiprocess = "1"
+    Register_node.inputs.multiprocess = "1"  # TODO settings
 
     Register_node.base_dir = workflow_cached_dir
     Register_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=1000, IO_write_MB=20, IO_read_MB=40)
@@ -289,13 +289,14 @@ def create_Mkbrainmask_node(subject_id: str, task: str, atlas_type: str, preproc
     Mkbrainmask_node.inputs.derivative_deepprep_path = derivative_deepprep_path
     Mkbrainmask_node.inputs.atlas_type = atlas_type
     Mkbrainmask_node.inputs.preprocess_method = preprocess_method
-    Mkbrainmask_node.inputs.multiprocess = "1"
+    Mkbrainmask_node.inputs.multiprocess = "1"  # TODO settings
 
     Mkbrainmask_node.base_dir = workflow_cached_dir
     Mkbrainmask_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=1000, IO_write_MB=20, IO_read_MB=40)
 
     return Mkbrainmask_node
 
+# TODO 将后处理的部分挪到其他py文件
 
 # def create_RestGauss_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str, settings):
 #     workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
@@ -337,25 +338,25 @@ def create_Mkbrainmask_node(subject_id: str, task: str, atlas_type: str, preproc
 #     return RestBandpass_node
 
 
-def create_RestRegression_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str, settings):
-    workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
-    derivative_deepprep_path = Path(settings.BOLD_PREPROCESS_DIR)
-    data_path = Path(settings.BIDS_DIR)
-    subjects_dir = Path(settings.SUBJECTS_DIR)
-
-    RestRegression_node = Node(RestRegression(), name=f'{subject_id}_bold_RestRegression_node')
-    RestRegression_node.inputs.subject_id = subject_id
-    RestRegression_node.inputs.subjects_dir = subjects_dir
-    RestRegression_node.inputs.data_path = data_path
-    RestRegression_node.inputs.task = task
-    RestRegression_node.inputs.derivative_deepprep_path = derivative_deepprep_path
-    RestRegression_node.inputs.atlas_type = atlas_type
-    RestRegression_node.inputs.preprocess_method = preprocess_method
-
-    RestRegression_node.base_dir = workflow_cached_dir
-    RestRegression_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=4000, IO_write_MB=20, IO_read_MB=40)
-
-    return RestRegression_node
+# def create_RestRegression_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str, settings):
+#     workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
+#     derivative_deepprep_path = Path(settings.BOLD_PREPROCESS_DIR)
+#     data_path = Path(settings.BIDS_DIR)
+#     subjects_dir = Path(settings.SUBJECTS_DIR)
+#
+#     RestRegression_node = Node(RestRegression(), name=f'{subject_id}_bold_RestRegression_node')
+#     RestRegression_node.inputs.subject_id = subject_id
+#     RestRegression_node.inputs.subjects_dir = subjects_dir
+#     RestRegression_node.inputs.data_path = data_path
+#     RestRegression_node.inputs.task = task
+#     RestRegression_node.inputs.derivative_deepprep_path = derivative_deepprep_path
+#     RestRegression_node.inputs.atlas_type = atlas_type
+#     RestRegression_node.inputs.preprocess_method = preprocess_method
+#
+#     RestRegression_node.base_dir = workflow_cached_dir
+#     RestRegression_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=4000, IO_write_MB=20, IO_read_MB=40)
+#
+#     return RestRegression_node
 
 
 def create_VxmRegNormMNI152_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str, settings):
@@ -385,25 +386,25 @@ def create_VxmRegNormMNI152_node(subject_id: str, task: str, atlas_type: str, pr
     return VxmRegNormMNI152_node
 
 
-def create_Smooth_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str, settings):
-    workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
-    derivative_deepprep_path = Path(settings.BOLD_PREPROCESS_DIR)
-    data_path = Path(settings.BIDS_DIR)
-    mni152_brain_mask = Path(settings.BRAIN_MASK)
-
-    Smooth_node = Node(Smooth(), name=f'{subject_id}_Smooth_node')
-    Smooth_node.inputs.subject_id = subject_id
-    Smooth_node.inputs.task = task
-    Smooth_node.inputs.data_path = data_path
-    Smooth_node.inputs.atlas_type = atlas_type
-    Smooth_node.inputs.preprocess_method = preprocess_method
-    Smooth_node.inputs.MNI152_T1_2mm_brain_mask = mni152_brain_mask
-    Smooth_node.inputs.derivative_deepprep_path = derivative_deepprep_path
-
-    Smooth_node.base_dir = workflow_cached_dir
-    Smooth_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=7500, IO_write_MB=0, IO_read_MB=0)
-
-    return Smooth_node
+# def create_Smooth_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str, settings):
+#     workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
+#     derivative_deepprep_path = Path(settings.BOLD_PREPROCESS_DIR)
+#     data_path = Path(settings.BIDS_DIR)
+#     mni152_brain_mask = Path(settings.BRAIN_MASK)
+#
+#     Smooth_node = Node(Smooth(), name=f'{subject_id}_Smooth_node')
+#     Smooth_node.inputs.subject_id = subject_id
+#     Smooth_node.inputs.task = task
+#     Smooth_node.inputs.data_path = data_path
+#     Smooth_node.inputs.atlas_type = atlas_type
+#     Smooth_node.inputs.preprocess_method = preprocess_method
+#     Smooth_node.inputs.MNI152_T1_2mm_brain_mask = mni152_brain_mask  # TODO settings
+#     Smooth_node.inputs.derivative_deepprep_path = derivative_deepprep_path
+#
+#     Smooth_node.base_dir = workflow_cached_dir
+#     Smooth_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=7500, IO_write_MB=0, IO_read_MB=0)
+#
+#     return Smooth_node
 
 
 def create_node_t(settings):
@@ -529,4 +530,5 @@ def create_node_t(settings):
 
 
 if __name__ == '__main__':
-    create_node_t()  # 测试
+    from config import settings
+    create_node_t(settings)  # 测试

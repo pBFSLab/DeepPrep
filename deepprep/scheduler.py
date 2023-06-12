@@ -11,7 +11,7 @@ from interface.run import set_envrion
 from interface.node_source import Source
 from interface.create_node_structure import create_OrigAndRawavg_node
 
-logging_wf = logging.getLogger("nipype.workflow")
+logging_wf = logging.getLogger("nipype.workflow")  # TODO 日志应该拆分为多个 scheduler和subject
 
 
 def clear_is_running(subjects_dir: Path, subject_ids: list):
@@ -277,7 +277,7 @@ def parse_args(settings):
                         required=True)
     parser.add_argument("--cache_dir", help="workflow cache dir: /mnt/ngshare2/DeepPrep_UKB/UKB_Workflow",
                         required=True)
-    parser.add_argument("--subject_nums", help="最多跑多少个数据", default=0, required=False)
+    parser.add_argument("--subject_nums", help="最多跑多少个数据", default=0, required=False)  # TODO 去掉这一项
     parser.add_argument("--bold_atlas_type", help="bold使用的MNI模板类型", default='MNI152_T1_2mm', required=False)
     parser.add_argument("--bold_task_type", help="跑的task类型example:motor、rest", default='rest', required=False)
     parser.add_argument("--bold_preprocess_method", help='使用的bold处理方法 rest or task', default=None,
@@ -294,7 +294,7 @@ def parse_args(settings):
 
 def main(settings):
 
-    # TODO 命令行的内容会覆盖setting中的内容
+    # TODO 命令行参数的内容覆盖setting中的内容，取消对 args 使用，使用 settings 代替
     args = parse_args(settings)
     bids_data_path = Path(args.bids_dir)
     subjects_dir = Path(args.recon_output_dir)
@@ -315,8 +315,7 @@ def main(settings):
         preprocess_method = args.bold_preprocess_method  # 'task' or 'rest'
 
     # ############### Common
-    # python_interpret = Path(sys.executable)  # 获取当前的Python解析器地址
-    last_node_name = 'VxmRegNormMNI152_node'  # workflow的最后一个node的名字,VxmRegNormMNI152_node or Smooth_node or ...
+    last_node_name = 'VxmRegNormMNI152_node'  # workflow的最后一个node的名字,VxmRegNormMNI152_node or Smooth_node or ...  # TODO 增加到settings
     auto_schedule = settings.AUTO_SCHEDULE  # 是否开启自动调度
     clear_bold_tmp_dir = settings.CHEAR_BOLD_CACHE_DIR
 
@@ -325,7 +324,7 @@ def main(settings):
         java_home=settings.JAVA_HOME,
         fsl_home=settings.FSL_HOME,
         subjects_dir=str(subjects_dir),
-        threads=8
+        threads=8  # TODO 默认的 threads 使用 settings.THREADS
     )
     # update dir info in settings
     settings.BIDS_DIR = bids_data_path
@@ -370,6 +369,8 @@ def main(settings):
             subject_ids_all = list(subject_dict.keys())
             t1w_filess_all = list(subject_dict.values())
 
+
+    # TODO max_batch_size 历史遗留问题，可以删除这段逻辑
     if max_batch_size > 0:
         batch_size = max_batch_size
     else:
@@ -384,7 +385,7 @@ def main(settings):
         logging_wf.warning(f'len(subject_ids == 0)')
         return
 
-    # 设置log目录位置
+    # 设置log目录位置  # TODO 增加到 settings [log] 下
     log_dir = workflow_cached_dir / 'log' / f'batchsize_{batch_size:03d}'
     log_dir.mkdir(parents=True, exist_ok=True)
     config.update_config({'logging': {'log_directory': log_dir,
@@ -403,8 +404,10 @@ def main(settings):
                               last_node_name=last_node_name,
                               auto_schedule=auto_schedule,
                               settings=settings)
+
+        # TODO 初始化 node 的逻辑梳理为一个函数放到 create_node.py 中
         if args.bold_only:
-            scheduler.last_node_name = 'VxmRegNormMNI152_node'
+            scheduler.last_node_name = 'VxmRegNormMNI152_node'  # TODO 增加到settings
             from interface.create_node_bold_new import create_BoldSkipReorient_node
             for subject_id in subject_ids:
                 node = create_BoldSkipReorient_node(subject_id=subject_id, task=task, atlas_type=atlas_type,
@@ -413,7 +416,7 @@ def main(settings):
                 scheduler.nodes_ready.append(node.name)
 
         elif args.recon_only:
-            scheduler.last_node_name = 'Aseg7_node'
+            scheduler.last_node_name = 'Aseg7_node'  # TODO 增加到 settings
             for subject_id, t1w_files in zip(subject_ids, t1w_filess):
                 node = create_OrigAndRawavg_node(subject_id=subject_id, t1w_files=t1w_files, settings=settings)
                 scheduler.node_all[node.name] = node
