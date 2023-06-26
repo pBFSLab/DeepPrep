@@ -170,6 +170,7 @@ class Scheduler:
             self.s_nodes_done.remove(node_name)
             print(f'Source ADD +    {node.name} :   {self.source_res}')
             if node_name in self.s_nodes_success:  # TODO FIX 判断subject 是否运行成功的逻辑有错误，需要修改判断
+                # TODO 使用 last node name 判断是否已经完成 run ，不太正确
                 if self.last_node_name is not None and self.last_node_name in node_name:
                     self.queue_subject.remove(node.inputs.subject_id)
                     if self.check_run_success(node.inputs.subject_id):
@@ -315,6 +316,8 @@ def main(settings):
 
     # ############### Common
     last_node_name = 'VxmRegNormMNI152_node'  # workflow的最后一个node的名字,VxmRegNormMNI152_node or Smooth_node or ...  # TODO 增加到settings
+    last_node_name_bold = 'VxmRegNormMNI152_node'  # TODO 增加到 settings
+    last_node_name_recon = 'Aseg7_node'  # TODO 增加到 settings
     auto_schedule = settings.AUTO_SCHEDULE  # 是否开启自动调度
     clear_bold_tmp_dir = settings.CHEAR_BOLD_CACHE_DIR
 
@@ -394,7 +397,7 @@ def main(settings):
 
         # TODO 初始化 node 的逻辑梳理为一个函数放到 create_node.py 中
         if args.bold_only:
-            scheduler.last_node_name = 'VxmRegNormMNI152_node'  # TODO 增加到settings
+            scheduler.last_node_name = last_node_name_bold
             from interface.create_node_bold_new import create_BoldSkipReorient_node
             for subject_id in subject_ids:
                 node = create_BoldSkipReorient_node(subject_id=subject_id, task=task, atlas_type=atlas_type,
@@ -403,7 +406,7 @@ def main(settings):
                 scheduler.nodes_ready.append(node.name)
 
         elif args.recon_only:
-            scheduler.last_node_name = 'Aseg7_node'  # TODO 增加到 settings
+            scheduler.last_node_name = last_node_name_recon
             for subject_id, t1w_files in zip(subject_ids, t1w_filess):
                 node = create_OrigAndRawavg_node(subject_id=subject_id, t1w_files=t1w_files, settings=settings)
                 scheduler.node_all[node.name] = node
