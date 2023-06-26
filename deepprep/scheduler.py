@@ -147,7 +147,7 @@ class Scheduler:
         2. 有新的node进入队列
         """
         lock.acquire()
-        if self.iter_count % 6 == 0:
+        if self.iter_count % 6 == 0:  # TODO CHG 如果是debug模式，才会在运行时输出以下内容
             print('Start run queue =================== ==================')
             print(f'start_datetime : {self.start_datetime}')
             print(f'nodes_running  : {len(self.s_nodes_running):3d}', self.s_nodes_running)
@@ -168,7 +168,7 @@ class Scheduler:
             self.source_res += node.source
             self.s_nodes_done.remove(node_name)
             print(f'Source ADD +    {node.name} :   {self.source_res}')
-            if node_name in self.s_nodes_success:
+            if node_name in self.s_nodes_success:  # TODO FIX 判断subject 是否运行成功的逻辑有错误，需要修改判断
                 if self.last_node_name is not None and self.last_node_name in node_name:
                     self.queue_subject.remove(node.inputs.subject_id)
                     if self.check_run_success(node.inputs.subject_id):
@@ -277,7 +277,6 @@ def parse_args(settings):
                         required=True)
     parser.add_argument("--cache_dir", help="workflow cache dir: /mnt/ngshare2/DeepPrep_UKB/UKB_Workflow",
                         required=True)
-    parser.add_argument("--subject_nums", help="最多跑多少个数据", default=0, required=False)  # TODO 去掉这一项
     parser.add_argument("--bold_atlas_type", help="bold使用的MNI模板类型", default='MNI152_T1_2mm', required=False)
     parser.add_argument("--bold_task_type", help="跑的task类型example:motor、rest", default='rest', required=False)
     parser.add_argument("--bold_preprocess_method", help='使用的bold处理方法 rest or task', default=None,
@@ -300,7 +299,6 @@ def main(settings):
     subjects_dir = Path(args.recon_output_dir)
     bold_preprocess_dir = Path(args.bold_output_dir)
     workflow_cached_dir = Path(args.cache_dir)
-    max_batch_size = int(args.subject_nums)
     multi_t1 = args.single_sub_multi_t1
 
     # ############### BOLD
@@ -347,8 +345,8 @@ def main(settings):
 
     layout = bids.BIDSLayout(str(bids_data_path), derivatives=False)
 
-    t1w_filess_all = list()
-    subject_ids_all = list()
+    t1w_filess = list()
+    subject_ids = list()
     subject_dict = {}
     for t1w_file in layout.get(return_type='filename', suffix="T1w", extension='.nii.gz'):
         sub_info = layout.parse_file_entities(t1w_file)
@@ -361,32 +359,20 @@ def main(settings):
                 subject_id = subject_id + f"-ses-{sub_info['session']}"
             if 'run' in sub_info:
                 subject_id = subject_id + f"-run-{sub_info['run']}"
-            t1w_filess_all.append([t1w_file])
-            subject_ids_all.append(subject_id)
+            t1w_filess.append([t1w_file])
+            subject_ids.append(subject_id)
         else:
             # 合并多个T1跑Recon
             subject_dict.setdefault(subject_id, []).append(t1w_file)
-            subject_ids_all = list(subject_dict.keys())
-            t1w_filess_all = list(subject_dict.values())
-
-
-    # TODO max_batch_size 历史遗留问题，可以删除这段逻辑
-    if max_batch_size > 0:
-        batch_size = max_batch_size
-    else:
-        batch_size = len(subject_ids_all)
-
-    # for epoch in range(len(subject_ids_all) + 1):
-    # try:
-    t1w_filess = t1w_filess_all[:batch_size]
-    subject_ids = subject_ids_all[:batch_size]
+            subject_ids = list(subject_dict.keys())
+            t1w_filess = list(subject_dict.values())
 
     if len(t1w_filess) <= 0 or len(subject_ids) <= 0:
         logging_wf.warning(f'len(subject_ids == 0)')
         return
 
     # 设置log目录位置  # TODO 增加到 settings [log] 下
-    log_dir = workflow_cached_dir / 'log' / f'batchsize_{batch_size:03d}'
+    log_dir = workflow_cached_dir / 'log'
     log_dir.mkdir(parents=True, exist_ok=True)
     config.update_config({'logging': {'log_directory': log_dir,
                                       'log_to_file': True}})
@@ -440,9 +426,6 @@ def main(settings):
         logging_wf.error(f'subject_error {len(scheduler.subject_error)}: {scheduler.subject_error}')
         if clear_bold_tmp_dir:
             clear_subject_bold_tmp_dir(bold_preprocess_dir, subject_ids, task)
-
-        # except Exception as why:
-        #     print(f'Exception : {why}')
 
 
 if __name__ == '__main__':
