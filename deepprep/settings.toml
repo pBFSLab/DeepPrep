@@ -5,6 +5,13 @@
 # 不建议修改： 改动会影响Pipeline的结果。比如会产生删除操作，修改原结果的操作，不能复现原来结果的操作。
 # 不可修改： 为DeepPrep的保留变量，仅开发者可以改动。比如改动后Pipeline发生改变。
 
+# Source set
+CPU_NUM = 20
+GPU_MB = 11000
+RAM_MB = 40000
+IO_WRITE_MB = 100
+IO_READ_MB = 200
+
 AUTO_SCHEDULE = true  # wether or not to use auto schedule. (default: true)
 
 # Warning: RECON_ONLY and BOLD_ONLY cant both to be set true.
@@ -52,8 +59,11 @@ JAVA_HOME = "/usr/lib/jvm/java-11-openjdk-amd64"
 # ### GPU set ###
 DEVICE = "cuda"
 # ### CPU set ###
-THREADS = 8  # default thereads
+THREADS = 8  # default thereads for OpenMP and ITK
 
+# Please do not make any modifications until you understand the purpose of these items！！！
+FORCE_RECON = false  # force to run the recon pipeline. (default: false)
+CHEAR_BOLD_CACHE_DIR = false  # wether or not to clear the bold cache while finished. (defaul: false)
 
 # ENVIRON
 
@@ -71,7 +81,3 @@ PREPROCESS_TYPE = ""  # can be set to rest or task (default: None)（replaced by
 #[default]
 #
 #[development]
-
-# Please do not make any modifications until you understand the purpose of these items！！！
-FORCE_RECON = false  # force to run the recon pipeline. (default: false)
-CHEAR_BOLD_CACHE_DIR = false  # wether or not to clear the bold cache while finished. (defaul: false)
