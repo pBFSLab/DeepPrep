@@ -14,12 +14,12 @@ def unzip(zip_file, outpath):
 
 
 if __name__ == '__main__':
-    UKB_dir = '/mnt/ngshare2'
-    T1_dir = '/media/pbfs19/c97fb2f7-1015-4387-bd54-b6ff6a54b856/UKB/T1'
-    rest_dir = '/media/pbfs19/c97fb2f7-1015-4387-bd54-b6ff6a54b856/UKB/rfMRI'
+    UKB_dir = '/mnt/ngshare2/UKB'
+    T1_dir = '/media/anning/c97fb2f7-1015-4387-bd54-b6ff6a54b856/UKB/T1'
+    rest_dir = '/media/anning/c97fb2f7-1015-4387-bd54-b6ff6a54b856/UKB/rfMRI'
     tmp_dir = os.path.join(UKB_dir, 'tmp')
     bids_outpath = os.path.join(UKB_dir, 'BIDS')
-    sublist_csv = '/home/pbfs19/workspace/f.20191.filtered_T1_01.csv'
+    sublist_csv = '/home/anning/workspace/f.20191.filtered_T1_03.csv'
 
     df = pd.read_csv(sublist_csv)
     df_data = pd.DataFrame(df)
@@ -30,28 +30,32 @@ if __name__ == '__main__':
     if os.path.exists(bids_outpath) is False:
         os.makedirs(bids_outpath)
 
-    for sub in subjects_list:
-        sub = str(sub)
-        sub_tmp_path = os.path.join(tmp_dir, sub)
-        if os.path.exists(sub_tmp_path) is True:
-            print(sub + "： 已解压!")
-            continue
-        else:
-            os.makedirs(sub_tmp_path)
+    # for sub in subjects_list:
+    #     sub = str(sub)
+    #     print(sub)
+    #     if sub == '1343281' or sub == '1846390':
+    #         continue
+    #
+    #     sub_tmp_path = os.path.join(tmp_dir, sub)
+    #     if os.path.exists(sub_tmp_path) is True:
+    #         print(sub + "： 已解压!")
+    #         continue
+    #     else:
+    #         os.makedirs(sub_tmp_path)
+    #
+    #     sub_T1_zip = os.path.join(T1_dir,  f'{sub}_20252_2_0.zip')
+    #     sub_rest_zip = os.path.join(rest_dir, f'{sub}_20227_2_0.zip')
+    #
+    #     if os.path.exists(sub_T1_zip) is False or os.path.exists(sub_rest_zip) is False:
+    #         print(sub + '没有！！！！！！！！！！！！！')
+    #         continue
+    #
+    #     unzip(sub_T1_zip, sub_tmp_path)
+    #     unzip(sub_rest_zip, sub_tmp_path)
+    #
+    #     print(sub + "： 已解压完成！")
 
-        sub_T1_zip = os.path.join(T1_dir,  f'{sub}_20252_2_0.zip')
-        sub_rest_zip = os.path.join(rest_dir, f'{sub}_20227_2_0.zip')
-
-        if os.path.exists(sub_T1_zip) is False or os.path.exists(sub_rest_zip) is False:
-            print(sub + '没有！！！！！！！！！！！！！')
-            continue
-
-        unzip(sub_T1_zip, sub_tmp_path)
-        unzip(sub_rest_zip, sub_tmp_path)
-
-        print(sub + "： 已解压完成！")
-
-    for sub in subjects_list:
+    for sub in os.listdir('/mnt/ngshare2/UKB/tmp'):
         sub = str(sub)
         sub_tmp_T1_file = os.path.join(tmp_dir, sub, 'T1', 'T1.nii.gz')
         sub_tmp_rest_file = os.path.join(tmp_dir, sub, 'fMRI', 'rfMRI.nii.gz')

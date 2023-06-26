@@ -103,13 +103,13 @@ def build_movement_regressors(subject, movement_path: Path, fcmri_path: Path, mc
         f.write('\n'.join(regressor_dat_txt))
 
 
-def compile_regressors(func_path: Path, subject, bold_path: Path, bpss_path: Path):
+def compile_regressors(func_path: Path, subject, bold_path: Path, bpss_path: Path, all_regressors_path):
     # Compile the regressors.
-    movement_path = func_path / 'movement'
-    movement_path.mkdir(exist_ok=True)
+    movement_path = func_path / 'movement' / bold_path.name.replace('.nii.gz', '')
+    movement_path.mkdir(parents=True, exist_ok=True)
 
-    fcmri_path = func_path / 'fcmri'
-    fcmri_path.mkdir(exist_ok=True)
+    fcmri_path = func_path / 'fcmri' / bold_path.name.replace('.nii.gz', '')
+    fcmri_path.mkdir(parents=True, exist_ok=True)
 
     # wipe mov regressors, if there
     mcdat_file = func_path / bold_path.name.replace('.nii.gz', '_skip_reorient_faln_mc.mcdat')
@@ -144,7 +144,7 @@ def compile_regressors(func_path: Path, subject, bold_path: Path, bpss_path: Pat
         fcmri_path / ('%s_WB_regressor_dt.dat' % subject),
         fcmri_path / ('%s_vent_wm_dt.dat' % subject),
         fcmri_path / ('%s_pca_regressor_dt.dat' % subject)]
-    all_regressors_path = fcmri_path / ('%s_regressors.dat' % subject)
+    all_regressors_path = all_regressors_path
     regressors = []
     for fname in fnames:
         with fname.open('r') as f:
@@ -203,8 +203,12 @@ def rest_cal_confounds(bids_dir, bold_preprocess_dir: Path, subject_id):
             bandpass_nifti(str(mc_path), TR)
             print(f'>>> {bpss_path}')
 
-        all_regressors = compile_regressors(subj_func_dir, subject_id, bold_file, bpss_path)
-        print(f'>>> {all_regressors}')
+        bold_name = bold_file.name.replace('.nii.gz', '')
+        subj_fcmri_dir = Path(bold_preprocess_dir) / subject_id / 'func' / 'fcmri'
+        all_regressors = subj_fcmri_dir / bold_name / f'{bold_name}_regressors.dat'
+        if not all_regressors.exists():
+            all_regressors = compile_regressors(subj_func_dir, subject_id, bold_file, bpss_path, all_regressors)
+            print(f'>>> {all_regressors}')
 
 
 def regression_MNI152(bids_dir, bold_preprocess_dir: Path, subject_id):
@@ -238,8 +242,9 @@ def regression_MNI152(bids_dir, bold_preprocess_dir: Path, subject_id):
             bandpass_nifti(str(mc_152_path), TR)
             print(f'>>> {bpss_path}')
 
-        all_regressors = subj_func_dir / 'fcmri' / bold_file.name.replace('.nii.gz', '') / f'{subject_id}_regressors.dat'
-
+        bold_name = bold_file.name.replace('.nii.gz', '')
+        all_regressors = subj_func_dir / 'fcmri' / bold_name / f'{bold_name}_regressors.dat'
+        print(f'<<< {all_regressors}')
         # regression orig_space bold
         resid_path = bpss_path.parent / bpss_path.name.replace('.nii.gz', '_resid.nii.gz')
         if not resid_path.exists():
@@ -286,7 +291,8 @@ def regression_surface(bids_dir, bold_preprocess_dir: Path, subject_id):
                 print(f'>>> {bpss_path}')
 
             # regression orig_space bold
-            all_regressors = subj_func_dir / 'fcmri' / bold_file.name.replace('.nii.gz', '') / f'{subject_id}_regressors.dat'
+            bold_name = bold_file.name.replace('.nii.gz', '')
+            all_regressors = subj_func_dir / 'fcmri' / bold_name / f'{bold_name}_regressors.dat'
             resid_path = bpss_path.parent / bpss_path.name.replace('.nii.gz', '_resid.nii.gz')
             if not resid_path.exists():
                 assert all_regressors.exists()
@@ -420,8 +426,6 @@ def project(bids_dir, bold_preprocess_dir: Path, subject_id,
     subj_surf_dir = Path(subject_dir) / 'surf'
     subj_surf_dir.mkdir(parents=True, exist_ok=True)
 
-    args = []
-    bold_files = []
     if task is None:
         bids_bolds = layout.get(subject=subj, suffix='bold', extension='.nii.gz')
     else:
@@ -451,7 +455,8 @@ def project(bids_dir, bold_preprocess_dir: Path, subject_id,
             sm6_path = subj_surf_dir / fs6_surf_path.name.replace(".nii.gz", "_sm6.nii.gz")
             if not sm6_path.exists():
                 smooth_fs6(fs6_surf_path, hemi)
-                print(f'>>> {fs6_surf_path}')
+                print(f'>>> {sm6_path}')
+
             # down_sample
             fs5_surf_path = subj_surf_dir / sm6_path.name.replace(".nii.gz", "_fsaverage5.nii.gz")
             fs4_surf_path = subj_surf_dir / sm6_path.name.replace(".nii.gz", "_fsaverage4.nii.gz")
@@ -465,13 +470,104 @@ def project(bids_dir, bold_preprocess_dir: Path, subject_id,
             # native_project_to_native(bold_path, surf_path, register_dat_path, hemi)
 
 
+def fwhm(bids_dir, bold_preprocess_dir: Path, subject_id,
+            bold_ext: str = '_skip_reorient_faln_mc_bpss_resid.nii.gz'):
+    """
+    投影都是已mc为基础，加载register.dat文件，配准到T1空间
+    默认采样到native空间
+    指定trgsubject为fsaverage6，则project to fsaverage6 空间
+    """
+    task = 'rest'
+
+    layout = bids.BIDSLayout(str(bids_dir), derivatives=False)
+
+    subj = subject_id.split('-')[1]
+    subject_dir = Path(bold_preprocess_dir) / subject_id
+    subj_func_dir = Path(subject_dir) / 'func'
+    subj_func_dir.mkdir(parents=True, exist_ok=True)
+    subj_surf_dir = Path(subject_dir) / 'surf'
+    subj_surf_dir.mkdir(parents=True, exist_ok=True)
+    subj_fwhm_dir = Path(subject_dir) / 'fwhm'
+    subj_fwhm_dir.mkdir(parents=True, exist_ok=True)
+
+    datas = []
+    if task is None:
+        bids_bolds = layout.get(subject=subj, suffix='bold', extension='.nii.gz')
+    else:
+        bids_bolds = layout.get(subject=subj, task=task, suffix='bold', extension='.nii.gz')
+    for idx, bids_bold in enumerate(bids_bolds):
+        bold_file = Path(bids_bold.path)
+        print(f'<<< {bold_file}')
+
+        # subject_id = bold_file.name.split('_')[0]
+        #
+        # subject_dir = Path(bold_preprocess_dir) / subject_id
+        # subj_func_dir = Path(subject_dir) / 'func'
+        # subj_func_dir.mkdir(parents=True, exist_ok=True)
+        # subj_surf_dir = Path(subject_dir) / 'surf'
+        # subj_surf_dir.mkdir(parents=True, exist_ok=True)
+        # subj_fwhm_dir = Path(subject_dir) / 'fwhm'
+        # subj_fwhm_dir.mkdir(parents=True, exist_ok=True)
+
+        # register.dat 包含了 subject_id 信息
+        bold_path = subj_func_dir / bold_file.name.replace('.nii.gz', bold_ext)
+
+        if not bold_path.exists():
+            print(f'Exists Error: {bold_path}')
+            continue
+
+        for hemi in ['lh', 'rh']:
+            data_dict = {'subject': f'{bold_file.name.replace(".nii.gz", "")}_hemi-{hemi}'}
+            # project to fsaverage6
+            fs6_surf_path = subj_surf_dir / f'{hemi}.{bold_path.name.replace(".nii.gz", "_fsaverage6.nii.gz")}'
+            # smooth
+            sm6_path = subj_surf_dir / fs6_surf_path.name.replace(".nii.gz", "_sm6.nii.gz")
+
+            for file_path, filetype in zip([fs6_surf_path, sm6_path], ['orig', 'sm6']):
+                fwhm_path = subj_fwhm_dir / file_path.name.replace('.nii.gz', '.txt')
+                if not fwhm_path.exists():
+                    cmd = f'mris_fwhm --i {file_path} --subject fsaverage6 --hemi lh >> {fwhm_path}'
+                    os.system(cmd)
+                    print(f'>>> {fwhm_path}')
+                with open(fwhm_path, 'r') as f:
+                    lines = f.readlines()
+                    print(f'<<< {fwhm_path}')
+                    data_dict[filetype] = float(lines[-1].split('=')[-1].strip())
+
+            # down_sample
+            fs5_surf_path = subj_surf_dir / sm6_path.name.replace(".nii.gz", "_fsaverage5.nii.gz")
+            fs4_surf_path = subj_surf_dir / sm6_path.name.replace(".nii.gz", "_fsaverage4.nii.gz")
+
+            fwhm_path = subj_fwhm_dir / fs4_surf_path.name.replace('.nii.gz', '.txt')
+            if not fwhm_path.exists():
+                cmd = f'mris_fwhm --i {fs4_surf_path} --subject fsaverage4 --hemi lh >> {fwhm_path}'
+                os.system(cmd)
+                print(f'>>> {fwhm_path}')
+            with open(fwhm_path, 'r') as f:
+                lines = f.readlines()
+                print(f'<<< {fwhm_path}')
+                data_dict['fsaverage4'] = float(lines[-1].split('=')[-1].strip())
+
+            datas.append(data_dict)
+
+    # import pandas as pd
+    # df = pd.DataFrame.from_dict(datas)
+    # df.to_csv(bold_preprocess_dir / 'fwhm.csv', index=False)
+    # print()
+
+
 def main():
     from interface.run import set_envrion
     set_envrion()
 
-    bids_dir = Path('/mnt/ngshare2/MSC_all/MSC')
-    recon_dir = '/mnt/ngshare2/MSC_all/MSC_Recon'
-    bold_preprocess_dir = Path('/mnt/ngshare2/MSC_all/MSC_BoldPreprocess')
+    bids_dir = Path('/mnt/ngshare/Data_Orig/HNU_1')
+    recon_dir = '/mnt/ngshare2/DeepPrep_HNU_1/HNU_1_Recon'
+    bold_preprocess_dir = Path('/mnt/ngshare2/DeepPrep_HNU_1/HNU_1_BoldPreprocess')
+
+    # subject_list_file = '/home/anning/Downloads/UKB50sub.txt'
+    # with open(subject_list_file, 'r') as f:
+    #     subject_id_list = f.readlines()
+    # subject_id_list = [i.strip() for i in subject_id_list]
 
     os.environ['SUBJECTS_DIR'] = recon_dir
     # subject_id = 'sub-1000037'
@@ -479,16 +575,26 @@ def main():
     for subject_id in os.listdir(recon_dir):
         if not 'sub' in subject_id:
             continue
-        if 'ses' in subject_id:
-            continue
-        if 'run' in subject_id:
-            continue
-        rest_cal_confounds(bids_dir, bold_preprocess_dir, subject_id)
-        project(bids_dir, bold_preprocess_dir, subject_id)
+        # if subject_id not in subject_id_list:
+        #     continue
+        # if 'ses' in subject_id:
+        #     continue
+        # if 'run' in subject_id:
+        #     continue
+        # rest_cal_confounds(bids_dir, bold_preprocess_dir, subject_id)
+        # project(bids_dir, bold_preprocess_dir, subject_id)
 
-        regression_MNI152(bids_dir, bold_preprocess_dir, subject_id)
-        regression_surface(bids_dir, bold_preprocess_dir, subject_id)
+        # regression_MNI152(bids_dir, bold_preprocess_dir, subject_id)
+        # regression_surface(bids_dir, bold_preprocess_dir, subject_id)
+        # fwhm(bids_dir, bold_preprocess_dir, subject_id)
         args.append([bids_dir, bold_preprocess_dir, subject_id])
+        # break
+
+    from multiprocessing.pool import Pool
+    pool = Pool(10)
+    pool.starmap(rest_cal_confounds, args)
+    pool.close()
+    pool.join()
 
     from multiprocessing.pool import Pool
     pool = Pool(3)

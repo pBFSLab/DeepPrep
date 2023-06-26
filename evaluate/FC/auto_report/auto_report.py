@@ -52,8 +52,8 @@ def add_surf_fc_report(prs, data_path, pipeline1, pipeline2, subj, fc_file_name)
     slide = add_picture(slide, str(pipeline2_fc_file), 101.26, 95.5, 136.15, 95)
 
 
-def main(pipeline1, pipeline2, dataset, ppt_outpath):
-    data_path = Path(f'/mnt/ngshare/DeepPrep/{dataset}/derivatives/analysis')
+def main(pipeline1, pipeline2, dist_dir, dataset, ppt_outpath):
+    data_path = Path(f'{dist_dir}/{dataset}/derivatives/analysis')
     subjs = os.listdir(data_path / pipeline1)
     subjs = sorted(subjs)
     prs = pptx.Presentation('report_template.pptx')
@@ -70,8 +70,10 @@ def main(pipeline1, pipeline2, dataset, ppt_outpath):
 
 
 if __name__ == '__main__':
-    pipeline1 = 'deepprep'
-    pipeline2 = 'app'
-    dataset = 'HNU_1'
-    ppt_outpath = f'/home/zhenyu/Nutstore Files/ODOT/zhenyu/DeepPrep/ppt/{dataset}.pptx'
-    main(pipeline1, pipeline2, dataset, ppt_outpath)
+    pipeline1 = 'DeepPrep'
+    pipeline2 = 'DeepPrep-SDC'
+    bids_dir = '/mnt/ngshare/DeepPrep'
+    dataset = 'MSC'
+    save_path = Path(bids_dir) / dataset / 'derivatives' / 'analysis'
+    ppt_outpath = save_path / f'{dataset}_{pipeline1}_{pipeline2}_new.pptx'
+    main(pipeline1, pipeline2, bids_dir, dataset, ppt_outpath)
