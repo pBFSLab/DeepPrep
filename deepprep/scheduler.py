@@ -31,10 +31,11 @@ def clear_subject_bold_tmp_dir(bold_preprocess_dir: Path, subject_ids: list, tas
 class Scheduler:
     def __init__(self, share_manager: Manager, subject_ids: list, last_node_name=None, auto_schedule=True,
                  settings=None):
-        self.source_res = Source(CPU_n=36, GPU_MB=23000, RAM_MB=100000, IO_write_MB=100, IO_read_MB=200)
         self.last_node_name = last_node_name
         self.auto_schedule = auto_schedule  # 是否开启自动调度
         self.settings = settings
+        self.source_res = Source(CPU_n=settings.CPU_NUM, GPU_MB=settings.GPU_MB, RAM_MB=settings.RAM_MB,
+                                 IO_write_MB=settings.IO_WRITE_MB, IO_read_MB=settings.IO_READ_MB)
 
         self.start_datetime = datetime.now().strftime('%Y-%m-%d-%H:%M:%S')
 
@@ -299,7 +300,7 @@ def main(settings):
     subjects_dir = Path(args.recon_output_dir)
     bold_preprocess_dir = Path(args.bold_output_dir)
     workflow_cached_dir = Path(args.cache_dir)
-    multi_t1 = args.single_sub_multi_t1
+    multi_t1 = args.single_sub_multi_t1  # TODO 变量名字改为 rawavg
 
     # ############### BOLD
     atlas_type = args.bold_atlas_type
@@ -322,7 +323,7 @@ def main(settings):
         java_home=settings.JAVA_HOME,
         fsl_home=settings.FSL_HOME,
         subjects_dir=str(subjects_dir),
-        threads=8  # TODO 默认的 threads 使用 settings.THREADS
+        threads=settings.THREADS
     )
     # update dir info in settings
     settings.BIDS_DIR = bids_data_path
