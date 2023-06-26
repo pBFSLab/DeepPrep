@@ -547,80 +547,56 @@ def ants_reg(moving_dir, dest_dir,  fixed_dir, type_of_transform='SyN'):
         ants.image_write(aseg_moved, str(aseg_movd_dir))
         print(f'{file} done')
 
-def info_label(aseg = True):
-    if aseg:
-        aseg_label = [0., 2., 3., 4., 5., 7., 8., 10., 11., 12., 13.,
-                      14., 15., 16., 17., 18., 24., 26., 28., 30., 31., 41.,
-                      42., 43., 44., 46., 47., 49., 50., 51., 52., 53., 54.,
-                      58., 60., 62., 63., 77., 85., 251., 252., 253., 254., 255.]
-        aseg_label_dict = {0: 0,
-                           2: "Left-Cerebral-White-Matter",
-                           3: "Left-Cerebral-Cortex",
-                           4: "Left-Lateral-Ventricle",
-                           5: "Left-Inf-Lat-Vent",
-                           7: "Left-Cerebellum-White-Matter",
-                           8: "Left-Cerebellum-Cortex",
-                           10: "Left-Thalamus",
-                           11: "Left-Caudate",
-                           12: "left-Putamen",
-                           13: "lefy-Pallidum",
-                           14: "3rd-Ventricle",
-                           15: "4th-Ventricle",
-                           16: "Brain-Stem",
-                           17: "Left-Hippocampus",
-                           18: "Left-Amygdala",
-                           24: "CSF",
-                           26: "Left-Accumbens-area",
-                           28: "Left-VentralDC",
-                           30: "Left-vessel",
-                           31: "Left-choroid-plexus",
-                           41: "Right-Cerebral-White-Matter",
-                           42: "Right-Cerebral-Cortex",
-                           43: "Right-Lateral-Ventricle",
-                           44: "Right-Inf-Lat-Vent",
-                           46: "Right-Cerebellum-White-Matter",
-                           47: "Right-Cerebellum-Cortex",
-                           49: "Right-Thalamus",
-                           50: "Right-Caudate",
-                           51: "Right-Putamen",
-                           52: "Right-Pallidum",
-                           53: "Right-Hippocampus",
-                           54: "Right-Amygdala",
-                           58: "Right-Accumbens-area",
-                           60: "Right-VentralDC",
-                           62: "Right-vessel",
-                           63: "Right-choroid-plexus",
-                           77: "WM-hypointensities",
-                           85: "Optic-Chiasm",
-                           251: "CC_Posterior",
-                           252: "CC_Mid_Posterior",
-                           253: "CC_Central",
-                           254: "CC_Mid_Anterior",
-                           255: "CC_Anterior"}
-        return aseg_label, aseg_label_dict
-    else:
-        aparc_label = [0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,
-       17, 18]
-        aparc_label_dict = {0: 'Null',
-                            1: 'Lateral Visual Network',
-                            2: 'Medial Visual Network',
-                            3: 'Lower-limb Sensorimotor Network',
-                            4: 'Facial Sensorimotor Network',
-                            5: 'Dorsal Attention Network A',
-                            6: 'Dorsal Attention Network B',
-                            7: 'Ventral Attention Network A',
-                            8: 'Ventral Attention Network B',
-                            9: 'Temporal Limbic Network A',
-                            10: 'Frontal Limbic Network',
-                            11: 'Medial Parietal Network',
-                            12: 'Executive Control Network A',
-                            13: 'Executive Control Network B',
-                            14: 'Language Network B',
-                            15: 'Episodic Memory Network',
-                            16: 'Default Mode Network',
-                            17: 'Language Network A',
-                            18: 'Upper-limb Sensorimotor Network'}
-        return aparc_label, aparc_label_dict
+def info_label_aseg():
+    aseg_label = [0., 2., 3., 4., 5., 7., 8., 10., 11., 12., 13.,
+                  14., 15., 16., 17., 18., 24., 26., 28., 30., 31., 41.,
+                  42., 43., 44., 46., 47., 49., 50., 51., 52., 53., 54.,
+                  58., 60., 62., 63., 77., 85., 251., 252., 253., 254., 255.]
+    aseg_label_dict = {0: 0,
+                       2: "Left-Cerebral-White-Matter",
+                       3: "Left-Cerebral-Cortex",
+                       4: "Left-Lateral-Ventricle",
+                       5: "Left-Inf-Lat-Vent",
+                       7: "Left-Cerebellum-White-Matter",
+                       8: "Left-Cerebellum-Cortex",
+                       10: "Left-Thalamus",
+                       11: "Left-Caudate",
+                       12: "left-Putamen",
+                       13: "lefy-Pallidum",
+                       14: "3rd-Ventricle",
+                       15: "4th-Ventricle",
+                       16: "Brain-Stem",
+                       17: "Left-Hippocampus",
+                       18: "Left-Amygdala",
+                       24: "CSF",
+                       26: "Left-Accumbens-area",
+                       28: "Left-VentralDC",
+                       30: "Left-vessel",
+                       31: "Left-choroid-plexus",
+                       41: "Right-Cerebral-White-Matter",
+                       42: "Right-Cerebral-Cortex",
+                       43: "Right-Lateral-Ventricle",
+                       44: "Right-Inf-Lat-Vent",
+                       46: "Right-Cerebellum-White-Matter",
+                       47: "Right-Cerebellum-Cortex",
+                       49: "Right-Thalamus",
+                       50: "Right-Caudate",
+                       51: "Right-Putamen",
+                       52: "Right-Pallidum",
+                       53: "Right-Hippocampus",
+                       54: "Right-Amygdala",
+                       58: "Right-Accumbens-area",
+                       60: "Right-VentralDC",
+                       62: "Right-vessel",
+                       63: "Right-choroid-plexus",
+                       77: "WM-hypointensities",
+                       85: "Optic-Chiasm",
+                       251: "CC_Posterior",
+                       252: "CC_Mid_Posterior",
+                       253: "CC_Central",
+                       254: "CC_Mid_Anterior",
+                       255: "CC_Anterior"}
+    return aseg_label, aseg_label_dict
 def dc(pred, gt):
     result = np.atleast_1d(pred.astype(bool))
     reference = np.atleast_1d(gt.astype(bool))
@@ -657,7 +633,7 @@ def evaluate_aseg(arr: np.ndarray, arr_gt: np.ndarray, aseg_i):
     del mask_gt, mask_pred
 
 def aseg_acc(fs_dir: Path, deepprep_dir: Path, output_dir: Path):
-    label, label_dict = info_label(aseg=True)
+    label, label_dict = info_label_aseg()
     df_dice = None
 
     for sub in os.listdir(fs_dir):
@@ -687,8 +663,8 @@ def aseg_acc(fs_dir: Path, deepprep_dir: Path, output_dir: Path):
     df_dice.loc['std'] = df_dice.std(axis=0)
     df_dice.to_csv(output_dir, index=False)
 
-def aseg_stability(fs_dir, output_dir, aseg=True):
-    label, label_dict = info_label(aseg=aseg)
+def aseg_stability(fs_dir, output_dir):
+    label, label_dict = info_label_aseg()
     fs_dict = {}
 
     for sub in os.listdir(fs_dir):
@@ -738,32 +714,32 @@ def aseg_stability(fs_dir, output_dir, aseg=True):
     df_dice.to_csv(output_dir)
 
 
-def get_info_label(parc):
+def info_label_aparc(parc):
     if parc == 18:
-        if parc == 18:
-            index, ctab, names = nib.freesurfer.read_annot('aparc_template/lh_parc_fs6.annot')
-            aparc_label = set(index)
-            aparc_label_dict = {}
-            for i in aparc_label:
-                if i != -1:
-                    aparc_label_dict[i] = f'Network_{i}'
-                else:
-                    aparc_label_dict[i] = f'none'
-            return aparc_label, aparc_label_dict
-    elif parc == 92:
-        index, ctab, names = nib.freesurfer.read_annot('aparc_template/lh_parc92_fs6.annot')
+        index = np.squeeze(ants.image_read('aparc_template/lh.Clustering_18_fs6_new.mgh').numpy())
         aparc_label = set(index)
         aparc_label_dict = {}
         for i in aparc_label:
-            if i != 112:
+            if i != 0:
                 aparc_label_dict[i] = f'Network_{i}'
             else:
-                aparc_label_dict[i] = f'none'
+                aparc_label_dict[i] = f'Unknown'
         return aparc_label, aparc_label_dict
+    elif parc == 92:
+        index = np.squeeze(ants.image_read('aparc_template/lh.Clustering_46_fs6.mgh').numpy())
+        aparc_label = set(index)
+        aparc_label_dict = {}
+        for i in aparc_label:
+            if i != 0:
+                aparc_label_dict[i] = f'Network_{i}'
+            else:
+                aparc_label_dict[i] = f'Unknown'
+        return aparc_label, aparc_label_dict
+    else:
+        raise RuntimeError("parc = 18 or 92")
 
-def aparc_stability(input_dir, output_dir, parc, aseg, pipline='App'):
-    label, label_dict = get_info_label(parc)
-    # label, label_dict = info_label(aseg=aseg)
+def aparc_stability(input_dir, output_dir, parc, pipline='App'):
+    label, label_dict = info_label_aparc(parc)
     sub_id = [sub for sub in sorted(os.listdir(input_dir))]
     dict = {}
     for sub in sub_id:
@@ -818,11 +794,30 @@ def aparc_stability(input_dir, output_dir, parc, aseg, pipline='App'):
         stability_output_dir = Path(output_dir, f'{pipline}_{hemi}_aparc_stability.csv')
         df_dice.to_csv(stability_output_dir)
 
-
+def diff_feature_after_rna(feature_na_dir: Path, feature_rna_dir: Path, feature='thickness'):
+    output_dir = Path(feature_rna_dir, 'diff_feature_after_rna')
+    if not output_dir.exists():
+        output_dir.mkdir()
+    for hemi in ['lh', 'rh']:
+        for sub in feature_na_dir.iterdir():
+            if sub.name.startswith('DeepPrep'):
+                na_feature_file = Path(feature_na_dir, sub, f'surf/{hemi}.{feature}')
+                rna_feature_file = Path(feature_rna_dir, sub, f'surf/{hemi}.{feature}')
+                if not rna_feature_file.exists():
+                    continue
+                data_na = np.expand_dims(nib.freesurfer.read_morph_data(na_feature_file), 1)
+                data_rna = np.expand_dims(nib.freesurfer.read_morph_data(rna_feature_file), 1)
+                data = data_na - data_rna
+                print(f'{sub.name}：{hemi}', np.count_nonzero(data))
 
 if __name__ == '__main__':
     set_environ()
     Multi_CPU_Num = 10
+
+    feature_na_dir = Path('/mnt/ngshare/Data_Mirror/FreeSurferFeatReg/Validation/MSC/v1_feature/recon_interp_fsaverage6')
+    feature_rna_dir = Path('/mnt/ngshare/Data_Mirror/FreeSurferFeatRegRNAT/Validation/MSC/v1_feature/recon_interp_fsaverage6')
+    diff_feature_after_rna(feature_na_dir, feature_rna_dir, feature='thickness')
+    exit()
 
     t1_moving_dir = '/mnt/ngshare/DeepPrep/MSC/derivatives/deepprep/Recon'
     dest_dir = '/mnt/ngshare/DeepPrep/Validation/MSC/v1_aparc/aseg_deepprepreg_to_mni152'
@@ -847,7 +842,7 @@ if __name__ == '__main__':
     # 功能分区稳定性
     input_dir = '/mnt/ngshare2/App/MSC_app'
     output_dir = '/mnt/ngshare2/App/csv/92'
-    # aparc_stability(input_dir, output_dir, parc=92, aseg=False, pipline='App')
+    # aparc_stability(input_dir, output_dir, parc=92, pipline='App')
 
 
 
@@ -938,6 +933,6 @@ if __name__ == '__main__':
         # print("DONE")
 
         p_value_dir_screenshot_concat_dir = Path(f'/mnt/ngshare/Data_Mirror/FreeSurferFastCSR/Validation/MSC/v1_feature/recon_interp_fsaverage6_pvalue_screenshot')
-        concat_pvalue_screenshot(p_value_dir_screenshot_concat_dir, feature=feature)
+        # concat_pvalue_screenshot(p_value_dir_screenshot_concat_dir, feature=feature)
 
     # break
