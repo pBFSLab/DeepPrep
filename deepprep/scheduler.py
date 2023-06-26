@@ -11,7 +11,7 @@ from interface.run import set_envrion
 from interface.node_source import Source
 from interface.create_node_structure import create_OrigAndRawavg_node
 
-logging_wf = logging.getLogger("nipype.workflow")  # TODO 日志应该拆分为多个 scheduler和subject
+logging_wf = logging.getLogger("nipype.workflow")  # TODO: 日志应该拆分为多个 scheduler和subject
 
 
 def clear_is_running(subjects_dir: Path, subject_ids: list):
@@ -285,7 +285,7 @@ def parse_args(settings):
                         required=False)
     parser.add_argument("--bold_only", help='跳过Recon', default=False, required=False, type=bool)
     parser.add_argument("--recon_only", help='跳过BOLD', default=False, required=False, type=bool)
-    parser.add_argument("--single_sub_multi_t1", help='单个subject对应多个T1', default=False, required=False, type=bool)
+    parser.add_argument("--rawavg_t1", help='是否平均多个T1', default=False, required=False, type=bool)
     parser.add_argument("--subject_filter", help='通过subject_id过滤', required=False)
 
     args = parser.parse_args()
@@ -301,7 +301,7 @@ def main(settings):
     subjects_dir = Path(args.recon_output_dir)
     bold_preprocess_dir = Path(args.bold_output_dir)
     workflow_cached_dir = Path(args.cache_dir)
-    multi_t1 = args.single_sub_multi_t1  # TODO 变量名字改为 rawavg
+    rawavg_t1 = args.rawavg_t1
 
     # ############### BOLD
     atlas_type = args.bold_atlas_type
@@ -315,9 +315,9 @@ def main(settings):
         preprocess_method = args.bold_preprocess_method  # 'task' or 'rest'
 
     # ############### Common
-    last_node_name = 'VxmRegNormMNI152_node'  # workflow的最后一个node的名字,VxmRegNormMNI152_node or Smooth_node or ...  # TODO 增加到settings
-    last_node_name_bold = 'VxmRegNormMNI152_node'  # TODO 增加到 settings
-    last_node_name_recon = 'Aseg7_node'  # TODO 增加到 settings
+    last_node_name = 'VxmRegNormMNI152_node'  # workflow的最后一个node的名字,VxmRegNormMNI152_node or Smooth_node or ...
+    last_node_name_bold = 'VxmRegNormMNI152_node'
+    last_node_name_recon = 'Aseg7_node'
     auto_schedule = settings.AUTO_SCHEDULE  # 是否开启自动调度
     clear_bold_tmp_dir = settings.CHEAR_BOLD_CACHE_DIR
 
@@ -358,7 +358,7 @@ def main(settings):
         # filter subjects by subjects_filter_file
         if (subject_filter_ids is not None) and (sub_info['subject'] not in subject_filter_ids):
             continue
-        if not multi_t1:
+        if not rawavg_t1:
             if 'session' in sub_info:
                 subject_id = subject_id + f"-ses-{sub_info['session']}"
             if 'run' in sub_info:
