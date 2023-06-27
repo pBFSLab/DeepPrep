@@ -285,7 +285,8 @@ def parse_args(settings):
     parser.add_argument("--bold_only", help='跳过Recon', default=False, required=False, type=bool)
     parser.add_argument("--recon_only", help='跳过BOLD', default=False, required=False, type=bool)
     parser.add_argument("--rawavg_t1", help='是否平均多个T1', default=False, required=False, type=bool)
-    parser.add_argument("--subject_filter", help='通过subject_id过滤', required=False)
+    parser.add_argument("--subject_filter", help='通过subject_id过滤, file of subject_id or subject id list',
+                        required=False, nargs='+')
 
     args = parser.parse_args()
 
@@ -341,18 +342,16 @@ def main(settings):
         subjects_dir=str(subjects_dir),
         threads=settings.THREADS
     )
-    # update dir info in settings
-    settings.BIDS_DIR = bids_data_path
-    settings.SUBJECTS_DIR = subjects_dir
-    settings.BOLD_PREPROCESS_DIR = bold_preprocess_dir
-    settings.WORKFLOW_CACHED_DIR = workflow_cached_dir
 
     # ############### filter subjects by subjects_filter_file
     if settings.SUBJECT_FILTER is not None:
-        with open(settings.SUBJECT_FILTER, 'r') as f:
-            subject_filter_ids = f.readlines()
-            subject_filter_ids = [i.strip() for i in subject_filter_ids]
-            subject_filter_ids = set(subject_filter_ids)
+        if len(settings.SUBJECT_FILTER) == 1 and os.path.isfile(settings.SUBJECT_FILTER[0]):
+            with open(settings.SUBJECT_FILTER[0], 'r') as f:
+                subject_filter_ids = f.readlines()
+                subject_filter_ids = [i.strip() for i in subject_filter_ids]
+                subject_filter_ids = set(subject_filter_ids)
+        else:
+            subject_filter_ids = settings.SUBJECT_FILTER
     else:
         subject_filter_ids = None
 
@@ -362,6 +361,7 @@ def main(settings):
 
     layout = bids.BIDSLayout(str(bids_data_path), derivatives=False)
 
+    # TODO: bold文件应该提前集中获取，而不是在每个Bold Node都去使用bids.layout获取一次
     t1w_filess = list()
     subject_ids = list()
     subject_dict = {}
@@ -371,6 +371,8 @@ def main(settings):
         # filter subjects by subjects_filter_file
         if (subject_filter_ids is not None) and (subject_id not in subject_filter_ids):
             continue
+        # TODO： 如果不是rawavg_t1的模式，那么BOLD的处理过程必须有一个subject_id的Recon结果的选择过程
+        # TODO： 原因是BOLD必须传入一个Recon结果，而not rawavg_t1模式会生成多个Recon结果
         if not rawavg_t1:
             if 'session' in sub_info:
                 subject_id = subject_id + f"-ses-{sub_info['session']}"
