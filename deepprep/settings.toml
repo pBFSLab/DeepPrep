@@ -5,6 +5,8 @@
 # 不建议修改： 改动会影响Pipeline的结果。比如会产生删除操作，修改原结果的操作，不能复现原来结果的操作。
 # 不可修改： 为DeepPrep的保留变量，仅开发者可以改动。比如改动后Pipeline发生改变。
 
+# TODO 将 DEEPPREP_HOME FREESURFER_HOME FSL_HOME JAVA_HOME 配置到环境变量
+
 # Source set
 CPU_NUM = 20
 GPU_MB = 11000
