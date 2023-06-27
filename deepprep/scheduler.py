@@ -169,8 +169,7 @@ class Scheduler:
             self.source_res += node.source
             self.s_nodes_done.remove(node_name)
             print(f'Source ADD +    {node.name} :   {self.source_res}')
-            if node_name in self.s_nodes_success:  # TODO FIX 判断subject 是否运行成功的逻辑有错误，需要修改判断
-                # TODO 使用 last node name 判断是否已经完成 run ，不太正确
+            if node_name in self.s_nodes_success:
                 if self.last_node_name is not None and self.last_node_name in node_name:
                     self.queue_subject.remove(node.inputs.subject_id)
                     if self.check_run_success(node.inputs.subject_id):
@@ -290,29 +289,43 @@ def parse_args(settings):
 
     args = parser.parse_args()
 
+    settings.BIDS_DIR = args.bids_dir
+    settings.SUBJECTS_DIR = args.recon_output_dir
+    settings.BOLD_PREPROCESS_DIR = args.bold_output_dir
+    settings.WORKFLOW_CACHED_DIR = args.cache_dir
+
+    settings.RECON_ONLY = args.recon_only
+    settings.BOLD_ONLY = args.bold_only
+
+    settings.SMRI.RAWAVG = args.rawavg_t1
+
+    settings.FMRI.ATLAS_TYPE = args.bold_atlas_type
+    settings.FMRI.TASK = args.bold_task_type
+    settings.FMRI.PREPROCESS_TYPE = args.bold_preprocess_method
+
+    settings.SUBJECT_FILTER = args.subject_filter
     return args
 
 
 def main(settings):
 
-    # TODO 命令行参数的内容覆盖setting中的内容，取消对 args 使用，使用 settings 代替
-    args = parse_args(settings)
-    bids_data_path = Path(args.bids_dir)
-    subjects_dir = Path(args.recon_output_dir)
-    bold_preprocess_dir = Path(args.bold_output_dir)
-    workflow_cached_dir = Path(args.cache_dir)
-    rawavg_t1 = args.rawavg_t1
+    parse_args(settings)
+    bids_data_path = Path(settings.BIDS_DIR)
+    subjects_dir = Path(settings.SUBJECTS_DIR)
+    bold_preprocess_dir = Path(settings.BOLD_PREPROCESS_DIR)
+    workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
+    rawavg_t1 = settings.SMRI.RAWAVG
 
     # ############### BOLD
-    atlas_type = args.bold_atlas_type
-    task = args.bold_task_type  # 'motor' or 'rest' or '...'
-    if args.bold_preprocess_method is None:
+    atlas_type = settings.FMRI.ATLAS_TYPE
+    task = settings.FMRI.TASK  # 'motor' or 'rest' or '...'
+    if settings.FMRI.PREPROCESS_TYPE is None:
         if task == 'rest':
             preprocess_method = 'rest'
         else:
             preprocess_method = 'task'
     else:
-        preprocess_method = args.bold_preprocess_method  # 'task' or 'rest'
+        preprocess_method = settings.FMRI.PREPROCESS_TYPE  # 'task' or 'rest'
 
     # ############### Common
     last_node_name = 'VxmRegNormMNI152_node'  # workflow的最后一个node的名字,VxmRegNormMNI152_node or Smooth_node or ...
@@ -335,8 +348,8 @@ def main(settings):
     settings.WORKFLOW_CACHED_DIR = workflow_cached_dir
 
     # ############### filter subjects by subjects_filter_file
-    if args.subject_filter is not None:
-        with open(args.subject_filter, 'r') as f:
+    if settings.SUBJECT_FILTER is not None:
+        with open(settings.SUBJECT_FILTER, 'r') as f:
             subject_filter_ids = f.readlines()
             subject_filter_ids = [i.strip() for i in subject_filter_ids]
             subject_filter_ids = set(subject_filter_ids)
@@ -356,7 +369,7 @@ def main(settings):
         sub_info = layout.parse_file_entities(t1w_file)
         subject_id = f"sub-{sub_info['subject']}"
         # filter subjects by subjects_filter_file
-        if (subject_filter_ids is not None) and (sub_info['subject'] not in subject_filter_ids):
+        if (subject_filter_ids is not None) and (subject_id not in subject_filter_ids):
             continue
         if not rawavg_t1:
             if 'session' in sub_info:
@@ -396,7 +409,7 @@ def main(settings):
                               settings=settings)
 
         # TODO 初始化 node 的逻辑梳理为一个函数放到 create_node.py 中
-        if args.bold_only:
+        if settings.BOLD_ONLY:
             scheduler.last_node_name = last_node_name_bold
             from interface.create_node_bold_new import create_BoldSkipReorient_node
             for subject_id in subject_ids:
@@ -405,7 +418,7 @@ def main(settings):
                 scheduler.node_all[node.name] = node
                 scheduler.nodes_ready.append(node.name)
 
-        elif args.recon_only:
+        elif settings.RECON_ONLY:
             scheduler.last_node_name = last_node_name_recon
             for subject_id, t1w_files in zip(subject_ids, t1w_filess):
                 node = create_OrigAndRawavg_node(subject_id=subject_id, t1w_files=t1w_files, settings=settings)
