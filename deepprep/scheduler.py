@@ -284,7 +284,7 @@ def parse_args(settings):
                         required=False)
     parser.add_argument("--bold_only", help='跳过Recon', default=False, required=False, type=bool)
     parser.add_argument("--recon_only", help='跳过BOLD', default=False, required=False, type=bool)
-    parser.add_argument("--rawavg_t1", help='是否平均多个T1', default=False, required=False, type=bool)
+    parser.add_argument("--rawavg_t1", help='是否平均多个T1。如果不平均T1，那么只运行Recon预处理，不运行BOLD', default=True, required=False, type=bool)
     parser.add_argument("--subject_filter", help='通过subject_id过滤, file of subject_id or subject id list',
                         required=False, nargs='+')
 
@@ -299,13 +299,24 @@ def parse_args(settings):
     settings.BOLD_ONLY = args.bold_only
 
     settings.SMRI.RAWAVG = args.rawavg_t1
+    # Warning：如果不平均T1，那么只运行sMRI的Recon流程，不运行fMRI流程
+    # 原因为：fMRI流程与Recon结果相关，需要固定一个Recon结果。目前使用的是与subject_id相同的Recon结果（无 ses 和 run 的信息）。
+    if not args.rawavg_t1:
+        settings.RECON_ONLY = True
 
     settings.FMRI.ATLAS_TYPE = args.bold_atlas_type
     settings.FMRI.TASK = args.bold_task_type
     settings.FMRI.PREPROCESS_TYPE = args.bold_preprocess_method
 
     settings.SUBJECT_FILTER = args.subject_filter
-    return args
+
+    # TODO： 增加命令行参数对 settings.Source 参数的覆盖
+    # settings.CPU_NUM = 20
+    # settings.GPU_MB = 11000
+    # settings.RAM_MB = 40000
+    # settings.IO_WRITE_MB = 100
+    # settings.IO_READ_MB = 200
+    return settings
 
 
 def main(settings):
@@ -315,7 +326,6 @@ def main(settings):
     subjects_dir = Path(settings.SUBJECTS_DIR)
     bold_preprocess_dir = Path(settings.BOLD_PREPROCESS_DIR)
     workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
-    rawavg_t1 = settings.SMRI.RAWAVG
 
     # ############### BOLD
     atlas_type = settings.FMRI.ATLAS_TYPE
@@ -371,9 +381,7 @@ def main(settings):
         # filter subjects by subjects_filter_file
         if (subject_filter_ids is not None) and (subject_id not in subject_filter_ids):
             continue
-        # TODO： 如果不是rawavg_t1的模式，那么BOLD的处理过程必须有一个subject_id的Recon结果的选择过程
-        # TODO： 原因是BOLD必须传入一个Recon结果，而not rawavg_t1模式会生成多个Recon结果
-        if not rawavg_t1:
+        if not settings.SMRI.RAWAVG:
             if 'session' in sub_info:
                 subject_id = subject_id + f"-ses-{sub_info['session']}"
             if 'run' in sub_info:
@@ -412,6 +420,7 @@ def main(settings):
 
         # TODO 初始化 node 的逻辑梳理为一个函数放到 create_node.py 中
         if settings.BOLD_ONLY:
+            # TODO： 如果 BOLD_ONLY，需要检测Recon结果是否存在。如果不存在，那么启动后无法完整运行，直接终止。
             scheduler.last_node_name = last_node_name_bold
             from interface.create_node_bold_new import create_BoldSkipReorient_node
             for subject_id in subject_ids:
