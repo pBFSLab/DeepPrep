@@ -269,23 +269,31 @@ def parse_args(settings):
         description="DeepPrep: sMRI and fMRI PreProcessing workflows"
     )
 
-    parser.add_argument("--bids_dir", help="directory of BIDS type: /mnt/ngshare2/UKB/BIDS", required=True)
-    parser.add_argument("--recon_output_dir",
+    parser.add_argument("--bids-dir", help="directory of BIDS type: /mnt/ngshare2/UKB/BIDS", required=True)
+    parser.add_argument("--recon-output-dir",
                         help="structure data Recon output directory: /mnt/ngshare2/DeepPrep_UKB/UKB_Recon",
                         required=True)
-    parser.add_argument("--bold_output_dir",
+    parser.add_argument("--bold-output-dir",
                         help="BOLD data Preprocess output directory: /mnt/ngshare2/DeepPrep_UKB/UKB_BoldPreprocess",
                         required=True)
-    parser.add_argument("--cache_dir", help="workflow cache dir: /mnt/ngshare2/DeepPrep_UKB/UKB_Workflow",
+    parser.add_argument("--cache-dir", help="workflow cache dir: /mnt/ngshare2/DeepPrep_UKB/UKB_Workflow",
                         required=True)
-    parser.add_argument("--bold_atlas_type", help="bold使用的MNI模板类型", default='MNI152_T1_2mm', required=False)
-    parser.add_argument("--bold_task_type", help="跑的task类型example:motor、rest", default='rest', required=False)
-    parser.add_argument("--bold_preprocess_method", help='使用的bold处理方法 rest or task', default=None,
+
+    parser.add_argument("--bold-atlas-type", help="bold使用的MNI模板类型", default='MNI152_T1_2mm', required=False)
+    parser.add_argument("--bold-task-type", help="跑的task类型example:motor、rest", default='rest', required=False)
+    parser.add_argument("--bold-preprocess-method", help='使用的bold处理方法 rest or task', default=None,
                         required=False)
-    parser.add_argument("--bold_only", help='跳过Recon', default=False, required=False, type=bool)
-    parser.add_argument("--recon_only", help='跳过BOLD', default=False, required=False, type=bool)
-    parser.add_argument("--rawavg_t1", help='是否平均多个T1。如果不平均T1，那么只运行Recon预处理，不运行BOLD', default=True, required=False, type=bool)
-    parser.add_argument("--subject_filter", help='通过subject_id过滤, file of subject_id or subject id list',
+
+    parser.add_argument("--bold-only", help='跳过Recon', dest='bold_only', action='store_true', required=False)
+    parser.add_argument("--recon-only", help='跳过BOLD', dest='recon_only', action='store_true', required=False)
+    parser.set_defaults(bold_only=False)
+    parser.set_defaults(recon_only=False)
+
+    parser.add_argument("--no-rawavg-t1", help='是否平均多个T1。如果不平均T1，那么只运行Recon预处理，不运行BOLD',
+                        dest='rawavg_t1', action='store_false', required=False)
+    parser.set_defaults(rawavg_t1=True)
+
+    parser.add_argument("--subject-filter", help='通过subject_id过滤, file of subject_id or subject id list',
                         required=False, nargs='+')
 
     args = parser.parse_args()
