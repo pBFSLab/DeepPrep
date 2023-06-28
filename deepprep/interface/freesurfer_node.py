@@ -1011,13 +1011,6 @@ class BalabelsMultInputSpec(BaseInterfaceInputSpec):
 
 
 class BalabelsMultOutputSpec(TraitedSpec):
-    lh_BA45_exvivo = File(exists=True, desc="label/lh.BA45_exvivo.label")
-    rh_BA45_exvivo = File(exists=True, desc="label/rh.BA45_exvivo.label")
-    lh_perirhinal_exvivo = File(exists=True, desc="label/lh.perirhinal_exvivo.label")
-    rh_perirhinal_exvivo = File(exists=True, desc="label/rh.perirhinal_exvivo.label")
-    lh_entorhinal_exvivo = File(exists=True, desc="label/lh.entorhinal_exvivo.label")
-    rh_entorhinal_exvivo = File(exists=True, desc="label/rh.entorhinal_exvivo.label")
-    BA_exvivo_thresh = File(exists=True, desc="label/BA_exvivo.thresh.ctab")
     subject_id = Str(desc='subject id')
 
 
@@ -1053,6 +1046,7 @@ class BalabelsMult(BaseInterface):
         # file_names = []
 
         def multi_process(file_names, Run):
+            # TODO 这个函数的逻辑是不是写复杂了，想要达到什么目的呢。
             all_num = len(file_names)
             num_per_thread = all_num // threads
             thread_pool = []
@@ -1136,6 +1130,7 @@ class BalabelsMult(BaseInterface):
         fsaverage5_dir = subjects_dir / "fsaverage5"
         fsaverage6_dir = subjects_dir / "fsaverage6"
 
+        # TODO 这里代码有点不优雅，相同的内容重复多次的时候，赋值给一个简单变量即可
         if not fsaverage_dir.exists():
             os.system(f"ln -sf {Path(self.inputs.freesurfer_dir) / 'subjects/fsaverage'} {fsaverage_dir}")
         if not fsaverage4_dir.exists():
@@ -1144,22 +1139,14 @@ class BalabelsMult(BaseInterface):
             os.system(f"ln -sf {Path(self.inputs.freesurfer_dir) / 'subjects/fsaverage5'} {fsaverage5_dir}")
         if not fsaverage6_dir.exists():
             os.system(f"ln -sf {Path(self.inputs.freesurfer_dir) / 'subjects/fsaverage6'} {fsaverage6_dir}")
-
+        # TODO 这里的Multi_Num数量是固定的，应该提到配置里面，并且这个multipool的函数名描述的不准确，这里应该最多lh和rh两个线程
         multipool(self.cmd, Multi_Num=2)
+
         return runtime
 
     def _list_outputs(self):
-        subjects_dir = Path(self.inputs.subjects_dir)
         subject_id = self.inputs.subject_id
         outputs = self._outputs().get()
-        sub_label_dir = subjects_dir / subject_id / 'label'
-        outputs["lh_BA45_exvivo"] = sub_label_dir / f'lh.BA45_exvivo.label'
-        outputs["rh_BA45_exvivo"] = sub_label_dir / f'rh.BA45_exvivo.label'
-        outputs["lh_perirhinal_exvivo"] = sub_label_dir / f'lh.perirhinal_exvivo.label'
-        outputs["rh_perirhinal_exvivo"] = sub_label_dir / f'rh.perirhinal_exvivo.label'
-        outputs["lh_entorhinal_exvivo"] = sub_label_dir / f'lh.entorhinal_exvivo.label'
-        outputs["rh_entorhinal_exvivo"] = sub_label_dir / f'rh.entorhinal_exvivo.label'
-        outputs["BA_exvivo_thresh"] = sub_label_dir / 'BA_exvivo.thresh.ctab'
         outputs['subject_id'] = subject_id
 
         return outputs
