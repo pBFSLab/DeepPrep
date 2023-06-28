@@ -1,11 +1,22 @@
+# use dynaconf -i config.settings list to validate the values
+# TODO 这里的配准最终会区分为  必须修改，可修改、不建议修改、不可修改。
+# 必须修改:  放命令行参数，比如BIDS目录，结果目录
+# 可修改： 修改后不会影响结果。比如集成的其他程序的安装目录
+# 不建议修改： 改动会影响Pipeline的结果。比如会产生删除操作，修改原结果的操作，不能复现原来结果的操作。
+# 不可修改： 为DeepPrep的保留变量，仅开发者可以改动。比如改动后Pipeline发生改变。
+
+# Source set
+CPU_NUM = 20
+GPU_MB = 11000
+RAM_MB = 40000
+IO_WRITE_MB = 100
+IO_READ_MB = 200
+
 AUTO_SCHEDULE = true  # wether or not to use auto schedule. (default: true)
 
-FORCE_RECON = false  # force to run the recon pipeline. (default: false)
-CHEAR_BOLD_CACHE_DIR = false  # wether or not to clear the bold cache while finished. (defaul: false)
-
 # Warning: RECON_ONLY and BOLD_ONLY cant both to be set true.
-RECON_ONLY = false  # wether or not to run recon workflow only. (defaul: false)
-BOLD_ONLY = false  # wether or not to run bold precessing workflow only. (defaul: false)
+RECON_ONLY = false  # wether or not to run recon workflow only. (defaul: false)（replaced by args）
+BOLD_ONLY = false  # wether or not to run bold precessing workflow only. (defaul: false)（replaced by args）
 
 # ### program set ###
 # DeepPrep: version ==
@@ -38,30 +49,34 @@ MNI152_BRAIN_MASK = "/usr/local/fsl/data/standard/MNI152_T1_2mm_brain_mask.nii.g
 JAVA_HOME = "/usr/lib/jvm/java-11-openjdk-amd64"
 
 ## ### input dir set ###
-#BIDS_DIR = ""  # where to save runtime cache, e.g. log file
+BIDS_DIR = ""  # where to save runtime cache, e.g. log file（replaced by args）
 #
 ## ### output dir set ###
-#SUBJECTS_DIR = ""  # where to save Recon result
-#BOLD_PREPROCESS_DIR = ""  # where to save bold preprocess result
-#WORKFLOW_CACHED_DIR = ""  # where to save runtime cache, e.g. log file
+SUBJECTS_DIR = ""  # where to save Recon result（replaced by args）
+BOLD_PREPROCESS_DIR = ""  # where to save bold preprocess result（replaced by args）
+WORKFLOW_CACHED_DIR = ""  # where to save runtime cache, e.g. log file（replaced by args）
 
 # ### GPU set ###
 DEVICE = "cuda"
 # ### CPU set ###
-THREADS = 8  # default thereads
+THREADS = 8  # default thereads for OpenMP and ITK
 
+# Please do not make any modifications until you understand the purpose of these items！！！
+FORCE_RECON = false  # force to run the recon pipeline. (default: false)
+CHEAR_BOLD_CACHE_DIR = false  # wether or not to clear the bold cache while finished. (defaul: false)
 
 # ENVIRON
 
 [smri]
+RAWAVG = false
 
 [smri.OrigAndRawavg]
-threads = 1
+THREADS = 1
 
 [fmri]
-ATLAS_SPACE = "MNI152_T1_2mm"
-TASK = "rest"  # which data to be proprecessing
-PREPROCESS_TYPE = "rest"  # can be set to rest or task(default: rest)
+ATLAS_SPACE = "MNI152_T1_2mm" # （replaced by args）
+TASK = "rest"  # which data to be proprecessing（replaced by args）
+PREPROCESS_TYPE = "rest"  # can be set to rest or task (default: None)（replaced by args）
 
 
 #[default]

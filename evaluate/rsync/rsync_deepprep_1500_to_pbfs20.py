@@ -2,11 +2,17 @@ import os
 from pathlib import Path
 
 
-def rsync(o_dir, d_dir, user=None, host=None):
+def rsync_update(o_dir, d_dir, user=None, host=None):
     if user is not None and host is not None:
         cmd = f'rsync -rav {o_dir}/ {user}@{host}:{d_dir}'
     else:
         cmd = f'rsync -rav {o_dir}/ {d_dir}'
+    os.system(cmd)
+
+
+def rsync_download(o_dir, d_dir, user=None, host=None):
+    cmd = f'rsync -rav {user}@{host}:{o_dir}/ {d_dir}'
+    print(cmd)
     os.system(cmd)
 
 
@@ -21,16 +27,16 @@ def copy_deepprep_1500_to_pbfs20():
     # host = None
 
     src_bold_dir = Path('/mnt/ngshare2/DeepPrep_UKB/UKB_BoldPreprocess')
-    src_recon_dir = Path('/mnt/ngshare2/DeepPrep_UKB/UKB_Recon')
+    src_recon_dir = Path('/mnt/ngshare/DeepPrep_UKB_150/UKB_150_Recon2')
     dst_bold_dir = Path('/mnt/ngshare2/DeepPrep_UKB_1500/UKB_BoldPreprocess')
     dst_recon_dir = Path('/mnt/ngshare2/DeepPrep_UKB_1500/UKB_Recon')
 
-    subject_filter_file = Path('/home/anning/Downloads/UKB_info/allsub_keep_3747_fieldid_1500.csv')
+    subject_filter_file = Path('/mnt/ngshare/fMRIPrep_UKB_150/UKB_150_sub_list.txt')
 
     with open(subject_filter_file, 'r') as f:
         subject_filter_ids = f.readlines()
         subject_filter_ids = [i.strip() for i in subject_filter_ids]
-        subject_filter_ids = [i.replace('sub-', '') for i in subject_filter_ids]
+        # subject_filter_ids = [i.replace('sub-', '') for i in subject_filter_ids]
         subject_filter_ids = set(subject_filter_ids)
 
     for subject_id in os.listdir(src_recon_dir):
@@ -42,6 +48,7 @@ def copy_deepprep_1500_to_pbfs20():
             src_dir = src_recon_dir / subject_id
             dst_dir = dst_recon_dir / subject_id
             rsync(src_dir, dst_dir, user, host)
+
 
     # for subject_id in os.listdir(src_bold_dir):
     #     if subject_filter_ids is not None and subject_id.split('-')[1] not in subject_filter_ids:
