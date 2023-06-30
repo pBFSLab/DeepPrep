@@ -296,6 +296,12 @@ def parse_args(settings):
     parser.add_argument("--subject-filter", help='通过subject_id过滤, file of subject_id or subject id list',
                         required=False, nargs='+')
 
+    # parser.add_argument("--source-CPU-NUM", help="设置资源池-使用CPU数量", default='MNI152_T1_2mm', required=False)
+    # parser.add_argument("--source-GPU-MB", help="设置资源池-使用GPU", default='MNI152_T1_2mm', required=False)
+    # parser.add_argument("--source-RAM-MB", help="设置资源池-使用CPU数量", default='MNI152_T1_2mm', required=False)
+    # parser.add_argument("--source-IO-WRITE-MB", help="设置资源池-使用硬盘IO", default='MNI152_T1_2mm', required=False)
+    # parser.add_argument("--source-IO-READ-MB", help="设置资源池-使用硬盘IO", default='MNI152_T1_2mm', required=False)
+
     args = parser.parse_args()
 
     settings.BIDS_DIR = args.bids_dir
@@ -351,7 +357,6 @@ def main(settings):
     last_node_name_bold = 'VxmRegNormMNI152_node'
     last_node_name_recon = 'Aseg7_node'
     auto_schedule = settings.AUTO_SCHEDULE  # 是否开启自动调度
-    clear_bold_tmp_dir = settings.CHEAR_BOLD_CACHE_DIR
 
     set_envrion(
         freesurfer_home=settings.FREESURFER_HOME,
@@ -414,7 +419,7 @@ def main(settings):
     logging.update_logging(config)
 
     # TODO force_recon 如果开启这个参数，强制重新跑recon结果，清理 'IsRunning.lh+rh' 文件
-    force_recon = settings.FORCE_RECON
+    force_recon = settings.DANGER.FORCE_RECON
     if force_recon:
         clear_is_running(subjects_dir=subjects_dir,
                          subject_ids=subject_ids)
@@ -460,7 +465,7 @@ def main(settings):
                         f' {scheduler.subject_success_datetime}')
         logging_wf.error(f'nodes_error {len(scheduler.s_nodes_error)}: {scheduler.s_nodes_error}')
         logging_wf.error(f'subject_error {len(scheduler.subject_error)}: {scheduler.subject_error}')
-        if clear_bold_tmp_dir:
+        if settings.DANGER.CHEAR_BOLD_CACHE_DIR:
             clear_subject_bold_tmp_dir(bold_preprocess_dir, subject_ids, task)
 
 
