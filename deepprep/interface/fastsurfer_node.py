@@ -169,8 +169,6 @@ class TalairachAndNu(BaseInterface):
         sub_mri_dir = subjects_dir / subject_id / "mri"
         nu_file = subjects_dir / subject_id / 'mri' / 'nu.mgz'
 
-        if self.inputs.threads is None:
-            self.inputs.threads = 1
         talairach_auto_xfm = sub_mri_dir / "transforms" / "talairach.auto.xfm"
         talairach_xfm = sub_mri_dir / "transforms" / "talairach.xfm"
         talairach_xfm_lta = sub_mri_dir / "transforms" / "talairach.xfm.lta"
