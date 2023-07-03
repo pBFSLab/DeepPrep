@@ -269,24 +269,38 @@ def parse_args(settings):
         description="DeepPrep: sMRI and fMRI PreProcessing workflows"
     )
 
-    parser.add_argument("--bids_dir", help="directory of BIDS type: /mnt/ngshare2/UKB/BIDS", required=True)
-    parser.add_argument("--recon_output_dir",
+    parser.add_argument("--bids-dir", help="directory of BIDS type: /mnt/ngshare2/UKB/BIDS", required=True)
+    parser.add_argument("--recon-output-dir",
                         help="structure data Recon output directory: /mnt/ngshare2/DeepPrep_UKB/UKB_Recon",
                         required=True)
-    parser.add_argument("--bold_output_dir",
+    parser.add_argument("--bold-output-dir",
                         help="BOLD data Preprocess output directory: /mnt/ngshare2/DeepPrep_UKB/UKB_BoldPreprocess",
                         required=True)
-    parser.add_argument("--cache_dir", help="workflow cache dir: /mnt/ngshare2/DeepPrep_UKB/UKB_Workflow",
+    parser.add_argument("--cache-dir", help="workflow cache dir: /mnt/ngshare2/DeepPrep_UKB/UKB_Workflow",
                         required=True)
-    parser.add_argument("--bold_atlas_type", help="bold使用的MNI模板类型", default='MNI152_T1_2mm', required=False)
-    parser.add_argument("--bold_task_type", help="跑的task类型example:motor、rest", default='rest', required=False)
-    parser.add_argument("--bold_preprocess_method", help='使用的bold处理方法 rest or task', default=None,
+
+    parser.add_argument("--bold-atlas-type", help="bold使用的MNI模板类型", default='MNI152_T1_2mm', required=False)
+    parser.add_argument("--bold-task-type", help="跑的task类型example:motor、rest", default='rest', required=False)
+    parser.add_argument("--bold-preprocess-method", help='使用的bold处理方法 rest or task', default=None,
                         required=False)
-    parser.add_argument("--bold_only", help='跳过Recon', default=False, required=False, type=bool)
-    parser.add_argument("--recon_only", help='跳过BOLD', default=False, required=False, type=bool)
-    parser.add_argument("--rawavg_t1", help='是否平均多个T1', default=False, required=False, type=bool)
-    parser.add_argument("--subject_filter", help='通过subject_id过滤, file of subject_id or subject id list',
+
+    parser.add_argument("--bold-only", help='跳过Recon', dest='bold_only', action='store_true', required=False)
+    parser.add_argument("--recon-only", help='跳过BOLD', dest='recon_only', action='store_true', required=False)
+    parser.set_defaults(bold_only=False)
+    parser.set_defaults(recon_only=False)
+
+    parser.add_argument("--no-rawavg-t1", help='是否平均多个T1。如果不平均T1，那么只运行Recon预处理，不运行BOLD',
+                        dest='rawavg_t1', action='store_false', required=False)
+    parser.set_defaults(rawavg_t1=True)
+
+    parser.add_argument("--subject-filter", help='通过subject_id过滤, file of subject_id or subject id list',
                         required=False, nargs='+')
+
+    parser.add_argument("--source-CPU-NUM", help="设置资源池-使用CPU数量", type=int, required=False)
+    parser.add_argument("--source-GPU-MB", help="设置资源池-使用GPU", type=int, required=False)
+    parser.add_argument("--source-RAM-MB", help="设置资源池-使用CPU数量", type=int, required=False)
+    parser.add_argument("--source-IO-WRITE-MB", help="设置资源池-使用硬盘IO", type=int, required=False)
+    parser.add_argument("--source-IO-READ-MB", help="设置资源池-使用硬盘IO", type=int, required=False)
 
     args = parser.parse_args()
 
@@ -299,13 +313,31 @@ def parse_args(settings):
     settings.BOLD_ONLY = args.bold_only
 
     settings.SMRI.RAWAVG = args.rawavg_t1
+    # Warning：如果不平均T1，那么只运行sMRI的Recon流程，不运行fMRI流程
+    # 原因为：fMRI流程与Recon结果相关，需要固定一个Recon结果。目前使用的是与subject_id相同的Recon结果（无 ses 和 run 的信息）。
+    if not args.rawavg_t1:
+        settings.RECON_ONLY = True
 
-    settings.FMRI.ATLAS_TYPE = args.bold_atlas_type
-    settings.FMRI.TASK = args.bold_task_type
-    settings.FMRI.PREPROCESS_TYPE = args.bold_preprocess_method
+    if args.bold_atlas_type is not None:
+        settings.FMRI.ATLAS_TYPE = args.bold_atlas_type
+    if args.bold_task_type is not None:
+        settings.FMRI.TASK = args.bold_task_type
+    if args.bold_preprocess_method is not None:
+        settings.FMRI.PREPROCESS_TYPE = args.bold_preprocess_method
 
     settings.SUBJECT_FILTER = args.subject_filter
-    return args
+
+    if args.source_CPU_NUM is not None:
+        settings.CPU_NUM = args.source_CPU_NUM
+    if args.source_GPU_MB is not None:
+        settings.GPU_MB = args.source_GPU_MB
+    if args.source_RAM_MB is not None:
+        settings.RAM_MB = args.source_RAM_MB
+    if args.source_IO_WRITE_MB is not None:
+        settings.IO_WRITE_MB = args.source_IO_WRITE_MB
+    if args.source_IO_READ_MB is not None:
+        settings.IO_READ_MB = args.source_IO_READ_MB
+    return settings
 
 
 def main(settings):
@@ -315,7 +347,6 @@ def main(settings):
     subjects_dir = Path(settings.SUBJECTS_DIR)
     bold_preprocess_dir = Path(settings.BOLD_PREPROCESS_DIR)
     workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
-    rawavg_t1 = settings.SMRI.RAWAVG
 
     # ############### BOLD
     atlas_type = settings.FMRI.ATLAS_TYPE
@@ -333,7 +364,6 @@ def main(settings):
     last_node_name_bold = 'VxmRegNormMNI152_node'
     last_node_name_recon = 'Aseg7_node'
     auto_schedule = settings.AUTO_SCHEDULE  # 是否开启自动调度
-    clear_bold_tmp_dir = settings.CHEAR_BOLD_CACHE_DIR
 
     set_envrion(
         freesurfer_home=settings.FREESURFER_HOME,
@@ -371,9 +401,7 @@ def main(settings):
         # filter subjects by subjects_filter_file
         if (subject_filter_ids is not None) and (subject_id not in subject_filter_ids):
             continue
-        # TODO： 如果不是rawavg_t1的模式，那么BOLD的处理过程必须有一个subject_id的Recon结果的选择过程
-        # TODO： 原因是BOLD必须传入一个Recon结果，而not rawavg_t1模式会生成多个Recon结果
-        if not rawavg_t1:
+        if not settings.SMRI.RAWAVG:
             if 'session' in sub_info:
                 subject_id = subject_id + f"-ses-{sub_info['session']}"
             if 'run' in sub_info:
@@ -391,14 +419,14 @@ def main(settings):
         return
 
     # 设置log目录位置  # TODO 增加到 settings [log] 下
-    log_dir = workflow_cached_dir / 'log'
+    log_dir = workflow_cached_dir / f'log_{datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}'
     log_dir.mkdir(parents=True, exist_ok=True)
     config.update_config({'logging': {'log_directory': log_dir,
                                       'log_to_file': True}})
     logging.update_logging(config)
 
     # TODO force_recon 如果开启这个参数，强制重新跑recon结果，清理 'IsRunning.lh+rh' 文件
-    force_recon = settings.FORCE_RECON
+    force_recon = settings.DANGER.FORCE_RECON
     if force_recon:
         clear_is_running(subjects_dir=subjects_dir,
                          subject_ids=subject_ids)
@@ -412,6 +440,7 @@ def main(settings):
 
         # TODO 初始化 node 的逻辑梳理为一个函数放到 create_node.py 中
         if settings.BOLD_ONLY:
+            # TODO： 如果 BOLD_ONLY，需要检测Recon结果是否存在。如果不存在，那么启动后无法完整运行，直接终止。
             scheduler.last_node_name = last_node_name_bold
             from interface.create_node_bold_new import create_BoldSkipReorient_node
             for subject_id in subject_ids:
@@ -443,7 +472,7 @@ def main(settings):
                         f' {scheduler.subject_success_datetime}')
         logging_wf.error(f'nodes_error {len(scheduler.s_nodes_error)}: {scheduler.s_nodes_error}')
         logging_wf.error(f'subject_error {len(scheduler.subject_error)}: {scheduler.subject_error}')
-        if clear_bold_tmp_dir:
+        if settings.DANGER.CHEAR_BOLD_CACHE_DIR:
             clear_subject_bold_tmp_dir(bold_preprocess_dir, subject_ids, task)
 
 
