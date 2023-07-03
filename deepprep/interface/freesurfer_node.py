@@ -71,11 +71,14 @@ class Brainmask(BaseInterface):
 
     def create_sub_node(self, settings):
         from interface.create_node_structure import create_UpdateAseg_node
-        from interface.create_node_bold_new import create_VxmRegistraion_node
-        node = [create_UpdateAseg_node(self.inputs.subject_id, settings),
-                create_VxmRegistraion_node(self.inputs.subject_id, self.task, self.atlas_type, self.preprocess_method, settings)]
+
         if settings.RECON_ONLY:
             node = create_UpdateAseg_node(self.inputs.subject_id, settings)
+        else:
+            from interface.create_node_bold_new import create_VxmRegistraion_node
+            node = [create_UpdateAseg_node(self.inputs.subject_id, settings),
+                    create_VxmRegistraion_node(self.inputs.subject_id, settings.FMRI.TASK,
+                                               settings.FMRI.ATLAS_SPACE, settings.FMRI.PREPROCESS_TYPE, settings)]
         return node
 
 
@@ -222,7 +225,7 @@ class WhitePreaparc1(BaseInterface):
     def cmd(self, hemi):
         threads = self.inputs.threads if self.inputs.threads else 0
         cmd = f"mris_make_surfaces -aseg aseg.presurf -white white.preaparc -whiteonly " \
-              f"-noaparc -mgz -T1 brain.finalsurfs {self.inputs.subject_id} {hemi} threads {threads}"
+              f"-noaparc -mgz -T1 brain.finalsurfs {self.inputs.subject_id} {hemi}"  # TODO: if threads is useful
         run_cmd_with_timing(cmd)
 
         # TODO issue: use white.preaparc replace white
@@ -233,8 +236,8 @@ class WhitePreaparc1(BaseInterface):
         run_cmd_with_timing(cmd)
 
     def _run_interface(self, runtime):
-        multipool(self.cmd, Multi_Num=2)
         threads = self.inputs.threads if self.inputs.threads else 0
+        multipool(self.cmd, Multi_Num=threads)
         fsthreads = get_freesurfer_threads(threads)
         cmd = f'recon-all -subject {self.inputs.subject_id} -autodetgwstats -white-preaparc -cortex-label ' \
               f'-no-isrunning {fsthreads}'
@@ -939,14 +942,15 @@ class Aseg7(BaseInterface):
         return outputs
 
     def create_sub_node(self, settings):
-        from interface.create_node_bold_new import create_Register_node
-        node = create_Register_node(self.inputs.subject_id,
-                                    self.task,
-                                    self.atlas_type,
-                                    self.preprocess_method,
-                                    settings)
         if settings.RECON_ONLY:
             node = []
+        else:
+            from interface.create_node_bold_new import create_Register_node
+            node = create_Register_node(self.inputs.subject_id,
+                                        settings.FMRI.TASK,
+                                        settings.FMRI.ATLAS_SPACE,
+                                        settings.FMRI.PREPROCESS_TYPE,
+                                        settings)
         return node
 
 
