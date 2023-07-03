@@ -822,7 +822,7 @@ def create_JacobianAvgcurvCortparc_node(subject_id: str, settings):
     subjects_dir = Path(settings.SUBJECTS_DIR)
     workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
 
-    JacobianAvgcurvCortparc_node = Node(JacobianAvgcurvCortparc(), f'{subject_id}_JacobianAvgcurvCortparc_node')
+    JacobianAvgcurvCortparc_node = Node(JacobianAvgcurvCortparc(), f'{subject_id}_sMRI_JacobianAvgcurvCortparc_node')
     JacobianAvgcurvCortparc_node.inputs.subjects_dir = subjects_dir
     JacobianAvgcurvCortparc_node.inputs.subject_id = subject_id
 
