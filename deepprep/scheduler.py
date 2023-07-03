@@ -296,11 +296,11 @@ def parse_args(settings):
     parser.add_argument("--subject-filter", help='通过subject_id过滤, file of subject_id or subject id list',
                         required=False, nargs='+')
 
-    # parser.add_argument("--source-CPU-NUM", help="设置资源池-使用CPU数量", default='MNI152_T1_2mm', required=False)
-    # parser.add_argument("--source-GPU-MB", help="设置资源池-使用GPU", default='MNI152_T1_2mm', required=False)
-    # parser.add_argument("--source-RAM-MB", help="设置资源池-使用CPU数量", default='MNI152_T1_2mm', required=False)
-    # parser.add_argument("--source-IO-WRITE-MB", help="设置资源池-使用硬盘IO", default='MNI152_T1_2mm', required=False)
-    # parser.add_argument("--source-IO-READ-MB", help="设置资源池-使用硬盘IO", default='MNI152_T1_2mm', required=False)
+    parser.add_argument("--source-CPU-NUM", help="设置资源池-使用CPU数量", type=int, required=False)
+    parser.add_argument("--source-GPU-MB", help="设置资源池-使用GPU", type=int, required=False)
+    parser.add_argument("--source-RAM-MB", help="设置资源池-使用CPU数量", type=int, required=False)
+    parser.add_argument("--source-IO-WRITE-MB", help="设置资源池-使用硬盘IO", type=int, required=False)
+    parser.add_argument("--source-IO-READ-MB", help="设置资源池-使用硬盘IO", type=int, required=False)
 
     args = parser.parse_args()
 
@@ -318,18 +318,25 @@ def parse_args(settings):
     if not args.rawavg_t1:
         settings.RECON_ONLY = True
 
-    settings.FMRI.ATLAS_TYPE = args.bold_atlas_type
-    settings.FMRI.TASK = args.bold_task_type
-    settings.FMRI.PREPROCESS_TYPE = args.bold_preprocess_method
+    if args.bold_atlas_type is not None:
+        settings.FMRI.ATLAS_TYPE = args.bold_atlas_type
+    if args.bold_task_type is not None:
+        settings.FMRI.TASK = args.bold_task_type
+    if args.bold_preprocess_method is not None:
+        settings.FMRI.PREPROCESS_TYPE = args.bold_preprocess_method
 
     settings.SUBJECT_FILTER = args.subject_filter
 
-    # TODO： 增加命令行参数对 settings.Source 参数的覆盖
-    # settings.CPU_NUM = 20
-    # settings.GPU_MB = 11000
-    # settings.RAM_MB = 40000
-    # settings.IO_WRITE_MB = 100
-    # settings.IO_READ_MB = 200
+    if args.source_CPU_NUM is not None:
+        settings.CPU_NUM = args.source_CPU_NUM
+    if args.source_GPU_MB is not None:
+        settings.GPU_MB = args.source_GPU_MB
+    if args.source_RAM_MB is not None:
+        settings.RAM_MB = args.source_RAM_MB
+    if args.source_IO_WRITE_MB is not None:
+        settings.IO_WRITE_MB = args.source_IO_WRITE_MB
+    if args.source_IO_READ_MB is not None:
+        settings.IO_READ_MB = args.source_IO_READ_MB
     return settings
 
 
@@ -412,7 +419,7 @@ def main(settings):
         return
 
     # 设置log目录位置  # TODO 增加到 settings [log] 下
-    log_dir = workflow_cached_dir / 'log'
+    log_dir = workflow_cached_dir / f'log_{datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}'
     log_dir.mkdir(parents=True, exist_ok=True)
     config.update_config({'logging': {'log_directory': log_dir,
                                       'log_to_file': True}})
