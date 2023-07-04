@@ -4,7 +4,7 @@ import json
 import argparse
 import shutil
 from pathlib import Path
-from multiprocessing import Pool, Process, Lock
+from multiprocessing import Process, Lock
 import logging
 import subprocess
 
@@ -14,23 +14,20 @@ import ants
 from scipy.ndimage import binary_fill_holes, binary_dilation
 
 
-def set_environ():
+def set_environ(freesurfer_home, jvm_home, model_path):
     # FreeSurfer
-    freesurfer_home = os.environ.get('FREESURFER_HOME')
-    if freesurfer_home is None:
-        os.environ['FREESURFER_HOME'] = '/usr/local/freesurfer'
-        os.environ['PATH'] = '/usr/local/freesurfer/bin:/usr/local/freesurfer/mni/bin:' + os.environ['PATH']
+    if os.environ.get('FREESURFER_HOME') is None:
+        os.environ['FREESURFER_HOME'] = f'{freesurfer_home}'
+        os.environ['PATH'] = f'{freesurfer_home}/bin:{freesurfer_home}/mni/bin:' + os.environ['PATH']
     # nnUNet
-    fastcsr_path = Path(os.path.split(__file__)[0])
-    os.environ['RESULTS_FOLDER'] = str(fastcsr_path / 'model' / 'nnUNet_trained_models')
+    if os.environ.get('RESULTS_FOLDER') is None:
+        os.environ['RESULTS_FOLDER'] = os.path.join(model_path, 'nnUNet_trained_models')
     # for nighres
     if os.environ.get('LD_LIBRARY_PATH') is None:
-        os.environ['LD_LIBRARY_PATH'] = \
-            '/usr/lib/jvm/java-11-openjdk-amd64/lib:/usr/lib/jvm/java-11-openjdk-amd64/lib/server'
+        os.environ['LD_LIBRARY_PATH'] = f'{jvm_home}/lib:{jvm_home}/lib/server'
     else:
-        os.environ['LD_LIBRARY_PATH'] = \
-            '/usr/lib/jvm/java-11-openjdk-amd64/lib:/usr/lib/jvm/java-11-openjdk-amd64/lib/server:' \
-            + os.environ['LD_LIBRARY_PATH']
+        if 'jvm' not in os.environ['LD_LIBRARY_PATH']:
+            os.environ['LD_LIBRARY_PATH'] = f'{jvm_home}/lib:{jvm_home}/lib/server:' + os.environ['LD_LIBRARY_PATH']
 
 
 def parse_args():
@@ -46,6 +43,9 @@ def parse_args():
     parser.add_argument('--pial', default=False, action='store_true', help="Whether to generate pial surface")
     parser.add_argument('--verbose', default=False, action='store_true', help="Whether to output detailed log")
 
+    parser.add_argument('--freesurfer-home', help="The FreeSurfer Home path")
+    parser.add_argument('--jvm-home', help="The JVM Home path")
+    parser.add_argument('--model-path', help="The Model path")
     args = parser.parse_args()
     if args.sd is None:
         raise ValueError('Subjects dir need to set via $SUBJECTS_DIR environment or --sd parameter')
@@ -427,7 +427,10 @@ def serial_scheduling(args):
 
 if __name__ == '__main__':
     args = parse_args()
-    set_environ()
+    set_environ(args.freesurfer_home, args.jvm_home, args.model_path)
+    print("FREESURFER_HOME", os.environ.get('FREESURFER_HOME'))
+    print("RESULTS_FOLDER", os.environ.get('RESULTS_FOLDER'))
+    print("LD_LIBRARY_PATH", os.environ.get('LD_LIBRARY_PATH'))
     config_logging()
     subj_dir = Path(args.sd) / args.sid
     # make sure the mri/orig.mgz file has been created
