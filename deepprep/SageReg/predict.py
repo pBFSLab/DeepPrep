@@ -18,6 +18,7 @@ def parse_args():
                         help='Output directory $FREESURFER_HOME (pass via environment or here)')
     parser.add_argument('--sd', default=os.environ.get('SUBJECTS_DIR'),
                         help='Output directory $SUBJECTS_DIR (pass via environment or here)')
+    parser.add_argument('--model_path', required=True, help='The path of model')
     parser.add_argument('--device', default='cuda', help='Use number of cuda or cpu')
 
     args = parser.parse_args()
@@ -42,7 +43,7 @@ def parse_args():
 
 
 if __name__ == '__main__':
-    abspath = os.path.abspath(os.path.dirname(__file__))
+    # abspath = os.path.abspath(os.path.dirname(__file__))
     args = parse_args()
     config = dict()
     # ========================== Predict Config ============================= #
@@ -79,7 +80,7 @@ if __name__ == '__main__':
 
     config['is_rigid'] = True
 
-    rigid_model_result_dir = [f'{abspath}/utils/model_files/fsaverage6']
+    rigid_model_result_dir = [f'{args.model_path} /fsaverage6']
     for hemi in args.hemi:
         config['sim_weight'] = torch.from_numpy(get_weight('sulc', hemi).astype(float)).float()
         config["hemisphere"] = hemi
@@ -98,10 +99,10 @@ if __name__ == '__main__':
     config['ico_index'] = ico_index
     config['is_rigid'] = False
     norigid_model_result_dir = [
-        f'{abspath}/utils/model_files/fsaverage3',
-        f'{abspath}/utils/model_files/fsaverage4',
-        f'{abspath}/utils/model_files/fsaverage5',
-        f'{abspath}/utils/model_files/fsaverage6'
+        f'{args.model_path}/fsaverage3',
+        f'{args.model_path}/fsaverage4',
+        f'{args.model_path}/fsaverage5',
+        f'{args.model_path}/fsaverage6'
     ]
     for hemi in args.hemi:
         config["hemisphere"] = hemi
