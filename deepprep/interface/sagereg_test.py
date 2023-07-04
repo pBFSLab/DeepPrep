@@ -4,7 +4,7 @@ from nipype import Node
 import os
 import argparse
 from run import set_envrion
-
+from config import settings
 
 def SageReg_test():
     pwd = Path.cwd()  # 当前目录,# get featreg dir Absolute path
@@ -20,6 +20,7 @@ def SageReg_test():
 
     os.environ['SUBJECTS_DIR'] = subjects_dir
 
+    sagereg_node.inputs.deepprep_home = Path(settings.DEEPPREP_HOME)
     sagereg_node.inputs.subjects_dir = subjects_dir
     sagereg_node.inputs.subject_id = subject_id
     sagereg_node.inputs.freesurfer_home = '/usr/local/freesurfer'
@@ -35,4 +36,5 @@ def SageReg_test():
 
 if __name__ == '__main__':
     set_envrion()
+
     SageReg_test()
