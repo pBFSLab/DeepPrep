@@ -196,9 +196,9 @@ def create_brainmask(args, lock=None):
 def create_levelset(args, lock=None):
     fastcsr_path = Path(os.path.split(__file__)[0])
     cmd_pool = list()
-    cmd = f"python3 {fastcsr_path / 'fastcsr_model_infer.py'} --fastcsr_subjects_dir {args.sd} --subj {args.sid} --hemi lh".split()
+    cmd = f"python3 {fastcsr_path / 'fastcsr_model_infer.py'} --fastcsr_subjects_dir {args.sd} --subj {args.sid} --hemi lh --model-path {args.model_path}".split()
     cmd_pool.append(cmd)
-    cmd = f"python3 {fastcsr_path / 'fastcsr_model_infer.py'} --fastcsr_subjects_dir {args.sd} --subj {args.sid} --hemi rh".split()
+    cmd = f"python3 {fastcsr_path / 'fastcsr_model_infer.py'} --fastcsr_subjects_dir {args.sd} --subj {args.sid} --hemi rh --model-path {args.model_path}".split()
     cmd_pool.append(cmd)
     if args.parallel_scheduling:
         lh_process = subprocess.Popen(cmd_pool[0], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)

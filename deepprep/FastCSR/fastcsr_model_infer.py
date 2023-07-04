@@ -129,6 +129,7 @@ def convert_data(inputpath: Path, outputpath: Path, subj):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--fastcsr_subjects_dir', required=True)
+    parser.add_argument('--model-path', required=True)
     parser.add_argument('--subj', required=True)
     parser.add_argument('--hemi', required=True, choices=['lh', 'rh'])
     parser.add_argument('--suffix', default='orig.nofix', choices=['orig.nofix', 'orig'])
@@ -149,8 +150,7 @@ if __name__ == '__main__':
     else:
         device = torch.device('cpu')
     # 模型初始化
-    model_path, _ = os.path.split(os.path.abspath(__file__))
-    model_path = Path(model_path) / 'model'
+    model_path = Path(args.model_path)
     levelset_model = LevelsetPredictor(hemi=hemi, device=device, model_path=model_path)
     # 输入文件
     input_files = sorted(glob.glob(str(input_path / '*.nii.gz')))
