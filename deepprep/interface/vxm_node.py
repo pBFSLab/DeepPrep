@@ -75,7 +75,7 @@ class VxmRegistraion(BaseInterface):
 
         # atlas and model
         vxm_model_path = Path(self.inputs.vxm_model_path)
-        model_file = vxm_model_path / atlas_type / f'model.h5'  # vxm_model_path / atlas_type / f'model.h5'
+        model_file = self.inputs.model_file  # vxm_model_path / atlas_type / f'model.h5'
         atlas_path = vxm_model_path / atlas_type / f'{atlas_type}_brain.nii.gz'  # MNI152空间模板
         vxm_atlas_path = vxm_model_path / atlas_type / f'{atlas_type}_brain_vxm.nii.gz'  # vxm_MNI152空间模板
         vxm_atlas_npz_path = vxm_model_path / atlas_type / f'{atlas_type}_brain_vxm.npz'
@@ -170,6 +170,7 @@ class VxmRegNormMNI152InputSpec(BaseInterfaceInputSpec):
     resource_dir = Directory(exists=True, desc='resource', mandatory=True)
     derivative_deepprep_path = Directory(exists=True, desc='derivative_deepprep_path', mandatory=True)
     gpuid = Str(exists=True, desc='gpuid set', mandatory=True)
+    batch_size = Str(exists=True, desc='batch size for interpret', mandatory=True)
 
 
 class VxmRegNormMNI152OutputSpec(TraitedSpec):
@@ -293,7 +294,7 @@ class VxmRegNormMNI152(BaseInterface):
             transform = vxm.networks.Transform(vxm_atlas.shape, interp_method='linear', nb_feats=1)
             tf_dataset = tf.data.Dataset.from_tensor_slices(np.transpose(affined_np, (3, 0, 1, 2)))
             del affined_np
-            batch_size = 16
+            batch_size = int(self.inputs.batch_size)
             deform = tf.convert_to_tensor(deform)
             deform = tf.keras.backend.tile(deform, [batch_size, 1, 1, 1, 1])
             for idx, batch_data in enumerate(tf_dataset.batch(batch_size=batch_size)):
