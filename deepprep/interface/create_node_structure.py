@@ -519,6 +519,8 @@ def create_FastCSR_node(subject_id: str, settings):
     Fastcsr_node.inputs.wm_file = Path(subjects_dir) / subject_id / 'mri/wm.mgz'
     Fastcsr_node.inputs.brain_finalsurfs_file = Path(subjects_dir) / subject_id / 'mri/brain.finalsurfs.mgz'
 
+    Fastcsr_node.inputs.model_path = os.path.join(settings.DEEPPREP_HOME, 'model/FastCSR')
+
     Fastcsr_node.base_dir = Path(workflow_cached_dir) / subject_id
     PARALLEL = settings.SMRI.FastCSR.PARALLEL
     CPU_NUM = settings.SMRI.FastCSR.CPU_NUM
@@ -1142,7 +1144,6 @@ def create_Aseg7_node(subject_id: str, settings):
 
 def create_node_t(settings):
     from interface.run import set_envrion
-    set_envrion()
 
     pwd = Path.cwd()
     pwd = pwd.parent
@@ -1178,6 +1179,11 @@ def create_node_t(settings):
     settings.RESOURCE_DIR = str(resource_dir_test)
     settings.DEVICE = 'cuda'
 
+    set_envrion(freesurfer_home=settings.FREESURFER_HOME,
+                java_home=settings.JAVA_HOME,
+                subjects_dir=settings.SUBJECTS_DIR,
+                )
+
     atlas_type_test = 'MNI152_T1_2mm'
     task_test = 'rest'
     preprocess_method_test = 'task'
@@ -1199,32 +1205,34 @@ def create_node_t(settings):
     # exit()
 
     # 测试
-    node = create_OrigAndRawavg_node(subject_id=subject_id_test, t1w_files=t1w_files, settings=settings)
-    node.run()
-
-    node = create_Segment_node(subject_id=subject_id_test, settings=settings)
-    node.run()
-
-    node = create_Noccseg_node(subject_id=subject_id_test, settings=settings)
-    node.run()
-
-    node = create_N4BiasCorrect_node(subject_id=subject_id_test, settings=settings)
-    node.run()
-
-    node = create_TalairachAndNu_node(subject_id=subject_id_test, settings=settings)
-    node.run()
-
-    node = create_Brainmask_node(subject_id=subject_id_test, settings=settings)
-    node.run()
-
-    node = create_UpdateAseg_node(subject_id=subject_id_test, settings=settings)
-    node.run()
-
-    node = create_Filled_node(subject_id=subject_id_test, settings=settings)
-    node.run()
+    # node = create_OrigAndRawavg_node(subject_id=subject_id_test, t1w_files=t1w_files, settings=settings)
+    # node.run()
+    #
+    # node = create_Segment_node(subject_id=subject_id_test, settings=settings)
+    # node.run()
+    #
+    # node = create_Noccseg_node(subject_id=subject_id_test, settings=settings)
+    # node.run()
+    #
+    # node = create_N4BiasCorrect_node(subject_id=subject_id_test, settings=settings)
+    # node.run()
+    #
+    # node = create_TalairachAndNu_node(subject_id=subject_id_test, settings=settings)
+    # node.run()
+    #
+    # node = create_Brainmask_node(subject_id=subject_id_test, settings=settings)
+    # node.run()
+    #
+    # node = create_UpdateAseg_node(subject_id=subject_id_test, settings=settings)
+    # node.run()
+    #
+    # node = create_Filled_node(subject_id=subject_id_test, settings=settings)
+    # node.run()
 
     node = create_FastCSR_node(subject_id=subject_id_test, settings=settings)
     node.run()
+
+    exit()
 
     node = create_WhitePreaparc1_node(subject_id=subject_id_test, settings=settings)
     node.run()

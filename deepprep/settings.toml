@@ -27,9 +27,6 @@ DEEPPREP_HOME = "/home/anning/workspace/DeepPrep/deepprep"
 # FreeSurfer: version == 7.2
 FREESURFER_HOME = "/usr/local/freesurfer720"
 
-# FSL: version == 6.0
-FSL_HOME = "/usr/local/fsl"
-
 # FastSurfer: version ==
 FASTSURFER_HOME = "@format {this.DEEPPREP_HOME}/FastSurfer"
 
