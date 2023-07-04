@@ -54,8 +54,9 @@ def create_OrigAndRawavg_node(subject_id: str, t1w_files: list, settings):
 
     Origandrawavg_node.base_dir = Path(workflow_cached_dir) / subject_id
 
-    THREADS = settings.THREADS  # FreeSurfer threads
-    CPU_NUM = settings.SMRI.OrigAndRawavg.CPU_NUM
+    THREADS = settings.FS_THREADS  # FreeSurfer threads
+    CPU_NUM = THREADS
+    # CPU_NUM = settings.SMRI.OrigAndRawavg.CPU_NUM
     RAM_MB = settings.SMRI.OrigAndRawavg.RAM_MB
 
     Origandrawavg_node.inputs.threads = THREADS
@@ -231,8 +232,8 @@ def create_N4BiasCorrect_node(subject_id: str, settings):
 
     N4_bias_correct_node.base_dir = Path(workflow_cached_dir) / subject_id
 
-    THREADS = settings.SMRI.N4BiasCorrect.THREADS
-    CPU_NUM = settings.SMRI.N4BiasCorrect.CPU_NUM
+    THREADS = settings.FS_THREADS
+    CPU_NUM = THREADS
     RAM_MB = settings.SMRI.N4BiasCorrect.RAM_MB
     N4_bias_correct_node.inputs.threads = THREADS  # FastSurfer.N4BiasCorrect
     N4_bias_correct_node.source = Source(CPU_n=CPU_NUM, RAM_MB=RAM_MB)
@@ -452,8 +453,8 @@ def create_Filled_node(subject_id: str, settings):
     Filled_node.inputs.talairach_lta = subjects_dir / subject_id / 'mri/transforms/talairach.lta'
 
     Filled_node.base_dir = Path(workflow_cached_dir) / subject_id
-    THREADS = settings.THREADS  # FreeSurfer.recon_all
-    CPU_NUM = settings.SMRI.Filled.CPU_NUM
+    THREADS = settings.FS_THREADS  # FreeSurfer.recon_all
+    CPU_NUM = THREADS
     RAM_MB = settings.SMRI.Filled.RAM_MB
     Filled_node.inputs.threads = THREADS
     Filled_node.source = Source(CPU_n=CPU_NUM, RAM_MB=RAM_MB)
@@ -505,7 +506,7 @@ def create_FastCSR_node(subject_id: str, settings):
     python_interpret = sys.executable
     settings.SUBJECTS_DIR = str(subjects_dir)
     fastcsr_home = Path(settings.FASTCSR_HOME)
-    fastcsr_py = fastcsr_home / 'pipeline.py'  # inference script  # TODO: 这个脚本里面也有一个environ set。所以DeepPrep的环境配置不会有作用
+    fastcsr_py = fastcsr_home / 'pipeline.py'  # inference script
 
     Fastcsr_node = Node(FastCSR(), name=f'{subject_id}_sMRI_FastCSR_node')
     Fastcsr_node.inputs.python_interpret = python_interpret
@@ -581,8 +582,8 @@ def create_WhitePreaparc1_node(subject_id: str, settings):
     White_preaparc1_node.inputs.subject_id = subject_id
 
     White_preaparc1_node.base_dir = Path(workflow_cached_dir) / subject_id
-    THREADS = settings.SMRI.WhitePreaparc1.THREADS
-    CPU_NUM = settings.SMRI.WhitePreaparc1.CPU_NUM
+    THREADS = settings.FS_THREADS
+    CPU_NUM = THREADS
     RAM_MB = settings.SMRI.WhitePreaparc1.RAM_MB
     White_preaparc1_node.inputs.threads = THREADS
     White_preaparc1_node.source = Source(CPU_n=CPU_NUM, RAM_MB=RAM_MB)
@@ -590,79 +591,79 @@ def create_WhitePreaparc1_node(subject_id: str, settings):
     return White_preaparc1_node
 
 
-def create_SampleSegmentationToSurface_node(subject_id: str, settings):
-    """Sample segmentation to surface
-
-        Inputs
-        ------
-        subjects_id
-           Subject id
-        subjects_dir
-           Recon dir
-        python_interpret
-            The python interpret to use
-        freesurfer_home
-            Freesurfer home
-        hemi_DKTatlaslookup_file
-
-        smooth_aparc_file
-            smooth_aparc script
-        aparc_aseg_file
-            Generated tag file with cc for deep
-        hemi_white_preaparc_file
-            Hemi white matter surface file
-        hemi_cortex_label_file
-            Hemi cortex label
-
-        Outputs
-        -------
-        hemi_aparc_DKTatlas_mapped_prefix_file
-
-        hemi_aparc_DKTatlas_mapped_file
-
-        See also
-        --------
-        * :py:func:`deepprep.interface.fastsurfer_node.SampleSegmentationToSurface`
-
-    """
-    subjects_dir = Path(settings.SUBJECTS_DIR)
-    workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
-    python_interpret = sys.executable
-    freesurfer_home = Path(settings.FREESURFER_HOME)
-    fastsurfer_home = Path(settings.FASTSURFER_HOME)
-
-    smooth_aparc_file = fastsurfer_home / 'recon_surf' / 'smooth_aparc.py'
-
-    subject_mri_dir = subjects_dir / subject_id / 'mri'
-    subject_surf_dir = subjects_dir / subject_id / 'surf'
-    subject_label_dir = subjects_dir / subject_id / 'label'
-    lh_DKTatlaslookup_file = fastsurfer_home / 'recon_surf' / f'lh.DKTatlaslookup.txt'
-    rh_DKTatlaslookup_file = fastsurfer_home / 'recon_surf' / f'rh.DKTatlaslookup.txt'
-    settings.SUBJECTS_DIR = str(subjects_dir)
-
-    SampleSegmentationToSurfave_node = Node(SampleSegmentationToSurface(),
-                                            name=f'{subject_id}_sMRI_SampleSegmentationToSurface_node')
-    SampleSegmentationToSurfave_node.inputs.subjects_dir = subjects_dir
-    SampleSegmentationToSurfave_node.inputs.subject_id = subject_id
-    SampleSegmentationToSurfave_node.inputs.python_interpret = python_interpret
-    SampleSegmentationToSurfave_node.inputs.freesurfer_home = freesurfer_home
-    SampleSegmentationToSurfave_node.inputs.lh_DKTatlaslookup_file = lh_DKTatlaslookup_file
-    SampleSegmentationToSurfave_node.inputs.rh_DKTatlaslookup_file = rh_DKTatlaslookup_file
-    SampleSegmentationToSurfave_node.inputs.aparc_aseg_file = subject_mri_dir / 'aparc.DKTatlas+aseg.deep.withCC.mgz'
-    SampleSegmentationToSurfave_node.inputs.smooth_aparc_file = smooth_aparc_file
-    SampleSegmentationToSurfave_node.inputs.lh_white_preaparc_file = subject_surf_dir / f'lh.white.preaparc'
-    SampleSegmentationToSurfave_node.inputs.rh_white_preaparc_file = subject_surf_dir / f'rh.white.preaparc'
-    SampleSegmentationToSurfave_node.inputs.lh_cortex_label_file = subject_label_dir / f'lh.cortex.label'
-    SampleSegmentationToSurfave_node.inputs.rh_cortex_label_file = subject_label_dir / f'rh.cortex.label'
-
-    SampleSegmentationToSurfave_node.base_dir = Path(workflow_cached_dir) / subject_id
-    THREADS = settings.THREADS
-    CPU_NUM = settings.SMRI.Segment.CPU_NUM
-    RAM_MB = settings.SMRI.Segment.RAM_MB
-    GPU_MB = settings.SMRI.Segment.GPU_MB
-    SampleSegmentationToSurfave_node.source = Source(CPU_n=2, GPU_MB=0, RAM_MB=4000)
-
-    return SampleSegmentationToSurfave_node
+# def create_SampleSegmentationToSurface_node(subject_id: str, settings):
+#     """Sample segmentation to surface
+#
+#         Inputs
+#         ------
+#         subjects_id
+#            Subject id
+#         subjects_dir
+#            Recon dir
+#         python_interpret
+#             The python interpret to use
+#         freesurfer_home
+#             Freesurfer home
+#         hemi_DKTatlaslookup_file
+#
+#         smooth_aparc_file
+#             smooth_aparc script
+#         aparc_aseg_file
+#             Generated tag file with cc for deep
+#         hemi_white_preaparc_file
+#             Hemi white matter surface file
+#         hemi_cortex_label_file
+#             Hemi cortex label
+#
+#         Outputs
+#         -------
+#         hemi_aparc_DKTatlas_mapped_prefix_file
+#
+#         hemi_aparc_DKTatlas_mapped_file
+#
+#         See also
+#         --------
+#         * :py:func:`deepprep.interface.fastsurfer_node.SampleSegmentationToSurface`
+#
+#     """
+#     subjects_dir = Path(settings.SUBJECTS_DIR)
+#     workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
+#     python_interpret = sys.executable
+#     freesurfer_home = Path(settings.FREESURFER_HOME)
+#     fastsurfer_home = Path(settings.FASTSURFER_HOME)
+#
+#     smooth_aparc_file = fastsurfer_home / 'recon_surf' / 'smooth_aparc.py'
+#
+#     subject_mri_dir = subjects_dir / subject_id / 'mri'
+#     subject_surf_dir = subjects_dir / subject_id / 'surf'
+#     subject_label_dir = subjects_dir / subject_id / 'label'
+#     lh_DKTatlaslookup_file = fastsurfer_home / 'recon_surf' / f'lh.DKTatlaslookup.txt'
+#     rh_DKTatlaslookup_file = fastsurfer_home / 'recon_surf' / f'rh.DKTatlaslookup.txt'
+#     settings.SUBJECTS_DIR = str(subjects_dir)
+#
+#     SampleSegmentationToSurfave_node = Node(SampleSegmentationToSurface(),
+#                                             name=f'{subject_id}_sMRI_SampleSegmentationToSurface_node')
+#     SampleSegmentationToSurfave_node.inputs.subjects_dir = subjects_dir
+#     SampleSegmentationToSurfave_node.inputs.subject_id = subject_id
+#     SampleSegmentationToSurfave_node.inputs.python_interpret = python_interpret
+#     SampleSegmentationToSurfave_node.inputs.freesurfer_home = freesurfer_home
+#     SampleSegmentationToSurfave_node.inputs.lh_DKTatlaslookup_file = lh_DKTatlaslookup_file
+#     SampleSegmentationToSurfave_node.inputs.rh_DKTatlaslookup_file = rh_DKTatlaslookup_file
+#     SampleSegmentationToSurfave_node.inputs.aparc_aseg_file = subject_mri_dir / 'aparc.DKTatlas+aseg.deep.withCC.mgz'
+#     SampleSegmentationToSurfave_node.inputs.smooth_aparc_file = smooth_aparc_file
+#     SampleSegmentationToSurfave_node.inputs.lh_white_preaparc_file = subject_surf_dir / f'lh.white.preaparc'
+#     SampleSegmentationToSurfave_node.inputs.rh_white_preaparc_file = subject_surf_dir / f'rh.white.preaparc'
+#     SampleSegmentationToSurfave_node.inputs.lh_cortex_label_file = subject_label_dir / f'lh.cortex.label'
+#     SampleSegmentationToSurfave_node.inputs.rh_cortex_label_file = subject_label_dir / f'rh.cortex.label'
+#
+#     SampleSegmentationToSurfave_node.base_dir = Path(workflow_cached_dir) / subject_id
+#     THREADS = settings.FS_THREADS
+#     CPU_NUM = settings.SMRI.Segment.CPU_NUM
+#     RAM_MB = settings.SMRI.Segment.RAM_MB
+#     GPU_MB = settings.SMRI.Segment.GPU_MB
+#     SampleSegmentationToSurfave_node.source = Source(CPU_n=2, GPU_MB=0, RAM_MB=4000)
+#
+#     return SampleSegmentationToSurfave_node
 
 
 def create_InflatedSphere_node(subject_id: str, settings):
@@ -709,8 +710,8 @@ def create_InflatedSphere_node(subject_id: str, settings):
     InflatedSphere_node.inputs.rh_white_preaparc_file = rh_white_preaparc_file
 
     InflatedSphere_node.base_dir = Path(workflow_cached_dir) / subject_id
-    THREADS = settings.SMRI.InflatedSphere.THREADS
-    CPU_NUM = settings.SMRI.InflatedSphere.CPU_NUM
+    THREADS = settings.FS_THREADS
+    CPU_NUM = THREADS
     RAM_MB = settings.SMRI.InflatedSphere.RAM_MB
     InflatedSphere_node.inputs.threads = THREADS
     InflatedSphere_node.source = Source(CPU_n=CPU_NUM, RAM_MB=RAM_MB)
@@ -830,8 +831,8 @@ def create_JacobianAvgcurvCortparc_node(subject_id: str, settings):
     JacobianAvgcurvCortparc_node.inputs.subject_id = subject_id
 
     JacobianAvgcurvCortparc_node.base_dir = Path(workflow_cached_dir) / subject_id
-    THREADS = settings.SMRI.JacobianAvgcurvCortparc.THREADS
-    CPU_NUM = settings.SMRI.JacobianAvgcurvCortparc.CPU_NUM
+    THREADS = settings.FS_THREADS
+    CPU_NUM = THREADS
     RAM_MB = settings.SMRI.JacobianAvgcurvCortparc.RAM_MB
     JacobianAvgcurvCortparc_node.inputs.threads = THREADS  # FreeSurfer.recon_all
     JacobianAvgcurvCortparc_node.source = Source(CPU_n=CPU_NUM, RAM_MB=RAM_MB)
@@ -884,8 +885,8 @@ def create_WhitePialThickness1_node(subject_id: str, settings):
     White_pial_thickness1_node.inputs.rh_cortex_label = subjects_dir / subject_id / "label" / "rh.cortex.label"
 
     White_pial_thickness1_node.base_dir = Path(workflow_cached_dir) / subject_id
-    THREADS = settings.SMRI.WhitePialThickness1.THREADS
-    CPU_NUM = settings.SMRI.WhitePialThickness1.CPU_NUM
+    THREADS = settings.FS_THREADS
+    CPU_NUM = THREADS
     RAM_MB = settings.SMRI.WhitePialThickness1.RAM_MB
     White_pial_thickness1_node.inputs.threads = THREADS
     White_pial_thickness1_node.source = Source(CPU_n=CPU_NUM, RAM_MB=RAM_MB)
@@ -937,8 +938,8 @@ def create_Curvstats_node(subject_id: str, settings):
     Curvstats_node.inputs.rh_sulc = subject_surf_dir / f'rh.sulc'
 
     Curvstats_node.base_dir = Path(workflow_cached_dir) / subject_id
-    THREADS = settings.SMRI.Curvstats.THREADS
-    CPU_NUM = settings.SMRI.Curvstats.CPU_NUM
+    THREADS = settings.FS_THREADS
+    CPU_NUM = THREADS
     RAM_MB = settings.SMRI.Curvstats.RAM_MB
     Curvstats_node.inputs.threads = THREADS
     Curvstats_node.source = Source(CPU_n=CPU_NUM, RAM_MB=RAM_MB)
@@ -967,8 +968,8 @@ def create_BalabelsMult_node(subject_id: str, settings):
     BalabelsMult_node.inputs.fsaverage_label_dir = Path(settings.FREESURFER_HOME) / "subjects/fsaverage/label"
 
     BalabelsMult_node.base_dir = Path(workflow_cached_dir) / subject_id
-    THREADS = settings.SMRI.BalabelsMult.THREADS
-    CPU_NUM = settings.SMRI.BalabelsMult.CPU_NUM
+    THREADS = settings.FS_THREADS
+    CPU_NUM = THREADS
     RAM_MB = settings.SMRI.BalabelsMult.RAM_MB
     BalabelsMult_node.inputs.threads = THREADS
     BalabelsMult_node.source = Source(CPU_n=CPU_NUM, RAM_MB=RAM_MB)
@@ -1022,8 +1023,8 @@ def create_Cortribbon_node(subject_id: str, settings):
     Cortribbon_node.inputs.rh_pial = subject_surf_dir / f'rh.pial'
 
     Cortribbon_node.base_dir = Path(workflow_cached_dir) / subject_id
-    THREADS = settings.SMRI.Cortribbon.THREADS
-    CPU_NUM = settings.SMRI.Cortribbon.CPU_NUM
+    THREADS = settings.FS_THREADS
+    CPU_NUM = THREADS
     RAM_MB = settings.SMRI.Cortribbon.RAM_MB
     Cortribbon_node.inputs.threads = THREADS
     Cortribbon_node.source = Source(CPU_n=CPU_NUM, RAM_MB=RAM_MB)
@@ -1099,8 +1100,8 @@ def create_Parcstats_node(subject_id: str, settings):
     Parcstats_node.inputs.rh_thickness = subject_surf_dir / f'rh.thickness'
 
     Parcstats_node.base_dir = Path(workflow_cached_dir) / subject_id
-    THREADS = settings.THREADS
-    CPU_NUM = settings.SMRI.Parcstats.CPU_NUM
+    THREADS = settings.FS_THREADS
+    CPU_NUM = THREADS
     RAM_MB = settings.SMRI.Parcstats.RAM_MB
     Parcstats_node.inputs.threads = THREADS
     Parcstats_node.source = Source(CPU_n=CPU_NUM, RAM_MB=RAM_MB)
@@ -1134,8 +1135,8 @@ def create_Aseg7_node(subject_id: str, settings):
     Aseg7_node.inputs.rh_aparc_annot = subject_label_dir / 'rh.aparc.annot'
 
     Aseg7_node.base_dir = Path(workflow_cached_dir) / subject_id
-    THREADS = settings.SMRI.Aseg7.THREADS
-    CPU_NUM = settings.SMRI.Aseg7.CPU_NUM
+    THREADS = settings.FS_THREADS
+    CPU_NUM = THREADS
     RAM_MB = settings.SMRI.Aseg7.RAM_MB
     Aseg7_node.inputs.threads = THREADS
     Aseg7_node.source = Source(CPU_n=CPU_NUM, RAM_MB=RAM_MB)
@@ -1146,20 +1147,10 @@ def create_Aseg7_node(subject_id: str, settings):
 def create_node_t(settings):
     from interface.run import set_envrion
 
-    pwd = Path.cwd()
-    pwd = pwd.parent
-    fastsurfer_home = pwd / "FastSurfer"
-    freesurfer_home = Path('/usr/local/freesurfer720')
-    fastcsr_home = pwd / "FastCSR"
-    sagereg_home = pwd / "SageReg"
-
-    bids_data_dir_test = '/mnt/ngshare/test_Time_one_sub/UKB'
-    subjects_dir_test = Path('/mnt/ngshare/temp/test_UKB_DeepPrep_Recon')
-    bold_preprocess_dir_test = Path('/mnt/ngshare/DeepPrep_workflow_test/test_UKB_BoldPreprocess')
-    workflow_cached_dir_test = '/mnt/ngshare/DeepPrep_workflow_test/test_UKB_WorkflowfsT1'
-    vxm_model_path_test = '//model/voxelmorph'
-    mni152_brain_mask_test = '/usr/local/fsl/data/standard/MNI152_T1_2mm_brain_mask.nii.gz'
-    resource_dir_test = '//resource'
+    bids_data_dir_test = '/mnt/ngshare/test_Time_one_sub/MSC'
+    subjects_dir_test = Path('/mnt/ngshare/temp/test_MSC_DeepPrep_Recon')
+    bold_preprocess_dir_test = Path('/mnt/ngshare/DeepPrep_workflow_test/test_MSC_BoldPreprocess')
+    workflow_cached_dir_test = '/mnt/ngshare/DeepPrep_workflow_test/test_MSC_WorkflowfsT1'
 
     if not subjects_dir_test.exists():
         subjects_dir_test.mkdir(parents=True, exist_ok=True)
@@ -1170,14 +1161,7 @@ def create_node_t(settings):
     settings.SUBJECTS_DIR = str(subjects_dir_test)
     settings.BOLD_PREPROCESS_DIR = str(bold_preprocess_dir_test)
     settings.WORKFLOW_CACHED_DIR = str(workflow_cached_dir_test)
-    settings.FASTSURFER_HOME = str(fastsurfer_home)
-    settings.FREESURFER_HOME = str(freesurfer_home)
-    settings.FASTCSR_HOME = str(fastcsr_home)
-    settings.SAGEREG_HOME = str(sagereg_home)
     settings.BIDS_DIR = bids_data_dir_test
-    settings.VXM_MODEL_PATH = str(vxm_model_path_test)
-    settings.MNI152_BRAIN_MASK = str(mni152_brain_mask_test)
-    settings.RESOURCE_DIR = str(resource_dir_test)
     settings.DEVICE = 'cuda'
 
     set_envrion(freesurfer_home=settings.FREESURFER_HOME,
@@ -1187,7 +1171,7 @@ def create_node_t(settings):
 
     atlas_type_test = 'MNI152_T1_2mm'
     task_test = 'rest'
-    preprocess_method_test = 'task'
+    preprocess_method_test = 'rest'
 
     settings.FMRI.ATLAS_SPACE = atlas_type_test
     settings.FMRI.TASK = task_test
@@ -1196,8 +1180,8 @@ def create_node_t(settings):
     settings.RECON_ONLY = 'True'
     settings.BOLD_ONLY = 'False'
 
-    subject_id_test = 'sub-1000037-ses-02'
-    t1w_files = ['/mnt/ngshare/DeepPrep_workflow_test/UKB_BIDS/sub-R07/ses-01/anat/sub-R07_ses-01_T1w.nii.gz']
+    subject_id_test = 'sub-MSC01'
+    t1w_files = ['/mnt/ngshare/temp/MSC/sub-MSC01/ses-struct01/anat/sub-MSC01_ses-struct01_run-01_T1w.nii.gz']
     # t1w_files = ['/mnt/ngshare/DeepPrep_workflow_test/sub-R07T1_ses-01_T1w.nii.gz']
 
     # 测试
@@ -1206,34 +1190,32 @@ def create_node_t(settings):
     # exit()
 
     # 测试
-    # node = create_OrigAndRawavg_node(subject_id=subject_id_test, t1w_files=t1w_files, settings=settings)
-    # node.run()
-    #
-    # node = create_Segment_node(subject_id=subject_id_test, settings=settings)
-    # node.run()
-    #
-    # node = create_Noccseg_node(subject_id=subject_id_test, settings=settings)
-    # node.run()
-    #
-    # node = create_N4BiasCorrect_node(subject_id=subject_id_test, settings=settings)
-    # node.run()
-    #
-    # node = create_TalairachAndNu_node(subject_id=subject_id_test, settings=settings)
-    # node.run()
-    #
-    # node = create_Brainmask_node(subject_id=subject_id_test, settings=settings)
-    # node.run()
-    #
-    # node = create_UpdateAseg_node(subject_id=subject_id_test, settings=settings)
-    # node.run()
-    #
-    # node = create_Filled_node(subject_id=subject_id_test, settings=settings)
-    # node.run()
+    node = create_OrigAndRawavg_node(subject_id=subject_id_test, t1w_files=t1w_files, settings=settings)
+    node.run()
+
+    node = create_Segment_node(subject_id=subject_id_test, settings=settings)
+    node.run()
+
+    node = create_Noccseg_node(subject_id=subject_id_test, settings=settings)
+    node.run()
+
+    node = create_N4BiasCorrect_node(subject_id=subject_id_test, settings=settings)
+    node.run()
+
+    node = create_TalairachAndNu_node(subject_id=subject_id_test, settings=settings)
+    node.run()
+
+    node = create_Brainmask_node(subject_id=subject_id_test, settings=settings)
+    node.run()
+
+    node = create_UpdateAseg_node(subject_id=subject_id_test, settings=settings)
+    node.run()
+
+    node = create_Filled_node(subject_id=subject_id_test, settings=settings)
+    node.run()
 
     node = create_FastCSR_node(subject_id=subject_id_test, settings=settings)
     node.run()
-
-    exit()
 
     node = create_WhitePreaparc1_node(subject_id=subject_id_test, settings=settings)
     node.run()
