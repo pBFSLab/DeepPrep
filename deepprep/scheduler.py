@@ -368,7 +368,6 @@ def main(settings):
     set_envrion(
         freesurfer_home=settings.FREESURFER_HOME,
         java_home=settings.JAVA_HOME,
-        fsl_home=settings.FSL_HOME,
         subjects_dir=str(subjects_dir),
         threads=settings.THREADS
     )
