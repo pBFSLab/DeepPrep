@@ -80,7 +80,7 @@ def set_envrion(freesurfer_home='/usr/local/freesurfer720',
                 java_home='/usr/lib/jvm/java-11-openjdk-amd64',
                 fsl_home='/usr/local/fsl',
                 subjects_dir='',
-                threads: int = 1):
+                threads: int = 8):
     # FreeSurfer recon-all env
     os.environ['FREESURFER_HOME'] = f'{freesurfer_home}'
     os.environ['FREESURFER'] = f'{freesurfer_home}'
@@ -96,11 +96,13 @@ def set_envrion(freesurfer_home='/usr/local/freesurfer720',
     os.environ['FSLOUTPUTTYPE'] = 'NIFTI_GZ'
 
     # FastCSR
-    os.environ[
-        'LD_LIBRARY_PATH'] = f'{java_home}/lib:{java_home}/lib/server:'
+    if os.environ.get('LD_LIBRARY_PATH') is None:
+        os.environ['LD_LIBRARY_PATH'] = f'{java_home}/lib:{java_home}/lib/server'
+    else:
+        os.environ['LD_LIBRARY_PATH'] = f'{java_home}/lib:{java_home}/lib/server:' + os.environ['LD_LIBRARY_PATH']
 
     # FSL
-    os.environ['PATH'] = f'{fsl_home}/bin:' + os.environ['PATH']
+    # os.environ['PATH'] = f'{fsl_home}/bin:' + os.environ['PATH']
 
     # set FreeSurfer threads
     os.environ['OMP_NUM_THREADS'] = str(threads)

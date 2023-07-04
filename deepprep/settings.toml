@@ -1,16 +1,16 @@
 # use dynaconf -i config.settings list to validate the values
-# TODO 这里的配准最终会区分为  必须修改，可修改、不建议修改、不可修改。
+# TODO: 这里的配准最终会区分为  必须修改，可修改、不建议修改、不可修改。
 # 必须修改:  放命令行参数，比如BIDS目录，结果目录
 # 可修改： 修改后不会影响结果。比如集成的其他程序的安装目录
 # 不建议修改： 改动会影响Pipeline的结果。比如会产生删除操作，修改原结果的操作，不能复现原来结果的操作。
 # 不可修改： 为DeepPrep的保留变量，仅开发者可以改动。比如改动后Pipeline发生改变。
 
-# TODO 将 DEEPPREP_HOME FREESURFER_HOME FSL_HOME JAVA_HOME 配置到环境变量
+# TODO: 将 DEEPPREP_HOME FREESURFER_HOME FSL_HOME JAVA_HOME 配置到环境变量
 
 # Source set
-CPU_NUM = 20
+CPU_NUM = 16
 GPU_MB = 11000
-RAM_MB = 40000
+RAM_MB = 30000
 IO_WRITE_MB = 100
 IO_READ_MB = 200
 
@@ -26,9 +26,6 @@ DEEPPREP_HOME = "/home/anning/workspace/DeepPrep/deepprep"
 
 # FreeSurfer: version == 7.2
 FREESURFER_HOME = "/usr/local/freesurfer720"
-
-# FSL: version == 6.0
-FSL_HOME = "/usr/local/fsl"
 
 # FastSurfer: version ==
 FASTSURFER_HOME = "@format {this.DEEPPREP_HOME}/FastSurfer"
@@ -66,7 +63,7 @@ THREADS = 8  # default thereads for OpenMP and ITK # TODO: 拆分THREADS不同�
 # ENVIRON
 
 [smri]
-RAWAVG = false
+RAWAVG = true
 
 [smri.OrigAndRawavg]
 THREADS = 1
@@ -171,6 +168,55 @@ ATLAS_SPACE = "MNI152_T1_2mm" # （replaced by args）
 TASK = "rest"  # which data to be proprecessing（replaced by args）
 PREPROCESS_TYPE = "rest"  # can be set to rest or task (default: None)（replaced by args）
 
+[fmri.BoldSkipReorient]
+NSKIP_FRAME = 0
+THREADS = 1
+CPU_NUM = 1
+RAM_MB = 1000
+GPU_MB = 0
+IO_WRITE_MB = 20
+IO_READ_MB = 40
+
+[fmri.StcMc]
+THREADS = 1
+CPU_NUM = 0
+RAM_MB = 1000
+GPU_MB = 0
+IO_WRITE_MB = 20
+IO_READ_MB = 40
+
+[fmri.Register]
+THREADS = 1
+CPU_NUM = 0
+RAM_MB = 1000
+GPU_MB = 0
+IO_WRITE_MB = 20
+IO_READ_MB = 40
+
+[fmri.Mkbrainmask]
+THREADS = 1
+CPU_NUM = 0
+RAM_MB = 1000
+GPU_MB = 0
+IO_WRITE_MB = 20
+IO_READ_MB = 40
+
+[fmri.VxmRegistraion]
+THREADS = 1
+CPU_NUM = 1
+RAM_MB = 3000
+GPU_MB = 2715
+IO_WRITE_MB = 0
+IO_READ_MB = 0
+
+[fmri.VxmRegNormMNI152]
+BATCH_SIZE = 16
+THREADS = 1
+CPU_NUM = 0
+RAM_MB = 15000
+GPU_MB = 4529
+IO_WRITE_MB = 0
+IO_READ_MB = 0
 
 # Please do not make any modifications until you understand the purpose of these items！！！
 [DANGER]
