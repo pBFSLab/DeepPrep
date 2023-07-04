@@ -1032,7 +1032,7 @@ class BalabelsMult(BaseInterface):
     def cmd(self, hemi):
         subjects_dir = Path(self.inputs.subjects_dir)
         subject_id = self.inputs.subject_id
-        threads = self.inputs.threads if self.inputs.threads else 0
+        threads = self.inputs.threads // 2 if self.inputs.threads else 0
         sub_label_dir = Path(subjects_dir, subject_id, 'label')
         sub_stats_dir = Path(subjects_dir, subject_id, 'stats')
 
