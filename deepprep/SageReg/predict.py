@@ -80,7 +80,7 @@ if __name__ == '__main__':
 
     config['is_rigid'] = True
 
-    rigid_model_result_dir = [f'{args.model_path} /fsaverage6']
+    rigid_model_result_dir = [f'{args.model_path}/fsaverage6']
     for hemi in args.hemi:
         config['sim_weight'] = torch.from_numpy(get_weight('sulc', hemi).astype(float)).float()
         config["hemisphere"] = hemi
