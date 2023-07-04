@@ -765,6 +765,7 @@ def create_SageReg_node(subject_id: str, settings):
     Sagereg_node.inputs.python_interpret = python_interpret
     Sagereg_node.inputs.device = device
 
+    Sagereg_node.inputs.deepprep_home = Path(settings.DEEPPREP_HOME)
     Sagereg_node.inputs.subjects_dir = subjects_dir
     Sagereg_node.inputs.subject_id = subject_id
     Sagereg_node.inputs.freesurfer_home = freesurfer_home
