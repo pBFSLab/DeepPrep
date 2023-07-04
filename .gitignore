@@ -4,7 +4,6 @@ workdir/
 # FastCSR
 model/
 # SageReg
-auxi_data/
 model_files/
 
 .idea
