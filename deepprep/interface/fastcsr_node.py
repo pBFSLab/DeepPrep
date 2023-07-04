@@ -25,6 +25,7 @@ class FastCSRInputSpec(BaseInterfaceInputSpec):
     python_interpret = File(exists=True, mandatory=True, desc='the python interpret to use')
     fastcsr_py = File(exists=True, mandatory=True, desc="FastCSR script")
     parallel_scheduling = Str(desc='parallel_scheduling', mandatory=False, default_value='on')
+    model_path = Str(exists=True, desc='FastCSR model_path', mandatory=False)
 
     subjects_dir = Directory(exists=True, desc='subject dir path', mandatory=True)
     subject_id = Str(desc='subject id', mandatory=True)
@@ -55,7 +56,8 @@ class FastCSR(BaseInterface):
         subjects_dir = self.inputs.subjects_dir
         subject_id = self.inputs.subject_id
         cmd = f'{self.inputs.python_interpret} {self.inputs.fastcsr_py} --sd {subjects_dir} --sid {subject_id} ' \
-              f'--optimizing_surface off --parallel_scheduling {self.inputs.parallel_scheduling}'
+              f'--optimizing_surface off --parallel_scheduling {self.inputs.parallel_scheduling} ' \
+              f'--model-path {self.inputs.model_path}'
         run_cmd_with_timing(cmd)
         for hemi in ['lh', 'rh']:
             orig = Path(subjects_dir) / subject_id / 'surf' / f'{hemi}.orig'
