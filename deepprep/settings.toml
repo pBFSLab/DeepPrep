@@ -58,7 +58,7 @@ WORKFLOW_CACHED_DIR = ""  # where to save runtime cache, e.g. log file（replace
 # ### GPU set ###
 DEVICE = "cuda"
 # ### CPU set ###
-FS_THREADS = 8  # default thereads for OpenMP and ITK # TODO: 拆分THREADS不同使用
+FS_THREADS = 16  # default thereads for OpenMP and ITK
 
 # ENVIRON
 
@@ -66,7 +66,7 @@ FS_THREADS = 8  # default thereads for OpenMP and ITK # TODO: 拆分THREADS不�
 RAWAVG = true
 
 [smri.OrigAndRawavg]
-# CPU_NUM = FS_THREADS
+CPU_NUM = 1
 RAM_MB = 500
 
 [smri.Segment]
@@ -79,7 +79,7 @@ CPU_NUM = 1
 RAM_MB = 500
 
 [smri.N4BiasCorrect]
-# CPU_NUM = FS_THREADS
+# CPU_NUM = FS_THREADS // 2
 RAM_MB = 500
 
 [smri.TalairachAndNu]
@@ -95,21 +95,21 @@ CPU_NUM = 1
 RAM_MB = 500
 
 [smri.Filled]
-# CPU_NUM = FS_THREADS
+CPU_NUM = 1
 RAM_MB = 500
 
 [smri.FastCSR]
 PARALLEL = 'on'
 CPU_NUM = 2
-RAM_MB = 6500
+RAM_MB = 7000
 GPU_MB = 7000
 
 [smri.WhitePreaparc1]
-# CPU_NUM = FS_THREADS
+# CPU_NUM = FS_THREADS // 2
 RAM_MB = 1500
 
 [smri.InflatedSphere]
-# CPU_NUM = FS_THREADS
+# CPU_NUM = FS_THREADS // 2
 RAM_MB = 500
 
 [smri.Sagereg]
@@ -118,15 +118,15 @@ RAM_MB = 5000
 GPU_MB = 4200
 
 [smri.JacobianAvgcurvCortparc]
-# CPU_NUM = FS_THREADS
+CPU_NUM = 1
 RAM_MB = 500
 
 [smri.WhitePialThickness1]
-# CPU_NUM = FS_THREADS
+# CPU_NUM = FS_THREADS // 2
 RAM_MB = 1500
 
 [smri.Curvstats]
-# CPU_NUM = FS_THREADS
+CPU_NUM = 1
 RAM_MB = 250
 
 [smri.BalabelsMult]
@@ -134,15 +134,15 @@ RAM_MB = 250
 RAM_MB = 1500
 
 [smri.Cortribbon]
-# CPU_NUM = FS_THREADS
+CPU_NUM = 1
 RAM_MB = 1000
 
 [smri.Parcstats]
-# CPU_NUM = FS_THREADS
+CPU_NUM = 1
 RAM_MB = 500
 
 [smri.Aseg7]
-# CPU_NUM = FS_THREADS
+# CPU_NUM = FS_THREADS // 2
 RAM_MB = 800
 
 [fmri]

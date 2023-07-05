@@ -369,7 +369,7 @@ def main(settings):
         freesurfer_home=settings.FREESURFER_HOME,
         java_home=settings.JAVA_HOME,
         subjects_dir=str(subjects_dir),
-        threads=settings.THREADS
+        threads=settings.FS_THREADS
     )
 
     # ############### filter subjects by subjects_filter_file

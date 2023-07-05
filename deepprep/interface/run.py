@@ -12,7 +12,14 @@ def get_freesurfer_threads(threads: int):
     return fsthreads
 
 
-def run_cmd_with_timing(cmd):
+def run_cmd_with_timing(cmd, threads=None):
+    """
+    threads: FreeSurfer threads setting
+    """
+    if threads is not None:
+        os.environ['OMP_NUM_THREADS'] = str(threads)
+        os.environ['FS_OMP_NUM_THREADS'] = str(threads)
+        os.environ['ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS'] = str(threads)
     print('*' * 50)
     print(cmd)
     print('*' * 50)
