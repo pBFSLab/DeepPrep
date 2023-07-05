@@ -6,17 +6,6 @@ from deepprep.interface.node_source import Source
 import sys
 from nipype import Node
 
-"""环境变量
-subjects_dir = Path(settings.SUBJECTS_DIR)
-bold_preprocess_dir = Path(settings.BOLD_PREPROCESS_DIR)
-workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
-fastsurfer_home = Path(settings.FASTSURFER_HOME)
-freesurfer_home = Path(settings.FREESURFER_HOME)
-fastcsr_home = Path(settings.FASTCSR_HOME)
-featreg_home = Path(settings.FEATREG_HOME)
-python_interpret = sys.executable
-"""
-
 
 def create_OrigAndRawavg_node(subject_id: str, t1w_files: list, settings):
     """Use ``Recon-all`` in Freesurfer to get Orig And Rawavg files
@@ -55,10 +44,8 @@ def create_OrigAndRawavg_node(subject_id: str, t1w_files: list, settings):
     Origandrawavg_node.base_dir = Path(workflow_cached_dir) / subject_id
 
     THREADS = settings.FS_THREADS  # FreeSurfer threads
-    CPU_NUM = THREADS
-    # CPU_NUM = settings.SMRI.OrigAndRawavg.CPU_NUM
+    CPU_NUM = settings.SMRI.OrigAndRawavg.CPU_NUM
     RAM_MB = settings.SMRI.OrigAndRawavg.RAM_MB
-
     Origandrawavg_node.inputs.threads = THREADS
     Origandrawavg_node.source = Source(CPU_n=CPU_NUM, RAM_MB=RAM_MB)
 
@@ -176,8 +163,10 @@ def create_Noccseg_node(subject_id: str, settings):
 
     Noccseg_node.base_dir = Path(workflow_cached_dir) / subject_id
 
+    THREADS = settings.FS_THREADS  # FreeSurfer threads
     CPU_NUM = settings.SMRI.Noccseg.CPU_NUM
     RAM_MB = settings.SMRI.Noccseg.RAM_MB
+    Noccseg_node.inputs.threads = THREADS
     Noccseg_node.source = Source(CPU_n=CPU_NUM, RAM_MB=RAM_MB)
 
     return Noccseg_node
@@ -233,7 +222,7 @@ def create_N4BiasCorrect_node(subject_id: str, settings):
     N4_bias_correct_node.base_dir = Path(workflow_cached_dir) / subject_id
 
     THREADS = settings.FS_THREADS
-    CPU_NUM = THREADS
+    CPU_NUM = THREADS // 2
     RAM_MB = settings.SMRI.N4BiasCorrect.RAM_MB
     N4_bias_correct_node.inputs.threads = THREADS  # FastSurfer.N4BiasCorrect
     N4_bias_correct_node.source = Source(CPU_n=CPU_NUM, RAM_MB=RAM_MB)
@@ -290,8 +279,10 @@ def create_TalairachAndNu_node(subject_id: str, settings):
 
     TalairachAndNu_node.base_dir = Path(workflow_cached_dir) / subject_id
 
+    THREADS = settings.FS_THREADS  # FreeSurfer threads
     CPU_NUM = settings.SMRI.TalairachAndNu.CPU_NUM
     RAM_MB = settings.SMRI.TalairachAndNu.RAM_MB
+    TalairachAndNu_node.inputs.threads = THREADS
     TalairachAndNu_node.source = Source(CPU_n=CPU_NUM, RAM_MB=RAM_MB)
 
     return TalairachAndNu_node
@@ -338,8 +329,11 @@ def create_Brainmask_node(subject_id: str, settings):
     Brainmask_node.inputs.mask_file = subjects_dir / subject_id / 'mri' / 'mask.mgz'
 
     Brainmask_node.base_dir = Path(workflow_cached_dir) / subject_id
+
+    THREADS = settings.FS_THREADS  # FreeSurfer threads
     CPU_NUM = settings.SMRI.Brainmask.CPU_NUM
     RAM_MB = settings.SMRI.Brainmask.RAM_MB
+    Brainmask_node.inputs.threads = THREADS
     Brainmask_node.source = Source(CPU_n=CPU_NUM, RAM_MB=RAM_MB)
 
     return Brainmask_node
@@ -394,8 +388,11 @@ def create_UpdateAseg_node(subject_id: str, settings):
     Updateaseg_node.inputs.aseg_noCCseg_file = subject_mri_dir / 'aseg.auto_noCCseg.mgz'
 
     Updateaseg_node.base_dir = Path(workflow_cached_dir) / subject_id
+
+    THREADS = settings.FS_THREADS  # FreeSurfer threads
     CPU_NUM = settings.SMRI.UpdateAseg.CPU_NUM
     RAM_MB = settings.SMRI.UpdateAseg.RAM_MB
+    Updateaseg_node.inputs.threads = THREADS
     Updateaseg_node.source = Source(CPU_n=CPU_NUM, RAM_MB=RAM_MB)
 
     return Updateaseg_node
@@ -454,7 +451,7 @@ def create_Filled_node(subject_id: str, settings):
 
     Filled_node.base_dir = Path(workflow_cached_dir) / subject_id
     THREADS = settings.FS_THREADS  # FreeSurfer.recon_all
-    CPU_NUM = THREADS
+    CPU_NUM = settings.SMRI.Filled.CPU_NUM
     RAM_MB = settings.SMRI.Filled.RAM_MB
     Filled_node.inputs.threads = THREADS
     Filled_node.source = Source(CPU_n=CPU_NUM, RAM_MB=RAM_MB)
@@ -583,7 +580,7 @@ def create_WhitePreaparc1_node(subject_id: str, settings):
 
     White_preaparc1_node.base_dir = Path(workflow_cached_dir) / subject_id
     THREADS = settings.FS_THREADS
-    CPU_NUM = THREADS
+    CPU_NUM = THREADS // 2
     RAM_MB = settings.SMRI.WhitePreaparc1.RAM_MB
     White_preaparc1_node.inputs.threads = THREADS
     White_preaparc1_node.source = Source(CPU_n=CPU_NUM, RAM_MB=RAM_MB)
@@ -711,7 +708,7 @@ def create_InflatedSphere_node(subject_id: str, settings):
 
     InflatedSphere_node.base_dir = Path(workflow_cached_dir) / subject_id
     THREADS = settings.FS_THREADS
-    CPU_NUM = THREADS
+    CPU_NUM = THREADS // 2
     RAM_MB = settings.SMRI.InflatedSphere.RAM_MB
     InflatedSphere_node.inputs.threads = THREADS
     InflatedSphere_node.source = Source(CPU_n=CPU_NUM, RAM_MB=RAM_MB)
@@ -832,7 +829,7 @@ def create_JacobianAvgcurvCortparc_node(subject_id: str, settings):
 
     JacobianAvgcurvCortparc_node.base_dir = Path(workflow_cached_dir) / subject_id
     THREADS = settings.FS_THREADS
-    CPU_NUM = THREADS
+    CPU_NUM = settings.SMRI.JacobianAvgcurvCortparc.CPU_NUM
     RAM_MB = settings.SMRI.JacobianAvgcurvCortparc.RAM_MB
     JacobianAvgcurvCortparc_node.inputs.threads = THREADS  # FreeSurfer.recon_all
     JacobianAvgcurvCortparc_node.source = Source(CPU_n=CPU_NUM, RAM_MB=RAM_MB)
@@ -886,7 +883,7 @@ def create_WhitePialThickness1_node(subject_id: str, settings):
 
     White_pial_thickness1_node.base_dir = Path(workflow_cached_dir) / subject_id
     THREADS = settings.FS_THREADS
-    CPU_NUM = THREADS
+    CPU_NUM = THREADS // 2
     RAM_MB = settings.SMRI.WhitePialThickness1.RAM_MB
     White_pial_thickness1_node.inputs.threads = THREADS
     White_pial_thickness1_node.source = Source(CPU_n=CPU_NUM, RAM_MB=RAM_MB)
@@ -939,7 +936,7 @@ def create_Curvstats_node(subject_id: str, settings):
 
     Curvstats_node.base_dir = Path(workflow_cached_dir) / subject_id
     THREADS = settings.FS_THREADS
-    CPU_NUM = THREADS
+    CPU_NUM = settings.SMRI.Curvstats.CPU_NUM
     RAM_MB = settings.SMRI.Curvstats.RAM_MB
     Curvstats_node.inputs.threads = THREADS
     Curvstats_node.source = Source(CPU_n=CPU_NUM, RAM_MB=RAM_MB)
@@ -1024,7 +1021,7 @@ def create_Cortribbon_node(subject_id: str, settings):
 
     Cortribbon_node.base_dir = Path(workflow_cached_dir) / subject_id
     THREADS = settings.FS_THREADS
-    CPU_NUM = THREADS
+    CPU_NUM = settings.SMRI.Cortribbon.CPU_NUM
     RAM_MB = settings.SMRI.Cortribbon.RAM_MB
     Cortribbon_node.inputs.threads = THREADS
     Cortribbon_node.source = Source(CPU_n=CPU_NUM, RAM_MB=RAM_MB)
@@ -1101,7 +1098,7 @@ def create_Parcstats_node(subject_id: str, settings):
 
     Parcstats_node.base_dir = Path(workflow_cached_dir) / subject_id
     THREADS = settings.FS_THREADS
-    CPU_NUM = THREADS
+    CPU_NUM = settings.SMRI.Parcstats.CPU_NUM
     RAM_MB = settings.SMRI.Parcstats.RAM_MB
     Parcstats_node.inputs.threads = THREADS
     Parcstats_node.source = Source(CPU_n=CPU_NUM, RAM_MB=RAM_MB)
@@ -1136,7 +1133,7 @@ def create_Aseg7_node(subject_id: str, settings):
 
     Aseg7_node.base_dir = Path(workflow_cached_dir) / subject_id
     THREADS = settings.FS_THREADS
-    CPU_NUM = THREADS
+    CPU_NUM = THREADS // 2
     RAM_MB = settings.SMRI.Aseg7.RAM_MB
     Aseg7_node.inputs.threads = THREADS
     Aseg7_node.source = Source(CPU_n=CPU_NUM, RAM_MB=RAM_MB)
@@ -1147,10 +1144,10 @@ def create_Aseg7_node(subject_id: str, settings):
 def create_node_t(settings):
     from interface.run import set_envrion
 
-    bids_data_dir_test = '/mnt/ngshare/test_Time_one_sub/MSC'
-    subjects_dir_test = Path('/mnt/ngshare/temp/test_MSC_DeepPrep_Recon')
-    bold_preprocess_dir_test = Path('/mnt/ngshare/DeepPrep_workflow_test/test_MSC_BoldPreprocess')
-    workflow_cached_dir_test = '/mnt/ngshare/DeepPrep_workflow_test/test_MSC_WorkflowfsT1'
+    bids_data_dir_test = '/mnt/ngshare/temp/MSC'
+    subjects_dir_test = Path('/mnt/ngshare/temp/test_MSC_Recon')
+    bold_preprocess_dir_test = Path('/mnt/ngshare/temp/test_MSC_BoldPreprocess')
+    workflow_cached_dir_test = '/mnt/ngshare/temp/test_MSC_Workflow'
 
     if not subjects_dir_test.exists():
         subjects_dir_test.mkdir(parents=True, exist_ok=True)
@@ -1183,11 +1180,6 @@ def create_node_t(settings):
     subject_id_test = 'sub-MSC01'
     t1w_files = ['/mnt/ngshare/temp/MSC/sub-MSC01/ses-struct01/anat/sub-MSC01_ses-struct01_run-01_T1w.nii.gz']
     # t1w_files = ['/mnt/ngshare/DeepPrep_workflow_test/sub-R07T1_ses-01_T1w.nii.gz']
-
-    # 测试
-    # node = create_WhitePreaparc1_node(subject_id=subject_id_test)
-    # node.run()
-    # exit()
 
     # 测试
     node = create_OrigAndRawavg_node(subject_id=subject_id_test, t1w_files=t1w_files, settings=settings)
@@ -1223,8 +1215,6 @@ def create_node_t(settings):
     node = create_InflatedSphere_node(subject_id=subject_id_test, settings=settings)
     node.run()
 
-    # exit()
-
     node = create_SageReg_node(subject_id=subject_id_test, settings=settings)
     node.run()
 
@@ -1238,6 +1228,9 @@ def create_node_t(settings):
     node.run()
 
     node = create_Cortribbon_node(subject_id=subject_id_test, settings=settings)
+    node.run()
+
+    node = create_BalabelsMult_node(subject_id=subject_id_test, settings=settings)
     node.run()
 
     node = create_Parcstats_node(subject_id=subject_id_test, settings=settings)

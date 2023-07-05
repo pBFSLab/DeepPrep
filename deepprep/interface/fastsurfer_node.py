@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from nipype.interfaces.base import BaseInterfaceInputSpec, BaseInterface, File, TraitedSpec, Directory, \
     traits, traits_extension, Str
@@ -92,7 +93,7 @@ class N4BiasCorrectInputSpec(BaseInterfaceInputSpec):
     orig_file = File(exists=True, desc="mri/orig.mgz", mandatory=True)
     mask_file = File(exists=True, desc="mri/mask.mgz", mandatory=True)
     # orig_nu_file = File(desc="mri/orig_nu.mgz", mandatory=True)
-    threads = traits.Int(desc="threads")
+    threads = traits.Int(desc="threads", mandatory=True)
 
 
 class N4BiasCorrectOutputSpec(TraitedSpec):
@@ -111,15 +112,14 @@ class N4BiasCorrect(BaseInterface):
     def _run_interface(self, runtime):
         subjects_dir = Path(self.inputs.subjects_dir)
         subject_id = self.inputs.subject_id
+        threads = self.inputs.threads if self.inputs.threads else 0
+        
         orig_nu_file = subjects_dir / subject_id / "mri" / "orig_nu.mgz"
         # orig_nu nu correct
-        if not traits_extension.isdefined(self.inputs.threads):
-            self.inputs.threads = 1
-
         py = self.inputs.correct_py
         cmd = f"{self.inputs.python_interpret} {py} --in {self.inputs.orig_file} --out {orig_nu_file} " \
               f"--mask {self.inputs.mask_file}  --threads {self.inputs.threads}"
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
 
         return runtime
 
@@ -140,7 +140,7 @@ class N4BiasCorrect(BaseInterface):
 class TalairachAndNuInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
-    threads = traits.Int(desc="threads")
+    threads = traits.Int(desc="threads", mandatory=True)
     orig_nu_file = File(exists=True, desc="mri/orig_nu.mgz", mandatory=True)
     orig_file = File(exists=True, desc="mri/orig.mgz", mandatory=True)
     mni305 = File(exists=True, desc="FREESURFER/average/mni305.cor.mgz", mandatory=True)
@@ -166,6 +166,8 @@ class TalairachAndNu(BaseInterface):
     def _run_interface(self, runtime):
         subjects_dir = Path(self.inputs.subjects_dir)
         subject_id = self.inputs.subject_id
+        threads = self.inputs.threads if self.inputs.threads else 0
+
         sub_mri_dir = subjects_dir / subject_id / "mri"
         nu_file = subjects_dir / subject_id / 'mri' / 'nu.mgz'
 
@@ -176,27 +178,27 @@ class TalairachAndNu(BaseInterface):
         # talairach.xfm: compute talairach full head (25sec)
         cmd = f'cd {sub_mri_dir} && ' \
               f'talairach_avi --i {self.inputs.orig_nu_file} --xfm {talairach_auto_xfm}'
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
         cmd = f'cp {talairach_auto_xfm} {talairach_xfm}'
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
 
         # talairach.lta:  convert to lta
         cmd = f"lta_convert --src {self.inputs.orig_file} --trg {self.inputs.mni305} " \
               f"--inxfm {talairach_xfm} --outlta {talairach_xfm_lta} " \
               f"--subject fsaverage --ltavox2vox"
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
 
         # Since we do not run mri_em_register we sym-link other talairach transform files here
         talairach_skull_lta = sub_mri_dir / "transforms" / "talairach_with_skull.lta"
         talairach_lta = subjects_dir / subject_id / 'mri' / 'transforms' / 'talairach.lta'
         cmd = f"cp {talairach_xfm_lta} {talairach_skull_lta}"
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
         cmd = f"cp {talairach_xfm_lta} {talairach_lta}"
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
 
         # Add xfm to nu
         cmd = f'mri_add_xform_to_header -c {talairach_xfm} {self.inputs.orig_nu_file} {nu_file}'
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
 
         return runtime
 
@@ -220,6 +222,7 @@ class NoccsegThresholdInputSpec(BaseInterfaceInputSpec):
     subject_id = Str(desc="subject id", mandatory=True)
     python_interpret = File(exists=True, mandatory=True, desc='the python interpret to use')
     reduce_to_aseg_py = File(exists=True, mandatory=True, desc="reduce to aseg")
+    threads = traits.Int(desc="threads", mandatory=True)
     # in_file = File(exists=True, mandatory=True, desc='name of file to process. Default: aparc.DKTatlas+aseg.orig.mgz')
 
     # mask_file = File(mandatory=True, desc='mri/mask.mgz')
@@ -251,13 +254,15 @@ class Noccseg(BaseInterface):
     def _run_interface(self, runtime):
         subjects_dir = Path(self.inputs.subjects_dir)
         subject_id = self.inputs.subject_id
+        threads = self.inputs.threads if self.inputs.threads else 0
+
         mask_file = subjects_dir / subject_id / 'mri' / 'mask.mgz'
         aseg_noCCseg_file = subjects_dir / subject_id / 'mri' / 'aseg.auto_noCCseg.mgz'
         in_file = subjects_dir / subject_id / "mri" / "aparc.DKTatlas+aseg.deep.mgz"
         cmd = f'{self.inputs.python_interpret} {self.inputs.reduce_to_aseg_py} ' \
               f'-i {in_file} ' \
               f'-o {aseg_noCCseg_file} --outmask {mask_file} --fixwm'
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
 
         return runtime
 
@@ -283,6 +288,8 @@ class Noccseg(BaseInterface):
 class UpdateAsegInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
+    threads = traits.Int(desc="threads", mandatory=True)
+
     python_interpret = File(exists=True, desc="python interpret", mandatory=True)
     paint_cc_file = File(exists=True, desc="FastSurfer/recon_surf/paint_cc_into_pred.py", mandatory=True)
     aseg_noCCseg_file = File(exists=True, desc="mri/aseg.auto_noCCseg.mgz", mandatory=True)
@@ -312,6 +319,8 @@ class UpdateAseg(BaseInterface):
     def _run_interface(self, runtime):
         subjects_dir = Path(self.inputs.subjects_dir)
         subject_id = self.inputs.subject_id
+        threads = self.inputs.threads if self.inputs.threads else 0
+
         aseg_auto_file = subjects_dir / subject_id / 'mri' / 'aseg.auto.mgz'
         cc_up_file = subjects_dir / subject_id / 'mri' / 'transforms' / 'cc_up.lta'
         aparc_aseg_file = subjects_dir / subject_id / 'mri' / 'aparc.DKTatlas+aseg.deep.withCC.mgz'
@@ -320,13 +329,13 @@ class UpdateAseg(BaseInterface):
         # 46 sec: (not sure if this is needed), requires norm.mgz
         cmd = f'mri_cc -aseg aseg.auto_noCCseg.mgz -o aseg.auto.mgz ' \
               f'-lta {cc_up_file} {self.inputs.subject_id}'
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
 
         # 0.8s
         cmd = f'{self.inputs.python_interpret} {self.inputs.paint_cc_file} ' \
               f'-in_cc {aseg_auto_file} -in_pred {self.inputs.seg_file} ' \
               f'-out {aparc_aseg_file}'
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
 
         return runtime
 
@@ -349,6 +358,8 @@ class UpdateAseg(BaseInterface):
 class SampleSegmentationToSurfaceInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subject dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
+    threads = traits.Int(desc="threads", mandatory=True)
+
     python_interpret = File(exists=True, desc="python interpret", mandatory=True)
     freesurfer_home = Directory(exists=True, desc="freesurfer_home", mandatory=True)
 
@@ -386,6 +397,8 @@ class SampleSegmentationToSurface(BaseInterface):
     def cmd(self, hemi):
         subjects_dir = Path(self.inputs.subjects_dir)
         subject_id = self.inputs.subject_id
+        threads = self.inputs.threads if self.inputs.threads else 0
+
         if hemi == 'lh':
             hemi_DKTatlaslookup_file = self.inputs.lh_DKTatlaslookup_file
             hemi_white_preaparc_file = subjects_dir / subject_id / "surf" / "lh.white.preaparc"
@@ -403,13 +416,13 @@ class SampleSegmentationToSurface(BaseInterface):
               f"-file {hemi_DKTatlaslookup_file} -projmm 0.6 -f 5  " \
               f"-surf white.preaparc {self.inputs.subject_id} {hemi} " \
               f"aparc.DKTatlas+aseg.orig.mgz aparc.DKTatlas.mapped.prefix.annot"
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
         cmd = f"{self.inputs.python_interpret} {self.inputs.smooth_aparc_file} " \
               f"--insurf {hemi_white_preaparc_file} " \
               f"--inaparc {hemi_aparc_DKTatlas_mapped_prefix_file} " \
               f"--incort {hemi_cortex_label_file} " \
               f"--outaparc {hemi_aparc_DKTatlas_mapped_file}"
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
 
     def _run_interface(self, runtime):
         # sample input segmentation (aparc.DKTatlas+aseg orig) onto wm surface:
