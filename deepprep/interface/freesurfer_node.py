@@ -12,6 +12,8 @@ import time
 class BrainmaskInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
+    threads = traits.Int(desc="threads", mandatory=True)
+
     need_t1 = traits.BaseCBool(desc='bool', mandatory=True)
     nu_file = File(exists=True, desc="mri/nu.mgz", mandatory=True)
     mask_file = File(exists=True, desc="mri/mask.mgz", mandatory=True)
@@ -36,6 +38,8 @@ class Brainmask(BaseInterface):
     def _run_interface(self, runtime):
         subjects_dir = Path(self.inputs.subjects_dir)
         subject_id = self.inputs.subject_id
+        threads = self.inputs.threads if self.inputs.threads else 0
+        
         brainmask_file = subjects_dir / subject_id / 'mri' / 'brainmask.mgz'
         norm_file = subjects_dir / subject_id / 'mri' / 'norm.mgz'
         T1_file = subjects_dir / subject_id / 'mri' / 'T1.mgz'
@@ -43,19 +47,24 @@ class Brainmask(BaseInterface):
         # create norm by masking nu 0.7s
         need_t1 = self.inputs.need_t1
         cmd = f'mri_mask {self.inputs.nu_file} {self.inputs.mask_file} {norm_file}'
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
 
         if need_t1:  # T1.mgz 相比 orig.mgz 更平滑，对比度更高
             # create T1.mgz from nu 96.9s
-            cmd = f'mri_normalize -g 1 -mprage {self.inputs.nu_file} {T1_file}'
-            run_cmd_with_timing(cmd)
+            threads = self.inputs.threads if self.inputs.threads else 0
+            os.environ['OMP_NUM_THREADS'] = str(threads)
+            os.environ['FS_OMP_NUM_THREADS'] = str(threads)
+            os.environ['ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS'] = str(threads)
+
+            cmd = f'mri_normalize -seed 1234 -g 1 -mprage {self.inputs.nu_file} {T1_file}'
+            run_cmd_with_timing(cmd, threads)
 
             # create brainmask by masking T1
             cmd = f'mri_mask {T1_file} {self.inputs.mask_file} {brainmask_file}'
-            run_cmd_with_timing(cmd)
+            run_cmd_with_timing(cmd, threads)
         else:
             cmd = f'cp {norm_file} {brainmask_file}'
-            run_cmd_with_timing(cmd)
+            run_cmd_with_timing(cmd, threads)
 
         return runtime
 
@@ -86,7 +95,7 @@ class OrigAndRawavgInputSpec(BaseInterfaceInputSpec):
     t1w_files = traits.List(desc='t1w path or t1w paths', mandatory=True)
     subjects_dir = Directory(exists=True, desc='subjects dir', mandatory=True)
     subject_id = Str(desc='subject id', mandatory=True)
-    threads = traits.Int(desc='threads')
+    threads = traits.Int(desc="threads", mandatory=True)
 
 
 class OrigAndRawavgOutputSpec(TraitedSpec):
@@ -102,9 +111,13 @@ class OrigAndRawavg(BaseInterface):
         threads = self.inputs.threads if self.inputs.threads else 0
         fsthreads = get_freesurfer_threads(threads)
 
+        os.environ['OMP_NUM_THREADS'] = str(threads)
+        os.environ['FS_OMP_NUM_THREADS'] = str(threads)
+        os.environ['ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS'] = str(threads)
+
         files = ' -i '.join(self.inputs.t1w_files)
         cmd = f"recon-all -subject {self.inputs.subject_id} -i {files} -motioncor {fsthreads}"
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
         return runtime
 
     def _list_outputs(self):
@@ -124,7 +137,7 @@ class OrigAndRawavg(BaseInterface):
 class FilledInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc='subjects dir', mandatory=True)
     subject_id = Str(desc='subject id', mandatory=True)
-    threads = traits.Int(desc='threads')
+    threads = traits.Int(desc="threads", mandatory=True)
 
     aseg_auto_file = File(exists=True, desc='mri/aseg.auto.mgz', mandatory=True)
     norm_file = File(exists=True, desc='mri/norm.mgz', mandatory=True)
@@ -154,15 +167,15 @@ class Filled(BaseInterface):
         fsthreads = get_freesurfer_threads(threads)
 
         cmd = f'recon-all -subject {self.inputs.subject_id} -asegmerge {fsthreads}'
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
         cmd = f'recon-all -subject {self.inputs.subject_id} -normalization2 {fsthreads}'
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
         cmd = f'recon-all -subject {self.inputs.subject_id} -maskbfs {fsthreads}'
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
         cmd = f'recon-all -subject {self.inputs.subject_id} -segmentation {fsthreads}'
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
         cmd = f'recon-all -subject {self.inputs.subject_id} -fill {fsthreads}'
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
         return runtime
 
     def _list_outputs(self):
@@ -186,7 +199,7 @@ class Filled(BaseInterface):
 class WhitePreaparc1InputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc='subjects_dir', mandatory=True)
     subject_id = Str(desc="sub-xxx", mandatory=True)
-    threads = traits.Int(desc='threads')
+    threads = traits.Int(desc="threads", mandatory=True)
 
     # aseg_presurf = File(exists=True, desc="mri/aseg.presurf.mgz", mandatory=True)
     # brain_finalsurfs = File(exists=True, desc="mri/brain.finalsurfs.mgz", mandatory=True)
@@ -225,15 +238,15 @@ class WhitePreaparc1(BaseInterface):
     def cmd(self, hemi):
         threads = self.inputs.threads if self.inputs.threads else 0
         cmd = f"mris_make_surfaces -aseg aseg.presurf -white white.preaparc -whiteonly " \
-              f"-noaparc -mgz -T1 brain.finalsurfs {self.inputs.subject_id} {hemi}"  # TODO: if threads is useful
-        run_cmd_with_timing(cmd)
+              f"-noaparc -mgz -T1 brain.finalsurfs {self.inputs.subject_id} {hemi}"
+        run_cmd_with_timing(cmd, threads)
 
         # TODO issue: use white.preaparc replace white
         white_preaparc_file = Path(self.inputs.subjects_dir) / self.inputs.subject_id / 'surf' / f'{hemi}.white.preaparc'
         white_file = Path(self.inputs.subjects_dir) / self.inputs.subject_id / 'surf' / f'{hemi}.white'
         cmd = f"cp {white_preaparc_file} {white_file}"
 
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
 
     def _run_interface(self, runtime):
         threads = self.inputs.threads if self.inputs.threads else 0
@@ -241,7 +254,7 @@ class WhitePreaparc1(BaseInterface):
         fsthreads = get_freesurfer_threads(threads)
         cmd = f'recon-all -subject {self.inputs.subject_id} -autodetgwstats -white-preaparc -cortex-label ' \
               f'-no-isrunning {fsthreads}'
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
 
         return runtime
 
@@ -276,7 +289,7 @@ class WhitePreaparc2InputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc='subjects dir', mandatory=True)
     subject_id = Str(desc="sub-xxx", mandatory=True)
     hemi = Str(desc="lh", mandatory=True)
-    threads = traits.Int(desc='threads')
+    threads = traits.Int(desc="threads", mandatory=True)
 
     aseg_presurf = File(exists=True, desc="mri/aseg.presurf.mgz", mandatory=True)
     brain_finalsurfs = File(exists=True, desc="mri/brain.finalsurfs.mgz", mandatory=True)
@@ -308,7 +321,7 @@ class WhitePreaparc2(BaseInterface):
         fsthreads = get_freesurfer_threads(threads)
         cmd = f'recon-all -subject {self.inputs.subject_id} -hemi {self.inputs.hemi} ' \
               f'-autodetgwstats -white-preaparc -cortex-label -no-isrunning {fsthreads}'
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
         return runtime
 
     def _list_outputs(self):
@@ -325,7 +338,7 @@ class WhitePreaparc2(BaseInterface):
 class InflatedSphereThresholdInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     subject_id = traits.String(mandatory=True, desc='sub-xxx')
-    threads = traits.Int(desc='threads')
+    threads = traits.Int(desc="threads", mandatory=True)
     lh_white_preaparc_file = File(exists=True, desc='surf/lh.white.preaparc')
     rh_white_preaparc_file = File(exists=True, desc='surf/rh.white.preaparc')
 
@@ -353,20 +366,18 @@ class InflatedSphere(BaseInterface):
     def cmd(self, hemi):
         # set threads
         threads = self.inputs.threads if self.inputs.threads else 0
-        os.environ['OMP_NUM_THREADS'] = str(threads)
-        os.environ['FS_OMP_NUM_THREADS'] = str(threads)
-        os.environ['ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS'] = str(threads)
+        threads = threads // 2
 
         hemi_white_preaparc = Path(self.inputs.subjects_dir) / self.inputs.subject_id / 'surf' / f'{hemi}.white.preaparc'
         hemi_smoothwm = Path(self.inputs.subjects_dir) / self.inputs.subject_id / 'surf' / f'{hemi}.smoothwm'
-        _cmd = f'mris_smooth -n 3 -nw  {hemi_white_preaparc} {hemi_smoothwm}'
-        run_cmd_with_timing(_cmd)
+        cmd = f'mris_smooth -n 3 -nw  {hemi_white_preaparc} {hemi_smoothwm}'
+        run_cmd_with_timing(cmd, threads)
         hemi_inflate = Path(self.inputs.subjects_dir) / self.inputs.subject_id / 'surf' / f'{hemi}.inflated'
-        _cmd = f'mris_inflate {hemi_smoothwm} {hemi_inflate}'
-        run_cmd_with_timing(_cmd)
+        cmd = f'mris_inflate {hemi_smoothwm} {hemi_inflate}'
+        run_cmd_with_timing(cmd, threads)
         hemi_sphere = Path(self.inputs.subjects_dir) / self.inputs.subject_id / 'surf' / f'{hemi}.sphere'
-        _cmd = f'mris_sphere -seed 1234 {hemi_inflate} {hemi_sphere}'
-        run_cmd_with_timing(_cmd)
+        cmd = f'mris_sphere -seed 1234 {hemi_inflate} {hemi_sphere}'
+        run_cmd_with_timing(cmd, threads)
 
     def _run_interface(self, runtime):
         multipool(self.cmd, Multi_Num=2)
@@ -396,7 +407,7 @@ class InflatedSphere(BaseInterface):
 class WhitePialThickness1InputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc='subjects dir', mandatory=True)
     subject_id = traits.Str(desc="sub-xxx", mandatory=True)
-    threads = traits.Int(desc='threads')
+    threads = traits.Int(desc="threads", mandatory=True)
 
     lh_white_preaparc = File(exists=True, desc="surf/lh.white.preaparc", mandatory=True)
     rh_white_preaparc = File(exists=True, desc="surf/rh.white.preaparc", mandatory=True)
@@ -457,10 +468,11 @@ class WhitePialThickness1(BaseInterface):
         # TODO 这里使用lh.smoothwm生成了lh.white,调用了lh.aparc.annot, 暂时去除，使用white.preaparc
         # TODO issue: use white.preaparc replace white
         # cmd = f"recon-all -subject {subject_id} -white -no-isrunning {fsthreads}"
-        # run_cmd_with_timing(cmd)
+        # run_cmd_with_timing(cmd, threads)
 
+        # TODO: 这里的流程是左右脑串行的，所以理论上可以节省一半的时间，大概190s
         cmd = f"recon-all -subject {subject_id} -pial -no-isrunning {fsthreads}"
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
 
         return runtime
 
@@ -489,12 +501,20 @@ class WhitePialThickness1(BaseInterface):
         return outputs
 
     def create_sub_node(self, settings):
-        from interface.create_node_structure import create_BalabelsMult_node, create_Cortribbon_node
+        # from interface.create_node_structure import create_BalabelsMult_node, create_Cortribbon_node
+        #
+        # node = [create_BalabelsMult_node(self.inputs.subject_id, settings),
+        #         create_Cortribbon_node(self.inputs.subject_id, settings),
+        #         ]
+
+        # TODO: 好像可以把Parcstats加入进行，一起并行, 可以进行测试
+        from interface.create_node_structure import create_BalabelsMult_node, create_Cortribbon_node, \
+            create_Curvstats_node
 
         node = [create_BalabelsMult_node(self.inputs.subject_id, settings),
                 create_Cortribbon_node(self.inputs.subject_id, settings),
+                create_Curvstats_node(self.inputs.subject_id, settings),
                 ]
-
         return node  # node list
 
 
@@ -508,7 +528,7 @@ class CurvstatsInputSpec(BaseInterfaceInputSpec):
     rh_curv = File(exists=True, desc="surf/rh.curv", mandatory=True)
     lh_sulc = File(exists=True, desc="surf/lh.sulc", mandatory=True)
     rh_sulc = File(exists=True, desc="surf/rh.sulc", mandatory=True)
-    threads = traits.Int(desc='threads')
+    threads = traits.Int(desc="threads", mandatory=True)
 
 
 class CurvstatsOutputSpec(TraitedSpec):
@@ -533,7 +553,7 @@ class Curvstats(BaseInterface):
 
         # in FS7 curvstats moves here
         cmd = f"recon-all -subject {subject_id} -curvstats -no-isrunning {fsthreads}"
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
 
     def _run_interface(self, runtime):
         self.cmd()
@@ -558,7 +578,7 @@ class Curvstats(BaseInterface):
 class CortribbonInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     subject_id = Str(desc="sub-xxx", mandatory=True)
-    threads = traits.Int(desc='threads')
+    threads = traits.Int(desc="threads", mandatory=True)
 
     aseg_presurf_file = File(exists=True, desc="mri/aseg.presurf.mgz", mandatory=True)
     lh_white = File(exists=True, desc="surf/lh.white", mandatory=True)
@@ -592,7 +612,7 @@ class Cortribbon(BaseInterface):
         # wmparc needs ribbon, probably other stuff (aparc to aseg etc).
         # could be stripped but lets run it to have these measures below
         cmd = f"recon-all -subject {subject_id} -cortribbon {fsthreads}"
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
 
         return runtime
 
@@ -616,7 +636,7 @@ class Cortribbon(BaseInterface):
 class ParcstatsInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     subject_id = Str(desc="sub-xxx", mandatory=True)
-    threads = traits.Int(desc='threads')
+    threads = traits.Int(desc="threads", mandatory=True)
 
     lh_aparc_annot = File(exists=True, desc="label/lh.aparc.annot", mandatory=True)
     rh_aparc_annot = File(exists=True, desc="label/rh.aparc.annot", mandatory=True)
@@ -657,7 +677,7 @@ class Parcstats(BaseInterface):
         fsthreads = get_freesurfer_threads(threads)
 
         cmd = f"recon-all -subject {subject_id} -parcstats -pctsurfcon -hyporelabel -apas2aseg {fsthreads}"
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
 
         return runtime
 
@@ -686,7 +706,7 @@ class Parcstats(BaseInterface):
 class PctsurfconInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     subject_id = Str(desc="sub-xxx", mandatory=True)
-    threads = traits.Int(desc='threads')
+    threads = traits.Int(desc="threads", mandatory=True)
     rawavg_file = File(exists=True, desc="mri/rawavg.mgz", mandatory=True)
     orig_file = File(exists=True, desc="mri/orig.mgz", mandatory=True)
     lh_cortex_label = File(exists=True, desc="label/lh.cortex.label", mandatory=True)
@@ -720,7 +740,7 @@ class Pctsurfcon(BaseInterface):
         fsthreads = get_freesurfer_threads(threads)
 
         cmd = f"recon-all -subject {self.inputs.subject_id} -pctsurfcon {fsthreads}"
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
 
         return runtime
 
@@ -739,7 +759,7 @@ class Pctsurfcon(BaseInterface):
 class HyporelabelInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
-    threads = traits.Int(desc='threads')
+    threads = traits.Int(desc="threads", mandatory=True)
     aseg_presurf = File(exists=True, desc="mri/aseg.presurf.mgz", mandatory=True)
     lh_white = File(exists=True, desc="surf/lh.white", mandatory=True)
     rh_white = File(exists=True, desc="surf/rh.white", mandatory=True)
@@ -765,7 +785,7 @@ class Hyporelabel(BaseInterface):
         fsthreads = get_freesurfer_threads(threads)
 
         cmd = f"recon-all -subject {self.inputs.subject_id} -hyporelabel {fsthreads}"
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
 
         return runtime
 
@@ -781,7 +801,7 @@ class Hyporelabel(BaseInterface):
 class JacobianAvgcurvCortparcThresholdInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     subject_id = traits.Str(mandatory=True, desc='sub-xxx')
-    threads = traits.Int(desc='threads')
+    threads = traits.Int(desc="threads", mandatory=True)
 
 
 class JacobianAvgcurvCortparcThresholdOutputSpec(TraitedSpec):
@@ -810,7 +830,7 @@ class JacobianAvgcurvCortparc(BaseInterface):
         # create nicer inflated surface from topo fixed (not needed, just later for visualization)
         cmd = f"recon-all -subject {subject_id} -jacobian_white -avgcurv -cortparc " \
               f"-no-isrunning {fsthreads}"
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
         return runtime
 
     def _list_outputs(self):
@@ -837,7 +857,7 @@ class JacobianAvgcurvCortparc(BaseInterface):
 class SegstatsInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
-    threads = traits.Int(desc='threads')
+    threads = traits.Int(desc="threads", mandatory=True)
 
     brainmask_file = File(exists=True, desc="mri/brainmask.mgz", mandatory=True)
     norm_file = File(exists=True, desc="mri/norm.mgz", mandatory=True)
@@ -873,7 +893,7 @@ class Segstats(BaseInterface):
         fsthreads = get_freesurfer_threads(threads)
 
         cmd = f"recon-all -subject {subject_id} -segstats  {fsthreads}"
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
 
         return runtime
 
@@ -892,7 +912,7 @@ class Segstats(BaseInterface):
 class Aseg7InputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     subject_id = Str(desc="sub-xxx", mandatory=True)
-    threads = traits.Int(desc='threads')
+    threads = traits.Int(desc="threads", mandatory=True)
 
     aseg_file = File(exists=True, desc="mri/aseg.mgz", mandatory=True)
     lh_cortex_label = File(exists=True, desc="label/lh.cortex.label", mandatory=True)
@@ -930,7 +950,7 @@ class Aseg7(BaseInterface):
               f'--lh-pial {self.inputs.lh_pial} --rh-annot {self.inputs.rh_aparc_annot} 2000 ' \
               f'--rh-cortex-mask {self.inputs.rh_cortex_label} --rh-white {self.inputs.rh_white} ' \
               f'--rh-pial {self.inputs.rh_pial} '
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
         return runtime
 
     def _list_outputs(self):
@@ -957,7 +977,7 @@ class Aseg7(BaseInterface):
 class Aseg7ToAsegInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     subject_id = Str(desc="sub-xxx", mandatory=True)
-    threads = traits.Int(desc='threads')
+    threads = traits.Int(desc="threads", mandatory=True)
 
     # aseg_presurf_hypos  = File(exists=True, desc="mri/aseg.presurf.hypos.mgz", mandatory=True)
     # ribbon_file = File(exists=True, desc="mri/ribbon.mgz", mandatory=True)
@@ -988,7 +1008,7 @@ class Aseg7ToAseg(BaseInterface):
         fsthreads = get_freesurfer_threads(threads)
 
         cmd = f"recon-all -subject {self.inputs.subject_id} -hyporelabel -apas2aseg {fsthreads}"
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads)
 
         return runtime
 
@@ -1004,7 +1024,7 @@ class Aseg7ToAseg(BaseInterface):
 class BalabelsMultInputSpec(BaseInterfaceInputSpec):
     subjects_dir = Directory(exists=True, desc="subjects dir", mandatory=True)
     subject_id = Str(desc="subject id", mandatory=True)
-    threads = traits.Int(desc='threads')
+    threads = traits.Int(desc="threads", mandatory=True)
 
     lh_sphere_reg = File(exists=True, desc="surf/lh.sphere.reg", mandatory=True)
     rh_sphere_reg = File(exists=True, desc="surf/rh.sphere.reg", mandatory=True)
@@ -1077,7 +1097,7 @@ class BalabelsMult(BaseInterface):
                 cmd = f"mri_label2label --srcsubject fsaverage --srclabel {self.inputs.fsaverage_label_dir}/{hemi}.{file_name[i]} " \
                       f"--trgsubject {subject_id} --trglabel {sub_label_dir}/{hemi}.{file_name[i]} " \
                       f"--hemi {hemi} --regmethod surface"
-                run_cmd_with_timing(cmd)
+                run_cmd_with_timing(cmd, threads=1)
 
         multi_process(file_names, Run_1)
 
@@ -1102,7 +1122,7 @@ class BalabelsMult(BaseInterface):
                 cmd = f"mri_label2label --srcsubject fsaverage --srclabel {self.inputs.fsaverage_label_dir}/{hemi}.{part_file_name[i]} " \
                       f"--trgsubject {subject_id} --trglabel {sub_label_dir}/{hemi}.{part_file_name[i]} " \
                       f"--hemi {hemi} --regmethod surface"
-                run_cmd_with_timing(cmd)
+                run_cmd_with_timing(cmd, threads=1)
 
         multi_process(part_file_names, Run_2)
         cmd = f'cd {sub_label_dir} && mris_label2annot --s {subject_id} --hemi {hemi} --ctab {self.inputs.freesurfer_dir}/average/colortable_BA.txt --l {hemi}.BA1_exvivo.label ' \
@@ -1110,22 +1130,22 @@ class BalabelsMult(BaseInterface):
               f'--l {hemi}.BA4p_exvivo.label --l {hemi}.BA6_exvivo.label --l {hemi}.BA44_exvivo.label --l {hemi}.BA45_exvivo.label ' \
               f'--l {hemi}.V1_exvivo.label --l {hemi}.V2_exvivo.label --l {hemi}.MT_exvivo.label --l {hemi}.perirhinal_exvivo.label ' \
               f'--l {hemi}.entorhinal_exvivo.label --a BA_exvivo --maxstatwinner --noverbose'
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads=1)
         cmd = f'cd {sub_label_dir} && mris_label2annot --s {subject_id} --hemi {hemi} --ctab {self.inputs.freesurfer_dir}/average/colortable_BA.txt ' \
               f'--l {hemi}.BA1_exvivo.thresh.label --l {hemi}.BA2_exvivo.thresh.label --l {hemi}.BA3a_exvivo.thresh.label ' \
               f'--l {hemi}.BA3b_exvivo.thresh.label --l {hemi}.BA4a_exvivo.thresh.label --l {hemi}.BA4p_exvivo.thresh.label ' \
               f'--l {hemi}.BA6_exvivo.thresh.label --l {hemi}.BA44_exvivo.thresh.label --l {hemi}.BA45_exvivo.thresh.label ' \
               f'--l {hemi}.V1_exvivo.thresh.label --l {hemi}.V2_exvivo.thresh.label --l {hemi}.MT_exvivo.thresh.label ' \
               f'--l {hemi}.perirhinal_exvivo.thresh.label --l {hemi}.entorhinal_exvivo.thresh.label --a BA_exvivo.thresh --maxstatwinner --noverbose'
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads=1)
         cmd = f'mris_anatomical_stats -th3 -mgz -f {sub_stats_dir}/{hemi}.BA_exvivo.stats -b ' \
               f'-a {sub_label_dir}/{hemi}.BA_exvivo.annot ' \
               f'-c {sub_label_dir}/BA_exvivo.ctab {subject_id} {hemi} white'
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads=1)
         cmd = f'mris_anatomical_stats -th3 -mgz -f {sub_stats_dir}/{hemi}.BA_exvivo.thresh.stats -b ' \
               f'-a {sub_label_dir}/{hemi}.BA_exvivo.thresh.annot ' \
               f'-c {sub_label_dir}/BA_exvivo.thresh.ctab {subject_id} {hemi} white'
-        run_cmd_with_timing(cmd)
+        run_cmd_with_timing(cmd, threads=1)
 
     def _run_interface(self, runtime):
         subjects_dir = Path(self.inputs.subjects_dir)
