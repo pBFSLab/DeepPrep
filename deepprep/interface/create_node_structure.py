@@ -966,7 +966,7 @@ def create_BalabelsMult_node(subject_id: str, settings):
 
     BalabelsMult_node.base_dir = Path(workflow_cached_dir) / subject_id
     THREADS = settings.FS_THREADS
-    CPU_NUM = THREADS
+    CPU_NUM = THREADS // 2
     RAM_MB = settings.SMRI.BalabelsMult.RAM_MB
     BalabelsMult_node.inputs.threads = THREADS
     BalabelsMult_node.source = Source(CPU_n=CPU_NUM, RAM_MB=RAM_MB)
