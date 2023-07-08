@@ -13,16 +13,22 @@ from utils.interp import resample_sphere_surface_barycentric, upsample_std_spher
 from utils.auxi_data import get_points_num_by_ico_level
 
 
-def interp_dir_single(dir_recon: str, dir_rigid: str, dir_fixed: str, ico_level: str, is_rigid=False):
+def interp_dir_single(dir_recon: str, dir_rigid: str, dir_fixed: str, ico_level: str, hemis=None, is_rigid=False):
     """
     预处理：将native空间插值到fsaverage空间
     """
+    if hemis is None:
+        hemis = ['lh', 'rh']
+    elif isinstance(hemis, str):
+        hemis = [hemis]
+    elif isinstance(hemis, list):
+        pass
 
     surf_dir_recon = os.path.join(dir_recon, 'surf')
     surf_dir_rigid = os.path.join(dir_rigid, 'surf')
     if not os.path.exists(surf_dir_rigid):
         os.makedirs(surf_dir_rigid, exist_ok=True)
-    for hemisphere in ['lh', 'rh']:
+    for hemisphere in hemis:
         sphere_fixed_file = os.path.join(dir_fixed, ico_level, 'surf', f'{hemisphere}.sphere')
 
         # ## 将刚性配准的结果插值到fsaverageN
@@ -333,7 +339,7 @@ def train_val(config):
     if config['validation'] is True:
         # 1. interp file
         interp_dir_single(config["dir_predict_recon"], config["dir_predict_rigid"], config["dir_fixed"],
-                          'fsaverage6', is_rigid=config['is_rigid'])
+                          'fsaverage6', hemis=config['hemisphere'], is_rigid=config['is_rigid'])
 
         models = []
         for model_file in config['model_files'][:config["ico_index"] + 1]:

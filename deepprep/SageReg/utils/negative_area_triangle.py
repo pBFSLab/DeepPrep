@@ -123,8 +123,10 @@ def single_remove_negative_area(sphere, sphere_removed, device='cuda'):
         xyz_sphere_removed, count_final, times = remove_negative_area(faces_sphere, xyz_sphere)
         # print(f'negative area: {count_orig}   {count_final}  {times}')
         if sphere_removed == sphere:
-            os.system(f'rm {sphere}')
+            os.system(f'mv {sphere} {sphere}.bak')
         nib.freesurfer.write_geometry(sphere_removed, xyz_sphere_removed.cpu().numpy(), faces_sphere.cpu().numpy())
+        if os.path.exists(f'{sphere}.bak'):
+            os.system(f'rm {sphere}.bak')
         # print(f'remove negative area triangle: >>> {sphere_removed}')
     else:
         print(f'negative area: {count_orig}   {count_final}  {times}')
