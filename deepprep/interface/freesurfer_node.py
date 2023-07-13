@@ -84,7 +84,7 @@ class Brainmask(BaseInterface):
         if settings.RECON_ONLY:
             node = create_UpdateAseg_node(self.inputs.subject_id, settings)
         else:
-            from interface.create_node_bold_new import create_VxmRegistraion_node
+            from interface.create_node_bold import create_VxmRegistraion_node
             node = [create_UpdateAseg_node(self.inputs.subject_id, settings),
                     create_VxmRegistraion_node(self.inputs.subject_id, settings.FMRI.TASK,
                                                settings.FMRI.ATLAS_SPACE, settings.FMRI.PREPROCESS_TYPE, settings)]
@@ -965,7 +965,7 @@ class Aseg7(BaseInterface):
         if settings.RECON_ONLY:
             node = []
         else:
-            from interface.create_node_bold_new import create_Register_node
+            from interface.create_node_bold import create_Register_node
             node = create_Register_node(self.inputs.subject_id,
                                         settings.FMRI.TASK,
                                         settings.FMRI.ATLAS_SPACE,
