@@ -10,7 +10,13 @@ from nipype import config, logging
 from interface.run import set_envrion
 from interface.node_source import Source
 from interface.create_node_structure import create_OrigAndRawavg_node
-
+"""
+autor: 
+anning
+lincong
+youjia
+zhenyu
+"""
 
 def clear_is_running(subjects_dir: Path, subject_ids: list):
     for subject_id in subject_ids:

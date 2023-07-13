@@ -295,7 +295,7 @@ def init_func_sdc_wf(layout, bold_file, bold_mc=None, bold_mask=None, ref_image=
     # if len(estimator_key) > 1:
     #     config.loggers.workflow.warning(
     #         f"Several fieldmaps <{', '.join(estimator_key)}> are "
-    #         f"'IntendedFor' <{bold_file}>, using {estimator_key[0]}"
+    #         f"'IntendedFor' <{bold_mc_file}>, using {estimator_key[0]}"
     #     )
 
     # sdc_report = pe.Node(
@@ -381,7 +381,7 @@ def init_func_sdc_wf(layout, bold_file, bold_mc=None, bold_mask=None, ref_image=
         # (final_boldref_wf, sdc_report, [
         #     ("outputnode.ref_image", "after"),
         #     ("outputnode.bold_mask", "wm_seg")]),
-        # (inputnode, ds_report_sdc, [("bold_file", "source_file")]),
+        # (inputnode, ds_report_sdc, [("bold_mc_file", "source_file")]),
         # (sdc_report, ds_report_sdc, [("out_report", "in_file")]),
         (unwarp_wf, bold_final, [("outputnode.corrected", "bold")]),
         (unwarp_wf, ds_sdc_wf, [('outputnode.corrected', "sdc")]),  # Connect DataSink with the relevant nodes
@@ -393,7 +393,7 @@ def init_func_sdc_wf(layout, bold_file, bold_mc=None, bold_mask=None, ref_image=
     #     (unwarp_wf, bold_final, [("outputnode.corrected", "bold")]),
     #     # remaining workflow connections
     #     # (unwarp_wf, final_boldref_wf, [
-    #     #     ("outputnode.corrected", "inputnode.bold_file"),
+    #     #     ("outputnode.corrected", "inputnode.bold_mc_file"),
     #     # ]),
     #     # (unwarp_wf, bold_t1_trans_wf, [
     #     #     # TEMPORARY: For the moment we can't use frame-wise fieldmaps
@@ -491,7 +491,7 @@ BIDS structure for this particular subject.
     # func_sdc_wfs = []
     # has_fieldmap = bool(fmap_estimators)
     # for data in subject_datas['bold']:
-    #     func_sdc_wf = init_func_sdc_wf(bold_file=data,
+    #     func_sdc_wf = init_func_sdc_wf(bold_mc_file=data,
     #                                    bold_mask=None,
     #                                    ref_image=None,
     #                                    has_fieldmap=has_fieldmap)
@@ -505,7 +505,7 @@ BIDS structure for this particular subject.
     has_fieldmap = bool(fmap_estimators)
     for data in subject_datas:
         func_sdc_wf = init_func_sdc_wf(layout,
-                                       bold_file=data['bold_file'],
+                                       bold_file=data['bold_mc_file'],
                                        bold_mc=data['bold_mc'],
                                        bold_mask=data['bold_mask'],
                                        ref_image=data['ref_image'],
@@ -573,7 +573,7 @@ def select_subject_bold_data(bids_bolds, preprocess_dir: Path, subject_id: str):
     for idx, bids_bold in enumerate(bids_bolds):
         run = f'{idx + 1:03}'
         data = {
-            'bold_file': bids_bold.path,
+            'bold_mc_file': bids_bold.path,
             'bold_mc': f'{subject_dir}/{run}/sub-{subject_id}_bld_rest_reorient_skip_faln_mc.nii.gz',
             'bold_mask': f'{subject_dir}/{run}/sub-{subject_id}.brainmask.bin.nii.gz',
             'ref_image': f'{subject_dir}/{run}/template.nii.gz',
