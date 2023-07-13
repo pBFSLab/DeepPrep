@@ -360,87 +360,6 @@ def create_VxmRegNormMNI152_node(subject_id: str, task: str, atlas_type: str, pr
     return VxmRegNormMNI152_node
 
 
-# def create_RestGauss_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str, settings):
-#     workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
-#     derivative_deepprep_path = Path(settings.BOLD_PREPROCESS_DIR)
-#     data_path = Path(settings.BIDS_DIR)
-#     subjects_dir = Path(settings.SUBJECTS_DIR)
-#
-#     RestGauss_node = Node(RestGauss(), name=f'{subject_id}_fMRI_RestGauss_node')
-#     RestGauss_node.inputs.subject_id = subject_id
-#     RestGauss_node.inputs.subjects_dir = subjects_dir
-#     RestGauss_node.inputs.data_path = data_path
-#     RestGauss_node.inputs.task = task
-#     RestGauss_node.inputs.derivative_deepprep_path = derivative_deepprep_path
-#     RestGauss_node.inputs.atlas_type = atlas_type
-#     RestGauss_node.inputs.preprocess_method = preprocess_method
-#
-#     RestGauss_node.base_dir = workflow_cached_dir / subject_id
-#     RestGauss_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=2000, IO_write_MB=0, IO_read_MB=0)
-#
-#     return RestGauss_node
-
-
-# def create_RestBandpass_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str, settings):
-#     workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
-#     derivative_deepprep_path = Path(settings.BOLD_PREPROCESS_DIR)
-#     data_path = Path(settings.BIDS_DIR)
-#
-#     RestBandpass_node = Node(RestBandpass(), name=f'{subject_id}_fMRI_RestBandpass_node')
-#     RestBandpass_node.inputs.subject_id = subject_id
-#     RestBandpass_node.inputs.data_path = data_path
-#     RestBandpass_node.inputs.task = task
-#     RestBandpass_node.inputs.derivative_deepprep_path = derivative_deepprep_path
-#     RestBandpass_node.inputs.atlas_type = atlas_type
-#     RestBandpass_node.inputs.preprocess_method = preprocess_method
-#
-#     RestBandpass_node.base_dir = workflow_cached_dir / subject_id
-#     RestBandpass_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=3000, IO_write_MB=0, IO_read_MB=0)
-#
-#     return RestBandpass_node
-
-
-# def create_RestRegression_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str, settings):
-#     workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
-#     derivative_deepprep_path = Path(settings.BOLD_PREPROCESS_DIR)
-#     data_path = Path(settings.BIDS_DIR)
-#     subjects_dir = Path(settings.SUBJECTS_DIR)
-#
-#     RestRegression_node = Node(RestRegression(), name=f'{subject_id}_fMRI_RestRegression_node')
-#     RestRegression_node.inputs.subject_id = subject_id
-#     RestRegression_node.inputs.subjects_dir = subjects_dir
-#     RestRegression_node.inputs.data_path = data_path
-#     RestRegression_node.inputs.task = task
-#     RestRegression_node.inputs.derivative_deepprep_path = derivative_deepprep_path
-#     RestRegression_node.inputs.atlas_type = atlas_type
-#     RestRegression_node.inputs.preprocess_method = preprocess_method
-#
-#     RestRegression_node.base_dir = workflow_cached_dir / subject_id
-#     RestRegression_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=4000, IO_write_MB=20, IO_read_MB=40)
-#
-#     return RestRegression_node
-
-# def create_Smooth_node(subject_id: str, task: str, atlas_type: str, preprocess_method: str, settings):
-#     workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
-#     derivative_deepprep_path = Path(settings.BOLD_PREPROCESS_DIR)
-#     data_path = Path(settings.BIDS_DIR)
-#     mni152_brain_mask = Path(settings.BRAIN_MASK)
-#
-#     Smooth_node = Node(Smooth(), name=f'{subject_id}_Smooth_node')
-#     Smooth_node.inputs.subject_id = subject_id
-#     Smooth_node.inputs.task = task
-#     Smooth_node.inputs.data_path = data_path
-#     Smooth_node.inputs.atlas_type = atlas_type
-#     Smooth_node.inputs.preprocess_method = preprocess_method
-#     Smooth_node.inputs.MNI152_T1_2mm_brain_mask = mni152_brain_mask
-#     Smooth_node.inputs.derivative_deepprep_path = derivative_deepprep_path
-#
-#     Smooth_node.base_dir = workflow_cached_dir / subject_id
-#     Smooth_node.source = Source(CPU_n=0, GPU_MB=0, RAM_MB=7500, IO_write_MB=0, IO_read_MB=0)
-#
-#     return Smooth_node
-
-
 def create_node_t(settings):
     from interface.run import set_envrion
     set_envrion(threads=8)
@@ -538,29 +457,6 @@ def create_node_t(settings):
     # sub_node.run()
 
     return
-    # print('#####################################################7#####################################################')
-    # node = create_RestGauss_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
-    #                              preprocess_method=preprocess_method_test, settings=settings)
-    # node.run()
-    # # sub_node = node.interface.create_sub_node()
-    # # sub_node.run()
-    # print('#####################################################8#####################################################')
-    # node = create_RestBandpass_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
-    #                                 preprocess_method=preprocess_method_test, settings=settings)
-    # node.run()
-    # # sub_node = node.interface.create_sub_node()
-    # # sub_node.run()
-    # print('#####################################################6#####################################################')
-    #
-    # node = create_RestRegression_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
-    #                                   preprocess_method=preprocess_method_test, settings=settings)
-    # node.run()
-    # # sub_node = node.interface.create_sub_node()
-    # # sub_node.run()
-    # print('####################################################11####################################################')
-    # node = create_Smooth_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
-    #                           preprocess_method=preprocess_method_test, settings=settings)
-    # node.run()
 
 
 if __name__ == '__main__':

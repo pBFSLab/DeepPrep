@@ -474,7 +474,7 @@ def main(settings):
 
         if settings.BOLD_ONLY:
             scheduler.last_node_name = last_node_name_bold
-            from interface.create_node_bold_new import create_BoldSkipReorient_node
+            from interface.create_node_bold import create_BoldSkipReorient_node
             for subject_id in subject_ids:
                 assert check_recon_exists(subjects_dir, subject_id), f'ExistError: bold-only need Recon, ' \
                                                                      f'{subjects_dir / subject_id} must be exist'
@@ -490,7 +490,7 @@ def main(settings):
                 scheduler.node_all[node.name] = node
                 scheduler.nodes_ready.append(node.name)
         else:
-            from interface.create_node_bold_new import create_BoldSkipReorient_node
+            from interface.create_node_bold import create_BoldSkipReorient_node
             for subject_id, t1w_files in zip(subject_ids, t1w_filess):
                 node = create_OrigAndRawavg_node(subject_id=subject_id, t1w_files=t1w_files, settings=settings)
                 scheduler.node_all[node.name] = node
