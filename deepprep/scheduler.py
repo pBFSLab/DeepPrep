@@ -11,8 +11,6 @@ from interface.run import set_envrion
 from interface.node_source import Source
 from interface.create_node_structure import create_OrigAndRawavg_node
 
-logging_wf = logging.getLogger("nipype.workflow")  # TODO: 日志应该拆分为多个 scheduler和subject
-
 
 def clear_is_running(subjects_dir: Path, subject_ids: list):
     for subject_id in subject_ids:
@@ -38,8 +36,8 @@ def get_abs_path():
 
 
 class Scheduler:
-    def __init__(self, share_manager: Manager, subject_ids: list, last_node_name=None, auto_schedule=True,
-                 settings=None):
+    def __init__(self, share_manager: Manager, subject_ids: list, logger_wf: logging,
+                 last_node_name=None, auto_schedule=True, settings=None):
         self.last_node_name = last_node_name
         self.auto_schedule = auto_schedule  # 是否开启自动调度
         self.settings = settings
@@ -67,6 +65,7 @@ class Scheduler:
 
         # others
         self.iter_count = 0
+        self.logger_wf = logger_wf
 
     def check_node_source(self, source: Source):
         """
@@ -119,7 +118,7 @@ class Scheduler:
             node.run()
             print(f'run over {node.name}')
         except Exception as why:
-            logging_wf.error(f'Run_Node_Error : {why}')
+            print(f'Run_Node_Error : {why}')
             node_error.append(node.name)
             subject_error.append(node.inputs.subject_id)
         else:
@@ -136,8 +135,8 @@ class Scheduler:
             node.run()
             print(f'run over {node.name}')
         except Exception as why:
-            logging_wf.error(f'Run_Node_Error : {why}')
             if lock.acquire():
+                print(f'Run_Node_Error : {why}')
                 node_error.append(node.name)
                 subject_error.append(node.inputs.subject_id)
                 lock.release()
@@ -157,7 +156,7 @@ class Scheduler:
         2. 有新的node进入队列
         """
         lock.acquire()
-        if self.iter_count % 6 == 0:  # TODO CHG 如果是debug模式，才会在运行时输出以下内容
+        if self.iter_count % 6 == 0:
             print('Start run queue =================== ==================')
             print(f'start_datetime : {self.start_datetime}')
             print(f'nodes_running  : {len(self.s_nodes_running):3d}', self.s_nodes_running)
@@ -195,7 +194,7 @@ class Scheduler:
                             self.nodes_ready.append(sub_nodes.name)
                         self.node_all_add_nodes(sub_nodes)
                     except Exception as why:
-                        logging_wf.error(f'Create_Sub_Node_Error {node_name}: {why}')
+                        self.logger_wf.error(f'Create_Sub_Node_Error {node_name}: {why}')
 
         # ############# Start deal nodes_ready =================== ==================')
         # run node in nodes_ready
@@ -235,7 +234,7 @@ class Scheduler:
             if not run_new_node:
                 lock.acquire()
                 if len(self.s_nodes_running) == 0 and len(self.s_nodes_done) == 0:
-                    logging_wf.info('All task node Done!')
+                    self.logger_wf.info('All task node Done!')
                     break
                 lock.release()
                 print('No new node, wait 10s')
@@ -243,7 +242,7 @@ class Scheduler:
             self.iter_count += 1
 
 
-def parse_args(settings):
+def parse_args(settings, logger):
     """
     python3 deepprep.py
     --bids_dir
@@ -328,7 +327,7 @@ def parse_args(settings):
     # Warning：如果不平均T1，那么只运行sMRI的Recon流程，不运行fMRI流程
     # 原因为：fMRI流程与Recon结果相关，需要固定一个Recon结果。目前使用的是与subject_id相同的Recon结果（无 ses 和 run 的信息）。
     if not args.rawavg_t1:
-        logging_wf.warning('RAWAVG is set to False, so RECON_ONLY set to True')
+        logger.warning('RAWAVG is set to False, so RECON_ONLY set to True')
         settings.RECON_ONLY = True
 
     if args.bold_atlas_type is not None:
@@ -368,16 +367,17 @@ def parse_args(settings):
 
 
 def main(settings):
+    logging_wf = logging.getLogger("nipype.workflow")  # TODO: 日志应该拆分为多个 scheduler和subject
 
-    parse_args(settings)
+    parse_args(settings, logging_wf)
     bids_data_path = Path(settings.BIDS_DIR)
     subjects_dir = Path(settings.SUBJECTS_DIR)
     bold_preprocess_dir = Path(settings.BOLD_PREPROCESS_DIR)
     workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
 
     # check software path
-    assert Path(settings.FREESURFER_HOME).exists(), f'{settings.FREESURFER_HOME} not exist'
-    assert Path(settings.JAVA_HOME).exists(), f'{settings.JAVA_HOME} not exist'
+    assert Path(settings.FREESURFER_HOME).exists(), f'{settings.FREESURFER_HOME} not exist, please check the setting.toml'
+    assert Path(settings.JAVA_HOME).exists(), f'{settings.JAVA_HOME} not exist, please check the setting.toml'
     assert Path(settings.FASTCSR_MODEL_PATH).exists(), f'{settings.FASTCSR_MODEL_PATH} not exist'
     assert Path(settings.SAGEREG_MODEL_PATH).exists(), f'{settings.SAGEREG_MODEL_PATH} not exist'
     assert Path(settings.VXM_MODEL_PATH).exists(), f'{settings.VXM_MODEL_PATH} not exist'
@@ -424,7 +424,7 @@ def main(settings):
 
     layout = bids.BIDSLayout(str(bids_data_path), derivatives=False)
 
-    # TODO: bold文件应该提前集中获取，而不是在每个Bold Node都去使用bids.layout获取一次
+    # TODO: bold文件可以提前集中获取，而不是在每个Bold Node都去使用bids.layout获取一次
     t1w_filess = list()
     subject_ids = list()
     subject_dict = {}
@@ -451,15 +451,15 @@ def main(settings):
         logging_wf.warning(f'len(subject_ids == 0)')
         return
 
-    # 设置log目录位置  # TODO 增加到 settings [log] 下
+    # 设置log目录位置
     log_dir = workflow_cached_dir / f'log_{datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}'
     log_dir.mkdir(parents=True, exist_ok=True)
     config.update_config({'logging': {'log_directory': log_dir,
                                       'log_to_file': True}})
     logging.update_logging(config)
 
-    # TODO: force_recon 如果开启这个参数，强制重新跑recon结果，清理 'IsRunning.lh+rh' 文件
-    # TODO: 对已有的Recon结果具有破坏性，暂时关闭这个功能
+    # force_recon 如果开启这个参数，强制重新跑recon结果，清理 'IsRunning.lh+rh' 文件
+    # 对已有的Recon结果具有破坏性，暂时关闭这个功能
     # force_recon = settings.DANGER.FORCE_RECON
     # if force_recon:
     #     clear_is_running(subjects_dir=subjects_dir,
@@ -467,7 +467,7 @@ def main(settings):
 
     lock = Lock()
     with Manager() as share_manager:
-        scheduler = Scheduler(share_manager, subject_ids,
+        scheduler = Scheduler(share_manager, subject_ids, logging_wf,
                               last_node_name=last_node_name,
                               auto_schedule=auto_schedule,
                               settings=settings)
@@ -476,7 +476,8 @@ def main(settings):
             scheduler.last_node_name = last_node_name_bold
             from interface.create_node_bold_new import create_BoldSkipReorient_node
             for subject_id in subject_ids:
-                assert check_recon_exists(subjects_dir, subject_id), f'{subjects_dir / subject_id} must be exist'
+                assert check_recon_exists(subjects_dir, subject_id), f'ExistError: bold-only need Recon, ' \
+                                                                     f'{subjects_dir / subject_id} must be exist'
                 node = create_BoldSkipReorient_node(subject_id=subject_id, task=task, atlas_type=atlas_type,
                                                     preprocess_method=preprocess_method, settings=settings)
                 scheduler.node_all[node.name] = node
