@@ -149,7 +149,7 @@ class VxmRegistraion(BaseInterface):
 
     def create_sub_node(self, settings):
         if settings.BOLD_ONLY:
-            from deepprep.interface.create_node_bold_new import create_VxmRegNormMNI152_node
+            from deepprep.interface.create_node_bold import create_VxmRegNormMNI152_node
             node = create_VxmRegNormMNI152_node(self.inputs.subject_id,
                                                 self.inputs.task,
                                                 self.inputs.atlas_type,
