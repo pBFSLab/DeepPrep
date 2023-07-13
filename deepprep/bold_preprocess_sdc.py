@@ -322,7 +322,7 @@ def vxm_warp_bold_2mm(resid_t1, affine_file, warp_file, warped_file, verbose=Fal
 
 def warp_bold_2mm(subj_func_path, subj, workdir, norm_file, resid_file, reg_file, save_file, verbose=False):
     resid_t1_file = subj_func_path / f'{subj}_native_t1_2mm.nii.gz'
-    # native_bold_to_T1_2mm(residual_file, subj, subj_t1_file, reg_file, resid_t1_file)
+    # native_bold_to_T1_2mm(residual_file, subj, subj_t1_file, register_dat_file, resid_t1_file)
     resid_t1 = native_bold_to_T1_2mm_ants(resid_file, subj, norm_file, reg_file, resid_t1_file, workdir,
                                           verbose=verbose)
     warp_file = subj_func_path / f'sub-{subj}_warp.nii.gz'

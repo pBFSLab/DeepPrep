@@ -1,10 +1,10 @@
-from deepprep.interface.bold_node_new import *
+from deepprep.interface.bold_node import *
 from deepprep.interface.vxm_node import *
 from deepprep.interface.node_source import Source
 
 from nipype import Node
 
-"""环境变量
+"""环境变量f
 subjects_dir = Path(settings.SUBJECTS_DIR)
 bold_preprocess_dir = Path(settings.BOLD_PREPROCESS_DIR)
 workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
@@ -46,7 +46,7 @@ def create_BoldSkipReorient_node(subject_id: str, task: str, atlas_type: str, pr
 
         See also
         --------
-        * :py:func:`deepprep.interface.bold_node_new.BoldSkipReorient`
+        * :py:func:`deepprep.interface.bold_node.BoldSkipReorient`
 
     """
     workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
@@ -102,7 +102,7 @@ def create_StcMc_node(subject_id: str, task: str, atlas_type: str, preprocess_me
 
         See also
         --------
-        * :py:func:`deepprep.interface.bold_node_new.StcMc`
+        * :py:func:`deepprep.interface.bold_node.StcMc`
 
     """
     workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
@@ -157,7 +157,7 @@ def create_Register_node(subject_id: str, task: str, atlas_type: str, preprocess
 
         See also
         --------
-        * :py:func:`deepprep.interface.bold_node_new.Register`
+        * :py:func:`deepprep.interface.bold_node.Register`
 
     """
     workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
