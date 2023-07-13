@@ -8,7 +8,7 @@ class SageRegInputSpec(BaseInterfaceInputSpec):
     sagereg_py = File(exists=True, mandatory=True, desc="SageReg script")
     device = Str(exists=True, desc='device set', mandatory=True)
 
-    deepprep_home = Directory(exists=True, desc='DeepPrep HOME path', mandatory=True)
+    model_path = Directory(exists=True, desc='SageReg Model path', mandatory=True)
     subjects_dir = Directory(exists=True, desc='subject dir path', mandatory=True)
     subject_id = Str(desc='subject id', mandatory=True)
     freesurfer_home = Directory(exists=True, desc='FreeSurfer HOME path', mandatory=True)
@@ -39,7 +39,7 @@ class SageReg(BaseInterface):
     def cmd(self, hemi):
         subjects_dir = self.inputs.subjects_dir
         subject_id = self.inputs.subject_id
-        model_path = Path(self.inputs.deepprep_home) / 'model' / 'SageReg' / 'model_files'
+        model_path = Path(self.inputs.model_path) / 'model_files'
         cmd = f'{self.inputs.python_interpret} {self.inputs.sagereg_py} --sd {subjects_dir} --sid {subject_id} ' \
               f'--fsd {self.inputs.freesurfer_home} --hemi {hemi} --model_path {model_path} --device {self.inputs.device}'
         run_cmd_with_timing(cmd)

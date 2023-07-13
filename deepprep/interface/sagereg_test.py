@@ -20,7 +20,7 @@ def SageReg_test():
 
     os.environ['SUBJECTS_DIR'] = subjects_dir
 
-    sagereg_node.inputs.deepprep_home = Path(settings.DEEPPREP_HOME)
+    sagereg_node.inputs.model_path = Path(settings.SAGEREG_MODEL_PATH)
     sagereg_node.inputs.subjects_dir = subjects_dir
     sagereg_node.inputs.subject_id = subject_id
     sagereg_node.inputs.freesurfer_home = '/usr/local/freesurfer'
