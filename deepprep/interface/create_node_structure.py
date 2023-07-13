@@ -517,7 +517,7 @@ def create_FastCSR_node(subject_id: str, settings):
     Fastcsr_node.inputs.wm_file = Path(subjects_dir) / subject_id / 'mri/wm.mgz'
     Fastcsr_node.inputs.brain_finalsurfs_file = Path(subjects_dir) / subject_id / 'mri/brain.finalsurfs.mgz'
 
-    Fastcsr_node.inputs.model_path = os.path.join(settings.DEEPPREP_HOME, 'model/FastCSR')
+    Fastcsr_node.inputs.model_path = settings.FASTCSR_MODEL_PATH
 
     Fastcsr_node.base_dir = Path(workflow_cached_dir) / subject_id
     PARALLEL = settings.SMRI.FastCSR.PARALLEL
@@ -764,8 +764,8 @@ def create_SageReg_node(subject_id: str, settings):
     Sagereg_node.inputs.sagereg_py = sagereg_py
     Sagereg_node.inputs.python_interpret = python_interpret
     Sagereg_node.inputs.device = device
+    Sagereg_node.inputs.model_path = settings.SAGEREG_MODEL_PATH
 
-    Sagereg_node.inputs.deepprep_home = Path(settings.DEEPPREP_HOME)
     Sagereg_node.inputs.subjects_dir = subjects_dir
     Sagereg_node.inputs.subject_id = subject_id
     Sagereg_node.inputs.freesurfer_home = freesurfer_home
