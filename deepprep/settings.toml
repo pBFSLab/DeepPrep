@@ -5,7 +5,7 @@
 # 不建议修改： 改动会影响Pipeline的结果。比如会产生删除操作，修改原结果的操作，不能复现原来结果的操作。
 # 不可修改： 为DeepPrep的保留变量，仅开发者可以改动。比如改动后Pipeline发生改变。
 
-# TODO: 将 DEEPPREP_HOME FREESURFER_HOME FSL_HOME JAVA_HOME 配置到环境变量
+# TODO: FREESURFER_HOME FSL_HOME JAVA_HOME 配置到命令行
 
 # Source set
 CPU_NUM = 16
@@ -21,31 +21,31 @@ RECON_ONLY = false  # wether or not to run recon workflow only. (defaul: false)�
 BOLD_ONLY = false  # wether or not to run bold precessing workflow only. (defaul: false)（replaced by args）
 
 # ### program set ###
-# DeepPrep: version ==
-DEEPPREP_HOME = "/home/anning/workspace/DeepPrep/deepprep"
 
 # FreeSurfer: version == 7.2
 FREESURFER_HOME = "/usr/local/freesurfer720"
-
-# FastSurfer: version ==
-FASTSURFER_HOME = "@format {this.DEEPPREP_HOME}/FastSurfer"
-
-# FastCSR: version ==
-FASTCSR_HOME = "@format {this.DEEPPREP_HOME}/FastCSR"
-
-# SageReg: version ==
-FEATREG_HOME = "@format {this.DEEPPREP_HOME}/FeatReg"
-SAGEREG_HOME = "@format {this.DEEPPREP_HOME}/SageReg"
-
-# c3d_affine_tool： version ==
-RESOURCE_DIR = "@format {this.DEEPPREP_HOME}/resource"
-
-# VoxelMorph: version ==
-VXM_MODEL_PATH = "@format {this.DEEPPREP_HOME}/model/voxelmorph"
-MNI152_BRAIN_MASK = "/usr/local/fsl/data/standard/MNI152_T1_2mm_brain_mask.nii.gz"
+# ### FreeSurfer THREADS set ###
+FS_THREADS = 8  # default thereads for OpenMP and ITK
 
 # JAVA: version ==
 JAVA_HOME = "/usr/lib/jvm/java-11-openjdk-amd64"
+
+# FastSurfer: version ==
+FASTSURFER_HOME = "{format_DEEPPREP_HOME}/FastSurfer"
+
+# FastCSR: version ==
+FASTCSR_HOME = "{format_DEEPPREP_HOME}/FastCSR"
+FASTCSR_MODEL_PATH = "{format_MODEL_PATH}/FastCSR"
+
+# SageReg: version ==
+SAGEREG_HOME = "{format_DEEPPREP_HOME}/SageReg"
+SAGEREG_MODEL_PATH = "{format_MODEL_PATH}/SageReg"
+
+# c3d_affine_tool： version ==
+RESOURCE_DIR = "{format_DEEPPREP_HOME}/resource"
+
+# VoxelMorph: version ==
+VXM_MODEL_PATH = "{format_MODEL_PATH}/voxelmorph"
 
 ## ### input dir set ###
 BIDS_DIR = ""  # where to save runtime cache, e.g. log file（replaced by args）
@@ -57,8 +57,6 @@ WORKFLOW_CACHED_DIR = ""  # where to save runtime cache, e.g. log file（replace
 
 # ### GPU set ###
 DEVICE = "cuda"
-# ### CPU set ###
-FS_THREADS = 16  # default thereads for OpenMP and ITK
 
 # ENVIRON
 

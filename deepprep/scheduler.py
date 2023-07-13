@@ -28,6 +28,15 @@ def clear_subject_bold_tmp_dir(bold_preprocess_dir: Path, subject_ids: list, tas
             os.system(f'rm -r {tmp_dir}')
 
 
+def check_recon_exists(subject_dir: Path, subject_id: str):
+    subject_recon_path = subject_dir / subject_id
+    return subject_recon_path.exists()
+
+
+def get_abs_path():
+    return os.path.dirname(os.path.abspath(__file__))
+
+
 class Scheduler:
     def __init__(self, share_manager: Manager, subject_ids: list, last_node_name=None, auto_schedule=True,
                  settings=None):
@@ -269,15 +278,16 @@ def parse_args(settings):
         description="DeepPrep: sMRI and fMRI PreProcessing workflows"
     )
 
-    parser.add_argument("--bids-dir", help="directory of BIDS type: /mnt/ngshare2/UKB/BIDS", required=True)
+    parser.add_argument("--bids-dir", help="directory of BIDS type: /mnt/ngshare2/BIDS/MSC", required=True)
     parser.add_argument("--recon-output-dir",
-                        help="structure data Recon output directory: /mnt/ngshare2/DeepPrep_UKB/UKB_Recon",
+                        help="structure data Recon output directory: /mnt/ngshare2/DeepPrep_MSC/MSC_Recon",
                         required=True)
     parser.add_argument("--bold-output-dir",
-                        help="BOLD data Preprocess output directory: /mnt/ngshare2/DeepPrep_UKB/UKB_BoldPreprocess",
+                        help="BOLD data Preprocess output directory: /mnt/ngshare2/DeepPrep_MSC/MSC_BOLD",
                         required=True)
-    parser.add_argument("--cache-dir", help="workflow cache dir: /mnt/ngshare2/DeepPrep_UKB/UKB_Workflow",
+    parser.add_argument("--cache-dir", help="workflow cache dir: /mnt/ngshare2/DeepPrep_MSC/MSC_Cache",
                         required=True)
+    parser.add_argument("--model-path", help="directory of model path", default='/usr/share/deepprep/model')
 
     parser.add_argument("--bold-atlas-type", help="bold使用的MNI模板类型", default='MNI152_T1_2mm', required=False)
     parser.add_argument("--bold-task-type", help="跑的task类型example:motor、rest", default='rest', required=False)
@@ -296,11 +306,13 @@ def parse_args(settings):
     parser.add_argument("--subject-filter", help='通过subject_id过滤, file of subject_id or subject id list',
                         required=False, nargs='+')
 
-    parser.add_argument("--source-CPU-NUM", help="设置资源池-使用CPU数量", type=int, required=False)
-    parser.add_argument("--source-GPU-MB", help="设置资源池-使用GPU", type=int, required=False)
-    parser.add_argument("--source-RAM-MB", help="设置资源池-使用CPU数量", type=int, required=False)
-    parser.add_argument("--source-IO-WRITE-MB", help="设置资源池-使用硬盘IO", type=int, required=False)
-    parser.add_argument("--source-IO-READ-MB", help="设置资源池-使用硬盘IO", type=int, required=False)
+    parser.add_argument("--source-CPU-NUM", help="设置资源池-CPU数量", type=int, required=False)
+    parser.add_argument("--source-GPU-MB", help="设置资源池-GRAM", type=int, required=False)
+    parser.add_argument("--source-RAM-MB", help="设置资源池-RAM", type=int, required=False)
+    parser.add_argument("--source-IO-WRITE-MB", help="设置资源池-IO-WRITE", type=int, required=False)
+    parser.add_argument("--source-IO-READ-MB", help="设置资源池-IO-READ", type=int, required=False)
+
+    parser.add_argument("--fs-threads", help="设置FreeSurfer threads", type=int, required=False)
 
     args = parser.parse_args()
 
@@ -316,6 +328,7 @@ def parse_args(settings):
     # Warning：如果不平均T1，那么只运行sMRI的Recon流程，不运行fMRI流程
     # 原因为：fMRI流程与Recon结果相关，需要固定一个Recon结果。目前使用的是与subject_id相同的Recon结果（无 ses 和 run 的信息）。
     if not args.rawavg_t1:
+        logging_wf.warning('RAWAVG is set to False, so RECON_ONLY set to True')
         settings.RECON_ONLY = True
 
     if args.bold_atlas_type is not None:
@@ -337,6 +350,20 @@ def parse_args(settings):
         settings.IO_WRITE_MB = args.source_IO_WRITE_MB
     if args.source_IO_READ_MB is not None:
         settings.IO_READ_MB = args.source_IO_READ_MB
+
+    if args.fs_threads is not None:
+        settings.FS_THREADS = args.fs_threads
+
+    deepprep_home = get_abs_path()
+    settings.DEEPPREP_HOME = deepprep_home
+    settings.FASTSURFER_HOME = settings.FASTSURFER_HOME.format(format_DEEPPREP_HOME=deepprep_home)
+    settings.FASTCSR_HOME = settings.FASTCSR_HOME.format(format_DEEPPREP_HOME=deepprep_home)
+    settings.SAGEREG_HOME = settings.SAGEREG_HOME.format(format_DEEPPREP_HOME=deepprep_home)
+    settings.RESOURCE_DIR = settings.RESOURCE_DIR.format(format_DEEPPREP_HOME=deepprep_home)
+
+    settings.FASTCSR_MODEL_PATH = settings.FASTCSR_MODEL_PATH.format(format_MODEL_PATH=args.model_path)
+    settings.SAGEREG_MODEL_PATH = settings.SAGEREG_MODEL_PATH.format(format_MODEL_PATH=args.model_path)
+    settings.VXM_MODEL_PATH = settings.VXM_MODEL_PATH.format(format_MODEL_PATH=args.model_path)
     return settings
 
 
@@ -347,6 +374,13 @@ def main(settings):
     subjects_dir = Path(settings.SUBJECTS_DIR)
     bold_preprocess_dir = Path(settings.BOLD_PREPROCESS_DIR)
     workflow_cached_dir = Path(settings.WORKFLOW_CACHED_DIR)
+
+    # check software path
+    assert Path(settings.FREESURFER_HOME).exists(), f'{settings.FREESURFER_HOME} not exist'
+    assert Path(settings.JAVA_HOME).exists(), f'{settings.JAVA_HOME} not exist'
+    assert Path(settings.FASTCSR_MODEL_PATH).exists(), f'{settings.FASTCSR_MODEL_PATH} not exist'
+    assert Path(settings.SAGEREG_MODEL_PATH).exists(), f'{settings.SAGEREG_MODEL_PATH} not exist'
+    assert Path(settings.VXM_MODEL_PATH).exists(), f'{settings.VXM_MODEL_PATH} not exist'
 
     # ############### BOLD
     atlas_type = settings.FMRI.ATLAS_TYPE
@@ -424,11 +458,12 @@ def main(settings):
                                       'log_to_file': True}})
     logging.update_logging(config)
 
-    # TODO force_recon 如果开启这个参数，强制重新跑recon结果，清理 'IsRunning.lh+rh' 文件
-    force_recon = settings.DANGER.FORCE_RECON
-    if force_recon:
-        clear_is_running(subjects_dir=subjects_dir,
-                         subject_ids=subject_ids)
+    # TODO: force_recon 如果开启这个参数，强制重新跑recon结果，清理 'IsRunning.lh+rh' 文件
+    # TODO: 对已有的Recon结果具有破坏性，暂时关闭这个功能
+    # force_recon = settings.DANGER.FORCE_RECON
+    # if force_recon:
+    #     clear_is_running(subjects_dir=subjects_dir,
+    #                      subject_ids=subject_ids)
 
     lock = Lock()
     with Manager() as share_manager:
@@ -437,12 +472,11 @@ def main(settings):
                               auto_schedule=auto_schedule,
                               settings=settings)
 
-        # TODO 初始化 node 的逻辑梳理为一个函数放到 create_node.py 中
         if settings.BOLD_ONLY:
-            # TODO： 如果 BOLD_ONLY，需要检测Recon结果是否存在。如果不存在，那么启动后无法完整运行，直接终止。
             scheduler.last_node_name = last_node_name_bold
             from interface.create_node_bold_new import create_BoldSkipReorient_node
             for subject_id in subject_ids:
+                assert check_recon_exists(subjects_dir, subject_id), f'{subjects_dir / subject_id} must be exist'
                 node = create_BoldSkipReorient_node(subject_id=subject_id, task=task, atlas_type=atlas_type,
                                                     preprocess_method=preprocess_method, settings=settings)
                 scheduler.node_all[node.name] = node
