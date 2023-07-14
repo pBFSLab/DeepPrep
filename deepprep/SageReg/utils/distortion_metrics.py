@@ -2,7 +2,7 @@ import numpy as np
 import nibabel as nib
 import os
 import torch
-from featreg.utils.interp import resample_sphere_surface_barycentric
+from utils.interp import resample_sphere_surface_barycentric
 
 
 def set_environ():
