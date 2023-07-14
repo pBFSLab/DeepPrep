@@ -4,7 +4,7 @@ from utils.utils import abspath
 import torch
 from pathlib import Path
 import numpy as np
-from featreg.utils.interp import resample_sphere_surface_barycentric
+from utils.interp import resample_sphere_surface_barycentric
 from multiprocessing import Pool
 
 def multipool(cmd, sub, Multi_Num=2):
