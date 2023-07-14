@@ -1,3 +1,11 @@
+# python3
+# -*- coding: utf-8 -*-
+# -------------------------------
+# @Author : Ning An        @Email : NingAnMe <ninganme0317@gmail.com>
+# @Author : Cong Lin       @Email : lincong <lincong8722@gmail.com>
+# @Author : Youjia Zhang   @Email : youjia <ireneyou33@gmail.com>
+# @Author : Zhenyu Sun     @Email : Kid-sunzhenyu <sun25939789@gmail.com>
+
 import os
 import argparse
 import time
@@ -10,13 +18,7 @@ from nipype import config, logging
 from interface.run import set_envrion
 from interface.node_source import Source
 from interface.create_node_structure import create_OrigAndRawavg_node
-"""
-autor: 
-anning
-lincong
-youjia
-zhenyu
-"""
+
 
 def clear_is_running(subjects_dir: Path, subject_ids: list):
     for subject_id in subject_ids:
@@ -251,11 +253,11 @@ class Scheduler:
 def parse_args(settings, logger):
     """
     python3 deepprep.py
-    --bids_dir
+    --bids-dir
     /mnt/ngshare2/UKB/BIDS
-    --recon_output_dir
+    --recon-output-dir
     /mnt/ngshare2/DeepPrep_UKB/UKB_Recon
-    --bold_output_dir
+    --bold-output-dir
     /mnt/ngshare2/DeepPrep_UKB/UKB_BoldPreprocess
     --cache_dir
     /mnt/ngshare2/DeepPrep_UKB/UKB_Workflow
