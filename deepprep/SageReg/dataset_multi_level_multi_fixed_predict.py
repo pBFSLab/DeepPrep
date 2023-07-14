@@ -41,8 +41,8 @@ def normalize(data, norm_method='SD', mean=None, std=None, mi=None, ma=None):
 
 
 def data_random_rotate(sulc, curv, xyz):
-    from featreg.utils.rotate_matrix import apply_rotate_matrix
-    from featreg.utils.interp import resample_sphere_surface_barycentric
+    from utils.rotate_matrix import apply_rotate_matrix
+    from utils.interp import resample_sphere_surface_barycentric
     euler = np.random.random(3) * 0.01
     euler_t = torch.from_numpy(euler.reshape(1, -1)).float().to('cuda')
     sulc_t = torch.from_numpy(sulc).float().to('cuda')
