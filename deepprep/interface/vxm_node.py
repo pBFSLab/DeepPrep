@@ -377,7 +377,7 @@ class VxmRegNormMNI152(BaseInterface):
 
             bold_fsnative2mm_img = self.bold_mc_to_fsnative2mm_ants(bold_mc_file, norm_fsnative2mm_file, register_dat_file,
                                                                     str(bold_fsnative2mm_file), subj_func_dir,
-                                                                    output_bolds, verbose=False)
+                                                                    output_bolds, verbose=True)
 
             ants_affine_trt_file = subj_anat_dir / f'{subject_id}_from_fsnative_to_vxm{atlas_type}_ants_affine.mat'
             vxm_nonrigid_trt_file = subj_anat_dir / f'{subject_id}_from_fsnative_to_vxm{atlas_type}_vxm_nonrigid.nii.gz'

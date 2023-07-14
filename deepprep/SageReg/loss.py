@@ -351,7 +351,7 @@ class LaplacianSmoothingLoss(nn.Module):
         self.nf = faces.shape[0]
         self.rate = rate
 
-        from featreg.utils.smooth import get_edge_index
+        from utils.smooth import get_edge_index
         edge_index = get_edge_index(faces.cpu().numpy(), device=device)
         self.row, self.col = edge_index
 
