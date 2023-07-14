@@ -1,0 +1,3 @@
+[submodule "deepprep/FastSurfer"]
+	path = deepprep/FastSurfer
+	url = https://github.com/Deep-MI/FastSurfer.git
