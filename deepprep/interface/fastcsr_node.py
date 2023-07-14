@@ -1,3 +1,11 @@
+# python3
+# -*- coding: utf-8 -*-
+# -------------------------------
+# @Author : Ning An        @Email : NingAnMe <ninganme0317@gmail.com>
+# @Author : Cong Lin       @Email : lincong <lincong8722@gmail.com>
+# @Author : Youjia Zhang   @Email : youjia <ireneyou33@gmail.com>
+# @Author : Zhenyu Sun     @Email : Kid-sunzhenyu <sun25939789@gmail.com>
+
 from deepprep.interface.run import run_cmd_with_timing
 from pathlib import Path
 from multiprocessing import Pool
