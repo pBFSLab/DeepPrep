@@ -178,7 +178,7 @@ class Filled(BaseInterface):
         run_cmd_with_timing(cmd, threads)
         cmd = f'recon-all -subject {self.inputs.subject_id} -normalization2 {fsthreads}'
         run_cmd_with_timing(cmd, threads)
-        cmd = f'recon-all -subject {self.inputs.subject_id} -maskbfs {fsthreads}'
+        cmd = f'recon-all -subject {self.inputs.subject_id} -maskbfs {fsthreads}'  # could cp brain to brain.finalsurfs.mgz
         run_cmd_with_timing(cmd, threads)
         cmd = f'recon-all -subject {self.inputs.subject_id} -segmentation {fsthreads}'
         run_cmd_with_timing(cmd, threads)
@@ -222,6 +222,8 @@ class WhitePreaparc1OutputSpec(TraitedSpec):
 
     lh_white_preaparc = File(exists=True, desc="surf/lh.white.preaparc")
     rh_white_preaparc = File(exists=True, desc="surf/rh.white.preaparc")
+    lh_white = File(exists=True, desc="surf/lh.white")
+    rh_white = File(exists=True, desc="surf/rh.white")
     lh_curv = File(exists=True, desc="surf/lh.curv")
     rh_curv = File(exists=True, desc="surf/rh.curv")
     lh_area = File(exists=True, desc="surf/lh.area")
@@ -249,9 +251,9 @@ class WhitePreaparc1(BaseInterface):
               f"-noaparc -mgz -T1 brain.finalsurfs {self.inputs.subject_id} {hemi}"
         run_cmd_with_timing(cmd, threads)
 
-        # TODO issue: use white.preaparc replace white
         white_preaparc_file = Path(self.inputs.subjects_dir) / self.inputs.subject_id / 'surf' / f'{hemi}.white.preaparc'
         white_file = Path(self.inputs.subjects_dir) / self.inputs.subject_id / 'surf' / f'{hemi}.white'
+        # use white.preaparc as white
         cmd = f"cp {white_preaparc_file} {white_file}"
 
         run_cmd_with_timing(cmd, threads)
@@ -274,6 +276,8 @@ class WhitePreaparc1(BaseInterface):
 
         outputs["lh_white_preaparc"] = subjects_dir / subject_id / f"surf/lh.white.preaparc"
         outputs["rh_white_preaparc"] = subjects_dir / subject_id / f"surf/rh.white.preaparc"
+        outputs["lh_white"] = subjects_dir / subject_id / f"surf/lh.white"
+        outputs["rh_white"] = subjects_dir / subject_id / f"surf/rh.white"
         outputs["lh_curv"] = subjects_dir / subject_id / f"surf/lh.curv"
         outputs["rh_curv"] = subjects_dir / subject_id / f"surf/rh.curv"
         outputs["lh_area"] = subjects_dir / subject_id / f"surf/lh.area"
@@ -352,7 +356,7 @@ class InflatedSphereThresholdInputSpec(BaseInterfaceInputSpec):
 
 
 class InflatedSphereThresholdOutputSpec(TraitedSpec):
-    lh_smoothwm = File(exists=True, desc='surflh.smoothwm')
+    lh_smoothwm = File(exists=True, desc='surf/lh.smoothwm')
     rh_smoothwm = File(exists=True, desc='surf/rh.smoothwm')
     lh_inflated = File(exists=True, desc='surf/lh.inflated')
     rh_inflated = File(exists=True, desc='surf/rh.inflated')
@@ -429,18 +433,12 @@ class WhitePialThickness1InputSpec(BaseInterfaceInputSpec):
 
 
 class WhitePialThickness1OutputSpec(TraitedSpec):
-    lh_white = File(exists=True, desc="surf/lh.white")
-    rh_white = File(exists=True, desc="surf/rh.white")
     lh_pial_t1 = File(exists=True, desc="surf/lh.pial.T1")
     rh_pial_t1 = File(exists=True, desc="surf/rh.pial.T1")
 
     lh_pial = File(exists=True, desc="surf/lh.pial")
     rh_pial = File(exists=True, desc="surf/rh.pial")
 
-    lh_curv = File(exists=True, desc="surf/lh.curv")
-    rh_curv = File(exists=True, desc="surf/rh.curv")
-    lh_area = File(exists=True, desc="surf/lh.area")
-    rh_area = File(exists=True, desc="surf/rh.area")
     lh_curv_pial = File(exists=True, desc="surf/lh.curv.pial")
     rh_curv_pial = File(exists=True, desc="surf/rh.curv.pial")
     lh_area_pial = File(exists=True, desc="surf/lh.area.pial")
@@ -456,10 +454,6 @@ class WhitePialThickness1(BaseInterface):
     output_spec = WhitePialThickness1OutputSpec
 
     def _run_interface(self, runtime):
-        # must run surfreg first
-        # 20-25 min for traditional surface segmentation (each hemi)
-        # this creates aparc and creates pial using aparc, also computes jacobian
-
         # FreeSurfer 7.2
         # Pool
         time = 242 / 60
@@ -473,8 +467,8 @@ class WhitePialThickness1(BaseInterface):
         threads = self.inputs.threads if self.inputs.threads else 0
         fsthreads = get_freesurfer_threads(threads)
 
-        # TODO 这里使用lh.smoothwm生成了lh.white,调用了lh.aparc.annot, 暂时去除，使用white.preaparc
-        # TODO issue: use white.preaparc replace white
+        # 这里使用lh.smoothwm生成了lh.white,调用了lh.aparc.annot, 暂时去除，使用white.preaparc
+        # issue: use white.preaparc replace white
         # cmd = f"recon-all -subject {subject_id} -white -no-isrunning {fsthreads}"
         # run_cmd_with_timing(cmd, threads)
 
@@ -488,16 +482,10 @@ class WhitePialThickness1(BaseInterface):
         subjects_dir = Path(self.inputs.subjects_dir)
         subject_id = self.inputs.subject_id
         outputs = self._outputs().get()
-        outputs["lh_white"] = subjects_dir / subject_id / f"surf/lh.white"
-        outputs["rh_white"] = subjects_dir / subject_id / f"surf/rh.white"
         outputs["lh_pial_t1"] = subjects_dir / subject_id / f"surf/lh.pial.T1"
         outputs["rh_pial_t1"] = subjects_dir / subject_id / f"surf/rh.pial.T1"
         outputs["lh_pial"] = subjects_dir / subject_id / f"surf/lh.pial"
         outputs["rh_pial"] = subjects_dir / subject_id / f"surf/rh.pial"
-        outputs["lh_curv"] = subjects_dir / subject_id / f"surf/lh.curv"
-        outputs["rh_curv"] = subjects_dir / subject_id / f"surf/rh.curv"
-        outputs["lh_area"] = subjects_dir / subject_id / f"surf/lh.area"
-        outputs["rh_area"] = subjects_dir / subject_id / f"surf/rh.area"
         outputs["lh_curv_pial"] = subjects_dir / subject_id / f"surf/lh.curv.pial"
         outputs["rh_curv_pial"] = subjects_dir / subject_id / f"surf/rh.curv.pial"
         outputs["lh_area_pial"] = subjects_dir / subject_id / f"surf/lh.area.pial"
@@ -509,13 +497,6 @@ class WhitePialThickness1(BaseInterface):
         return outputs
 
     def create_sub_node(self, settings):
-        # from interface.create_node_structure import create_BalabelsMult_node, create_Cortribbon_node
-        #
-        # node = [create_BalabelsMult_node(self.inputs.subject_id, settings),
-        #         create_Cortribbon_node(self.inputs.subject_id, settings),
-        #         ]
-
-        # TODO: 好像可以把Parcstats加入进行，一起并行, 可以进行测试
         from interface.create_node_structure import create_BalabelsMult_node, create_Cortribbon_node, \
             create_Curvstats_node
 
