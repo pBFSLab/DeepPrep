@@ -356,6 +356,9 @@ def create_VxmRegNormMNI152_node(subject_id: str, task: str, atlas_type: str, pr
     VxmRegNormMNI152_node.inputs.gpuid = gpuid
     VxmRegNormMNI152_node.inputs.batch_size = str(settings.fMRI.VxmRegNormMNI152.BATCH_SIZE)
 
+    VxmRegNormMNI152_node.inputs.fsaverage6_space = settings.fMRI.fsaverage6_space
+    VxmRegNormMNI152_node.inputs.fs_native_space = settings.fMRI.fs_native_space
+
     VxmRegNormMNI152_node.base_dir = workflow_cached_dir / subject_id
     CPU_NUM = settings.FMRI.VxmRegNormMNI152.CPU_NUM
     RAM_MB = settings.FMRI.VxmRegNormMNI152.RAM_MB
