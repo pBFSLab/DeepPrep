@@ -7,7 +7,7 @@
 # @Author : Zhenyu Sun     @Email : Kid-sunzhenyu <sun25939789@gmail.com>
 
 from nipype.interfaces.base import BaseInterface, \
-    BaseInterfaceInputSpec, File, TraitedSpec, Directory, Str
+    BaseInterfaceInputSpec, File, TraitedSpec, Directory, Str, traits, traits_extension
 import sh
 import shutil
 import nibabel as nib
@@ -179,6 +179,9 @@ class VxmRegNormMNI152InputSpec(BaseInterfaceInputSpec):
     derivative_deepprep_path = Directory(exists=True, desc='derivative_deepprep_path', mandatory=True)
     gpuid = Str(exists=True, desc='gpuid set', mandatory=True)
     batch_size = Str(exists=True, desc='batch size for interpret', mandatory=True)
+    standard_space = traits.Bool(desc='flag for output standard space')
+    fs_native_space = traits.Bool(desc='flag for output fs native space')
+    fsaverage6_space = traits.Bool(desc='flag for output fs fsaverage6 space')
 
 
 class VxmRegNormMNI152OutputSpec(TraitedSpec):
@@ -201,6 +204,32 @@ class VxmRegNormMNI152(BaseInterface):
         for bold in output_bolds:
             if not bold.exists():
                 raise FileExistsError(bold)
+
+    def native_project_to_fs6(self, input_path, out_path, reg_path, hemi):
+        """
+        Project a volume (e.g., residuals) in native space onto the
+        fsaverage6 surface.
+
+        subject     - str. Subject ID.
+        input_path  - Path. Volume to project.
+        reg_path    - Path. Registaration .dat file.
+        hemi        - str from {'lh', 'rh'}.
+
+        Output file created at $DATA_DIR/surf/
+         input_path.name.replace(input_path.ext, '_fsaverage6' + input_path.ext))
+        Path object pointing to this file is returned.
+        """
+        sh.mri_vol2surf(
+            '--mov', input_path,
+            '--reg', reg_path,
+            '--hemi', hemi,
+            '--projfrac', 0.5,
+            '--trgsubject', 'fsaverage6',
+            '--o', out_path,
+            '--reshape',
+            '--interp', 'trilinear',
+        )
+        return out_path
 
     def register_dat_to_fslmat(self, bold_mc_file, norm_fsnative_2mm_file, register_dat_file, fslmat_file):
         sh.tkregister2('--mov', bold_mc_file,
@@ -234,7 +263,7 @@ class VxmRegNormMNI152(BaseInterface):
         shutil.rmtree(tmp_dir)
 
     def bold_mc_to_fsnative2mm_ants(self, bold_mc_file: Path, norm_fsnative2mm_file, register_dat_file,
-                                    bold_fsnative2mm_file: str, func_dir: Path, output_bolds, verbose=False):
+                                    bold_fsnative2mm_file: Path, func_dir: Path, output_bolds, verbose=False):
         """
         bold_mc_file : moving
         norm_fsnative_file : norm.mgz
@@ -339,12 +368,21 @@ class VxmRegNormMNI152(BaseInterface):
         return moved_img
 
     def _run_interface(self, runtime):
+        if not traits_extension.isdefined(self.inputs.standard_space):
+            self.inputs.standard_space = True
+        if not traits_extension.isdefined(self.inputs.fs_native_space):
+            self.inputs.fs_native_space = False
+        if not traits_extension.isdefined(self.inputs.fsaverage6_space):
+            self.inputs.fsaverage6_space = False
+
         preprocess_dir = Path(self.inputs.derivative_deepprep_path) / self.inputs.subject_id
         subj = self.inputs.subject_id.split('-')[1]
         layout = bids.BIDSLayout(str(self.inputs.data_path), derivatives=False)
         subj_func_dir = preprocess_dir / 'func'
+        subj_surf_dir = preprocess_dir / 'surf'
         subj_anat_dir = Path(preprocess_dir) / 'anat'
         subj_func_dir.mkdir(parents=True, exist_ok=True)
+        subj_surf_dir.mkdir(parents=True, exist_ok=True)
 
         subject_id = self.inputs.subject_id
         atlas_type = self.inputs.atlas_type
@@ -373,11 +411,12 @@ class VxmRegNormMNI152(BaseInterface):
             register_dat_file = subj_func_dir / bold_file.name.replace('.nii.gz',
                                                                        '_skip_reorient_faln_mc_from_mc_to_fsnative_bbregister_rigid.dat')
             bold_fsnative2mm_file = subj_func_dir / bold_file.name.replace('.nii.gz',
-                                                                           '_skip_reorient_faln_mc_space-fsnative2mm.nii.gz')  # save reg to T1 result file
+                                                                           '_skip_reorient_faln_mc_space-FS_NATIVE_2mm.nii.gz')  # save reg to T1 result file
 
             bold_fsnative2mm_img = self.bold_mc_to_fsnative2mm_ants(bold_mc_file, norm_fsnative2mm_file, register_dat_file,
-                                                                    str(bold_fsnative2mm_file), subj_func_dir,
-                                                                    output_bolds, verbose=True)
+                                                                    bold_fsnative2mm_file, subj_func_dir,
+                                                                    output_bolds,
+                                                                    verbose=self.inputs.fs_native_space)
 
             ants_affine_trt_file = subj_anat_dir / f'{subject_id}_from_fsnative_to_vxm{atlas_type}_ants_affine.mat'
             vxm_nonrigid_trt_file = subj_anat_dir / f'{subject_id}_from_fsnative_to_vxm{atlas_type}_vxm_nonrigid.nii.gz'
@@ -385,7 +424,15 @@ class VxmRegNormMNI152(BaseInterface):
                                                                      f'_skip_reorient_faln_mc_space-{atlas_type}.nii.gz')  # save reg to MNI152 result file
             self.vxm_warp_bold_2mm(bold_fsnative2mm_img, bold_mc_file,
                                    ants_affine_trt_file, vxm_nonrigid_trt_file, bold_atlas_file,
-                                   output_bolds, verbose=True)
+                                   output_bolds,
+                                   verbose=self.inputs.standard_space)
+
+            bold_fsaverage_file = subj_surf_dir / bold_file.name.replace('.nii.gz',
+                                                                         '_skip_reorient_faln_mc_space-fsaverage6.nii.gz')  # save reg to fsaverage6 result file
+            bold_fsaverage_lh_file = subj_surf_dir / ('lh.' + bold_fsaverage_file.name)
+            self.native_project_to_fs6(bold_mc_file, bold_fsaverage_lh_file, register_dat_file, 'lh')
+            bold_fsaverage_rh_file = subj_surf_dir / ('rh.' + bold_fsaverage_file.name)
+            self.native_project_to_fs6(bold_mc_file, bold_fsaverage_rh_file, register_dat_file, 'rh')
 
         self.check_output(output_bolds)
 
@@ -398,5 +445,13 @@ class VxmRegNormMNI152(BaseInterface):
 
         return outputs
 
-    def create_sub_node(self):
+    def create_sub_node(self, settings):
+        # if settings.fsaverage6_space:
+        #     from deepprep.interface.create_node_bold import create_fsaverage_node
+        #     node = create_fsaverage_node(self.inputs.subject_id,
+        #                                  self.inputs.task,
+        #                                  self.inputs.atlas_type,
+        #                                  self.inputs.preprocess_method,
+        #                                  settings)
+        #     return node
         return []
