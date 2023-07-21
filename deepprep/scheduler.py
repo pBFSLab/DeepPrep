@@ -320,7 +320,10 @@ def parse_args(settings, logger):
     parser.add_argument("--source-IO-WRITE-MB", help="设置资源池-IO-WRITE", type=int, required=False)
     parser.add_argument("--source-IO-READ-MB", help="设置资源池-IO-READ", type=int, required=False)
 
-    parser.add_argument("--fs-threads", help="设置FreeSurfer threads", type=int, required=False)
+    parser.add_argument("--fs-threads", help="设置FreeSurfer threads, 部分Node的CPU使用数量与这个参数相关", type=int, required=False)
+
+    parser.add_argument("--output-spaces", help='BOLD预处理结果的输出空间，默认MNI152_T1_2mm，可选FS_NATIVE_2mm，fsaverage6. example: --output-space FS_NATIVE_2mm fsaverage6',
+                        required=False, nargs='+')
 
     args = parser.parse_args()
 
@@ -361,6 +364,19 @@ def parse_args(settings, logger):
 
     if args.fs_threads is not None:
         settings.FS_THREADS = args.fs_threads
+
+    settings.fMRI.fsaverage6_space = False
+    settings.fMRI.fs_native_space = False
+    if args.output_spaces is not None:
+        # spaces_set = {'MNI152_T1_2mm', 'FS_NATIVE_2mm', 'fsaverage', 'fsaverage6', 'fsaverage5', 'fsaverage4'}
+        spaces_set = {'MNI152_T1_2mm', 'FS_NATIVE_2mm', 'fsaverage6'}
+        output_spaces_set = set(args.output_spaces)
+        assert (output_spaces_set | spaces_set) == spaces_set, f"{output_spaces_set} not in {spaces_set}"
+
+        if 'fsaverage6' in output_spaces_set:
+            settings.FMRI.fsaverage6_space = True
+        if 'FS_NATIVE_2mm' in output_spaces_set:
+            settings.fMRI.fs_native_space = True
 
     deepprep_home = get_abs_path()
     settings.DEEPPREP_HOME = deepprep_home
