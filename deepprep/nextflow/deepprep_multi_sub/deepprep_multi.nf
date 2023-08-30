@@ -885,6 +885,7 @@ process qc_plot_volsurf {
 
     """
     python3 ${script_py} \
+    --subject_id ${subject_id} \
     --subjects_dir ${subjects_dir} \
     --affine_mat ${affine_mat} \
     --scene_file ${vol_Surface_scene} \
@@ -919,6 +920,7 @@ process qc_plot_surfparc {
 
     """
     python3 ${script_py} \
+    --subject_id ${subject_id} \
     --subjects_dir ${subjects_dir} \
     --affine_mat ${affine_mat} \
     --scene_file ${surface_parc_scene} \
@@ -1121,6 +1123,7 @@ process qc_plot_aparc_aseg {
     volume_parc_scene = "${nextflow_bin_path}/qc_tool/Volume_parc.scene"
     """
     python3 ${script_py} \
+    --subject_id ${subject_id} \
     --subjects_dir ${subjects_dir} \
     --dlabel_info ${freesurfer_AllLut} \
     --scene_file ${volume_parc_scene} \
