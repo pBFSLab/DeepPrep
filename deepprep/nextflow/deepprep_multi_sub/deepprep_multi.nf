@@ -19,6 +19,9 @@ process cp_fsaverage_to_subjects_dir {
     val subjects_dir
     val freesurfer_fsaverage_dir
 
+    output:
+    val("${subjects_dir}/fsaverage")
+
     shell:
     """
     #! /usr/bin/env python3
@@ -33,9 +36,27 @@ process cp_fsaverage_to_subjects_dir {
 }
 
 
+process make_qc_result_dir {
+    input:
+    val qc_result_dir
+
+    output:
+    val("${qc_result_dir}")
+
+    shell:
+    """
+    #! /usr/bin/env python3
+
+    import os
+    from pathlib import Path
+    sd = Path('${qc_result_dir}')
+    sd.mkdir(parents=True, exist_ok=True)
+    """
+}
+
+
 process get_t1w_file_in_bids {
     cpus 1
-    disk '200 MB'
 
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
     path bids_dir
@@ -53,7 +74,6 @@ process get_t1w_file_in_bids {
 
 process anat_create_subject_dir {
     cpus 1
-    disk '100 MB'
 
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
     path(subjects_dir)
@@ -75,13 +95,10 @@ process anat_motioncor {
     tag "${subject_id}"
 
     cpus 1
-    disk '200 MB'
 
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
     path(subjects_dir)
     val(subject_id)
-
-//     publishDir "${subjects_dir}", mode: 'copy'
 
     output:
     tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/orig.mgz")) // emit: orig_mgz
@@ -90,7 +107,7 @@ process anat_motioncor {
     script:
     threads = 1
     """
-    recon-all -sd ${subjects_dir} -subject ${subject_id} -motioncor -threads ${threads} -itkthreads ${threads}
+    recon-all -sd ${subjects_dir} -subject ${subject_id} -motioncor -threads ${threads} -itkthreads ${threads} -no-isrunning
     """
 }
 
@@ -99,7 +116,7 @@ process anat_segment {
 
     label "with_gpu"
     cpus 1
-    disk '10 GB'
+    memory '10 GB'
 
     input:
     path(subjects_dir)
@@ -327,7 +344,7 @@ process anat_fill {
     """
     recon-all -sd ${subjects_dir} -subject ${subject_id} \
     -asegmerge -normalization2 -maskbfs -segmentation -fill \
-    -threads ${threads} -itkthreads ${threads}
+    -threads ${threads} -itkthreads ${threads} -no-isrunning
     """
 }
 
@@ -452,6 +469,10 @@ process split_hemi_filled_mgz {
 process anat_fastcsr_levelset {
     tag "${subject_id}"
 
+    label "with_gpu"
+    cpus 1
+    memory '6.5 GB'
+
     input:
     path(subjects_dir)
     tuple(val(subject_id), path(orig_mgz),path(filled_mgz))
@@ -481,6 +502,8 @@ process anat_fastcsr_levelset {
 process anat_fastcsr_mksurface {
     tag "${subject_id}"
 
+    memory '3.5 GB'
+
     input:
     path(subjects_dir)
 
@@ -507,19 +530,6 @@ process anat_fastcsr_mksurface {
 }
 
 
-process hemi_anat_autodet_gwstats_input {
-    input:
-    each hemi
-    val(in_data)
-    output:
-    val(in_data)
-    script:
-    """
-    echo ${in_data}
-    """
-}
-
-
 process anat_autodet_gwstats {
     tag "${subject_id}"
 
@@ -539,21 +549,10 @@ process anat_autodet_gwstats {
 }
 
 
-process hemi_anat_white_surface_input {
-    input:
-    each hemi
-    val(in_data)
-    output:
-    val(in_data)
-    script:
-    """
-    echo ${in_data}
-    """
-}
-
-
 process anat_white_surface {
     tag "${subject_id}"
+
+    memory '2 GB'
 
     input:
     path(subjects_dir)
@@ -587,19 +586,6 @@ process anat_white_surface {
     mris_place_surface --area-map ${subjects_dir}/${subject_id}/surf/${hemi}.white.preaparc ${subjects_dir}/${subject_id}/surf/${hemi}.area
 
     cp ${subjects_dir}/${subject_id}/surf/${hemi}.white.preaparc ${subjects_dir}/${subject_id}/surf/${hemi}.white
-    """
-}
-
-
-process hemi_anat_cortex_hipamyg_label_input {
-    input:
-    each hemi
-    val(in_data)
-    output:
-    val(in_data)
-    script:
-    """
-    echo ${in_data}
     """
 }
 
@@ -727,6 +713,10 @@ process anat_sphere {
 process anat_sphere_register {
     tag "${subject_id}"
 
+    label "with_gpu"
+    cpus 1
+    memory '5 GB'
+
     input:
     path(subjects_dir)
     tuple(val(subject_id), val(hemi), path(curv_surf), path(sulc_surf), path(sphere_surf))
@@ -790,19 +780,6 @@ process anat_avgcurv {
 }
 
 
-process hemi_anat_cortparc_aparc_input {
-    input:
-    each hemi
-    val(in_data)
-    output:
-    val(in_data)
-    script:
-    """
-    echo ${in_data}
-    """
-}
-
-
 process anat_cortparc_aparc {
     tag "${subject_id}"
 
@@ -845,20 +822,10 @@ process anat_cortparc_aparc_a2009s {
 }
 
 
-process hemi_anat_pial_surface_input {
-    input:
-    each hemi
-    val(in_data)
-    output:
-    val(in_data)
-    script:
-    """
-    echo ${in_data}
-    """
-}
-
 process anat_pial_surface {
     tag "${subject_id}"
+
+    memory '1.5 GB'
 
     input:
     path(subjects_dir)
@@ -894,15 +861,70 @@ process anat_pial_surface {
 }
 
 
-process hemi_anat_pctsurfcon_input {
+process qc_plot_volsurf {
+    tag "${subject_id}"
+
     input:
-    each hemi
-    val(in_data)
+    path subjects_dir
+
+    tuple(val(subject_id), path(lh_white_surf), path(lh_pial_surf), path(rh_white_surf), path(rh_pial_surf), path(t1_mgz))
+
+    path nextflow_bin_path
+    path qc_result_path
+    path freesurfer_home
+
     output:
-    val(in_data)
+    tuple(val(subject_id), path("${qc_result_path}/${subject_id}/anat/Vol_Surface.svg"))
+
     script:
+    qc_plot_aseg_fig_path = "${qc_result_path}/${subject_id}/anat/Vol_Surface.svg"
+
+    script_py = "${nextflow_bin_path}/qc_vol_surface.py"
+    vol_Surface_scene = "${nextflow_bin_path}/qc_tool/Vol_Surface.scene"
+    affine_mat = "${nextflow_bin_path}/qc_tool/affine.mat"
+
     """
-    echo ${in_data}
+    python3 ${script_py} \
+    --subjects_dir ${subjects_dir} \
+    --affine_mat ${affine_mat} \
+    --scene_file ${vol_Surface_scene} \
+    --svg_outpath ${qc_plot_aseg_fig_path} \
+    --freesurfer_home ${freesurfer_home}
+
+    """
+}
+
+
+process qc_plot_surfparc {
+    tag "${subject_id}"
+
+    input:
+    path subjects_dir
+
+    tuple(val(subject_id), path(lh_aparc_annot), path(lh_white_surf), path(lh_pial_surf), path(rh_aparc_annot),path(rh_white_surf), path(rh_pial_surf))
+
+    path nextflow_bin_path
+    path qc_result_path
+    path freesurfer_home
+
+    output:
+    tuple(val(subject_id), path("${qc_result_path}/${subject_id}/anat/Surface_parc.svg"))
+
+    script:
+    qc_plot_aseg_fig_path = "${qc_result_path}/${subject_id}/anat/Surface_parc.svg"
+
+    script_py = "${nextflow_bin_path}/qc_surface_parc.py"
+    surface_parc_scene = "${nextflow_bin_path}/qc_tool/Surface_parc.scene"
+    affine_mat = "${nextflow_bin_path}/qc_tool/affine.mat"
+
+    """
+    python3 ${script_py} \
+    --subjects_dir ${subjects_dir} \
+    --affine_mat ${affine_mat} \
+    --scene_file ${surface_parc_scene} \
+    --svg_outpath ${qc_plot_aseg_fig_path} \
+    --freesurfer_home ${freesurfer_home}
+
     """
 }
 
@@ -929,19 +951,6 @@ process anat_pctsurfcon {
 }
 
 
-process hemi_anat_parcstats_input {
-    input:
-    each hemi
-    val(in_data)
-    output:
-    val(in_data)
-    script:
-    """
-    echo ${in_data}
-    """
-}
-
-
 process anat_parcstats {
     tag "${subject_id}"
 
@@ -960,10 +969,10 @@ process anat_parcstats {
 //     recon-all -sd ${subjects_dir} -subject ${subject_id} -parcstats -threads ${threads} -itkthreads ${threads}
 //     """
     """
-    SUBJECTS_DIR=${subjects_dir} mris_anatomical_stats -th3 -mgz -cortex ${lh_cortex_label} -f ${subjects_dir}/${subject_id}/stats/lh.aparc.pial.stats -b -a ${lh_aparc_annot} -c ${subjects_dir}/${subject_id}/stats/aparc.annot.ctab ${subject_id} lh pial
-    SUBJECTS_DIR=${subjects_dir} mris_anatomical_stats -th3 -mgz -cortex ${lh_cortex_label} -f ${subjects_dir}/${subject_id}/stats/lh.aparc.stats -b -a ${lh_aparc_annot} -c ${subjects_dir}/${subject_id}/stats/aparc.annot.ctab ${subject_id} lh white
-    SUBJECTS_DIR=${subjects_dir} mris_anatomical_stats -th3 -mgz -cortex ${rh_cortex_label} -f ${subjects_dir}/${subject_id}/stats/rh.aparc.pial.stats -b -a ${rh_aparc_annot} -c ${subjects_dir}/${subject_id}/stats/aparc.annot.ctab ${subject_id} lh pial
-    SUBJECTS_DIR=${subjects_dir} mris_anatomical_stats -th3 -mgz -cortex ${rh_cortex_label} -f ${subjects_dir}/${subject_id}/stats/rh.aparc.stats -b -a ${rh_aparc_annot} -c ${subjects_dir}/${subject_id}/stats/aparc.annot.ctab ${subject_id} lh white
+    SUBJECTS_DIR=${subjects_dir} mris_anatomical_stats -th3 -mgz -cortex ${lh_cortex_label} -f ${subjects_dir}/${subject_id}/stats/lh.aparc.pial.stats -b -a ${lh_aparc_annot} -c ${subjects_dir}/${subject_id}/label/aparc.annot.ctab ${subject_id} lh pial
+    SUBJECTS_DIR=${subjects_dir} mris_anatomical_stats -th3 -mgz -cortex ${lh_cortex_label} -f ${subjects_dir}/${subject_id}/stats/lh.aparc.stats -b -a ${lh_aparc_annot} -c ${subjects_dir}/${subject_id}/label/aparc.annot.ctab ${subject_id} lh white
+    SUBJECTS_DIR=${subjects_dir} mris_anatomical_stats -th3 -mgz -cortex ${rh_cortex_label} -f ${subjects_dir}/${subject_id}/stats/rh.aparc.pial.stats -b -a ${rh_aparc_annot} -c ${subjects_dir}/${subject_id}/label/aparc.annot.ctab ${subject_id} lh pial
+    SUBJECTS_DIR=${subjects_dir} mris_anatomical_stats -th3 -mgz -cortex ${rh_cortex_label} -f ${subjects_dir}/${subject_id}/stats/rh.aparc.stats -b -a ${rh_aparc_annot} -c ${subjects_dir}/${subject_id}/label/aparc.annot.ctab ${subject_id} lh white
     """
 }
 
@@ -986,10 +995,10 @@ process anat_parcstats2 {
 //     recon-all -sd ${subjects_dir} -subject ${subject_id} -parcstats -threads ${threads} -itkthreads ${threads}
 //     """
     """
-    SUBJECTS_DIR=${subjects_dir} mris_anatomical_stats -th3 -mgz -cortex ${lh_cortex_label} -f ${subjects_dir}/${subject_id}/stats/lh.aparc.a2009s.pial.stats -b -a ${lh_aparc_annot} -c ${subjects_dir}/${subject_id}/stats/aparc.a2009s.annot.ctab ${subject_id} lh pial
-    SUBJECTS_DIR=${subjects_dir} mris_anatomical_stats -th3 -mgz -cortex ${lh_cortex_label} -f ${subjects_dir}/${subject_id}/stats/lh.aparc.a2009s.stats -b -a ${lh_aparc_annot} -c ${subjects_dir}/${subject_id}/stats/aparc.a2009s.annot.ctab ${subject_id} lh white
-    SUBJECTS_DIR=${subjects_dir} mris_anatomical_stats -th3 -mgz -cortex ${rh_cortex_label} -f ${subjects_dir}/${subject_id}/stats/rh.aparc.a2009s.pial.stats -b -a ${rh_aparc_annot} -c ${subjects_dir}/${subject_id}/stats/aparc.a2009s.annot.ctab ${subject_id} lh pial
-    SUBJECTS_DIR=${subjects_dir} mris_anatomical_stats -th3 -mgz -cortex ${rh_cortex_label} -f ${subjects_dir}/${subject_id}/stats/rh.aparc.a2009s.stats -b -a ${rh_aparc_annot} -c ${subjects_dir}/${subject_id}/stats/aparc.a2009s.annot.ctab ${subject_id} lh white
+    SUBJECTS_DIR=${subjects_dir} mris_anatomical_stats -th3 -mgz -cortex ${lh_cortex_label} -f ${subjects_dir}/${subject_id}/stats/lh.aparc.a2009s.pial.stats -b -a ${lh_aparc_annot} -c ${subjects_dir}/${subject_id}/label/aparc.a2009s.annot.ctab ${subject_id} lh pial
+    SUBJECTS_DIR=${subjects_dir} mris_anatomical_stats -th3 -mgz -cortex ${lh_cortex_label} -f ${subjects_dir}/${subject_id}/stats/lh.aparc.a2009s.stats -b -a ${lh_aparc_annot} -c ${subjects_dir}/${subject_id}/label/aparc.a2009s.annot.ctab ${subject_id} lh white
+    SUBJECTS_DIR=${subjects_dir} mris_anatomical_stats -th3 -mgz -cortex ${rh_cortex_label} -f ${subjects_dir}/${subject_id}/stats/rh.aparc.a2009s.pial.stats -b -a ${rh_aparc_annot} -c ${subjects_dir}/${subject_id}/label/aparc.a2009s.annot.ctab ${subject_id} lh pial
+    SUBJECTS_DIR=${subjects_dir} mris_anatomical_stats -th3 -mgz -cortex ${rh_cortex_label} -f ${subjects_dir}/${subject_id}/stats/rh.aparc.a2009s.stats -b -a ${rh_aparc_annot} -c ${subjects_dir}/${subject_id}/label/aparc.a2009s.annot.ctab ${subject_id} lh white
     """
 }
 
@@ -1090,6 +1099,38 @@ process anat_aparc2aseg {
 }
 
 
+process qc_plot_aparc_aseg {
+    tag "${subject_id}"
+
+    input:
+    path subjects_dir
+    tuple(val(subject_id), path(norm_mgz), path(aparc_aseg))
+
+    path nextflow_bin_path
+    path qc_result_path
+    path freesurfer_home
+
+    output:
+    tuple(val(subject_id), path("${qc_result_path}/${subject_id}/anat/Volume_parc.svg"))
+
+    script:
+    qc_plot_aseg_fig_path = "${qc_result_path}/${subject_id}/anat/Volume_parc.svg"
+
+    script_py = "${nextflow_bin_path}/qc_aparc_aseg.py"
+    freesurfer_AllLut = "${nextflow_bin_path}/qc_tool/FreeSurferAllLut.txt"
+    volume_parc_scene = "${nextflow_bin_path}/qc_tool/Volume_parc.scene"
+    """
+    python3 ${script_py} \
+    --subjects_dir ${subjects_dir} \
+    --dlabel_info ${freesurfer_AllLut} \
+    --scene_file ${volume_parc_scene} \
+    --svg_outpath ${qc_plot_aseg_fig_path} \
+    --freesurfer_home ${freesurfer_home}
+
+    """
+}
+
+
 process anat_aparc_a2009s2aseg {
     tag "${subject_id}"
 
@@ -1164,7 +1205,7 @@ process anat_test {
     script:
     threads = 1
     """
-    recon-all -sd ${subjects_dir} -subject ${subject_id} -parcstats -threads ${threads} -itkthreads ${threads}
+    recon-all -sd ${subjects_dir} -subject ${subject_id} -parcstats -threads ${threads} -itkthreads ${threads} -no-isrunning
     """
 }
 
@@ -1172,6 +1213,7 @@ process anat_test {
 workflow {
     bids_dir = params.bids_dir
     subjects_dir = params.subjects_dir
+    qc_result_path = params.qc_result_path
 
     fsthreads = params.fsthreads
 
@@ -1188,35 +1230,10 @@ workflow {
 
     nextflow_bin_path = params.nextflow_bin_path
 
-    subject_id = Channel.of('sub-MSC01', 'sub-MSC02')
-//     t1_files = Channel.of(['/mnt/ngshare/temp/MSC/sub-MSC01/ses-struct01/anat/sub-MSC01_ses-struct01_run-01_T1w.nii.gz', '/mnt/ngshare/temp/MSC/sub-MSC01/ses-struct01/anat/sub-MSC01_ses-struct01_run-01_T1w.nii.gz'], '/mnt/ngshare/temp/MSC/sub-MSC02/ses-struct01/anat/sub-MSC02_ses-struct01_run-01_T1w.nii.gz')
-//     rawavg_mgz = '/mnt/ngshare/temp/MSC_nf/sub-MSC01/mri/rawavg.mgz'
-//     orig_mgz = '/mnt/ngshare/temp/MSC_nf/sub-MSC01/mri/orig.mgz'
-//     filled_mgz = '/mnt/ngshare/temp/MSC_nf/sub-MSC01/mri/filled.mgz'
-//     brainmask_mgz = '/mnt/ngshare/temp/MSC_nf/sub-MSC01/mri/brainmask.mgz'
-//     aseg_presurf_mgz = '/mnt/ngshare/temp/MSC_nf/sub-MSC01/mri/aseg.presurf.mgz'
-//     brain_finalsurfs_mgz = '/mnt/ngshare/temp/MSC_nf/sub-MSC01/mri/brain.finalsurfs.mgz'
-//     wm_mgz = '/mnt/ngshare/temp/MSC_nf/sub-MSC01/mri/wm.mgz'
-//     filled_mgz = '/mnt/ngshare/temp/MSC_nf/sub-MSC01/mri/filled.mgz'
-//
-//     orig_surf = '/mnt/ngshare/temp/MSC_nf/sub-MSC01/surf/lh.orig'
-//     orig_premesh_surf = '/mnt/ngshare/temp/MSC_nf/sub-MSC01/surf/lh.orig.premesh'
-//     white_preaparc_surf = '/mnt/ngshare/temp/MSC_nf/sub-MSC01/surf/lh.white.preaparc'
-//     white_surf = '/mnt/ngshare/temp/MSC_nf/sub-MSC01/surf/lh.white'
-//     smoothwm_surf = '/mnt/ngshare/temp/MSC_nf/sub-MSC01/surf/lh.smoothwm'
-//     curv_surf = '/mnt/ngshare/temp/MSC_nf/sub-MSC01/surf/lh.curv'
-//     sulc_surf = '/mnt/ngshare/temp/MSC_nf/sub-MSC01/surf/lh.sulc'
-//     sphere_surf = '/mnt/ngshare/temp/MSC_nf/sub-MSC01/surf/lh.sphere'
-//     sphere_reg_surf = '/mnt/ngshare/temp/MSC_nf/sub-MSC01/surf/lh.sphere.reg'
-//     autodet_gwstats = '/mnt/ngshare/temp/MSC_nf/sub-MSC01/surf/autodet.gw.stats.lh.dat'
-//
-//     cortex_label = '/mnt/ngshare/temp/MSC_nf/sub-MSC01/label/lh.cortex.label'
-//     cortex_hipamyg_label = '/mnt/ngshare/temp/MSC_nf/sub-MSC01/label/lh.cortex+hipamyg.label'
-//     aparc_annot = '/mnt/ngshare/temp/MSC_nf/sub-MSC01/label/lh.aparc.annot'
-
     // BIDS and SUBJECTS_DIR
     subject_t1wfile_txt = get_t1w_file_in_bids(bids_dir, nextflow_bin_path)
-    cp_fsaverage_to_subjects_dir(subjects_dir, freesurfer_fsaverage_dir)
+    qc_result_path = make_qc_result_dir(qc_result_path)
+    subjects_fsaverage_dir = cp_fsaverage_to_subjects_dir(subjects_dir, freesurfer_fsaverage_dir)
     subject_id = anat_create_subject_dir(subjects_dir, subject_t1wfile_txt, nextflow_bin_path)
 
     // freesurfer
@@ -1232,7 +1249,7 @@ workflow {
     anat_talairach_and_nu_input = orig_mgz.join(orig_nu_mgz)
     (nu_mgz, talairach_auto_xfm, talairach_xfm, talairach_xfm_lta, talairach_with_skull_lta, talairach_lta) = anat_talairach_and_nu(subjects_dir, anat_talairach_and_nu_input, freesurfer_home)
 
-    t1_mgz = anat_T1(subjects_dir, nu_mgz)
+    t1_mgz = anat_T1(subjects_dir, nu_mgz)  // if for paper, comment out
 
     anat_brainmask_input = nu_mgz.join(mask_mgz)
     (norm_mgz, brainmask_mgz) = anat_brainmask(subjects_dir, anat_brainmask_input)
@@ -1309,6 +1326,16 @@ workflow {
     anat_pial_surface_input = orig_surf.join(white_surf, by: [0, 1]).join(autodet_gwstats, by: [0, 1]).join(cortex_hipamyg_label, by: [0, 1]).join(cortex_label, by: [0, 1]).join(aparc_annot, by: [0, 1]).join(hemis_aseg_presurf_mgz, by: [0, 1]).join(hemis_wm_mgz, by: [0, 1]).join(hemis_brain_finalsurfs_mgz, by: [0, 1])
     (pial_surf, pial_t1_surf, curv_pial_surf, area_pial_surf, thickness_surf) = anat_pial_surface(subjects_dir, anat_pial_surface_input)
 
+    qc_plot_volsurf_input_lh = white_surf.join(pial_surf, by: [0, 1]).join(subject_id_lh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3] }
+    qc_plot_volsurf_input_rh = white_surf.join(pial_surf, by: [0, 1]).join(subject_id_rh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3] }
+    qc_plot_volsurf_input = qc_plot_volsurf_input_lh.join(qc_plot_volsurf_input_rh).join(t1_mgz)
+    vol_surface_svg = qc_plot_volsurf(subjects_dir, qc_plot_volsurf_input, nextflow_bin_path, qc_result_path, freesurfer_home)
+
+    qc_plot_surfparc_input_lh = aparc_annot.join(white_surf, by: [0, 1]).join(pial_surf, by: [0, 1]).join(subject_id_lh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4] }
+    qc_plot_surfparc_input_rh = aparc_annot.join(white_surf, by: [0, 1]).join(pial_surf, by: [0, 1]).join(subject_id_rh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4] }
+    qc_plot_surfparc_input = qc_plot_surfparc_input_lh.join(qc_plot_surfparc_input_rh)
+    surface_parc_svg = qc_plot_surfparc(subjects_dir, qc_plot_surfparc_input, nextflow_bin_path, qc_result_path, freesurfer_home)
+
     anat_pctsurfcon_input = cortex_label.join(white_surf, by: [0, 1]).join(thickness_surf, by: [0, 1]).join(hemis_rawavg_mgz, by: [0, 1]).join(hemis_orig_mgz, by: [0, 1])
     (w_g_pct_mgh, w_g_pct_stats) = anat_pctsurfcon(subjects_dir, anat_pctsurfcon_input)
 
@@ -1317,6 +1344,7 @@ workflow {
     rh_anat_parcstats_input = white_surf.join(cortex_label, by: [0, 1]).join(pial_surf, by: [0, 1]).join(aparc_annot, by: [0, 1]).join(subject_id_rh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4, 5] }
     anat_parcstats_input = lh_anat_parcstats_input.join(rh_anat_parcstats_input).join(wm_mgz)
     (aparc_pial_stats, aparc_stats) = anat_parcstats(subjects_dir, anat_parcstats_input)
+
     lh_anat_parcstats2_input = white_surf.join(cortex_label, by: [0, 1]).join(pial_surf, by: [0, 1]).join(aparc_a2009s_annot, by: [0, 1]).join(subject_id_lh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4, 5] }
     rh_anat_parcstats2_input = white_surf.join(cortex_label, by: [0, 1]).join(pial_surf, by: [0, 1]).join(aparc_a2009s_annot, by: [0, 1]).join(subject_id_rh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4, 5] }
     anat_parcstats2_input = lh_anat_parcstats2_input.join(rh_anat_parcstats2_input).join(wm_mgz)
@@ -1338,16 +1366,19 @@ workflow {
     anat_aparc2aseg_inputs = aseg_mgz.join(ribbon_mgz).join(lh_anat_aparc2aseg_input).join(rh_anat_aparc2aseg_input)
     aparc_aseg = anat_aparc2aseg(subjects_dir, anat_aparc2aseg_inputs)
 
+    qc_plot_aparc_aseg_input = norm_mgz.join(aparc_aseg)
+    aparc_aseg_svg = qc_plot_aparc_aseg(subjects_dir, qc_plot_aparc_aseg_input, nextflow_bin_path, qc_result_path, freesurfer_home)
+
     lh_anat_aparc_a2009s2aseg_input = white_surf.join(pial_surf, by: [0, 1]).join(cortex_label, by: [0, 1]).join(aparc_a2009s_annot, by: [0, 1]).join(subject_id_lh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4, 5] }
     rh_anat_aparc_a2009s2aseg_input = white_surf.join(pial_surf, by: [0, 1]).join(cortex_label, by: [0, 1]).join(aparc_a2009s_annot, by: [0, 1]).join(subject_id_rh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4, 5] }
     anat_aparc_a2009s2aseg_inputs = aseg_mgz.join(ribbon_mgz).join(lh_anat_aparc_a2009s2aseg_input).join(rh_anat_aparc_a2009s2aseg_input)
     aparc_aseg = anat_aparc_a2009s2aseg(subjects_dir, anat_aparc_a2009s2aseg_inputs)  // if for paper, comment out
 
     //  *exvivo* labels
-    balabels_lh = Channel.fromPath("${freesurfer_fsaverage_dir}/label/*lh*exvivo*.label")
-    balabels_rh = Channel.fromPath("${freesurfer_fsaverage_dir}/label/*rh*exvivo*.label")
+    balabels_lh = Channel.fromPath("${subjects_fsaverage_dir}/label/*lh*exvivo*.label")
+    balabels_rh = Channel.fromPath("${subjects_fsaverage_dir}/label/*rh*exvivo*.label")
     anat_balabels_input_lh = sphere_reg_surf.join(white_surf, by: [0, 1]).join(subject_id_lh, by: [0, 1])
     anat_balabels_input_rh = sphere_reg_surf.join(white_surf, by: [0, 1]).join(subject_id_rh, by: [0, 1])
-    balabel_lh = anat_balabels_lh(subjects_dir, anat_balabels_input_lh, balabels_lh)
-    balabel_rh = anat_balabels_rh(subjects_dir, anat_balabels_input_rh, balabels_rh)
+    balabel_lh = anat_balabels_lh(subjects_dir, anat_balabels_input_lh, balabels_lh)  // if for paper, comment out
+    balabel_rh = anat_balabels_rh(subjects_dir, anat_balabels_input_rh, balabels_rh)  // if for paper, comment out
 }
