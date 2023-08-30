@@ -1,12 +1,11 @@
 import numpy as np
 import torch
 import torch.nn.functional as F
-from torch.nn import Linear, Dropout
-from torch_geometric.nn import GCNConv, GATv2Conv, GMMConv
+from torch_geometric.nn import GATv2Conv, GMMConv
 from torch import nn
 
-from featreg.utils.rotate_matrix import apply_rotate_matrix, get_en_torch
-from featreg.utils.pooling import IcosahedronPooling, IcosahedronUnPooling, get_network_index
+from .utils.rotate_matrix import apply_rotate_matrix, get_en_torch
+from .utils.pooling import IcosahedronPooling, IcosahedronUnPooling, get_network_index
 
 
 def xyz_to_lon_lat(xyz):
