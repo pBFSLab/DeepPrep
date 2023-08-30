@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import nibabel as nib
-from utils.interp import resample_sphere_surface_barycentric
+from .interp_fine import resample_sphere_surface_barycentric
 
 
 def save_rotate_matrix(rotate_matrix, out_file, xyz=None):

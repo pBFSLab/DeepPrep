@@ -9,7 +9,7 @@ from dataset_multi_level_multi_fixed_predict import SphericalDataset
 from utils.interp_fine import interp_sulc_curv_barycentric
 from utils.rotate_matrix import apply_rotate_matrix
 from utils.negative_area_triangle import count_negative_area
-from utils.interp import resample_sphere_surface_barycentric, upsample_std_sphere_torch
+from utils.interp_fine import resample_sphere_surface_barycentric, upsample_std_sphere_torch
 from utils.auxi_data import get_points_num_by_ico_level
 
 
