@@ -17,7 +17,7 @@ process mkdir_subjects_dir_exist {
 process cp_fsaverage_to_subjects_dir {
     input:
     val subjects_dir
-    val freesurfer_fsaverage_dir
+    path(freesurfer_fsaverage_dir)
 
     output:
     val("${subjects_dir}/fsaverage")
@@ -76,12 +76,12 @@ process anat_create_subject_dir {
     cpus 1
 
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
-    path(subjects_dir)
+    val(subjects_dir)
     each path(subject_t1wfile_txt)
     path(nextflow_bin_path)
 
     output:
-    val subject_id
+    val(subject_id)
 
     script:
     subject_id =  subject_t1wfile_txt.name
@@ -98,7 +98,7 @@ process anat_motioncor {
 
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
     path(subjects_dir)
-    val(subject_id)
+    tuple(val(subject_id), path(subject_t1wfile_txt))
 
     output:
     tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/orig.mgz")) // emit: orig_mgz
@@ -843,7 +843,7 @@ process anat_pial_surface {
     """
     mris_place_surface --adgws-in ${autodet_gwstats} --seg ${aseg_presurf_mgz} --threads ${threads} --wm ${wm_mgz} \
     --invol ${brain_finalsurfs_mgz} --${hemi} --i ${white_surf} --o ${subjects_dir}/${subject_id}/surf/${hemi}.pial.T1 \
-    --pial --nsmooth 0 --rip-label ${subjects_dir}/${subject_id}/label/lh.cortex+hipamyg.label --pin-medial-wall ${cortex_label} --aparc ${aparc_annot} --repulse-surf ${white_surf} --white-surf ${white_surf}
+    --pial --nsmooth 0 --rip-label ${subjects_dir}/${subject_id}/label/${hemi}.cortex+hipamyg.label --pin-medial-wall ${cortex_label} --aparc ${aparc_annot} --repulse-surf ${white_surf} --white-surf ${white_surf}
     cp ${subjects_dir}/${subject_id}/surf/${hemi}.pial.T1 ${subjects_dir}/${subject_id}/surf/${hemi}.pial
 
     mris_place_surface --curv-map ${subjects_dir}/${subject_id}/surf/${hemi}.pial.T1 2 10 ${subjects_dir}/${subject_id}/surf/${hemi}.curv.pial
@@ -1166,6 +1166,7 @@ process anat_balabels_lh {
     path(subjects_dir)
     tuple(val(subject_id), val(hemi), path(sphere_reg_surf), path(white_surf))
     each path(label)
+    path(subjects_fsaverage_dir)
 
     output:
     tuple(val(subject_id), val(hemi), path("${subjects_dir}/${subject_id}/label/${label}")) // emit: balabel
@@ -1184,6 +1185,7 @@ process anat_balabels_rh {
     path(subjects_dir)
     tuple(val(subject_id), val(hemi), path(sphere_reg_surf), path(white_surf))
     each path(label)
+    path(subjects_fsaverage_dir)
 
     output:
     tuple(val(subject_id), val(hemi), path("${subjects_dir}/${subject_id}/label/${label}")) // emit: balabel
@@ -1375,13 +1377,13 @@ workflow {
     lh_anat_aparc_a2009s2aseg_input = white_surf.join(pial_surf, by: [0, 1]).join(cortex_label, by: [0, 1]).join(aparc_a2009s_annot, by: [0, 1]).join(subject_id_lh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4, 5] }
     rh_anat_aparc_a2009s2aseg_input = white_surf.join(pial_surf, by: [0, 1]).join(cortex_label, by: [0, 1]).join(aparc_a2009s_annot, by: [0, 1]).join(subject_id_rh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4, 5] }
     anat_aparc_a2009s2aseg_inputs = aseg_mgz.join(ribbon_mgz).join(lh_anat_aparc_a2009s2aseg_input).join(rh_anat_aparc_a2009s2aseg_input)
-    aparc_aseg = anat_aparc_a2009s2aseg(subjects_dir, anat_aparc_a2009s2aseg_inputs)  // if for paper, comment out
+    aparc_a2009s_aseg = anat_aparc_a2009s2aseg(subjects_dir, anat_aparc_a2009s2aseg_inputs)  // if for paper, comment out
 
     //  *exvivo* labels
-    balabels_lh = Channel.fromPath("${subjects_fsaverage_dir}/label/*lh*exvivo*.label")
-    balabels_rh = Channel.fromPath("${subjects_fsaverage_dir}/label/*rh*exvivo*.label")
+    balabels_lh = Channel.fromPath("${freesurfer_fsaverage_dir}/label/*lh*exvivo*.label")
+    balabels_rh = Channel.fromPath("${freesurfer_fsaverage_dir}/label/*rh*exvivo*.label")
     anat_balabels_input_lh = sphere_reg_surf.join(white_surf, by: [0, 1]).join(subject_id_lh, by: [0, 1])
     anat_balabels_input_rh = sphere_reg_surf.join(white_surf, by: [0, 1]).join(subject_id_rh, by: [0, 1])
-    balabel_lh = anat_balabels_lh(subjects_dir, anat_balabels_input_lh, balabels_lh)  // if for paper, comment out
-    balabel_rh = anat_balabels_rh(subjects_dir, anat_balabels_input_rh, balabels_rh)  // if for paper, comment out
+    balabel_lh = anat_balabels_lh(subjects_dir, anat_balabels_input_lh, balabels_lh, subjects_fsaverage_dir)  // if for paper, comment out
+    balabel_rh = anat_balabels_rh(subjects_dir, anat_balabels_input_rh, balabels_rh, subjects_fsaverage_dir)  // if for paper, comment out
 }
