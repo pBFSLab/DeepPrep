@@ -103,7 +103,7 @@ if __name__ == '__main__':
 
     subject_id = args.subject_id
     subjects_dir = args.subjects_dir
-    affine_mat = args.affine_mat
+    affine_mat_atlas = args.affine_mat
     scene_file = args.scene_file
     savepath_svg = args.svg_outpath
     freesurfer_home = args.freesurfer_home
@@ -114,6 +114,8 @@ if __name__ == '__main__':
         subject_resultdir.mkdir(parents=True, exist_ok=True)
     subject_workdir = Path(subject_resultdir) / 'surfparc'
     subject_workdir.mkdir(parents=True, exist_ok=True)
+    affine_mat = subject_workdir / 'affine.mat'
+    shutil.copyfile(affine_mat_atlas, affine_mat)
 
     lh_white = Path(subjects_dir) / subject_id / 'surf' / 'lh.white'
     rh_white = Path(subjects_dir) / subject_id / 'surf' / 'rh.white'
