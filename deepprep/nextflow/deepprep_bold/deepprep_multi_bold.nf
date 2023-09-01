@@ -159,6 +159,8 @@ process bold_vxmregnormmni152{
     path nextflow_bin_path
     val batch_size
     val gpuid
+    val standard_space
+    val fs_native_space
     tuple(val(subject_id), val(bold_id), path(mc), path(bbregister_dat), path(vxm_nonrigid_nii), path(vxm_fsnative_affine_mat))
     output:
     tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_skip_reorient_stc_mc_space-MNI152_T1_2mm.nii.gz")) // emit: bold_atlas_to_mni152
@@ -179,7 +181,9 @@ process bold_vxmregnormmni152{
     --batch_size ${batch_size} \
     --ants_affine_trt ${vxm_fsnative_affine_mat} \
     --vxm_nonrigid_trt ${vxm_nonrigid_nii} \
-    --gpuid ${gpuid}
+    --gpuid ${gpuid} \
+    --standard_space ${standard_space} \
+    --fs_native_space ${fs_native_space}
     """
 }
 
@@ -195,6 +199,8 @@ workflow {
     gpuid = params.device
     resource_dir = params.resource_dir
     batch_size = params.batch_size
+    standard_space = params.standard_space
+    fs_native_space = params.fs_native_space
 
     bold_preprocess_path = make_bold_preprocess_dir(bold_preprocess_path)
     subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, nextflow_bin_path, bold_task)
@@ -206,5 +212,5 @@ workflow {
     (anat_wm, anat_csf, anat_aseg, anat_ventricles, anat_brainmask, anat_brainmask_bin) = bold_mkbrainmask(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_aparaseg2mc_inputs)
     bold_vxmregnormmni152_inputs = mc.join(bbregister_dat, by: [0,1]).join(vxm_nonrigid_nii).join(vxm_fsnative_affine_mat)
     bold_vxmregnormmni152_inputs.view()
-    (bold_atlas_to_mni152) = bold_vxmregnormmni152(bold_preprocess_path, subjects_dir, atlas_type, vxm_model_path, resource_dir, nextflow_bin_path, batch_size, gpuid, bold_vxmregnormmni152_inputs)
+    (bold_atlas_to_mni152) = bold_vxmregnormmni152(bold_preprocess_path, subjects_dir, atlas_type, vxm_model_path, resource_dir, nextflow_bin_path, batch_size, gpuid, standard_space, fs_native_space, bold_vxmregnormmni152_inputs)
 }
