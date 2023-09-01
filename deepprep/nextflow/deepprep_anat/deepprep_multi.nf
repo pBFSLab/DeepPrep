@@ -55,7 +55,7 @@ process make_qc_result_dir {
 }
 
 
-process get_t1w_file_in_bids {
+process anat_get_t1w_file_in_bids {
     cpus 1
 
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
@@ -66,7 +66,7 @@ process get_t1w_file_in_bids {
     path "sub-*"
 
     script:
-    script_py = "${nextflow_bin_path}/get_t1w_file_in_bids.py"
+    script_py = "${nextflow_bin_path}/anat_get_t1w_file_in_bids.py"
     """
     python3 ${script_py} --bids-dir ${bids_dir}
     """
@@ -85,7 +85,7 @@ process anat_create_subject_dir {
 
     script:
     subject_id =  subject_t1wfile_txt.name
-    script_py = "${nextflow_bin_path}/create_subject_orig_dir.py"
+    script_py = "${nextflow_bin_path}/anat_create_subject_orig_dir.py"
     """
     python3 ${script_py} --subjects-dir ${subjects_dir} --t1wfile-path ${subject_t1wfile_txt}
     """
@@ -1236,7 +1236,7 @@ workflow {
     nextflow_bin_path = params.nextflow_bin_path
 
     // BIDS and SUBJECTS_DIR
-    subject_t1wfile_txt = get_t1w_file_in_bids(bids_dir, nextflow_bin_path)
+    subject_t1wfile_txt = anat_get_t1w_file_in_bids(bids_dir, nextflow_bin_path)
     qc_result_path = make_qc_result_dir(qc_result_path)
     subjects_fsaverage_dir = cp_fsaverage_to_subjects_dir(subjects_dir, freesurfer_fsaverage_dir)
     subject_id = anat_create_subject_dir(subjects_dir, subject_t1wfile_txt, nextflow_bin_path)
