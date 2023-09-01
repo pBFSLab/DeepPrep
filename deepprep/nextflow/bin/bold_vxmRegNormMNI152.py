@@ -10,6 +10,38 @@ import voxelmorph as vxm
 import argparse
 
 
+def native_project_to_fs6(subj_recon_dir, input_path, out_path, reg_path, hemi):
+    """
+    Project a volume (e.g., residuals) in native space onto the
+    fsaverage6 surface.
+
+    subject     - str. Subject ID.
+    input_path  - Path. Volume to project.
+    reg_path    - Path. Registaration .dat file.
+    hemi        - str from {'lh', 'rh'}.
+
+    Output file created at $DATA_DIR/surf/
+     input_path.name.replace(input_path.ext, '_fsaverage6' + input_path.ext))
+    Path object pointing to this file is returned.
+    """
+    fsaverage6_dir = subj_recon_dir / 'fsaverage6'
+    if not fsaverage6_dir.exists():
+        src_fsaverage6_dir = Path(os.environ['FREESURFER_HOME']) / 'subjects' / 'fsaverage6'
+        os.symlink(src_fsaverage6_dir, fsaverage6_dir)
+    os.environ['SUBJECTS_DIR'] = str(subj_recon_dir)
+    sh.mri_vol2surf(
+        '--mov', input_path,
+        '--reg', reg_path,
+        '--hemi', hemi,
+        '--projfrac', 0.5,
+        '--trgsubject', 'fsaverage6',
+        '--o', out_path,
+        '--reshape',
+        '--interp', 'trilinear',
+    )
+    return out_path
+
+
 def register_dat_to_fslmat(bold_mc_file, norm_fsnative_2mm_file, register_dat_file, fslmat_file):
     sh.tkregister2('--mov', bold_mc_file,
                    '--targ', norm_fsnative_2mm_file,
@@ -44,7 +76,7 @@ def register_dat_to_trf(bold_mc_file: Path, norm_fsnative_2mm_file, register_dat
 
 
 def bold_mc_to_fsnative2mm_ants(bold_mc_file: Path, norm_fsnative2mm_file, register_dat_file,
-                                bold_fsnative2mm_file: str, func_dir: Path, resource_dir: Path, verbose=False):
+                                bold_fsnative2mm_file: Path, func_dir: Path, resource_dir: Path, verbose=False):
     """
     bold_mc_file : moving
     norm_fsnative_file : norm.mgz
@@ -70,7 +102,7 @@ def bold_mc_to_fsnative2mm_ants(bold_mc_file: Path, norm_fsnative2mm_file, regis
 
 
 def vxm_warp_bold_2mm(vxm_model_path, bold_fsnative2mm, bold_fsnative2mm_file, atlas_type, gpuid,
-                      trt_ants_affine_file, trt_vxm_norigid_file, warped_file, output_bolds, batch_size, verbose=True):
+                      trt_ants_affine_file, trt_vxm_norigid_file, warped_file, batch_size, verbose=True):
     import voxelmorph as vxm
 
     vxm_model_path = Path(vxm_model_path)
@@ -146,15 +178,16 @@ def vxm_warp_bold_2mm(vxm_model_path, bold_fsnative2mm, bold_fsnative2mm_file, a
         header_info = nib.load(bold_fsnative2mm_file).header
         nib_img = nib.Nifti1Image(moved_img.numpy().astype(int), affine=affine_info, header=header_info)
         nib.save(nib_img, warped_file)
-        output_bolds.append(warped_file)
     return moved_img
 
 
-def VxmRegNormMNI152(deepprep_subj_path, subject_id, atlas_type, subjects_dir, vxm_model_path, bold_mc_file,
-                     register_dat_file, resource_dir, batch_size, gpuid):
+def VxmRegNormMNI152(subj_recon_dir, deepprep_subj_path, subject_id, atlas_type, subjects_dir, vxm_model_path, bold_mc_file,
+                     register_dat_file, resource_dir, batch_size, gpuid, standard_space, fs_native_space):
     subj_func_dir = Path(deepprep_subj_path) / 'func'
     subj_anat_dir = Path(deepprep_subj_path) / 'anat'
+    subj_surf_dir = Path(deepprep_subj_path) / 'surf'
     subj_func_dir.mkdir(parents=True, exist_ok=True)
+    subj_surf_dir.mkdir(parents=True, exist_ok=True)
 
     norm_fsnative_file = Path(subjects_dir) / subject_id / 'mri' / 'norm.mgz'
     norm_fsnative2mm_file = subj_anat_dir / f'{subject_id}_norm_2mm.nii.gz'
@@ -163,14 +196,12 @@ def VxmRegNormMNI152(deepprep_subj_path, subject_id, atlas_type, subjects_dir, v
                        '-i', norm_fsnative_file,
                        '-o', norm_fsnative2mm_file)
 
-    output_bolds = []
-
     bold_fsnative2mm_file = subj_func_dir / bold_mc_file.name.replace('.nii.gz',
                                                                       '_space-fsnative2mm.nii.gz')  # save reg to T1 result file
 
     bold_fsnative2mm_img = bold_mc_to_fsnative2mm_ants(bold_mc_file, norm_fsnative2mm_file, register_dat_file,
                                                        str(bold_fsnative2mm_file), subj_func_dir, resource_dir,
-                                                       verbose=False)
+                                                       verbose=fs_native_space)
 
     ants_affine_trt_file = subj_anat_dir / f'{subject_id}_from_fsnative_to_vxm{atlas_type}_ants_affine.mat'
     vxm_nonrigid_trt_file = subj_anat_dir / f'{subject_id}_from_fsnative_to_vxm{atlas_type}_vxm_nonrigid.nii.gz'
@@ -178,7 +209,14 @@ def VxmRegNormMNI152(deepprep_subj_path, subject_id, atlas_type, subjects_dir, v
                                                                 f'_space-{atlas_type}.nii.gz')  # save reg to MNI152 result file
     vxm_warp_bold_2mm(vxm_model_path, bold_fsnative2mm_img, bold_mc_file, atlas_type, gpuid,
                       ants_affine_trt_file, vxm_nonrigid_trt_file, bold_atlas_file,
-                      output_bolds, batch_size, verbose=True)
+                      batch_size, verbose=standard_space)
+
+    bold_fsaverage_file = subj_surf_dir / bold_mc_file.name.replace('.nii.gz',
+                                                                    '_space-fsaverage6.nii.gz')  # save reg to fsaverage6 result file
+    bold_fsaverage_lh_file = subj_surf_dir / ('lh.' + bold_fsaverage_file.name)
+    native_project_to_fs6(subj_recon_dir, bold_mc_file, bold_fsaverage_lh_file, register_dat_file, 'lh')
+    bold_fsaverage_rh_file = subj_surf_dir / ('rh.' + bold_fsaverage_file.name)
+    native_project_to_fs6(subj_recon_dir, bold_mc_file, bold_fsaverage_rh_file, register_dat_file, 'rh')
 
 
 if __name__ == '__main__':
@@ -199,14 +237,18 @@ if __name__ == '__main__':
     parser.add_argument("--gpuid", required=True)
     parser.add_argument("--ants_affine_trt", required=True)
     parser.add_argument("--vxm_nonrigid_trt", required=True)
+    parser.add_argument("--standard_space", required=True)
+    parser.add_argument("--fs_native_space", required=True)
     args = parser.parse_args()
 
     cur_path = os.getcwd()
     preprocess_dir = Path(cur_path) / str(args.bold_preproces_dir) / args.subject_id
     subj_func_dir = Path(preprocess_dir) / 'func'
     subj_func_dir.mkdir(parents=True, exist_ok=True)
+    subj_recon_dir = Path(cur_path) / str(args.subjects_dir)
 
     mc_file = subj_func_dir / f'{args.bold_id}_skip_reorient_stc_mc.nii.gz'
     bbregister_dat = subj_func_dir / f'{args.bold_id}_skip_reorient_stc_mc_from_mc_to_fsnative_bbregister_rigid.dat'
-    VxmRegNormMNI152(preprocess_dir, args.subject_id, args.atlas_type, args.subjects_dir, args.vxm_model_path,
-                     Path(mc_file), Path(bbregister_dat), args.resource_dir, args.batch_size, args.gpuid)
+    VxmRegNormMNI152(subj_recon_dir, preprocess_dir, args.subject_id, args.atlas_type, args.subjects_dir, args.vxm_model_path,
+                     Path(mc_file), Path(bbregister_dat), args.resource_dir, args.batch_size, args.gpuid,
+                     bool(args.standard_space), bool(args.fs_native_space))
