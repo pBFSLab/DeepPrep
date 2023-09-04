@@ -17,8 +17,9 @@ def cmd(subj_func_dir: Path, skip_reorient: Path, run: str, subject_id, bold_nam
     if not link_dir.exists():
         link_dir.mkdir(parents=True, exist_ok=True)
     link_files = os.listdir(subj_func_dir)
-    link_files.remove(bold_name)
-    for link_file in link_files:
+    nii_files = [file for file in link_files if file.endswith('skip_reorient.nii.gz')]
+    # link_files.remove(bold_name)
+    for link_file in nii_files:
         try:
             src_file = subj_func_dir / link_file
             dst_file = link_dir / link_file
