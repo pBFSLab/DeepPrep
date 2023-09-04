@@ -1,5 +1,22 @@
 process make_bold_preprocess_dir {
     input:
+    val(bold_result_dir)
+
+    output:
+    val(bold_result_dir)
+
+    shell:
+    """
+    #! /usr/bin/env python3
+
+    import os
+    from pathlib import Path
+    sd = Path('${bold_result_dir}')
+    sd.mkdir(parents=True, exist_ok=True)
+    """
+}
+process make_bold_outputs_dir {
+    input:
     val(qc_result_dir)
 
     output:
@@ -228,7 +245,8 @@ workflow {
     bold_vxmregnormmni152_fs_native_space = params.bold_vxmregnormmni152_fs_native_space
 
     bold_preprocess_path = make_bold_preprocess_dir(bold_preprocess_path)
-    subject_boldfile_txt = anat_get_bold_file_in_bids(bids_dir, nextflow_bin_path, bold_task)
+    save_svg_dir = make_bold_outputs_dir(save_svg_dir)
+    subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, nextflow_bin_path, bold_task)
 
     skip_reorient = bold_skip_reorient(bold_preprocess_path, subject_boldfile_txt, nextflow_bin_path, bold_skip_reorient_nskip)
     (vxm_norm_nii, norm_nii, vxm_nonrigid_nii, vxm_affine_npz, vxm_fsnative_affine_mat) = bold_vxmregistration(subjects_dir, bold_preprocess_path, nextflow_bin_path, subject_boldfile_txt, gpuid, atlas_type, vxm_model_path)
