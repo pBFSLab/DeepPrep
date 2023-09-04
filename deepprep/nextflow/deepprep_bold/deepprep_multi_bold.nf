@@ -30,7 +30,7 @@ process bold_skip_reorient {
 
     """
     python3 ${script_py} \
-    --bold_preproces_dir ${bold_preprocess_path} \
+    --bold_preprocess_dir ${bold_preprocess_path} \
     --boldfile_path ${subject_boldfile_txt} \
     --nskip_frame ${nskip}
     """
@@ -49,7 +49,7 @@ process bold_stc_mc {
 
     """
     python3 ${script_py} \
-    --bold_preproces_dir ${bold_preprocess_path} \
+    --bold_preprocess_dir ${bold_preprocess_path} \
     --subject_id ${subject_id} \
     --skip_reorient ${skip_reorient} \
     --bold_id ${bold_id}
@@ -69,7 +69,7 @@ process bold_bbregister {
     """
     python3 ${script_py} \
     --subjects_dir ${subjects_dir} \
-    --bold_preproces_dir ${bold_preprocess_path} \
+    --bold_preprocess_dir ${bold_preprocess_path} \
     --subject_id ${subject_id} \
     --mc ${mc} \
     --bold_id ${bold_id}
@@ -94,7 +94,7 @@ process bold_mkbrainmask {
 
     """
     python3 ${script_py} \
-    --bold_preproces_dir ${bold_preprocess_path} \
+    --bold_preprocess_dir ${bold_preprocess_path} \
     --subjects_dir ${subjects_dir} \
     --subject_id ${subject_id} \
     --mc ${mc} \
@@ -123,7 +123,7 @@ process bold_vxmregistration{
 
     """
     python3 ${script_py} \
-    --bold_preproces_dir ${bold_preprocess_path} \
+    --bold_preprocess_dir ${bold_preprocess_path} \
     --subjects_dir ${subjects_dir} \
     --subject_id ${subject_id} \
     --atlas_type ${atlas_type} \
@@ -153,7 +153,7 @@ process bold_vxmregnormmni152{
 
     """
     python3 ${script_py} \
-    --bold_preproces_dir ${bold_preprocess_path} \
+    --bold_preprocess_dir ${bold_preprocess_path} \
     --subjects_dir ${subjects_dir} \
     --subject_id ${subject_id} \
     --atlas_type ${atlas_type} \
