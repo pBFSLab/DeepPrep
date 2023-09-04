@@ -9,8 +9,8 @@ import ants
 import voxelmorph as vxm
 import argparse
 
-def VxmRegistration(subject_id: str, subjects_dir: Path, bold_preproces_dir: Path, atlas_type: str, vxm_model_path: Path, gpuid: str):
-    deepprep_subj_path = Path(bold_preproces_dir) / subject_id
+def VxmRegistration(subject_id: str, subjects_dir: Path, bold_preprocess_dir: Path, atlas_type: str, vxm_model_path: Path, gpuid: str):
+    deepprep_subj_path = Path(bold_preprocess_dir) / subject_id
 
     func_dir = Path(deepprep_subj_path) / 'func'
     anat_dir = Path(deepprep_subj_path) / 'anat'
@@ -96,7 +96,7 @@ if __name__ == '__main__':
         description="DeepPrep: Bold PreProcessing workflows -- VxmRegidtration"
     )
 
-    parser.add_argument("--bold_preproces_dir", required=True)
+    parser.add_argument("--bold_preprocess_dir", required=True)
     parser.add_argument("--subjects_dir", required=True)
     parser.add_argument("--subject_id", required=True)
     parser.add_argument("--atlas_type", required=True)
@@ -106,4 +106,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # cur_path = os.getcwd()
-    VxmRegistration(args.subject_id, args.subjects_dir, args.bold_preproces_dir, args.atlas_type, Path(args.vxm_model_path), args.gpuid)
+    VxmRegistration(args.subject_id, args.subjects_dir, args.bold_preprocess_dir, args.atlas_type, Path(args.vxm_model_path), args.gpuid)

@@ -17,8 +17,9 @@ def cmd(subj_func_dir: Path, skip_reorient: Path, run: str, subject_id, bold_nam
     if not link_dir.exists():
         link_dir.mkdir(parents=True, exist_ok=True)
     link_files = os.listdir(subj_func_dir)
-    link_files.remove(bold_name)
-    for link_file in link_files:
+    nii_files = [file for file in link_files if file.endswith('skip_reorient.nii.gz')]
+    # link_files.remove(bold_name)
+    for link_file in nii_files:
         try:
             src_file = subj_func_dir / link_file
             dst_file = link_dir / link_file
@@ -109,7 +110,7 @@ if __name__ == '__main__':
     )
 
     # parser.add_argument("--cur_path", required=True)
-    parser.add_argument("--bold_preproces_dir", required=True)
+    parser.add_argument("--bold_preprocess_dir", required=True)
     parser.add_argument("--subject_id", required=True)
     parser.add_argument("--skip_reorient", required=True)
     parser.add_argument("--bold_id", required=True)
@@ -117,7 +118,7 @@ if __name__ == '__main__':
 
     cur_path = os.getcwd()
 
-    preprocess_dir  = Path(cur_path) / str(args.bold_preproces_dir) / args.subject_id
+    preprocess_dir  = Path(cur_path) / str(args.bold_preprocess_dir) / args.subject_id
     subj_func_dir = Path(preprocess_dir) / 'func'
     subj_func_dir.mkdir(parents=True, exist_ok=True)
 

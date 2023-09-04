@@ -38,7 +38,7 @@ if __name__ == '__main__':
         description="DeepPrep: Bold PreProcessing workflows -- BoldSkipReorient"
     )
 
-    parser.add_argument("--bold_preproces_dir", required=True)
+    parser.add_argument("--bold_preprocess_dir", required=True)
     parser.add_argument("--boldfile_path", required=True)
     parser.add_argument("--nskip_frame", required=True)
     args = parser.parse_args()
@@ -49,7 +49,7 @@ if __name__ == '__main__':
     data = [i.strip() for i in data]
     subject_id = data[0]
     bold_file = data[1]
-    preprocess_dir = Path(args.bold_preproces_dir) / subject_id
+    preprocess_dir = Path(args.bold_preprocess_dir) / subject_id
     subj_func_dir = Path(preprocess_dir) / 'func'
     subj_func_dir.mkdir(parents=True, exist_ok=True)
 
