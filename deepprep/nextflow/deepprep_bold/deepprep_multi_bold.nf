@@ -43,6 +43,7 @@ process bold_stc_mc {
     tuple(val(subject_id), val(bold_id), path(skip_reorient))
     output:
     tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_skip_reorient_stc_mc.nii.gz")) // emit: mc
+    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_skip_reorient_stc_mc.mcdat")) // emit: mcdat
     tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_skip_reorient_stc_boldref.nii.gz")) // emit: boldref
     script:
     script_py = "${nextflow_bin_path}/bold_stc_mc.py"
@@ -100,6 +101,27 @@ process bold_mkbrainmask {
     --mc ${mc} \
     --bbregister_dat ${bbregister_dat} \
     --bold_id ${bold_id}
+    """
+}
+process bold_draw_carpet{
+    input:
+    path bold_preprocess_path
+    path nextflow_bin_path
+    path save_svg_dir
+    tuple(val(subject_id), val(bold_id), path(mc), path(mcdat), path(anat_brainmask))
+    output:
+    tuple(val(subject_id), val(bold_id), path("${save_svg_dir}/${subject_id}/figures/${bold_id}_desc-carpet_bold.svg")) // emit: bold_carpet_svg
+    script:
+    script_py = "${nextflow_bin_path}/bold_averagesingnal.py"
+    """
+    python3 ${script_py} \
+    --bold_preprocess_dir ${bold_preprocess_path} \
+    --subject_id ${subject_id} \
+    --mc ${mc} \
+    --mcdat ${mcdat} \
+    --anat_brainmask ${anat_brainmask} \
+    --bold_id ${bold_id} \
+    --save_svg_dir ${save_svg_dir}
     """
 }
 process bold_vxmregistration{
@@ -181,18 +203,21 @@ workflow {
     bold_skip_reorient_nskip = params.bold_skip_reorient_nskip
     atlas_type = params.atlas_type
     gpuid = params.device
+    save_svg_dir = params.save_svg_dir
     resource_dir = params.bold_vxmregnormmni152_resource_dir
     bold_vxmregnormmni152_batch_size = params.bold_vxmregnormmni152_batch_size
     bold_vxmregnormmni152_standard_space = params.bold_vxmregnormmni152_standard_space
     bold_vxmregnormmni152_fs_native_space = params.bold_vxmregnormmni152_fs_native_space
 
-    subject_boldfile_txt = anat_get_bold_file_in_bids(bids_dir, nextflow_bin_path, bold_task)
+    subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, nextflow_bin_path, bold_task)
     skip_reorient = bold_skip_reorient(bold_preprocess_path, subject_boldfile_txt, nextflow_bin_path, bold_skip_reorient_nskip)
     (vxm_norm_nii, norm_nii, vxm_nonrigid_nii, vxm_affine_npz, vxm_fsnative_affine_mat) = bold_vxmregistration(subjects_dir, bold_preprocess_path, nextflow_bin_path, subject_boldfile_txt, gpuid, atlas_type, vxm_model_path)
-    (mc, boldref) = bold_stc_mc(bold_preprocess_path, nextflow_bin_path, skip_reorient)
+    (mc, mcdat, boldref) = bold_stc_mc(bold_preprocess_path, nextflow_bin_path, skip_reorient)
     bbregister_dat = bold_bbregister(subjects_dir, bold_preprocess_path, nextflow_bin_path, mc)
     bold_aparaseg2mc_inputs = mc.join(bbregister_dat, by: [0,1])
     (anat_wm, anat_csf, anat_aseg, anat_ventricles, anat_brainmask, anat_brainmask_bin) = bold_mkbrainmask(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_aparaseg2mc_inputs)
-    bold_vxmregnormmni152_inputs = mc.join(bbregister_dat, by: [0,1]).join(vxm_nonrigid_nii).join(vxm_fsnative_affine_mat)
-    (bold_atlas_to_mni152) = bold_vxmregnormmni152(bold_preprocess_path, subjects_dir, atlas_type, vxm_model_path, resource_dir, nextflow_bin_path, bold_vxmregnormmni152_batch_size, gpuid, bold_vxmregnormmni152_standard_space, bold_vxmregnormmni152_fs_native_space, bold_vxmregnormmni152_inputs)
+    bold_draw_carpet_inputs = mc.join(mcdat, by: [0,1]).join(anat_brainmask, by: [0,1])
+    (bold_carpet_svg) = bold_draw_carpet(bold_preprocess_path, nextflow_bin_path, save_svg_dir, bold_draw_carpet_inputs)
+//     bold_vxmregnormmni152_inputs = mc.join(bbregister_dat, by: [0,1]).join(vxm_nonrigid_nii).join(vxm_fsnative_affine_mat)
+//     (bold_atlas_to_mni152) = bold_vxmregnormmni152(bold_preprocess_path, subjects_dir, atlas_type, vxm_model_path, resource_dir, nextflow_bin_path, bold_vxmregnormmni152_batch_size, gpuid, bold_vxmregnormmni152_standard_space, bold_vxmregnormmni152_fs_native_space, bold_vxmregnormmni152_inputs)
 }
