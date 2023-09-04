@@ -1,4 +1,4 @@
-process anat_get_bold_file_in_bids {
+process bold_get_bold_file_in_bids {
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
     path bids_dir
     path nextflow_bin_path
@@ -187,7 +187,7 @@ workflow {
     bold_vxmregnormmni152_fs_native_space = params.bold_vxmregnormmni152_fs_native_space
 
     subject_boldfile_txt = anat_get_bold_file_in_bids(bids_dir, nextflow_bin_path, bold_task)
-    skip_reorient = bold_skip_reorient(bold_preprocess_path, subject_boldfile_txt, nextflow_bin_path, params.bold_skip_reorient_nskip)
+    skip_reorient = bold_skip_reorient(bold_preprocess_path, subject_boldfile_txt, nextflow_bin_path, bold_skip_reorient_nskip)
     (vxm_norm_nii, norm_nii, vxm_nonrigid_nii, vxm_affine_npz, vxm_fsnative_affine_mat) = bold_vxmregistration(subjects_dir, bold_preprocess_path, nextflow_bin_path, subject_boldfile_txt, gpuid, atlas_type, vxm_model_path)
     (mc, boldref) = bold_stc_mc(bold_preprocess_path, nextflow_bin_path, skip_reorient)
     bbregister_dat = bold_bbregister(subjects_dir, bold_preprocess_path, nextflow_bin_path, mc)
