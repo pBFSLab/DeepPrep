@@ -34,12 +34,12 @@ def set_environ(freesurfer_home):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="plot subject surf parc fig")
+    parser = argparse.ArgumentParser(description="plot subject aseg fig")
     parser.add_argument('--subject_id', help='输入的subjects id', required=True)
-    parser.add_argument('--subjects_dir', help='输入的subjects dir文件', required=True)
+    parser.add_argument('--subjects_dir', help='输入的subjects_dir文件', required=True)
     parser.add_argument('--affine_mat', help='surf转换格式配准的affine', required=True)
     parser.add_argument('--scene_file', help='画图所需要的scene文件', required=True)
-    parser.add_argument('--svg_outpath', help='输出的svg图片保存路径', required=True)
+    parser.add_argument('--svg_outpath', help='输出的sav图片保存路径', required=True)
     parser.add_argument('--freesurfer_home', help='freesurfer 的环境变量', default="/usr/local/freesurfer720",
                         required=False)
     args = parser.parse_args()
@@ -47,8 +47,8 @@ def parse_args():
     return args
 
 
-def label_nii2gii(nii_label, nii_white, gii_label):
-    cmd = f'mris_convert --annot {nii_label} {nii_white} {gii_label}'
+def mgz2nii(mgz_file, nii_file):
+    cmd = f'mri_convert {mgz_file} {nii_file}'
     os.system(cmd)
 
 
@@ -65,19 +65,6 @@ def surface_apply_affine(giisurf_file, affine_mat):
 def scene_plot(scene_file, savepath, length, width):
     cmd = f'wb_command -show-scene {scene_file} 1  {savepath} {length} {width}'
     os.system(cmd)
-
-
-def rewrite_affine(surf_file, src_affine_mat):
-    _, _, header_info = nib.freesurfer.read_geometry(surf_file, read_metadata=True)
-    c_ras = header_info['cras']
-
-    affine_list = [[1, 0, 0, c_ras[0]], [0, 1, 0, c_ras[1]], [0, 0, 1, c_ras[2]], [0, 0, 0, 1]]
-
-    with open(src_affine_mat, 'w') as f:
-        for line in affine_list:
-            f.write(str(line)[1:-1].replace(',', '    ') + '\n')
-
-    f.close()
 
 
 def write_single_svg(svg, png_back, view_height, view_width):
@@ -98,6 +85,19 @@ def encode_png(png_img):
     return pngdata
 
 
+def rewrite_affine(surf_file, src_affine_mat):
+    _, _, header_info = nib.freesurfer.read_geometry(surf_file, read_metadata=True)
+    c_ras = header_info['cras']
+
+    affine_list = [[1, 0, 0, c_ras[0]], [0, 1, 0, c_ras[1]], [0, 0, 1, c_ras[2]], [0, 0, 0, 1]]
+
+    with open(src_affine_mat, 'w') as f:
+        for line in affine_list:
+            f.write(str(line)[1:-1].replace(',', '    ') + '\n')
+
+    f.close()
+
+
 if __name__ == '__main__':
     args = parse_args()
 
@@ -112,15 +112,19 @@ if __name__ == '__main__':
     subject_resultdir = Path(savepath_svg).parent
     if subject_resultdir.exists() is False:
         subject_resultdir.mkdir(parents=True, exist_ok=True)
-    subject_workdir = Path(subject_resultdir) / 'surfparc'
+    subject_workdir = Path(subject_resultdir) / 'volsurf'
     subject_workdir.mkdir(parents=True, exist_ok=True)
     affine_mat = subject_workdir / 'affine.mat'
     shutil.copyfile(affine_mat_atlas, affine_mat)
 
+    T1_mgz = Path(subjects_dir) / subject_id / 'mri' / 'T1.mgz'
+    T1_nii = subject_workdir / 'T1.nii.gz'
+    mgz2nii(T1_mgz, T1_nii)
     lh_white = Path(subjects_dir) / subject_id / 'surf' / 'lh.white'
     rh_white = Path(subjects_dir) / subject_id / 'surf' / 'rh.white'
     lh_pial = Path(subjects_dir) / subject_id / 'surf' / 'lh.pial'
     rh_pial = Path(subjects_dir) / subject_id / 'surf' / 'rh.pial'
+
     lh_white_gii = subject_workdir / 'lh.white.surf.gii'
     rh_white_gii = subject_workdir / 'rh.white.surf.gii'
     surf_nii2gii(lh_white, lh_white_gii)
@@ -135,20 +139,11 @@ if __name__ == '__main__':
     surface_apply_affine(lh_pial_gii, affine_mat)
     surface_apply_affine(rh_pial_gii, affine_mat)
 
-    lh_annot_label = Path(subjects_dir) / subject_id / 'label' / 'lh.aparc.annot'
-    rh_annot_label = Path(subjects_dir) / subject_id / 'label' / 'rh.aparc.annot'
-    lh_white = Path(subjects_dir) / subject_id / 'surf' / 'lh.white'
-    rh_white = Path(subjects_dir) / subject_id / 'surf' / 'rh.white'
-    lh_annot_label_gii = subject_workdir / 'lh.aparc.label.gii'
-    rh_annot_label_gii = subject_workdir / 'rh.aparc.label.gii'
-    label_nii2gii(lh_annot_label, lh_white, lh_annot_label_gii)
-    label_nii2gii(rh_annot_label, rh_white, rh_annot_label_gii)
-
-    Surface_parc_savepath = subject_workdir / 'Surface_parc.png'
-    Surface_parc_scene = subject_workdir / 'Surface_parc.scene'
-    if Surface_parc_scene.exists() is False:
-        shutil.copyfile(scene_file, Surface_parc_scene)
-    scene_plot(Surface_parc_scene, Surface_parc_savepath, 2400, 1000)
-    Surface_parc_savepath_svg = subject_resultdir / 'Surface_parc.svg'
-    write_single_svg(Surface_parc_savepath_svg, Surface_parc_savepath, 2400, 1000)
+    Vol_Surface_savepath = subject_workdir / 'Vol_Surface.png'
+    Vol_Surface_scene = subject_workdir / 'Vol_Surface.scene'
+    if Vol_Surface_scene.exists() is False:
+         shutil.copyfile(scene_file, Vol_Surface_scene)
+    scene_plot(Vol_Surface_scene, Vol_Surface_savepath, 2400, 1000)
+    Vol_Surface_savepath_svg = subject_resultdir / 'Vol_Surface.svg'
+    write_single_svg(Vol_Surface_savepath_svg, Vol_Surface_savepath, 2400, 1000)
     shutil.rmtree(subject_workdir)
