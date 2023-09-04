@@ -1,9 +1,9 @@
 process make_bold_preprocess_dir {
     input:
-    val(qc_result_dir)
+    val(dir_path)
 
     output:
-    val(qc_result_dir)
+    val(dir_path)
 
     shell:
     """
@@ -11,7 +11,7 @@ process make_bold_preprocess_dir {
 
     import os
     from pathlib import Path
-    sd = Path('${qc_result_dir}')
+    sd = Path('${dir_path}')
     sd.mkdir(parents=True, exist_ok=True)
     """
 }
@@ -38,7 +38,7 @@ process bold_skip_reorient {
     path bold_preprocess_path
     each path(subject_boldfile_txt)
     path nextflow_bin_path
-    val  nskip
+    val nskip
     output:
     tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_skip_reorient.nii.gz")) // emit: skip_reorient
     script:
@@ -121,6 +121,9 @@ process bold_mkbrainmask {
     """
 }
 process bold_vxmregistration{
+
+    memory '5 GB'
+
     input:
     path subjects_dir
     path bold_preprocess_path
@@ -150,7 +153,9 @@ process bold_vxmregistration{
     """
 }
 process bold_vxmregnormmni152{
-    maxForks 2
+    maxForks 1
+    memory '40 GB'
+
     input:
     path bold_preprocess_path
     path subjects_dir
@@ -205,13 +210,13 @@ workflow {
     bold_vxmregnormmni152_fs_native_space = params.bold_vxmregnormmni152_fs_native_space
 
     bold_preprocess_path = make_bold_preprocess_dir(bold_preprocess_path)
-    subject_boldfile_txt = anat_get_bold_file_in_bids(bids_dir, nextflow_bin_path, bold_task)
-    skip_reorient = bold_skip_reorient(bold_preprocess_path, subject_boldfile_txt, nextflow_bin_path, bold_skip_reorient_nskip)
+    subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, nextflow_bin_path, bold_task)
+    skip_reorient_nii = bold_skip_reorient(bold_preprocess_path, subject_boldfile_txt, nextflow_bin_path, bold_skip_reorient_nskip)
     (vxm_norm_nii, norm_nii, vxm_nonrigid_nii, vxm_affine_npz, vxm_fsnative_affine_mat) = bold_vxmregistration(subjects_dir, bold_preprocess_path, nextflow_bin_path, subject_boldfile_txt, gpuid, atlas_type, vxm_model_path)
-    (mc, boldref) = bold_stc_mc(bold_preprocess_path, nextflow_bin_path, skip_reorient)
-    bbregister_dat = bold_bbregister(subjects_dir, bold_preprocess_path, nextflow_bin_path, mc)
-    bold_aparaseg2mc_inputs = mc.join(bbregister_dat, by: [0,1])
-    (anat_wm, anat_csf, anat_aseg, anat_ventricles, anat_brainmask, anat_brainmask_bin) = bold_mkbrainmask(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_aparaseg2mc_inputs)
-    bold_vxmregnormmni152_inputs = mc.join(bbregister_dat, by: [0,1]).join(vxm_nonrigid_nii).join(vxm_fsnative_affine_mat)
+    (mc_nii, boldref_nii) = bold_stc_mc(bold_preprocess_path, nextflow_bin_path, skip_reorient_nii)
+    bbregister_dat = bold_bbregister(subjects_dir, bold_preprocess_path, nextflow_bin_path, mc_nii)
+    bold_aparaseg2mc_inputs = mc_nii.join(bbregister_dat, by: [0,1])
+    (anat_wm_nii, anat_csf_nii, anat_aseg_nii, anat_ventricles_nii, anat_brainmask_nii, anat_brainmask_bin_nii) = bold_mkbrainmask(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_aparaseg2mc_inputs)
+    bold_vxmregnormmni152_inputs = mc_nii.join(bbregister_dat, by: [0,1]).join(vxm_nonrigid_nii).join(vxm_fsnative_affine_mat)
     (bold_atlas_to_mni152) = bold_vxmregnormmni152(bold_preprocess_path, subjects_dir, atlas_type, vxm_model_path, resource_dir, nextflow_bin_path, bold_vxmregnormmni152_batch_size, gpuid, bold_vxmregnormmni152_standard_space, bold_vxmregnormmni152_fs_native_space, bold_vxmregnormmni152_inputs)
 }
