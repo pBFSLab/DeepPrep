@@ -66,7 +66,7 @@ if __name__ == '__main__':
         description="DeepPrep: Bold PreProcessing workflows -- MKbrainmask"
     )
 
-    parser.add_argument("--bold_preproces_dir", required=True)
+    parser.add_argument("--bold_preprocess_dir", required=True)
     parser.add_argument("--subjects_dir", required=True)
     parser.add_argument("--subject_id", required=True)
     parser.add_argument("--mc", required=True)
@@ -77,7 +77,7 @@ if __name__ == '__main__':
 
     cur_path = os.getcwd()
 
-    preprocess_dir = Path(cur_path) / str(args.bold_preproces_dir) / args.subject_id
+    preprocess_dir = Path(cur_path) / str(args.bold_preprocess_dir) / args.subject_id
     subj_func_dir = Path(preprocess_dir) / 'func'
     subj_func_dir.mkdir(parents=True, exist_ok=True)
 
