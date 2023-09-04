@@ -221,10 +221,10 @@ def VxmRegNormMNI152(subj_recon_dir, deepprep_subj_path, subject_id, atlas_type,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description="DeepPrep: Bold PreProcessing workflows -- VxmRegidtration"
+        description="DeepPrep: Bold PreProcessing workflows -- VxmRegNormMNI152"
     )
 
-    parser.add_argument("--bold_preproces_dir", required=True)
+    parser.add_argument("--bold_preprocess_dir", required=True)
     parser.add_argument("--subjects_dir", required=True)
     parser.add_argument("--subject_id", required=True)
     parser.add_argument("--atlas_type", required=True)
@@ -242,7 +242,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     cur_path = os.getcwd()
-    preprocess_dir = Path(cur_path) / str(args.bold_preproces_dir) / args.subject_id
+    preprocess_dir = Path(cur_path) / str(args.bold_preprocess_dir) / args.subject_id
     subj_func_dir = Path(preprocess_dir) / 'func'
     subj_func_dir.mkdir(parents=True, exist_ok=True)
     subj_recon_dir = Path(cur_path) / str(args.subjects_dir)
