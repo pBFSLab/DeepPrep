@@ -300,12 +300,13 @@ process qc_plot_bold_to_space{
     path bold_preprocess_path
     path nextflow_bin_path
     path qc_result_path
+    path freesurfer_home
 
     output:
     tuple(val(subject_id), val(bold_id), path("${qc_result_path}/${subject_id}/figures/${bold_id}_desc-reg2MNI152_bold.svg"))
 
     script:
-    qc_plot_bold_reg_space_fig_path = "${qc_result_path}/${subject_id}/figures/${bold_id}_desc-reg2MNI152_bold.svg"
+    qc_plot_norm_to_mni152_fig_path = "${qc_result_path}/${subject_id}/figures/${bold_id}_desc-reg2MNI152_bold.svg"
     script_py = "${nextflow_bin_path}/qc_bold_to_space.py"
     qc_tool_package = "${nextflow_bin_path}/qc_tool"
 
@@ -316,7 +317,7 @@ process qc_plot_bold_to_space{
     --fs_native_space ${fs_native_space} \
     --subjects_dir ${subjects_dir} \
     --bold_preprocess_path  ${bold_preprocess_path} \
-    --qc_tool_package  ${nextflow_bin_path} \
+    --qc_tool_package  ${qc_tool_package} \
     --svg_outpath ${qc_plot_norm_to_mni152_fig_path} \
     --freesurfer_home ${freesurfer_home}
 
@@ -353,8 +354,8 @@ workflow {
     (anat_wm_nii, anat_csf_nii, anat_aseg_nii, anat_ventricles_nii, anat_brainmask_nii, anat_brainmask_bin_nii) = bold_mkbrainmask(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_aparaseg2mc_inputs)
 //     qc_plot_mctsnr_input = mc_nii.join(anat_brainmask_nii, by: [0,1])
 //     bold_mc_tsnr_svg = qc_plot_mctsnr(qc_plot_mctsnr_input, bold_preprocess_path, nextflow_bin_path, qc_result_path)
-    bold_draw_carpet_inputs = mc_nii.join(mcdat, by: [0,1]).join(anat_brainmask_nii, by: [0,1])
-    (bold_carpet_svg) = bold_draw_carpet(bold_preprocess_path, nextflow_bin_path, qc_result_path, bold_draw_carpet_inputs)
+//     bold_draw_carpet_inputs = mc_nii.join(mcdat, by: [0,1]).join(anat_brainmask_nii, by: [0,1])
+//     (bold_carpet_svg) = bold_draw_carpet(bold_preprocess_path, nextflow_bin_path, qc_result_path, bold_draw_carpet_inputs)
 
     bold_vxmregnormmni152_inputs = mc_nii.join(bbregister_dat, by: [0,1]).join(vxm_nonrigid_nii).join(vxm_fsnative_affine_mat)
     (bold_atlas_to_mni152) = bold_vxmregnormmni152(bold_preprocess_path, subjects_dir, atlas_type, vxm_model_path, resource_dir, nextflow_bin_path, bold_vxmregnormmni152_batch_size, gpuid, bold_vxmregnormmni152_standard_space, bold_vxmregnormmni152_fs_native_space, bold_vxmregnormmni152_inputs)

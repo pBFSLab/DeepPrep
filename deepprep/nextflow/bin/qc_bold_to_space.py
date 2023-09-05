@@ -139,17 +139,17 @@ if __name__ == '__main__':
     mni152_scene_tmp = subject_bold2mni152_workdir / 'plot_MNI152_tmp.scene'
     bold2mni152_scene_tmp = subject_bold2mni152_workdir / 'plot_bold2MNI152_tmp.scene'
 
-    os.symlink(lh_MNI152_white_gii, lh_MNI152_white_gii_tmp)
-    os.symlink(rh_MNI152_white_gii, rh_MNI152_white_gii_tmp)
-    os.symlink(lh_MNI152_pial_gii, lh_MNI152_pial_gii_tmp)
-    os.symlink(rh_MNI152_pial_gii, rh_MNI152_pial_gii_tmp)
-    os.symlink(mni152_norm, MNI152_norm_tmp)
-    os.symlink(mni152_scene, mni152_scene_tmp)
-    os.symlink(bold2mni152_scene, bold2mni152_scene_tmp)
+    shutil.copyfile(lh_MNI152_white_gii, lh_MNI152_white_gii_tmp)
+    shutil.copyfile(rh_MNI152_white_gii, rh_MNI152_white_gii_tmp)
+    shutil.copyfile(lh_MNI152_pial_gii, lh_MNI152_pial_gii_tmp)
+    shutil.copyfile(rh_MNI152_pial_gii, rh_MNI152_pial_gii_tmp)
+    shutil.copyfile(mni152_norm, MNI152_norm_tmp)
+    shutil.copyfile(mni152_scene, mni152_scene_tmp)
+    shutil.copyfile(bold2mni152_scene, bold2mni152_scene_tmp)
 
     bold2mni152_src = Path(bold_preprocess_dir) / subject_id / 'func' / f'{bold_id}_skip_reorient_stc_mc_space-MNI152_T1_2mm_fframe.nii.gz'
     bold2mni152_trg = subject_bold2mni152_workdir / f'bold2MNI152_tmp_bold.nii.gz'
-    os.symlink(bold2mni152_src, bold2mni152_trg)
+    shutil.copyfile(bold2mni152_src, bold2mni152_trg)
 
     bold2MNI152_savepath = subject_bold2mni152_workdir / f'{bold_id}_bold_to_MNI152_moved.png'
     MNI152_savepath = subject_bold2mni152_workdir / f'{bold_id}_MNI152_atlas_fixed.png'
@@ -194,12 +194,12 @@ if __name__ == '__main__':
         T1_scene = Path(qc_tool_package) / 'plot_T1.scene'
         bold2T1_scene_tmp = subject_bold2T1_workdir / 'plot_boldT1_tmp.scene'
         T1_scene_tmp = subject_bold2T1_workdir / 'plot_T1_tmp.scene'
-        os.symlink(bold2T1_scene, bold2T1_scene_tmp)
-        os.symlink(T1_scene, T1_scene_tmp)
+        shutil.copyfile(bold2T1_scene, bold2T1_scene_tmp)
+        shutil.copyfile(T1_scene, T1_scene_tmp)
 
         bold2mni152_src = Path(bold_preprocess_dir) / subject_id / 'func' / f'{bold_id}_skip_reorient_stc_mc_space-fsnative2mm_fframe.nii.gz'
         bold2mni152_trg = subject_bold2T1_workdir / f'bold2T1_tmp_bold.nii.gz'
-        os.symlink(bold2mni152_src, bold2mni152_trg)
+        shutil.copyfile(bold2mni152_src, bold2mni152_trg)
 
         bold2T1_savepath = subject_bold2T1_workdir / f'{bold_id}_bold_to_T1_moved.png'
         T1_savepath = subject_bold2T1_workdir / f'{bold_id}_T1_atlas_fixed.png'
