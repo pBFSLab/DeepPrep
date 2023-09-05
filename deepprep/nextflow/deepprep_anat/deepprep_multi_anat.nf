@@ -117,6 +117,7 @@ process anat_segment {
     label "with_gpu"
     cpus 1
     memory '10 GB'
+    maxForks 1
 
     input:
     path(subjects_dir)
@@ -472,6 +473,7 @@ process anat_fastcsr_levelset {
     label "with_gpu"
     cpus 1
     memory '6.5 GB'
+    maxForks 1
 
     input:
     path(subjects_dir)
@@ -716,6 +718,7 @@ process anat_sphere_register {
     label "with_gpu"
     cpus 1
     memory '5 GB'
+    maxForks 1
 
     input:
     path(subjects_dir)
