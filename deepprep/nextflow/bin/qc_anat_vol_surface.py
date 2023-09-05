@@ -34,12 +34,12 @@ def set_environ(freesurfer_home):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="plot subject aseg fig")
+    parser = argparse.ArgumentParser(description="plot subject vol surf fig")
     parser.add_argument('--subject_id', help='输入的subjects id', required=True)
-    parser.add_argument('--subjects_dir', help='输入的subjects_dir文件', required=True)
+    parser.add_argument('--subjects_dir', help='输入的subjects dir文件', required=True)
     parser.add_argument('--affine_mat', help='surf转换格式配准的affine', required=True)
     parser.add_argument('--scene_file', help='画图所需要的scene文件', required=True)
-    parser.add_argument('--svg_outpath', help='输出的sav图片保存路径', required=True)
+    parser.add_argument('--svg_outpath', help='输出的svg图片保存路径', required=True)
     parser.add_argument('--freesurfer_home', help='freesurfer 的环境变量', default="/usr/local/freesurfer720",
                         required=False)
     args = parser.parse_args()
@@ -144,6 +144,6 @@ if __name__ == '__main__':
     if Vol_Surface_scene.exists() is False:
          shutil.copyfile(scene_file, Vol_Surface_scene)
     scene_plot(Vol_Surface_scene, Vol_Surface_savepath, 2400, 1000)
-    Vol_Surface_savepath_svg = subject_resultdir / 'Vol_Surface.svg'
+    Vol_Surface_savepath_svg = subject_resultdir / f'{subject_id}_desc-volsurf_anat.svg'
     write_single_svg(Vol_Surface_savepath_svg, Vol_Surface_savepath, 2400, 1000)
     shutil.rmtree(subject_workdir)
