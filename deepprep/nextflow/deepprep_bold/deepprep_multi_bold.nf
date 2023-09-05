@@ -140,6 +140,35 @@ process bold_mkbrainmask {
     --bold_id ${bold_id}
     """
 }
+
+process qc_plot_mctsnr{
+    input:
+    tuple(val(subject_id), val(bold_id), path(mc), path(anat_brainmask))
+    path bold_preprocess_path
+    path nextflow_bin_path
+    path qc_result_path
+
+    output:
+    tuple(val(subject_id), val(bold_id), path("${qc_result_path}/${subject_id}/figures/${bold_id}_desc-tsnr_bold.svg"))
+
+    script:
+    qc_plot_mctsnr_fig_path = "${qc_result_path}/${subject_id}/figures/${bold_id}_desc-tsnr_bold.svg"
+    script_py = "${nextflow_bin_path}/qc_bold_mc_tsnr.py"
+    mctsnr_scene = "${nextflow_bin_path}/qc_tool/McTSNR.scene"
+    color_bar_png = "${nextflow_bin_path}/qc_tool/color_bar.png"
+
+    """
+    python3 ${script_py} \
+    --subject_id ${subject_id} \
+    --bold_id ${bold_id} \
+    --bold_preprocess_path  ${bold_preprocess_path} \
+    --scene_file ${mctsnr_scene} \
+    --color_bar_png ${color_bar_png} \
+    --svg_outpath ${qc_plot_mctsnr_fig_path}
+    """
+
+}
+
 process bold_draw_carpet{
     input:
     path bold_preprocess_path
@@ -290,7 +319,8 @@ workflow {
     bbregister_dat = bold_bbregister(subjects_dir, bold_preprocess_path, nextflow_bin_path, mc_nii)
     bold_aparaseg2mc_inputs = mc_nii.join(bbregister_dat, by: [0,1])
     (anat_wm_nii, anat_csf_nii, anat_aseg_nii, anat_ventricles_nii, anat_brainmask_nii, anat_brainmask_bin_nii) = bold_mkbrainmask(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_aparaseg2mc_inputs)
-
+    qc_plot_mctsnr_input = mc_nii.join(anat_brainmask_nii, by: [0,1])
+    bold_mc_tsnr_svg = qc_plot_mctsnr(qc_plot_mctsnr_input, bold_preprocess_path, nextflow_bin_path, qc_result_path)
     bold_draw_carpet_inputs = mc_nii.join(mcdat, by: [0,1]).join(anat_brainmask_nii, by: [0,1])
     (bold_carpet_svg) = bold_draw_carpet(bold_preprocess_path, nextflow_bin_path, qc_result_path, bold_draw_carpet_inputs)
 
