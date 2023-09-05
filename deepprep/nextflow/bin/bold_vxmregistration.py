@@ -9,6 +9,7 @@ import ants
 import voxelmorph as vxm
 import argparse
 
+
 def VxmRegistration(subject_id: str, subjects_dir: Path, bold_preprocess_dir: Path, atlas_type: str, vxm_model_path: Path, gpuid: str):
     deepprep_subj_path = Path(bold_preprocess_dir) / subject_id
 
@@ -45,7 +46,7 @@ def VxmRegistration(subject_id: str, subjects_dir: Path, bold_preprocess_dir: Pa
     np.savez_compressed(vxm_input_npz, vol=vol)  # vxm输入，
     # save transforms matrix
     fwdtransforms_file = Path(tx['fwdtransforms'][0])
-    shutil.copy(fwdtransforms_file, trf_fsnative2vxmatlask_affine_path)
+    shutil.move(fwdtransforms_file, trf_fsnative2vxmatlask_affine_path)
 
     # ####################### voxelmorph norigid
     # tensorflow device handling
