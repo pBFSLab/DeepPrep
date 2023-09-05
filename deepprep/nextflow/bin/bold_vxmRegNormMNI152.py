@@ -95,8 +95,17 @@ def bold_mc_to_fsnative2mm_ants(bold_mc_file: Path, norm_fsnative2mm_file, regis
     if verbose:
         affine_info = nib.load(norm_fsnative2mm_file).affine
         header_info = nib.load(bold_mc_file).header
-        affined_nib_img = nib.Nifti1Image(affined_bold_img.numpy().astype(int), affine=affine_info, header=header_info)
+        affined_bold_img_np = affined_bold_img.numpy().astype(int)
+        affined_nib_img = nib.Nifti1Image(affined_bold_img_np, affine=affine_info, header=header_info)
         nib.save(affined_nib_img, bold_fsnative2mm_file)
+
+        # save one frame for plotting
+        nib_fframe_img = ants.apply_transforms(fixed=fixed,
+                                               moving=ants.from_numpy(bold_img[..., 0:1], bold_img.origin, bold_img.spacing, bold_img.direction),
+                                               interpolator='nearestNeighbor',
+                                               transformlist=[str(ants_rigid_trf_file)], imagetype=3)
+        nib_fframe_img = nib.Nifti1Image(nib_fframe_img.numpy().astype(int)[..., 0], affine=affine_info, header=header_info)
+        nib.save(nib_fframe_img, bold_fsnative2mm_file.parent / bold_fsnative2mm_file.name.replace('.nii.gz', '_fframe.nii.gz'))
 
     return affined_bold_img
 
@@ -176,8 +185,11 @@ def vxm_warp_bold_2mm(vxm_model_path, bold_fsnative2mm, bold_fsnative2mm_file, a
     if verbose:
         affine_info = nib.load(MNI152_2mm_file).affine
         header_info = nib.load(bold_fsnative2mm_file).header
-        nib_img = nib.Nifti1Image(moved_img.numpy().astype(int), affine=affine_info, header=header_info)
+        moved_img_np = moved_img.numpy().astype(int)
+        nib_img = nib.Nifti1Image(moved_img_np, affine=affine_info, header=header_info)
         nib.save(nib_img, warped_file)
+        nib_fframe_img = nib.Nifti1Image(moved_img_np[..., 0], affine=affine_info, header=header_info)
+        nib.save(nib_fframe_img, warped_file.parent / warped_file.name.replace('.nii.gz', '_fframe.nii.gz'))
     return moved_img
 
 
@@ -200,7 +212,7 @@ def VxmRegNormMNI152(subj_recon_dir, deepprep_subj_path, subject_id, atlas_type,
                                                                       '_space-fsnative2mm.nii.gz')  # save reg to T1 result file
 
     bold_fsnative2mm_img = bold_mc_to_fsnative2mm_ants(bold_mc_file, norm_fsnative2mm_file, register_dat_file,
-                                                       str(bold_fsnative2mm_file), subj_func_dir, resource_dir,
+                                                       bold_fsnative2mm_file, subj_func_dir, resource_dir,
                                                        verbose=fs_native_space)
 
     ants_affine_trt_file = subj_anat_dir / f'{subject_id}_from_fsnative_to_vxm{atlas_type}_ants_affine.mat'
