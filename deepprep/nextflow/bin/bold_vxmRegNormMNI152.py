@@ -223,11 +223,9 @@ def VxmRegNormMNI152(subj_recon_dir, deepprep_subj_path, subject_id, atlas_type,
                       ants_affine_trt_file, vxm_nonrigid_trt_file, bold_atlas_file,
                       batch_size, verbose=standard_space)
 
-    bold_fsaverage_file = subj_surf_dir / bold_mc_file.name.replace('.nii.gz',
-                                                                    '_space-fsaverage6.nii.gz')  # save reg to fsaverage6 result file
-    bold_fsaverage_lh_file = subj_surf_dir / ('lh.' + bold_fsaverage_file.name)
+    bold_fsaverage_lh_file = subj_surf_dir / bold_mc_file.name.replace('.nii.gz', '_hemi-L_space-fsaverage6.nii.gz')
     native_project_to_fs6(subj_recon_dir, bold_mc_file, bold_fsaverage_lh_file, register_dat_file, 'lh')
-    bold_fsaverage_rh_file = subj_surf_dir / ('rh.' + bold_fsaverage_file.name)
+    bold_fsaverage_rh_file = subj_surf_dir / bold_mc_file.name.replace('.nii.gz', '_hemi-R_space-fsaverage6.nii.gz')
     native_project_to_fs6(subj_recon_dir, bold_mc_file, bold_fsaverage_rh_file, register_dat_file, 'rh')
 
 
