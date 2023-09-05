@@ -98,7 +98,7 @@ process anat_motioncor {
 
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
     path(subjects_dir)
-    tuple(val(subject_id), path(subject_t1wfile_txt))
+    val(subject_id)
 
     output:
     tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/orig.mgz")) // emit: orig_mgz
@@ -1223,7 +1223,7 @@ workflow {
     subjects_dir = params.subjects_dir
     qc_result_path = params.qc_result_path
 
-    fsthreads = params.fsthreads
+    fsthreads = params.anat_fsthreads
 
     fastsurfer_home = params.fastsurfer_home
 
