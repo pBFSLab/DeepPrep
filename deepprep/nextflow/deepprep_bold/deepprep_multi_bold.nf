@@ -17,6 +17,25 @@ process make_bold_preprocess_dir {
 }
 
 
+process make_qc_result_dir {
+    input:
+    val(dir_path)
+
+    output:
+    val(dir_path)
+
+    shell:
+    """
+    #! /usr/bin/env python3
+
+    import os
+    from pathlib import Path
+    sd = Path('${dir_path}')
+    sd.mkdir(parents=True, exist_ok=True)
+    """
+}
+
+
 process bold_get_bold_file_in_bids {
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
     path bids_dir
@@ -243,7 +262,7 @@ workflow {
     bold_aparaseg2mc_inputs = mc_nii.join(bbregister_dat, by: [0,1])
     (anat_wm_nii, anat_csf_nii, anat_aseg_nii, anat_ventricles_nii, anat_brainmask_nii, anat_brainmask_bin_nii) = bold_mkbrainmask(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_aparaseg2mc_inputs)
 
-    bold_draw_carpet_inputs = mc.mc_nii(mcdat, by: [0,1]).join(anat_brainmask_nii, by: [0,1])
+    bold_draw_carpet_inputs = mc_nii.join(mcdat, by: [0,1]).join(anat_brainmask_nii, by: [0,1])
     (bold_carpet_svg) = bold_draw_carpet(bold_preprocess_path, nextflow_bin_path, save_svg_dir, bold_draw_carpet_inputs)
 
     bold_vxmregnormmni152_inputs = mc_nii.join(bbregister_dat, by: [0,1]).join(vxm_nonrigid_nii).join(vxm_fsnative_affine_mat)
