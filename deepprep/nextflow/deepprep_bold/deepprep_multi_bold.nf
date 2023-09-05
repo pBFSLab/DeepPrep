@@ -144,10 +144,10 @@ process bold_draw_carpet{
     input:
     path bold_preprocess_path
     path nextflow_bin_path
-    path save_svg_dir
+    path qc_result_path
     tuple(val(subject_id), val(bold_id), path(mc), path(mcdat), path(anat_brainmask))
     output:
-    tuple(val(subject_id), val(bold_id), path("${save_svg_dir}/${subject_id}/figures/${bold_id}_desc-carpet_bold.svg")) // emit: bold_carpet_svg
+    tuple(val(subject_id), val(bold_id), path("${qc_result_path}/${subject_id}/figures/${bold_id}_desc-carpet_bold.svg")) // emit: bold_carpet_svg
     script:
     script_py = "${nextflow_bin_path}/bold_averagesingnal.py"
     """
@@ -158,7 +158,7 @@ process bold_draw_carpet{
     --mcdat ${mcdat} \
     --anat_brainmask ${anat_brainmask} \
     --bold_id ${bold_id} \
-    --save_svg_dir ${save_svg_dir}
+    --save_svg_dir ${qc_result_path}
     """
 }
 process bold_vxmregistration{
@@ -193,6 +193,34 @@ process bold_vxmregistration{
     --gpuid ${gpuid}
     """
 }
+
+process qc_plot_norm2mni152{
+    input:
+    tuple(val(subject_id), path(norm_to_mni152_nii))
+    path bold_preprocess_path
+    path nextflow_bin_path
+    path qc_result_path
+
+    output:
+    tuple(val(subject_id), path("${qc_result_path}/${subject_id}/figures/${subject_id}_desc-T1toMNI152_combine.svg"))
+
+    script:
+    qc_plot_norm_to_mni152_fig_path = "${qc_result_path}/${subject_id}/figures/${subject_id}_desc-T1toMNI152_combine.svg"
+    script_py = "${nextflow_bin_path}/qc_bold_norm_to_mni152.py"
+    normtoMNI152_scene = "${nextflow_bin_path}/qc_tool/NormtoMNI152.scene"
+    mni152_norm_png = "${nextflow_bin_path}/qc_tool/MNI152_norm.png"
+
+    """
+    python3 ${script_py} \
+    --subject_id ${subject_id} \
+    --bold_preprocess_path  ${bold_preprocess_path} \
+    --scene_file ${normtoMNI152_scene} \
+    --mni152_norm_png ${mni152_norm_png} \
+    --svg_outpath ${qc_plot_norm_to_mni152_fig_path}
+
+    """
+}
+
 process bold_vxmregnormmni152{
     maxForks 1
     memory '40 GB'
@@ -245,25 +273,26 @@ workflow {
     bold_skip_reorient_nskip = params.bold_skip_reorient_nskip
     atlas_type = params.atlas_type
     gpuid = params.device
-    save_svg_dir = params.qc_result_path
+    qc_result_path = params.qc_result_path
     resource_dir = params.bold_vxmregnormmni152_resource_dir
     bold_vxmregnormmni152_batch_size = params.bold_vxmregnormmni152_batch_size
     bold_vxmregnormmni152_standard_space = params.bold_vxmregnormmni152_standard_space
     bold_vxmregnormmni152_fs_native_space = params.bold_vxmregnormmni152_fs_native_space
 
     bold_preprocess_path = make_bold_preprocess_dir(bold_preprocess_path)
-    save_svg_dir = make_qc_result_dir(save_svg_dir)
+    qc_result_path = make_qc_result_dir(qc_result_path)
 
     subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, nextflow_bin_path, bold_task)
     skip_reorient_nii = bold_skip_reorient(bold_preprocess_path, subject_boldfile_txt, nextflow_bin_path, bold_skip_reorient_nskip)
     (vxm_norm_nii, norm_nii, vxm_nonrigid_nii, vxm_affine_npz, vxm_fsnative_affine_mat) = bold_vxmregistration(subjects_dir, bold_preprocess_path, nextflow_bin_path, subject_boldfile_txt, gpuid, atlas_type, vxm_model_path)
+    norm_to_mni152_svg = qc_plot_norm2mni152(norm_nii, bold_preprocess_path, nextflow_bin_path, qc_result_path)
     (mc_nii, mcdat, boldref) = bold_stc_mc(bold_preprocess_path, nextflow_bin_path, skip_reorient_nii)
     bbregister_dat = bold_bbregister(subjects_dir, bold_preprocess_path, nextflow_bin_path, mc_nii)
     bold_aparaseg2mc_inputs = mc_nii.join(bbregister_dat, by: [0,1])
     (anat_wm_nii, anat_csf_nii, anat_aseg_nii, anat_ventricles_nii, anat_brainmask_nii, anat_brainmask_bin_nii) = bold_mkbrainmask(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_aparaseg2mc_inputs)
 
     bold_draw_carpet_inputs = mc_nii.join(mcdat, by: [0,1]).join(anat_brainmask_nii, by: [0,1])
-    (bold_carpet_svg) = bold_draw_carpet(bold_preprocess_path, nextflow_bin_path, save_svg_dir, bold_draw_carpet_inputs)
+    (bold_carpet_svg) = bold_draw_carpet(bold_preprocess_path, nextflow_bin_path, qc_result_path, bold_draw_carpet_inputs)
 
     bold_vxmregnormmni152_inputs = mc_nii.join(bbregister_dat, by: [0,1]).join(vxm_nonrigid_nii).join(vxm_fsnative_affine_mat)
     (bold_atlas_to_mni152) = bold_vxmregnormmni152(bold_preprocess_path, subjects_dir, atlas_type, vxm_model_path, resource_dir, nextflow_bin_path, bold_vxmregnormmni152_batch_size, gpuid, bold_vxmregnormmni152_standard_space, bold_vxmregnormmni152_fs_native_space, bold_vxmregnormmni152_inputs)
