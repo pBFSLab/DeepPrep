@@ -197,9 +197,7 @@ def VxmRegNormMNI152(subj_recon_dir, deepprep_subj_path, subject_id, atlas_type,
                      register_dat_file, resource_dir, batch_size, gpuid, standard_space, fs_native_space):
     subj_func_dir = Path(deepprep_subj_path) / 'func'
     subj_anat_dir = Path(deepprep_subj_path) / 'anat'
-    subj_surf_dir = Path(deepprep_subj_path) / 'surf'
     subj_func_dir.mkdir(parents=True, exist_ok=True)
-    subj_surf_dir.mkdir(parents=True, exist_ok=True)
 
     norm_fsnative_file = Path(subjects_dir) / subject_id / 'mri' / 'norm.mgz'
     norm_fsnative2mm_file = subj_anat_dir / f'{subject_id}_norm_2mm.nii.gz'
@@ -223,11 +221,9 @@ def VxmRegNormMNI152(subj_recon_dir, deepprep_subj_path, subject_id, atlas_type,
                       ants_affine_trt_file, vxm_nonrigid_trt_file, bold_atlas_file,
                       batch_size, verbose=standard_space)
 
-    bold_fsaverage_file = subj_surf_dir / bold_mc_file.name.replace('.nii.gz',
-                                                                    '_space-fsaverage6.nii.gz')  # save reg to fsaverage6 result file
-    bold_fsaverage_lh_file = subj_surf_dir / ('lh.' + bold_fsaverage_file.name)
+    bold_fsaverage_lh_file = subj_func_dir / bold_mc_file.name.replace('.nii.gz', '_hemi-L_space-fsaverage6.nii.gz')
     native_project_to_fs6(subj_recon_dir, bold_mc_file, bold_fsaverage_lh_file, register_dat_file, 'lh')
-    bold_fsaverage_rh_file = subj_surf_dir / ('rh.' + bold_fsaverage_file.name)
+    bold_fsaverage_rh_file = subj_func_dir / bold_mc_file.name.replace('.nii.gz', '_hemi-R_space-fsaverage6.nii.gz')
     native_project_to_fs6(subj_recon_dir, bold_mc_file, bold_fsaverage_rh_file, register_dat_file, 'rh')
 
 
