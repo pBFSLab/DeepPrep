@@ -116,10 +116,10 @@ if __name__ == '__main__':
     subject_workdir = Path(subject_resultdir) / f'{bold_id}_mctsnr'
     subject_workdir.mkdir(parents=True, exist_ok=True)
 
-    bold_mc = Path(bold_preprocess_dir) / subject_id / 'func' / f'{bold_id}_skip_reorient_stc_mc.nii.gz'
-    # bold_mc = '/mnt/ngshare2/nextflow/temp/BoldPreprocess/sub-MSC01/func/sub-MSC01_ses-func01_task-rest_bold_skip_reorient_stc_mc.nii.gz'
-    mc_tsnr_path = subject_workdir / 'mc_tsnr.nii.gz'
-    # mc_tsnr_path = '/mnt/ngshare2/nextflow/qc_result/sub-MSC01/bold/sub-MSC01_ses-func01_task-rest_bold_mctsnr/snr.nii.gz'
+    cur_path = os.getcwd()
+
+    bold_mc = Path(cur_path) / bold_preprocess_dir / subject_id / 'func' / f'{bold_id}_skip_reorient_stc_mc.nii.gz'
+    mc_tsnr_path = Path(cur_path) / str(subject_workdir) / 'mc_tsnr.nii.gz'
     TSNR_test(bold_mc, mc_tsnr_path)
     mc_brainmask = str(bold_mc).replace('.nii.gz', '.anat.brainmask.nii.gz')
     rewrite_tsnr(mc_tsnr_path, mc_brainmask)
@@ -132,4 +132,4 @@ if __name__ == '__main__':
     combine_bar(str(output_tsnr_savepath), str(color_bar_png))
     Surface_parc_savepath_svg = subject_resultdir / f'{bold_id}_desc-tsnr_bold.svg'
     write_single_svg(Surface_parc_savepath_svg, output_tsnr_savepath, 2400, 1000)
-    os.remove(subject_workdir)
+    shutil.rmtree(subject_workdir)
