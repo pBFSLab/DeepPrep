@@ -52,6 +52,8 @@ process bold_get_bold_file_in_bids {
     --task ${bold_task}
     """
 }
+
+
 process bold_skip_reorient {
     input:
     path bold_preprocess_path
@@ -73,6 +75,8 @@ process bold_skip_reorient {
     """
 
 }
+
+
 process bold_stc_mc {
     input:
     path bold_preprocess_path
@@ -93,6 +97,8 @@ process bold_stc_mc {
     --bold_id ${bold_id}
     """
 }
+
+
 process bold_bbregister {
     input:
     path subjects_dir
@@ -114,6 +120,8 @@ process bold_bbregister {
     """
 
 }
+
+
 process bold_mkbrainmask {
     input:
     path subjects_dir
@@ -140,7 +148,9 @@ process bold_mkbrainmask {
     --bold_id ${bold_id}
     """
 }
-process bold_draw_carpet{
+
+
+process bold_draw_carpet {
     input:
     path bold_preprocess_path
     path nextflow_bin_path
@@ -161,7 +171,9 @@ process bold_draw_carpet{
     --save_svg_dir ${qc_result_path}
     """
 }
-process bold_vxmregistration{
+
+
+process bold_vxmregistration {
 
     memory '5 GB'
 
@@ -194,7 +206,8 @@ process bold_vxmregistration{
     """
 }
 
-process qc_plot_norm2mni152{
+
+process qc_plot_norm2mni152 {
     input:
     tuple(val(subject_id), path(norm_to_mni152_nii))
     path bold_preprocess_path
@@ -221,7 +234,8 @@ process qc_plot_norm2mni152{
     """
 }
 
-process bold_vxmregnormmni152{
+
+process bold_vxmregnormmni152 {
     maxForks 1
     memory '40 GB'
 
@@ -263,6 +277,32 @@ process bold_vxmregnormmni152{
     """
 }
 
+
+process bold_confounds {
+    maxForks 1
+    memory '40 GB'
+
+    input:
+    path bold_preprocess_path
+    path nextflow_bin_path
+    tuple(val(subject_id), val(bold_id), path(mc), path(bbregister_dat))
+
+    output:
+    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_skip_reorient_stc_mc_space-MNI152_T1_2mm.nii.gz")) // emit: bold_atlas_to_mni152
+
+    script:
+    script_py = "${nextflow_bin_path}/bold_cal_confounds.py"
+
+    """
+    python3 ${script_py} \
+    --bold_preprocess_dir ${bold_preprocess_path} \
+    --subject_id ${subject_id} \
+    --bold_id ${bold_id} \
+    --mc ${mc}
+    """
+}
+
+
 workflow {
     bids_dir = params.bids_dir
     subjects_dir = params.subjects_dir
@@ -290,6 +330,9 @@ workflow {
     bbregister_dat = bold_bbregister(subjects_dir, bold_preprocess_path, nextflow_bin_path, mc_nii)
     bold_aparaseg2mc_inputs = mc_nii.join(bbregister_dat, by: [0,1])
     (anat_wm_nii, anat_csf_nii, anat_aseg_nii, anat_ventricles_nii, anat_brainmask_nii, anat_brainmask_bin_nii) = bold_mkbrainmask(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_aparaseg2mc_inputs)
+
+//     bold_confounds_inputs = mc_nii.join(anat_wm_nii, by: [0,1]).join(anat_brainmask_nii, by: [0,1])
+//     bold_confounds(bold_preprocess_path, nextflow_bin_path, )
 
     bold_draw_carpet_inputs = mc_nii.join(mcdat, by: [0,1]).join(anat_brainmask_nii, by: [0,1])
     (bold_carpet_svg) = bold_draw_carpet(bold_preprocess_path, nextflow_bin_path, qc_result_path, bold_draw_carpet_inputs)
