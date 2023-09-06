@@ -877,10 +877,10 @@ process qc_plot_volsurf {
     path freesurfer_home
 
     output:
-    tuple(val(subject_id), path("${qc_result_path}/${subject_id}/figures/${subject_id}_desc-volsurf_anat.svg"))
+    tuple(val(subject_id), path("${qc_result_path}/${subject_id}/figures/${subject_id}_desc-volsurf_T1w.svg"))
 
     script:
-    qc_plot_aseg_fig_path = "${qc_result_path}/${subject_id}/figures/${subject_id}_desc-volsurf_anat.svg"
+    qc_plot_aseg_fig_path = "${qc_result_path}/${subject_id}/figures/${subject_id}_desc-volsurf_T1w.svg"
 
     script_py = "${nextflow_bin_path}/qc_vol_surface.py"
     vol_Surface_scene = "${nextflow_bin_path}/qc_tool/Vol_Surface.scene"
@@ -912,10 +912,10 @@ process qc_plot_surfparc {
     path freesurfer_home
 
     output:
-    tuple(val(subject_id), path("${qc_result_path}/${subject_id}/figures/${subject_id}_desc-surfparc_anat.svg"))
+    tuple(val(subject_id), path("${qc_result_path}/${subject_id}/figures/${subject_id}_desc-surfparc_T1w.svg"))
 
     script:
-    qc_plot_aseg_fig_path = "${qc_result_path}/${subject_id}/figures/${subject_id}_desc-surfparc_anat.svg"
+    qc_plot_aseg_fig_path = "${qc_result_path}/${subject_id}/figures/${subject_id}_desc-surfparc_T1w.svg"
 
     script_py = "${nextflow_bin_path}/qc_surface_parc.py"
     surface_parc_scene = "${nextflow_bin_path}/qc_tool/Surface_parc.scene"
@@ -1116,10 +1116,10 @@ process qc_plot_aparc_aseg {
     path freesurfer_home
 
     output:
-    tuple(val(subject_id), path("${qc_result_path}/${subject_id}/figures/${subject_id}_desc-volparc_anat.svg"))
+    tuple(val(subject_id), path("${qc_result_path}/${subject_id}/figures/${subject_id}_desc-volparc_T1w.svg"))
 
     script:
-    qc_plot_aseg_fig_path = "${qc_result_path}/${subject_id}/figures/${subject_id}_desc-volparc_anat.svg"
+    qc_plot_aseg_fig_path = "${qc_result_path}/${subject_id}/figures/${subject_id}_desc-volparc_T1w.svg"
 
     script_py = "${nextflow_bin_path}/qc_aparc_aseg.py"
     freesurfer_AllLut = "${nextflow_bin_path}/qc_tool/FreeSurferAllLut.txt"
