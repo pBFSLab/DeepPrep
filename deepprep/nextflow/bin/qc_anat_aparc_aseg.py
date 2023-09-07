@@ -111,6 +111,6 @@ if __name__ == '__main__':
     if Volume_parc_scene.exists() is False:
         shutil.copyfile(scene_file, Volume_parc_scene)
     scene_plot(Volume_parc_scene, png_savepath, 2400, 1000)
-    Volume_parc_savepath_svg = subject_resultdir / f'{subject_id}_desc-volparc_anat.svg'
+    Volume_parc_savepath_svg = subject_resultdir / f'{subject_id}_desc-volparc_T1w.svg'
     write_single_svg(Volume_parc_savepath_svg, png_savepath, 2400, 1000)
     shutil.rmtree(subject_workdir)
