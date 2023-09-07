@@ -94,7 +94,7 @@ def VxmRegistration(subject_id: str, subjects_dir: Path, bold_preprocess_dir: Pa
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description="DeepPrep: Bold PreProcessing workflows -- VxmRegidtration"
+        description="DeepPrep: Bold PreProcessing workflows -- VxmRegistration"
     )
 
     parser.add_argument("--bold_preprocess_dir", required=True)
@@ -106,5 +106,6 @@ if __name__ == '__main__':
     parser.add_argument("--gpuid", required=True)
     args = parser.parse_args()
 
-    # cur_path = os.getcwd()
-    VxmRegistration(args.subject_id, args.subjects_dir, args.bold_preprocess_dir, args.atlas_type, Path(args.vxm_model_path), args.gpuid)
+    cur_path = os.getcwd()
+    preprocess_dir = Path(cur_path) / str(args.bold_preprocess_dir)
+    VxmRegistration(args.subject_id, args.subjects_dir, preprocess_dir, args.atlas_type, Path(args.vxm_model_path), args.gpuid)
