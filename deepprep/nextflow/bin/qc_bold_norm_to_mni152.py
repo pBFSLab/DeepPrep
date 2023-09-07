@@ -94,4 +94,5 @@ if __name__ == '__main__':
     scene_plot(NormtoMNI152_scene, NormtoMNI152_savepath, 2400, 1000)
     combine_svg_savepath = subject_resultdir / f'{subject_id}_desc-T1toMNI152_combine.svg'
     write_combine_svg(combine_svg_savepath, mni152_norm_png, NormtoMNI152_savepath, 2400, 1000)
-    shutil.rmtree(subject_workdir)
+    if subject_workdir.exists():
+        shutil.rmtree(subject_workdir)
