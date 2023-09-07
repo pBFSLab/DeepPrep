@@ -104,6 +104,7 @@ def cmd(subj_func_dir: Path, skip_reorient: Path, run: str, subject_id, bold_nam
         pass
     shutil.rmtree(ori_path / bold_name)
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="DeepPrep: Bold PreProcessing workflows -- STC"
@@ -118,7 +119,7 @@ if __name__ == '__main__':
 
     cur_path = os.getcwd()
 
-    preprocess_dir  = Path(cur_path) / str(args.bold_preprocess_dir) / args.subject_id
+    preprocess_dir = Path(cur_path) / str(args.bold_preprocess_dir) / args.subject_id
     subj_func_dir = Path(preprocess_dir) / 'func'
     subj_func_dir.mkdir(parents=True, exist_ok=True)
 
