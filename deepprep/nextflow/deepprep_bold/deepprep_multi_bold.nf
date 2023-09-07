@@ -1,4 +1,8 @@
 process make_bold_preprocess_dir {
+    tag "${subject_id}"
+
+    cpus 1
+
     input:
     val(dir_path)
 
@@ -18,6 +22,9 @@ process make_bold_preprocess_dir {
 
 
 process make_qc_result_dir {
+    tag "${subject_id}"
+
+    cpus 1
     input:
     val(dir_path)
 
@@ -37,6 +44,10 @@ process make_qc_result_dir {
 
 
 process bold_get_bold_file_in_bids {
+    tag "${subject_id}"
+
+    cpus 1
+
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
     path bids_dir
     path nextflow_bin_path
@@ -55,6 +66,10 @@ process bold_get_bold_file_in_bids {
 
 
 process bold_skip_reorient {
+    tag "${subject_id}"
+
+    cpus 1
+
     input:
     path bold_preprocess_path
     each path(subject_boldfile_txt)
@@ -78,6 +93,10 @@ process bold_skip_reorient {
 
 
 process bold_stc_mc {
+    tag "${subject_id}"
+
+    cpus 1
+
     input:
     path bold_preprocess_path
     path nextflow_bin_path
@@ -100,6 +119,10 @@ process bold_stc_mc {
 
 
 process bold_bbregister {
+    tag "${subject_id}"
+
+    cpus 1
+
     input:
     path subjects_dir
     path bold_preprocess_path
@@ -123,6 +146,10 @@ process bold_bbregister {
 
 
 process bold_mkbrainmask {
+    tag "${subject_id}"
+
+    cpus 1
+
     input:
     path subjects_dir
     path bold_preprocess_path
@@ -151,6 +178,10 @@ process bold_mkbrainmask {
 
 
 process qc_plot_mctsnr {
+    tag "${subject_id}"
+
+    cpus 1
+
     input:
     tuple(val(subject_id), val(bold_id), path(mc), path(anat_brainmask))
     path bold_preprocess_path
@@ -180,6 +211,10 @@ process qc_plot_mctsnr {
 
 
 process bold_draw_carpet {
+    tag "${subject_id}"
+
+    cpus 1
+
     input:
     path bold_preprocess_path
     path nextflow_bin_path
@@ -203,7 +238,9 @@ process bold_draw_carpet {
 
 
 process bold_vxmregistration {
+    tag "${subject_id}"
 
+    cpus 1
     memory '5 GB'
 
     input:
@@ -237,6 +274,10 @@ process bold_vxmregistration {
 
 
 process qc_plot_norm2mni152 {
+    tag "${subject_id}"
+
+    cpus 1
+
     input:
     tuple(val(subject_id), path(norm_to_mni152_nii))
     path bold_preprocess_path
@@ -265,6 +306,9 @@ process qc_plot_norm2mni152 {
 
 
 process bold_vxmregnormmni152 {
+    tag "${subject_id}"
+
+    cpus 1
     maxForks 1
     memory '40 GB'
 
@@ -308,8 +352,9 @@ process bold_vxmregnormmni152 {
 
 
 process bold_confounds {
-    maxForks 1
-    memory '40 GB'
+    tag "${subject_id}"
+
+    cpus 1
 
     input:
     path bold_preprocess_path
@@ -334,6 +379,10 @@ process bold_confounds {
 
 
 process qc_plot_bold_to_space {
+    tag "${subject_id}"
+
+    cpus 1
+
     input:
     tuple(val(subject_id), val(bold_id), path(bold_atlas_to_mni152))
     val fs_native_space
@@ -400,8 +449,8 @@ workflow {
     (bold_carpet_svg) = bold_draw_carpet(bold_preprocess_path, nextflow_bin_path, qc_result_path, bold_draw_carpet_inputs)
 
     bold_vxmregnormmni152_inputs = mc_nii.join(bbregister_dat, by: [0,1]).join(vxm_nonrigid_nii).join(vxm_fsnative_affine_mat)
-//     (bold_atlas_to_mni152) = bold_vxmregnormmni152(bold_preprocess_path, subjects_dir, atlas_type, vxm_model_path, resource_dir, nextflow_bin_path, bold_vxmregnormmni152_batch_size, gpuid, bold_vxmregnormmni152_standard_space, bold_vxmregnormmni152_fs_native_space, bold_vxmregnormmni152_inputs)
-//     bold_to_mni152_svg = qc_plot_bold_to_space(bold_atlas_to_mni152, bold_vxmregnormmni152_fs_native_space, subjects_dir, bold_preprocess_path, nextflow_bin_path, qc_result_path, freesurfer_home)
+    (bold_atlas_to_mni152) = bold_vxmregnormmni152(bold_preprocess_path, subjects_dir, atlas_type, vxm_model_path, resource_dir, nextflow_bin_path, bold_vxmregnormmni152_batch_size, gpuid, bold_vxmregnormmni152_standard_space, bold_vxmregnormmni152_fs_native_space, bold_vxmregnormmni152_inputs)
+    bold_to_mni152_svg = qc_plot_bold_to_space(bold_atlas_to_mni152, bold_vxmregnormmni152_fs_native_space, subjects_dir, bold_preprocess_path, nextflow_bin_path, qc_result_path, freesurfer_home)
 
     bold_confounds_inputs = mc_nii.join(anat_wm_nii, by: [0,1]).join(bbregister_dat, by: [0,1])
     bold_confounds_inputs.view()
