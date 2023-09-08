@@ -107,4 +107,5 @@ if __name__ == '__main__':
 
     cur_path = os.getcwd()
     preprocess_dir = Path(cur_path) / str(args.bold_preprocess_dir)
-    VxmRegistration(args.subject_id, args.subjects_dir, preprocess_dir, args.atlas_type, Path(args.vxm_model_path), args.gpuid)
+    subjects_dir = Path(cur_path) / str(args.subjects_dir)
+    VxmRegistration(args.subject_id, subjects_dir, preprocess_dir, args.atlas_type, Path(args.vxm_model_path), args.gpuid)
