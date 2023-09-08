@@ -76,7 +76,7 @@ process bold_skip_reorient {
     path nextflow_bin_path
     val nskip
     output:
-    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_skip_reorient.nii.gz")) // emit: skip_reorient
+    tuple(val(subject_id), val(bold_id)) // emit: bold_info
     script:
     bold_id = subject_boldfile_txt.name
     subject_id = bold_id.split('_')[0]
@@ -100,7 +100,7 @@ process bold_stc_mc {
     input:
     path bold_preprocess_path
     path nextflow_bin_path
-    tuple(val(subject_id), val(bold_id), path(skip_reorient))
+    tuple(val(subject_id), val(bold_id))
     output:
     tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_skip_reorient_stc_mc.nii.gz")) // emit: mc
     tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_skip_reorient_stc_mc.mcdat")) // emit: mcdat
@@ -112,7 +112,6 @@ process bold_stc_mc {
     python3 ${script_py} \
     --bold_preprocess_dir ${bold_preprocess_path} \
     --subject_id ${subject_id} \
-    --skip_reorient ${skip_reorient} \
     --bold_id ${bold_id}
     """
 }
@@ -247,7 +246,7 @@ process bold_vxmregistration {
     path subjects_dir
     path bold_preprocess_path
     path nextflow_bin_path
-    each path(subject_boldfile_txt)
+    tuple(val(subject_id), val(bold_id))
     val gpuid
     val atlas_type
     path vxm_model_path
@@ -258,7 +257,6 @@ process bold_vxmregistration {
     tuple(val(subject_id), path("${bold_preprocess_path}/${subject_id}/anat/${subject_id}_norm_affine_space-vxm${atlas_type}.npz")) // emit: vxm_affine_npz
     tuple(val(subject_id), path("${bold_preprocess_path}/${subject_id}/anat/${subject_id}_from_fsnative_to_vxm${atlas_type}_ants_affine.mat")) // emit: vxm_fsnative_affine_mat
     script:
-    subject_id = subject_boldfile_txt.name.split('_')[0]
     script_py = "${nextflow_bin_path}/bold_vxmregistration.py"
 
     """
@@ -464,10 +462,10 @@ workflow {
     qc_result_path = make_qc_result_dir(qc_result_path)
 
     subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, nextflow_bin_path, bold_task)
-    skip_reorient_nii = bold_skip_reorient(bold_preprocess_path, subject_boldfile_txt, nextflow_bin_path, bold_skip_reorient_nskip)
-    (vxm_norm_nii, norm_nii, vxm_nonrigid_nii, vxm_affine_npz, vxm_fsnative_affine_mat) = bold_vxmregistration(subjects_dir, bold_preprocess_path, nextflow_bin_path, subject_boldfile_txt, gpuid, atlas_type, vxm_model_path)
+    bold_info = bold_skip_reorient(bold_preprocess_path, subject_boldfile_txt, nextflow_bin_path, bold_skip_reorient_nskip)
+    (vxm_norm_nii, norm_nii, vxm_nonrigid_nii, vxm_affine_npz, vxm_fsnative_affine_mat) = bold_vxmregistration(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_info, gpuid, atlas_type, vxm_model_path)
     norm_to_mni152_svg = qc_plot_norm2mni152(norm_nii, bold_preprocess_path, nextflow_bin_path, qc_result_path)
-    (mc_nii, mcdat, boldref) = bold_stc_mc(bold_preprocess_path, nextflow_bin_path, skip_reorient_nii)
+    (mc_nii, mcdat, boldref) = bold_stc_mc(bold_preprocess_path, nextflow_bin_path, bold_info)
 //     bold_synthmorpt_registration_inputs= mc_nii.join(boldref, by: [0,1])
 //     (bold_mc_to_mni152) = bold_synthmorpt_registration(bold_preprocess_path, nextflow_bin_path, bold_synthmorph_template_path, bold_synthmorph_model_path, bold_synthmorpt_registration_inputs)
     bbregister_dat = bold_bbregister(subjects_dir, bold_preprocess_path, nextflow_bin_path, mc_nii)

@@ -102,7 +102,6 @@ if __name__ == '__main__':
     parser.add_argument("--subject_id", required=True)
     parser.add_argument("--atlas_type", required=True)
     parser.add_argument("--vxm_model_path", required=True)
-    # parser.add_argument("--bold_id", required=True)
     parser.add_argument("--gpuid", required=True)
     args = parser.parse_args()
 

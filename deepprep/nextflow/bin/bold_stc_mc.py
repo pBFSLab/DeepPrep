@@ -110,10 +110,8 @@ if __name__ == '__main__':
         description="DeepPrep: Bold PreProcessing workflows -- STC"
     )
 
-    # parser.add_argument("--cur_path", required=True)
     parser.add_argument("--bold_preprocess_dir", required=True)
     parser.add_argument("--subject_id", required=True)
-    parser.add_argument("--skip_reorient", required=True)
     parser.add_argument("--bold_id", required=True)
     args = parser.parse_args()
 
