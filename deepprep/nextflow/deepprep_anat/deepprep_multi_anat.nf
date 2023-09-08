@@ -1,4 +1,6 @@
 process mkdir_subjects_dir_exist {
+    cpus 1
+
     input:
     val subjects_dir
 
@@ -15,6 +17,8 @@ process mkdir_subjects_dir_exist {
 
 
 process cp_fsaverage_to_subjects_dir {
+    cpus 1
+
     input:
     val subjects_dir
     path(freesurfer_fsaverage_dir)
@@ -37,6 +41,8 @@ process cp_fsaverage_to_subjects_dir {
 
 
 process make_qc_result_dir {
+    cpus 1
+
     input:
     val qc_result_dir
 
@@ -156,6 +162,8 @@ process anat_segment {
 process anat_reduce_to_aseg {
     tag "${subject_id}"
 
+    cpus 1
+
     input:
     path(subjects_dir)
     tuple(val(subject_id), path(seg_deep_mgz))
@@ -184,6 +192,8 @@ process anat_reduce_to_aseg {
 process anat_N4_bias_correct {
     tag "${subject_id}"
 
+    cpus 1
+
     input:
     path(subjects_dir)
     tuple(val(subject_id), path(orig_mgz), path(mask_mgz))
@@ -210,6 +220,8 @@ process anat_N4_bias_correct {
 
 process anat_talairach_and_nu {
     tag "${subject_id}"
+
+    cpus 1
 
     input:
     path(subjects_dir)
@@ -256,6 +268,8 @@ process anat_talairach_and_nu {
 process anat_T1 {
     tag "${subject_id}"
 
+    cpus 1
+
     input:
     path(subjects_dir)
     tuple(val(subject_id), path(nu_mgz))
@@ -276,6 +290,8 @@ process anat_T1 {
 
 process anat_brainmask {
     tag "${subject_id}"
+
+    cpus 1
 
     input:
     path(subjects_dir)
@@ -299,6 +315,8 @@ process anat_brainmask {
 
 process anat_paint_cc_to_aseg {
     tag "${subject_id}"
+
+    cpus 1
 
     input:
     path(subjects_dir)
@@ -327,6 +345,8 @@ process anat_paint_cc_to_aseg {
 process anat_fill {
     tag "${subject_id}"
 
+    cpus 1
+
     input:
     path(subjects_dir)
     tuple(val(subject_id), path(aseg_auto_mgz), path(norm_mgz), path(brainmask_mgz), path(talairach_lta))
@@ -353,6 +373,8 @@ process anat_fill {
 process subject_id_hemi_lh {
     tag "${subject_id}"
 
+    cpus 1
+
     input:
     tuple(val(subject_id), path(aseg_presurf_mgz))
     output:
@@ -365,6 +387,8 @@ process subject_id_hemi_lh {
 process subject_id_hemi_rh {
     tag "${subject_id}"
 
+    cpus 1
+
     input:
     tuple(val(subject_id), path(aseg_presurf_mgz))
     output:
@@ -376,6 +400,8 @@ process subject_id_hemi_rh {
 }
 process split_hemi_orig_mgz {
     tag "${subject_id}"
+
+    cpus 1
 
     input:
     each hemi
@@ -390,6 +416,8 @@ process split_hemi_orig_mgz {
 process split_hemi_rawavg_mgz {
     tag "${subject_id}"
 
+    cpus 1
+
     input:
     each hemi
     tuple(val(subject_id), path(in_data))
@@ -402,6 +430,8 @@ process split_hemi_rawavg_mgz {
 }
 process split_hemi_brainmask_mgz {
     tag "${subject_id}"
+
+    cpus 1
 
     input:
     each hemi
@@ -416,6 +446,8 @@ process split_hemi_brainmask_mgz {
 process split_hemi_aseg_presurf_mgz {
     tag "${subject_id}"
 
+    cpus 1
+
     input:
     each hemi
     tuple(val(subject_id), path(in_data))
@@ -428,6 +460,8 @@ process split_hemi_aseg_presurf_mgz {
 }
 process split_hemi_brain_finalsurfs_mgz {
     tag "${subject_id}"
+
+    cpus 1
 
     input:
     each hemi
@@ -442,6 +476,8 @@ process split_hemi_brain_finalsurfs_mgz {
 process split_hemi_wm_mgz {
     tag "${subject_id}"
 
+    cpus 1
+
     input:
     each hemi
     tuple(val(subject_id), path(in_data))
@@ -454,6 +490,8 @@ process split_hemi_wm_mgz {
 }
 process split_hemi_filled_mgz {
     tag "${subject_id}"
+
+    cpus 1
 
     input:
     each hemi
@@ -504,6 +542,7 @@ process anat_fastcsr_levelset {
 process anat_fastcsr_mksurface {
     tag "${subject_id}"
 
+    cpus 1
     memory '3.5 GB'
 
     input:
@@ -535,6 +574,8 @@ process anat_fastcsr_mksurface {
 process anat_autodet_gwstats {
     tag "${subject_id}"
 
+    cpus 1
+
     input:
     path(subjects_dir)
     tuple(val(subject_id), val(hemi), path(orig_premesh_surf), path(brain_finalsurfs_mgz), path(wm_mgz))
@@ -554,6 +595,7 @@ process anat_autodet_gwstats {
 process anat_white_surface {
     tag "${subject_id}"
 
+    cpus 1
     memory '2 GB'
 
     input:
@@ -595,6 +637,8 @@ process anat_white_surface {
 process anat_cortex_label {
     tag "${subject_id}"
 
+    cpus 1
+
     input:
     path(subjects_dir)
     tuple(val(subject_id), val(hemi), path(white_preaparc_surf), path(aseg_presurf_mgz))
@@ -614,6 +658,8 @@ process anat_cortex_label {
 process anat_cortex_hipamyg_label {
     tag "${subject_id}"
 
+    cpus 1
+
     input:
     path(subjects_dir)
     tuple(val(subject_id), val(hemi), path(white_preaparc_surf), path(aseg_presurf_mgz))
@@ -632,6 +678,8 @@ process anat_cortex_hipamyg_label {
 
 process anat_hyporelabel {
     tag "${subject_id}"
+
+    cpus 1
 
     input:
     path(subjects_dir)
@@ -653,6 +701,8 @@ process anat_hyporelabel {
 
 process anat_smooth_inflated {
     tag "${subject_id}"
+
+    cpus 1
 
     input:
     path(subjects_dir)
@@ -676,6 +726,8 @@ process anat_smooth_inflated {
 process anat_curv_stats {
     tag "${subject_id}"
 
+    cpus 1
+
     input:
     path(subjects_dir)
     tuple(val(subject_id), val(hemi), path(smoothwm_surf), path(curv_surf), path(sulc_surf))
@@ -696,6 +748,8 @@ process anat_curv_stats {
 
 process anat_sphere {
     tag "${subject_id}"
+
+    cpus 1
 
     input:
     path(subjects_dir)
@@ -746,6 +800,8 @@ process anat_sphere_register {
 process anat_jacobian {
     tag "${subject_id}"
 
+    cpus 1
+
     input:
     path(subjects_dir)
     tuple(val(subject_id), val(hemi), path(white_preaparc_surf), path(sphere_reg_surf))
@@ -764,6 +820,8 @@ process anat_jacobian {
 
 process anat_avgcurv {
     tag "${subject_id}"
+
+    cpus 1
 
     input:
     path(subjects_dir)
@@ -786,6 +844,8 @@ process anat_avgcurv {
 process anat_cortparc_aparc {
     tag "${subject_id}"
 
+    cpus 1
+
     input:
     path(subjects_dir)
     tuple(val(subject_id), val(hemi), path(cortex_label), path(sphere_reg_surf), path(smoothwm_surf), path(aseg_presurf_mgz))
@@ -806,6 +866,8 @@ process anat_cortparc_aparc {
 
 process anat_cortparc_aparc_a2009s {
     tag "${subject_id}"
+
+    cpus 1
 
     input:
     path(subjects_dir)
@@ -828,6 +890,7 @@ process anat_cortparc_aparc_a2009s {
 process anat_pial_surface {
     tag "${subject_id}"
 
+    cpus 1
     memory '1.5 GB'
 
     input:
@@ -867,6 +930,8 @@ process anat_pial_surface {
 process qc_plot_volsurf {
     tag "${subject_id}"
 
+    cpus 1
+
     input:
     path subjects_dir
 
@@ -901,6 +966,8 @@ process qc_plot_volsurf {
 
 process qc_plot_surfparc {
     tag "${subject_id}"
+
+    cpus 1
 
     input:
     path subjects_dir
@@ -937,6 +1004,8 @@ process qc_plot_surfparc {
 process anat_pctsurfcon {
     tag "${subject_id}"
 
+    cpus 1
+
     input:
     path(subjects_dir)
     tuple(val(subject_id), val(hemi), path(cortex_label), path(white_surf), path(thickness_surf), path(rawavg_mgz), path(orig_mgz))
@@ -958,6 +1027,8 @@ process anat_pctsurfcon {
 
 process anat_parcstats {
     tag "${subject_id}"
+
+    cpus 1
 
     input:
     path(subjects_dir)
@@ -985,6 +1056,8 @@ process anat_parcstats {
 process anat_parcstats2 {
     tag "${subject_id}"
 
+    cpus 1
+
     input:
     path(subjects_dir)
     tuple(val(subject_id), path(lh_white_surf), path(lh_cortex_label), path(lh_pial_surf), path(lh_aparc_annot), path(rh_white_surf), path(rh_cortex_label), path(rh_pial_surf), path(rh_aparc_annot), path(wm_mgz))
@@ -1011,6 +1084,8 @@ process anat_parcstats2 {
 process lh_anat_ribbon_inputs {
     tag "${subject_id}"
 
+    cpus 1
+
     input:
     tuple(val(subject_id), path(aseg_presurf_mgz))
     output:
@@ -1022,6 +1097,8 @@ process lh_anat_ribbon_inputs {
 }
 process rh_anat_ribbon_inputs {
     tag "${subject_id}"
+
+    cpus 1
 
     input:
     tuple(val(subject_id), path(aseg_presurf_mgz))
@@ -1036,6 +1113,8 @@ process rh_anat_ribbon_inputs {
 
 process anat_ribbon {
     tag "${subject_id}"
+
+    cpus 1
 
     input:
     path(subjects_dir)
@@ -1056,6 +1135,8 @@ process anat_ribbon {
 
 process anat_apas2aseg {
     tag "${subject_id}"
+
+    cpus 1
 
     input:
     path(subjects_dir)
@@ -1082,6 +1163,8 @@ process anat_apas2aseg {
 process anat_aparc2aseg {
     tag "${subject_id}"
 
+    cpus 1
+
     input:
     path(subjects_dir)
     tuple(val(subject_id), path(aseg_mgz), path(ribbon_mgz), path(lh_white_surf), path(lh_pial_surf), path(lh_cortex_label), path(lh_aparc_annot), path(rh_white_surf), path(rh_pial_surf), path(rh_cortex_label), path(rh_aparc_annot))
@@ -1106,6 +1189,8 @@ process anat_aparc2aseg {
 
 process qc_plot_aparc_aseg {
     tag "${subject_id}"
+
+    cpus 1
 
     input:
     path subjects_dir
@@ -1140,6 +1225,8 @@ process qc_plot_aparc_aseg {
 process anat_aparc_a2009s2aseg {
     tag "${subject_id}"
 
+    cpus 1
+
     input:
     path(subjects_dir)
     tuple(val(subject_id), path(aseg_mgz), path(ribbon_mgz), path(lh_white_surf), path(lh_pial_surf), path(lh_cortex_label), path(lh_aparc_annot), path(rh_white_surf), path(rh_pial_surf), path(rh_cortex_label), path(rh_aparc_annot))
@@ -1165,6 +1252,8 @@ process anat_aparc_a2009s2aseg {
 process anat_balabels_lh {
     tag "${subject_id}"
 
+    cpus 1
+
     input:
     path(subjects_dir)
     tuple(val(subject_id), val(hemi), path(sphere_reg_surf), path(white_surf))
@@ -1183,6 +1272,8 @@ process anat_balabels_lh {
 
 process anat_balabels_rh {
     tag "${subject_id}"
+
+    cpus 1
 
     input:
     path(subjects_dir)
@@ -1218,7 +1309,7 @@ process anat_test {
 }
 
 
-workflow {
+workflow anat_workflow {
     bids_dir = params.bids_dir
     subjects_dir = params.subjects_dir
     qc_result_path = params.qc_result_path
