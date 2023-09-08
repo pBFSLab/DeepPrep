@@ -365,6 +365,33 @@ process qc_plot_bold_to_space {
     """
 }
 
+process bold_synthmorpt_registration {
+    maxForks 1
+    input:
+    path bold_preprocess_path
+    path nextflow_bin_path
+    path synth_template_path
+    path synth_model_path
+    tuple(val(subject_id), val(bold_id), path(mc), path(boldref))
+
+    output:
+    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_skip_reorient_stc_mc_synthmorph_space-MNI152_T1_2mm.nii.gz")) // emit: bold_mc_to_mni152
+    script:
+    script_py = "${nextflow_bin_path}/bold_synthmorph.py"
+    synth_script = "${nextflow_bin_path}/mri_bold_synthmorph.py"
+
+    """
+    python3 ${script_py} \
+    --bold_preprocess_dir ${bold_preprocess_path} \
+    --subject_id ${subject_id} \
+    --bold_id ${bold_id} \
+    --mc ${mc} \
+    --boldref ${boldref} \
+    --synth_template_path ${synth_template_path} \
+    --synth_model_path ${synth_model_path} \
+    --synth_script ${synth_script} \
+    """
+}
 
 workflow {
     bids_dir = params.bids_dir
@@ -382,7 +409,8 @@ workflow {
     bold_vxmregnormmni152_batch_size = params.bold_vxmregnormmni152_batch_size
     bold_vxmregnormmni152_standard_space = params.bold_vxmregnormmni152_standard_space
     bold_vxmregnormmni152_fs_native_space = params.bold_vxmregnormmni152_fs_native_space
-
+    bold_synthmorph_template_path = params.bold_synthmorph_template_path
+    bold_synthmorph_model_path = params.bold_synthmorph_model_path
     bold_preprocess_path = make_bold_preprocess_dir(bold_preprocess_path)
     qc_result_path = make_qc_result_dir(qc_result_path)
 
@@ -391,6 +419,8 @@ workflow {
     (vxm_norm_nii, norm_nii, vxm_nonrigid_nii, vxm_affine_npz, vxm_fsnative_affine_mat) = bold_vxmregistration(subjects_dir, bold_preprocess_path, nextflow_bin_path, subject_boldfile_txt, gpuid, atlas_type, vxm_model_path)
     norm_to_mni152_svg = qc_plot_norm2mni152(norm_nii, bold_preprocess_path, nextflow_bin_path, qc_result_path)
     (mc_nii, mcdat, boldref) = bold_stc_mc(bold_preprocess_path, nextflow_bin_path, skip_reorient_nii)
+//     bold_synthmorpt_registration_inputs= mc_nii.join(boldref, by: [0,1])
+//     (bold_mc_to_mni152) = bold_synthmorpt_registration(bold_preprocess_path, nextflow_bin_path, bold_synthmorph_template_path, bold_synthmorph_model_path, bold_synthmorpt_registration_inputs)
     bbregister_dat = bold_bbregister(subjects_dir, bold_preprocess_path, nextflow_bin_path, mc_nii)
     bold_aparaseg2mc_inputs = mc_nii.join(bbregister_dat, by: [0,1])
     (anat_wm_nii, anat_csf_nii, anat_aseg_nii, anat_ventricles_nii, anat_brainmask_nii, anat_brainmask_bin_nii) = bold_mkbrainmask(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_aparaseg2mc_inputs)
@@ -400,8 +430,8 @@ workflow {
     (bold_carpet_svg) = bold_draw_carpet(bold_preprocess_path, nextflow_bin_path, qc_result_path, bold_draw_carpet_inputs)
 
     bold_vxmregnormmni152_inputs = mc_nii.join(bbregister_dat, by: [0,1]).join(vxm_nonrigid_nii).join(vxm_fsnative_affine_mat)
-//     (bold_atlas_to_mni152) = bold_vxmregnormmni152(bold_preprocess_path, subjects_dir, atlas_type, vxm_model_path, resource_dir, nextflow_bin_path, bold_vxmregnormmni152_batch_size, gpuid, bold_vxmregnormmni152_standard_space, bold_vxmregnormmni152_fs_native_space, bold_vxmregnormmni152_inputs)
-//     bold_to_mni152_svg = qc_plot_bold_to_space(bold_atlas_to_mni152, bold_vxmregnormmni152_fs_native_space, subjects_dir, bold_preprocess_path, nextflow_bin_path, qc_result_path, freesurfer_home)
+    (bold_atlas_to_mni152) = bold_vxmregnormmni152(bold_preprocess_path, subjects_dir, atlas_type, vxm_model_path, resource_dir, nextflow_bin_path, bold_vxmregnormmni152_batch_size, gpuid, bold_vxmregnormmni152_standard_space, bold_vxmregnormmni152_fs_native_space, bold_vxmregnormmni152_inputs)
+    bold_to_mni152_svg = qc_plot_bold_to_space(bold_atlas_to_mni152, bold_vxmregnormmni152_fs_native_space, subjects_dir, bold_preprocess_path, nextflow_bin_path, qc_result_path, freesurfer_home)
 
     bold_confounds_inputs = mc_nii.join(anat_wm_nii, by: [0,1]).join(bbregister_dat, by: [0,1])
     bold_confounds_inputs.view()
