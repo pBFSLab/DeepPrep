@@ -1348,7 +1348,7 @@ process bold_skip_reorient {
     path nextflow_bin_path
     val nskip
     output:
-    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_skip_reorient.nii.gz")) // emit: skip_reorient
+    tuple(val(subject_id), val(bold_id)) // emit: bold_info
     script:
     bold_id = subject_boldfile_txt.name
     subject_id = bold_id.split('_')[0]
@@ -1372,7 +1372,7 @@ process bold_stc_mc {
     input:
     path bold_preprocess_path
     path nextflow_bin_path
-    tuple(val(subject_id), val(bold_id), path(skip_reorient))
+    tuple(val(subject_id), val(bold_id))
     output:
     tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_skip_reorient_stc_mc.nii.gz")) // emit: mc
     tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_skip_reorient_stc_mc.mcdat")) // emit: mcdat
@@ -1384,7 +1384,6 @@ process bold_stc_mc {
     python3 ${script_py} \
     --bold_preprocess_dir ${bold_preprocess_path} \
     --subject_id ${subject_id} \
-    --skip_reorient ${skip_reorient} \
     --bold_id ${bold_id}
     """
 }
@@ -1409,10 +1408,11 @@ process split_bold_bbregister_from_anat_input {
     cpus 1
 
     input:
-    each
+    each path(bold_file_txt)
+    val(params)
 
     output:
-    tuple(val(subject_id), path(bold_file_txt))
+    tuple(val(subject_id), val(bold_id), val(params))
 
     script:
     bold_id = bold_file_txt.name
@@ -1430,7 +1430,7 @@ process bold_bbregister {
     path subjects_dir
     path bold_preprocess_path
     path nextflow_bin_path
-    tuple(val(subject_id), val(bold_id), path(mc))
+    tuple(val(subject_id), val(bold_id), path(aparc_aseg_mgz), path(mc))
     output:
     tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_skip_reorient_stc_mc_from_mc_to_fsnative_bbregister_rigid.dat")) // emit: bbregister_dat
     script:
@@ -1457,7 +1457,7 @@ process bold_mkbrainmask {
     path subjects_dir
     path bold_preprocess_path
     path nextflow_bin_path
-    tuple(val(subject_id), val(bold_id), path(mc), path(bbregister_dat))
+    tuple(val(subject_id), val(bold_id), path(aparc_aseg), path(mc), path(bbregister_dat))
     output:
     tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_skip_reorient_stc_mc.anat.wm.nii.gz")) // emit: anat_wm
     tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_skip_reorient_stc_mc.anat.csf.nii.gz")) // emit: anat_csf
@@ -1575,6 +1575,23 @@ process bold_vxmregistration {
 }
 
 
+process split_bold_vxmregnormmni152_input {
+    cpus 1
+
+    input:
+    each path(bold_file_txt)
+    tuple(path(vxm_nonrigid_nii), path(vxm_fsnative_affine_mat))
+
+    output:
+    tuple(val(subject_id), val(bold_id), path(vxm_nonrigid_nii), path(vxm_fsnative_affine_mat))
+
+    script:
+    bold_id = bold_file_txt.name
+    subject_id = bold_id.split('_')[0]
+    """
+    echo
+    """
+}
 process qc_plot_norm2mni152 {
     tag "${subject_id}"
 
@@ -1891,15 +1908,15 @@ workflow anat_workflow {
     lh_anat_aparc2aseg_input = white_surf.join(pial_surf, by: [0, 1]).join(cortex_label, by: [0, 1]).join(aparc_annot, by: [0, 1]).join(subject_id_lh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4, 5] }
     rh_anat_aparc2aseg_input = white_surf.join(pial_surf, by: [0, 1]).join(cortex_label, by: [0, 1]).join(aparc_annot, by: [0, 1]).join(subject_id_rh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4, 5] }
     anat_aparc2aseg_inputs = aseg_mgz.join(ribbon_mgz).join(lh_anat_aparc2aseg_input).join(rh_anat_aparc2aseg_input)
-    aparc_aseg = anat_aparc2aseg(subjects_dir, anat_aparc2aseg_inputs)
+    aparc_aseg_mgz = anat_aparc2aseg(subjects_dir, anat_aparc2aseg_inputs)
 
-    qc_plot_aparc_aseg_input = norm_mgz.join(aparc_aseg)
+    qc_plot_aparc_aseg_input = norm_mgz.join(aparc_aseg_mgz)
     aparc_aseg_svg = qc_plot_aparc_aseg(subjects_dir, qc_plot_aparc_aseg_input, nextflow_bin_path, qc_result_path, freesurfer_home)
 
     lh_anat_aparc_a2009s2aseg_input = white_surf.join(pial_surf, by: [0, 1]).join(cortex_label, by: [0, 1]).join(aparc_a2009s_annot, by: [0, 1]).join(subject_id_lh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4, 5] }
     rh_anat_aparc_a2009s2aseg_input = white_surf.join(pial_surf, by: [0, 1]).join(cortex_label, by: [0, 1]).join(aparc_a2009s_annot, by: [0, 1]).join(subject_id_rh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4, 5] }
     anat_aparc_a2009s2aseg_inputs = aseg_mgz.join(ribbon_mgz).join(lh_anat_aparc_a2009s2aseg_input).join(rh_anat_aparc_a2009s2aseg_input)
-    aparc_a2009s_aseg = anat_aparc_a2009s2aseg(subjects_dir, anat_aparc_a2009s2aseg_inputs)  // if for paper, comment out
+    aparc_a2009s_aseg_mgz = anat_aparc_a2009s2aseg(subjects_dir, anat_aparc_a2009s2aseg_inputs)  // if for paper, comment out
 
     //  *exvivo* labels
     balabels_lh = Channel.fromPath("${freesurfer_fsaverage_dir}/label/*lh*exvivo*.label")
@@ -1911,7 +1928,8 @@ workflow anat_workflow {
 
     lh_bold_bbregister_input = white_surf.join(thickness_surf, by: [0, 1]).join(cortex_label, by: [0, 1]).join(subject_id_lh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4] }
     rh_bold_bbregister_input = white_surf.join(thickness_surf, by: [0, 1]).join(cortex_label, by: [0, 1]).join(subject_id_rh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4] }
-    bold_bbregister_input = seg_deep_withcc_mgz.join(lh_bold_bbregister_input).join(rh_bold_bbregister_input)
+//     bold_bbregister_input = seg_deep_withcc_mgz.join(lh_bold_bbregister_input).join(rh_bold_bbregister_input)
+    bold_bbregister_input = aparc_aseg_mgz.join(lh_bold_bbregister_input).join(rh_bold_bbregister_input)
 
     emit:
     norm_mgz
@@ -2005,27 +2023,38 @@ workflow {
     // ///////////////////////////////////// BOLD /////////////////////////////////////
     subjects_bold_file = bold_add_subject_id_to_bold_file(subject_boldfile_txt)
 
-    skip_reorient_nii = bold_skip_reorient(bold_preprocess_path, subjects_bold_file, nextflow_bin_path, bold_skip_reorient_nskip)
+    bold_id = bold_skip_reorient(bold_preprocess_path, subjects_bold_file, nextflow_bin_path, bold_skip_reorient_nskip)
     (vxm_norm_nii, norm_nii, vxm_nonrigid_nii, vxm_affine_npz, vxm_fsnative_affine_mat) = bold_vxmregistration(subjects_dir, bold_preprocess_path, nextflow_bin_path, norm_mgz, gpuid, atlas_type, vxm_model_path)
     norm_to_mni152_svg = qc_plot_norm2mni152(norm_nii, bold_preprocess_path, nextflow_bin_path, qc_result_path)
-    (mc_nii, mcdat, boldref) = bold_stc_mc(bold_preprocess_path, nextflow_bin_path, skip_reorient_nii)
+    (mc_nii, mcdat, boldref) = bold_stc_mc(bold_preprocess_path, nextflow_bin_path, bold_id)
 
-    a = subjects_bold_file.groupTuple().join(skip_reorient_nii).map { tuple -> return tuple[0, 1, 3] }
-    a.view()
+    subjects_bold_file_group = subjects_bold_file.groupTuple()
 
-    bold_bbregister_input = bold_bbregister_input_from_anat.join(mc_nii,)
-//     bbregister_dat = bold_bbregister(subjects_dir, bold_preprocess_path, nextflow_bin_path, mc_nii)
-//     bold_aparaseg2mc_inputs = mc_nii.join(bbregister_dat, by: [0,1])
-//     (anat_wm_nii, anat_csf_nii, anat_aseg_nii, anat_ventricles_nii, anat_brainmask_nii, anat_brainmask_bin_nii) = bold_mkbrainmask(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_aparaseg2mc_inputs)
-//     qc_plot_mctsnr_input = mc_nii.join(anat_brainmask_nii, by: [0,1])
-//     bold_mc_tsnr_svg = qc_plot_mctsnr(qc_plot_mctsnr_input, bold_preprocess_path, nextflow_bin_path, qc_result_path)
-//     bold_draw_carpet_inputs = mc_nii.join(mcdat, by: [0,1]).join(anat_brainmask_nii, by: [0,1])
-//     (bold_carpet_svg) = bold_draw_carpet(bold_preprocess_path, nextflow_bin_path, qc_result_path, bold_draw_carpet_inputs)
-//
-//     bold_vxmregnormmni152_inputs = mc_nii.join(bbregister_dat, by: [0,1]).join(vxm_nonrigid_nii).join(vxm_fsnative_affine_mat)
-//     (bold_atlas_to_mni152) = bold_vxmregnormmni152(bold_preprocess_path, subjects_dir, atlas_type, vxm_model_path, resource_dir, nextflow_bin_path, bold_vxmregnormmni152_batch_size, gpuid, bold_vxmregnormmni152_standard_space, bold_vxmregnormmni152_fs_native_space, bold_vxmregnormmni152_inputs)
-//     bold_to_mni152_svg = qc_plot_bold_to_space(bold_atlas_to_mni152, bold_vxmregnormmni152_fs_native_space, subjects_dir, bold_preprocess_path, nextflow_bin_path, qc_result_path, freesurfer_home)
-//
-//     bold_confounds_inputs = mc_nii.join(anat_wm_nii, by: [0,1]).join(bbregister_dat, by: [0,1])
-//     bold_confounds(bold_preprocess_path, nextflow_bin_path, bold_confounds_inputs)
+    (bold_id_file, bold_bbregister_input_from_anat) = subjects_bold_file_group.join(bold_bbregister_input_from_anat).multiMap { tuple ->
+                                                                                                                               b: tuple[1]
+                                                                                                                               c: tuple[2]
+                                                                                                                               }
+    bold_bbregister_input = split_bold_bbregister_from_anat_input(bold_id_file.flatten(), bold_bbregister_input_from_anat).join(mc_nii, by: [0, 1])
+    bbregister_dat = bold_bbregister(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_bbregister_input)
+
+    bold_aparaseg2mc_inputs = bold_bbregister_input.join(bbregister_dat, by: [0,1])
+    (anat_wm_nii, anat_csf_nii, anat_aseg_nii, anat_ventricles_nii, anat_brainmask_nii, anat_brainmask_bin_nii) = bold_mkbrainmask(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_aparaseg2mc_inputs)
+
+
+    qc_plot_mctsnr_input = mc_nii.join(anat_brainmask_nii, by: [0,1])
+    bold_mc_tsnr_svg = qc_plot_mctsnr(qc_plot_mctsnr_input, bold_preprocess_path, nextflow_bin_path, qc_result_path)
+    bold_draw_carpet_inputs = mc_nii.join(mcdat, by: [0,1]).join(anat_brainmask_nii, by: [0,1])
+    (bold_carpet_svg) = bold_draw_carpet(bold_preprocess_path, nextflow_bin_path, qc_result_path, bold_draw_carpet_inputs)
+
+    (bold_id_file, bold_vxmregnormmni152_input) = subjects_bold_file_group.join(vxm_nonrigid_nii.join(vxm_fsnative_affine_mat)).multiMap { tuple ->
+                                                                                                                                           b: tuple[1]
+                                                                                                                                           c: tuple[2, 3]
+                                                                                                                                           }
+    bold_vxmregnormmni152_inputs_split = split_bold_vxmregnormmni152_input(bold_id_file.flatten(), bold_vxmregnormmni152_input)
+    bold_vxmregnormmni152_inputs = mc_nii.join(bbregister_dat, by: [0,1]).join(bold_vxmregnormmni152_inputs_split, by: [0, 1])
+    (bold_atlas_to_mni152) = bold_vxmregnormmni152(bold_preprocess_path, subjects_dir, atlas_type, vxm_model_path, resource_dir, nextflow_bin_path, bold_vxmregnormmni152_batch_size, gpuid, bold_vxmregnormmni152_standard_space, bold_vxmregnormmni152_fs_native_space, bold_vxmregnormmni152_inputs)
+    bold_to_mni152_svg = qc_plot_bold_to_space(bold_atlas_to_mni152, bold_vxmregnormmni152_fs_native_space, subjects_dir, bold_preprocess_path, nextflow_bin_path, qc_result_path, freesurfer_home)
+
+    bold_confounds_inputs = mc_nii.join(anat_wm_nii, by: [0,1]).join(bbregister_dat, by: [0,1])
+    bold_confounds(bold_preprocess_path, nextflow_bin_path, bold_confounds_inputs)
 }

@@ -24,6 +24,3 @@ if __name__ == '__main__':
         if not output_file.exists():
             os.system(f"mri_convert {t1w_file} {output_file}")
             print(f"mri_convert {t1w_file} {output_file}")
-
-    with open(subject_id, 'w') as f:
-        f.write(subject_id)
