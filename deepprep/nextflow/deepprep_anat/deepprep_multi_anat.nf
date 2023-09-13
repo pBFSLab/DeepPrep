@@ -1400,8 +1400,8 @@ workflow anat_workflow {
     anat_brainmask_input = nu_mgz.join(mask_mgz)
     (norm_mgz, brainmask_mgz) = anat_brainmask(subjects_dir, anat_brainmask_input)
 
-    anat_ca_register_input = brainmask_mgz.join(talairach_lta).join(norm_mgz)
-    talairach_m3z = anat_ca_register(subjects_dir, anat_ca_register_input, freesurfer_home)
+//     anat_ca_register_input = brainmask_mgz.join(talairach_lta).join(norm_mgz)
+//     talairach_m3z = anat_ca_register(subjects_dir, anat_ca_register_input, freesurfer_home)   // for app, if for paper, comment out
 
     anat_paint_cc_to_aseg_input = norm_mgz.join(seg_deep_mgz).join(aseg_auto_noccseg_mgz)
     (aseg_auto_mgz, cc_up_lta, seg_deep_withcc_mgz) = anat_paint_cc_to_aseg(subjects_dir, anat_paint_cc_to_aseg_input, fastsurfer_home)
@@ -1524,9 +1524,9 @@ workflow anat_workflow {
     aparc_a2009s_aseg_mgz = anat_aparc_a2009s2aseg(subjects_dir, anat_aparc_a2009s2aseg_inputs)  // if for paper, comment out
 
     anat_segstats_input = aseg_mgz.join(norm_mgz).join(brainmask_mgz).join(ribbon_mgz)
-    aseg_stats = anat_segstats(subjects_dir, anat_segstats_input, freesurfer_home)
+    aseg_stats = anat_segstats(subjects_dir, anat_segstats_input, freesurfer_home)   // for app, if for paper, comment out
 
-     *exvivo* labels
+    // *exvivo* labels
     balabels_lh = Channel.fromPath("${freesurfer_fsaverage_dir}/label/*lh*exvivo*.label")
     balabels_rh = Channel.fromPath("${freesurfer_fsaverage_dir}/label/*rh*exvivo*.label")
     anat_balabels_input_lh = sphere_reg_surf.join(white_surf, by: [0, 1]).join(subject_id_lh, by: [0, 1])
