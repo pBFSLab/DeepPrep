@@ -208,6 +208,43 @@ process qc_plot_mctsnr {
 
 }
 
+process qc_plot_mctsnr_surf {
+    tag "${subject_id}"
+
+    cpus 1
+
+    input:
+    path subjects_dir
+    tuple(val(subject_id), val(bold_id), path(mc))
+    path bold_preprocess_path
+    path nextflow_bin_path
+    path qc_result_path
+    path freesurfer_home
+
+    output:
+    tuple(val(subject_id), val(bold_id), path("${qc_result_path}/${subject_id}/figures/${bold_id}_desc-tsnr2surf_bold.svg"))
+
+    script:
+    qc_plot_mctsnr_surf_fig_path = "${qc_result_path}/${subject_id}/figures/${bold_id}_desc-tsnr2surf_bold.svg"
+    script_py = "${nextflow_bin_path}/qc_bold_mc_tsnr.py"
+    mctsnr_surf_fs6_scene = "${nextflow_bin_path}/qc_tool/plot_mctsnr_surf_fs6.scene"
+    mctsnr_surf_native_scene = "${nextflow_bin_path}/qc_tool/plot_mctsnr_surf_native.scene"
+    color_bar = "${nextflow_bin_path}/qc_tool/color_bar_surf.png"
+
+    """
+    python3 ${script_py} \
+    --subject_id ${subject_id} \
+    --bold_id ${bold_id} \
+    --subjects_dir ${subjects_dir} \
+    --bold_preprocess_path  ${bold_preprocess_path} \
+    --fs6_scene_file ${mctsnr_surf_fs6_scene} \
+    --native_scene_file ${mctsnr_surf_native_scene} \
+    --color_bar ${color_bar} \
+    --svg_outpath ${qc_plot_mctsnr_surf_fig_path} \
+    --freesurfer_home ${freesurfer_home}
+    """
+
+}
 
 process bold_draw_carpet {
     tag "${subject_id}"
@@ -473,6 +510,9 @@ workflow {
     (anat_wm_nii, anat_csf_nii, anat_aseg_nii, anat_ventricles_nii, anat_brainmask_nii, anat_brainmask_bin_nii) = bold_mkbrainmask(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_aparaseg2mc_inputs)
     qc_plot_mctsnr_input = mc_nii.join(anat_brainmask_nii, by: [0,1])
     bold_mc_tsnr_svg = qc_plot_mctsnr(qc_plot_mctsnr_input, bold_preprocess_path, nextflow_bin_path, qc_result_path)
+
+    bold_mc_tsnr2surf_svg = qc_plot_mctsnr_surf(subjects_dir, mc_nii, bold_preprocess_path, nextflow_bin_path, qc_result_path, freesurfer_home)
+
     bold_draw_carpet_inputs = mc_nii.join(mcdat, by: [0,1]).join(anat_brainmask_nii, by: [0,1])
     (bold_carpet_svg) = bold_draw_carpet(bold_preprocess_path, nextflow_bin_path, qc_result_path, bold_draw_carpet_inputs)
 
