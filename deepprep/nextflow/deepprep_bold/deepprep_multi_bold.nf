@@ -226,7 +226,7 @@ process qc_plot_mctsnr_surf {
 
     script:
     qc_plot_mctsnr_surf_fig_path = "${qc_result_path}/${subject_id}/figures/${bold_id}_desc-tsnr2surf_bold.svg"
-    script_py = "${nextflow_bin_path}/qc_bold_mc_tsnr.py"
+    script_py = "${nextflow_bin_path}/qc_bold_mc_tsnr_surf.py"
     mctsnr_surf_fs6_scene = "${nextflow_bin_path}/qc_tool/plot_mctsnr_surf_fs6.scene"
     mctsnr_surf_native_scene = "${nextflow_bin_path}/qc_tool/plot_mctsnr_surf_native.scene"
     color_bar = "${nextflow_bin_path}/qc_tool/color_bar_surf.png"

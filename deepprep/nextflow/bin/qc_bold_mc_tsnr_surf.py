@@ -217,6 +217,6 @@ if __name__ == '__main__':
     combine_png_path = subject_workdir / f'{bold_id}_mc_tsnr_surf_combine.png'
     combine_png(str(output_tsnr_surf_native_savepath), str(output_tsnr_surf_fs6_savepath), color_bar, str(combine_png_path))
 
-    mctsnr_surf_savepath_svg = subject_resultdir / f'{bold_id}_desc-tsnrsurf_bold.svg'
+    mctsnr_surf_savepath_svg = subject_resultdir / f'{bold_id}_desc-tsnr2surf_bold.svg'
     write_single_svg(mctsnr_surf_savepath_svg, combine_png_path, 2400, 1000)
     shutil.rmtree(subject_workdir)
