@@ -130,6 +130,6 @@ if __name__ == '__main__':
     scene_plot(McTSNR_scene, output_tsnr_savepath, 2400, 1000)
 
     combine_bar(str(output_tsnr_savepath), str(color_bar_png))
-    Surface_parc_savepath_svg = subject_resultdir / f'{bold_id}_desc-tsnr_bold.svg'
-    write_single_svg(Surface_parc_savepath_svg, output_tsnr_savepath, 2400, 1000)
+    mctsnr_savepath_svg = subject_resultdir / f'{bold_id}_desc-tsnr_bold.svg'
+    write_single_svg(mctsnr_savepath_svg, output_tsnr_savepath, 2400, 1000)
     shutil.rmtree(subject_workdir)
