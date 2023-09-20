@@ -1,8 +1,6 @@
 #! /usr/bin/env python3
 import sys
 import sh
-import nibabel as nib
-import numpy as np
 from pathlib import Path
 import argparse
 import os
@@ -45,7 +43,7 @@ def cmd(subj_func_dir: Path, skip_reorient: Path, run: str, subject_id, bold_nam
     """
     mktemplate-sess 会生成两个template
     1. 一个放到 bold/template.nii.gz，使用的是run 001的first frame，供mc-sess --per-session使用
-    2. 一个放到 bold/run/template.nii.gz 使用的是每个run的mid frame，供mc-sess --per-run参数使用(default)
+    2. 一个放到 bold/run/template.nii.gz 使用的是每个run的mid frame，供mc-sess --per-run参数使用
     """
     shargs = [
         '-s', subject_id,
@@ -59,7 +57,7 @@ def cmd(subj_func_dir: Path, skip_reorient: Path, run: str, subject_id, bold_nam
     shargs = [
         '-s', subject_id,
         '-d', tmp_run,
-        '-per-run',
+        '-per-sess',
         '-fsd', 'bold',
         '-fstem', faln_fname,
         '-fmcstem', mc_fname,
@@ -79,7 +77,7 @@ def cmd(subj_func_dir: Path, skip_reorient: Path, run: str, subject_id, bold_nam
             (ori_path / f'{input_fname}.nii.gz').unlink(missing_ok=True)
 
         # Template reference for mc
-        shutil.copyfile(link_dir / 'template.nii.gz',
+        shutil.copyfile(link_dir.parent / 'template.nii.gz',
                         ori_path / f'{faln_fname}_boldref.nii.gz')
         shutil.copyfile(link_dir / 'template.log',
                         ori_path / f'{faln_fname}_boldref.log')
@@ -100,9 +98,10 @@ def cmd(subj_func_dir: Path, skip_reorient: Path, run: str, subject_id, bold_nam
                         ori_path / f'{mc_fname}.mcextreg')
             shutil.move(link_dir / 'mcdat2extreg.log',
                         ori_path / f'{mc_fname}.mcdat2extreg.log')
+
+        shutil.rmtree(ori_path / bold_name)
     except:
         pass
-    shutil.rmtree(ori_path / bold_name)
 
 
 if __name__ == '__main__':
@@ -125,4 +124,3 @@ if __name__ == '__main__':
 
     run = '001'
     cmd(subj_func_dir, skip_reorient_file, run, args.subject_id, args.bold_id)
-
