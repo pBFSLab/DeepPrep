@@ -65,6 +65,48 @@ process bold_get_bold_file_in_bids {
 }
 
 
+process bold_get_bold_ref_in_bids {
+    tag "${subject_id}"
+
+    cpus 1
+
+    input:  // https://www.nextflow.io/docs/latest/process.html#inputs
+    path bold_preprocess_path
+    path bids_dir
+    path nextflow_bin_path
+    val subject_id
+    val bold_id
+
+
+    output:
+    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${subject_id}_boldref.nii.gz")) // emit: mc
+
+    script:
+    script_py = "${nextflow_bin_path}/bold_get_bold_ref_in_bids.py"
+    """
+    python3 ${script_py} \
+    --bold_preprocess_dir ${bold_preprocess_path} \
+    --bids_dir ${bids_dir} \
+    --subject_id ${subject_id} \
+    --bold_id ${bold_id}
+    """
+}
+process split_subject_boldref_file {
+    cpus 1
+
+    input:
+    val(bold_id)
+
+    output:
+    tuple(val(subject_id), val(bold_id))
+
+    script:
+    subject_id = bold_id.split('_')[0]
+    """
+    echo
+    """
+}
+
 process bold_skip_reorient {
     tag "${subject_id}"
 
@@ -499,9 +541,23 @@ workflow {
     qc_result_path = make_qc_result_dir(qc_result_path)
 
     subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, nextflow_bin_path, bold_task)
+    (subject_id, boldfile_id, subject_boldfile_txt) = subject_boldfile_txt.flatten().multiMap { it ->
+                                                                                     a: it.name.split('_')[0]
+                                                                                     c: it.name
+                                                                                     b: it }
+    subject_id_boldfile_id = subject_id.merge(boldfile_id)
+    (subject_id_unique, boldfile_id_unique) = subject_id_boldfile_id.groupTuple(sort: true).multiMap { tuple ->
+                                                                                                        a: tuple[0]
+                                                                                                        b: tuple[1][0] }
+    subject_boldref_file = bold_get_bold_ref_in_bids(bold_preprocess_path, bids_dir, nextflow_bin_path, subject_id_unique, boldfile_id_unique)  // subject_id, subject_boldref_file
+
+    boldfile_id_group = subject_id_boldfile_id.groupTuple(sort: true).join(subject_boldref_file).map { tuple -> tuple[1] }
+    boldfile_id_split = split_subject_boldref_file(boldfile_id_group.flatten())
+
     bold_info = bold_skip_reorient(bold_preprocess_path, subject_boldfile_txt, nextflow_bin_path, bold_skip_reorient_nskip)
-    (vxm_norm_nii, norm_nii, vxm_nonrigid_nii, vxm_affine_npz, vxm_fsnative_affine_mat) = bold_vxmregistration(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_info, gpuid, atlas_type, vxm_model_path)
-    norm_to_mni152_svg = qc_plot_norm2mni152(norm_nii, bold_preprocess_path, nextflow_bin_path, qc_result_path)
+//     (vxm_norm_nii, norm_nii, vxm_nonrigid_nii, vxm_affine_npz, vxm_fsnative_affine_mat) = bold_vxmregistration(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_info, gpuid, atlas_type, vxm_model_path)
+//     norm_to_mni152_svg = qc_plot_norm2mni152(norm_nii, bold_preprocess_path, nextflow_bin_path, qc_result_path)
+    bold_info = boldfile_id_split.join(bold_info, by: [0, 1])
     (mc_nii, mcdat, boldref) = bold_stc_mc(bold_preprocess_path, nextflow_bin_path, bold_info)
 //     bold_synthmorpt_registration_inputs= mc_nii.join(boldref, by: [0,1])
 //     (bold_mc_to_mni152) = bold_synthmorpt_registration(bold_preprocess_path, nextflow_bin_path, bold_synthmorph_template_path, bold_synthmorph_model_path, bold_synthmorpt_registration_inputs)
