@@ -3,7 +3,7 @@ import argparse
 import sh
 from pathlib import Path
 
-from ants import image_read
+from ants import image_read, image_write
 from ants import fsl2antstransform, write_transform, apply_transforms
 import numpy as np
 import nibabel as nib
@@ -51,21 +51,26 @@ def bold_to_native(moving, fixed, input_transform, moved):
     # save one frame for plotting
     nib_fframe_img = nib.Nifti1Image(warped_img.numpy().astype(int), affine=affine_info, header=header_info)
     nib.save(nib_fframe_img, moved)
+
+    # 将结果保存为 NIfTI 格式文件
+    # image_write(warped_img, moved)
     print(f"-->>> output       : {moved}")
 
 
 if __name__ == '__main__':
     """
+    --ref /mnt/ngshare/temp/synthmorph/sub-MSC01_0925/sub-MSC01_ses-func01_task-rest_bold_skip_reorient_stc_boldref.nii.gz
     --moving /mnt/ngshare/temp/synthmorph/sub-MSC01_0925/sub-MSC01_ses-func01_task-rest_bold_skip_reorient_stc_mc.nii.gz
-    --fixed /mnt/ngshare/temp/synthmorph/sub-MSC01_0925/sub-MSC01_norm_2mm.nii.gz
+    --fixed /mnt/ngshare/temp/synthmorph/sub-MSC01_0925/sub-MSC01_norm_2mm.nii.gz 
     --dat /mnt/ngshare/temp/synthmorph/sub-MSC01_0925/sub-MSC01_ses-func01_task-rest_bold_skip_reorient_stc_mc_from_mc_to_fsnative_bbregister_rigid.dat
-    --moved /mnt/ngshare/temp/synthmorph/sub-MSC01_0925/sub-MSC01_ses-func01_task-rest_bold_skip_reorient_stc_mc_bbregister_space-native_2mm.nii.gz
+    --moved /mnt/ngshare/temp/synthmorph/sub-MSC01_0925/sub-MSC01_ses-func01_task-rest_bold_skip_reorient_stc_boldref_bbregister_space-native_2mm.nii.gz
     --freesurfer-home /usr/local/freesurfer
     """
     # 创建一个命令行解析器
     parser = argparse.ArgumentParser(description='ANTS registration script')
 
     # 添加需要的命令行参数
+    parser.add_argument('--ref', type=str, help='path to moving image: bold')
     parser.add_argument('--moving', type=str, help='path to moving image: bold')
     parser.add_argument('--fixed', type=str, help='path to fixed image: norm_2mm')
     parser.add_argument('--dat', type=str, help='path to bbregister dat: bbregister.dat')
@@ -87,6 +92,6 @@ if __name__ == '__main__':
     tfm_mat = args.dat.replace('.dat', '.mat')
     transforms = [tfm_mat]
 
-    bbregister_dat_to_fsl(args.moving, args.fixed, Path(args.dat), tfm_fsl)
-    fsl_to_ants_mat(args.moving, args.fixed, tfm_fsl, tfm_mat)
+    bbregister_dat_to_fsl(args.ref, args.fixed, Path(args.dat), tfm_fsl)
+    fsl_to_ants_mat(args.ref, args.fixed, tfm_fsl, tfm_mat)
     bold_to_native(args.moving, args.fixed, transforms, args.moved)
