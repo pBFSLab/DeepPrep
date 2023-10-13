@@ -260,25 +260,20 @@ def parse_args(settings, logger):
     /mnt/ngshare2/DeepPrep_UKB/UKB_Recon
     --bold-output-dir
     /mnt/ngshare2/DeepPrep_UKB/UKB_BoldPreprocess
-    --cache_dir
+    --cache-dir
     /mnt/ngshare2/DeepPrep_UKB/UKB_Workflow
 
-    --bids_dir
-    /mnt/ngshare2/MSC_all/MSC
-    --recon_output_dir
-    /mnt/ngshare2/MSC_all/MSC_Recon
-    --bold_output_dir
-    /mnt/ngshare2/MSC_all/MSC_BoldPreprocess
-    --cache_dir
-    /mnt/ngshare2/MSC_all/MSC_Workflow
-    --bold_task_type
+    --bids-dir
+    /mnt/ngshare/temp/MSC_One
+    --recon-output-dir
+    /mnt/ngshare/temp/MSC_One_Recon
+    --bold-output-dir
+    /mnt/ngshare/temp/MSC_One_BoldPreprocess
+    --cache-dir
+    /mnt/ngshare/temp/MSC_One_Workflow
+    --bold-task-type
     motor
-    --bold_preprocess_method
-    task
-    --bold_only
-    True
-    --single_sub_multi_t1
-    True
+    --recon-only
 
     """
 

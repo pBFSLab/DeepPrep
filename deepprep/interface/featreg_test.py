@@ -7,7 +7,7 @@
 # @Author : Zhenyu Sun     @Email : Kid-sunzhenyu <sun25939789@gmail.com>
 
 from pathlib import Path
-from featreg_interface import FeatReg
+from featreg_node import FeatReg
 from nipype import Node
 import os
 import argparse
