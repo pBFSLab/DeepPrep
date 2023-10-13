@@ -6,7 +6,7 @@
 # @Author : Youjia Zhang   @Email : youjia <ireneyou33@gmail.com>
 # @Author : Zhenyu Sun     @Email : Kid-sunzhenyu <sun25939789@gmail.com>
 
-from bold import BoldSkipReorient, MotionCorrection, Stc, Register, MkBrainmask, VxmRegistraion, RestGauss, \
+from bold_node import BoldSkipReorient, MotionCorrection, Stc, Register, MkBrainmask, VxmRegistraion, RestGauss, \
     RestBandpass, RestRegression, VxmRegNormMNI152, Smooth, MkTemplate
 from pathlib import Path
 from nipype import Node

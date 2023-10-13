@@ -36,6 +36,15 @@ process make_subjects_dir_and_cp_fsaverage {
     sd.mkdir(parents=True, exist_ok=True)
 
     os.system('cp -nr ${freesurfer_fsaverage_dir} ${subjects_dir}')
+
+    with open('df', 'w') as file:
+        result = os.popen('df -h')
+        res = result.read()
+        file.writelines(res.splitlines())
+    with open('ll', 'w') as file:
+        result = os.popen('ls /tmp')
+        res = result.read()
+        file.writelines(res.splitlines())
     """
 }
 
@@ -1540,6 +1549,7 @@ process bold_draw_carpet {
 process bold_vxmregistration {
     tag "${subject_id}"
 
+    label "with_gpu"
     cpus 1
     memory '5 GB'
 
@@ -1624,6 +1634,7 @@ process qc_plot_norm2mni152 {
 process bold_vxmregnormmni152 {
     tag "${subject_id}"
 
+    label "with_gpu"
     cpus 1
     memory '40 GB'
 

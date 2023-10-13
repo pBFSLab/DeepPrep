@@ -7,7 +7,7 @@
 # @Author : Zhenyu Sun     @Email : Kid-sunzhenyu <sun25939789@gmail.com>
 
 from pathlib import Path
-from sagereg_interface import SageReg
+from sagereg_node import SageReg
 from nipype import Node
 import os
 import argparse
