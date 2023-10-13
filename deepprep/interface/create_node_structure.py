@@ -6,11 +6,11 @@
 # @Author : Youjia Zhang   @Email : youjia <ireneyou33@gmail.com>
 # @Author : Zhenyu Sun     @Email : Kid-sunzhenyu <sun25939789@gmail.com>
 
-from deepprep.interface.freesurfer_node import *
-from deepprep.interface.fastcsr_node import *
-from deepprep.interface.fastsurfer_node import *
-from deepprep.interface.sagereg_node import *
-from deepprep.interface.node_source import Source
+from .freesurfer_node import *
+from .fastcsr_node import *
+from .fastsurfer_node import *
+from .sagereg_node import *
+from .node_source import Source
 import sys
 from nipype import Node
 

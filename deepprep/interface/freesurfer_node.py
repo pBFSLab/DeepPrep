@@ -7,14 +7,14 @@
 # @Author : Zhenyu Sun     @Email : Kid-sunzhenyu <sun25939789@gmail.com>
 
 import os
+from pathlib import Path
+from threading import Thread
+import time
+
 from nipype.interfaces.base import BaseInterface, \
     BaseInterfaceInputSpec, traits, File, TraitedSpec, Directory, Str
 
-from deepprep.interface.run import run_cmd_with_timing, get_freesurfer_threads, multipool
-from pathlib import Path
-
-from threading import Thread
-import time
+from .run import run_cmd_with_timing, get_freesurfer_threads, multipool
 
 
 class BrainmaskInputSpec(BaseInterfaceInputSpec):
@@ -87,12 +87,12 @@ class Brainmask(BaseInterface):
         return outputs
 
     def create_sub_node(self, settings):
-        from interface.create_node_structure import create_UpdateAseg_node
+        from .create_node_structure import create_UpdateAseg_node
 
         if settings.RECON_ONLY:
             node = create_UpdateAseg_node(self.inputs.subject_id, settings)
         else:
-            from interface.create_node_bold import create_VxmRegistraion_node
+            from .create_node_bold import create_VxmRegistraion_node
             node = [create_UpdateAseg_node(self.inputs.subject_id, settings),
                     create_VxmRegistraion_node(self.inputs.subject_id, settings.FMRI.TASK,
                                                settings.FMRI.ATLAS_SPACE, settings.FMRI.PREPROCESS_TYPE, settings)]
@@ -137,7 +137,7 @@ class OrigAndRawavg(BaseInterface):
         return outputs
 
     def create_sub_node(self, settings):
-        from interface.create_node_structure import create_Segment_node
+        from .create_node_structure import create_Segment_node
         node = [create_Segment_node(self.inputs.subject_id, settings)]
         return node
 
@@ -199,7 +199,7 @@ class Filled(BaseInterface):
         return outputs
 
     def create_sub_node(self, settings):
-        from interface.create_node_structure import create_FastCSR_node
+        from .create_node_structure import create_FastCSR_node
         node = create_FastCSR_node(self.inputs.subject_id, settings)
         return node
 
@@ -292,7 +292,7 @@ class WhitePreaparc1(BaseInterface):
         return outputs
 
     def create_sub_node(self, settings):
-        from interface.create_node_structure import create_InflatedSphere_node
+        from .create_node_structure import create_InflatedSphere_node
         node = create_InflatedSphere_node(self.inputs.subject_id, settings)
         return node
 
@@ -410,7 +410,7 @@ class InflatedSphere(BaseInterface):
         return outputs
 
     def create_sub_node(self, settings):
-        from interface.create_node_structure import create_SageReg_node, create_Curvstats_node
+        from .create_node_structure import create_SageReg_node, create_Curvstats_node
         node = [create_SageReg_node(self.inputs.subject_id, settings),
                 create_Curvstats_node(self.inputs.subject_id, settings)]
         return node
@@ -497,7 +497,7 @@ class WhitePialThickness1(BaseInterface):
         return outputs
 
     def create_sub_node(self, settings):
-        from interface.create_node_structure import create_BalabelsMult_node, create_Cortribbon_node, \
+        from .create_node_structure import create_BalabelsMult_node, create_Cortribbon_node, \
             create_Curvstats_node
 
         node = [create_BalabelsMult_node(self.inputs.subject_id, settings),
@@ -617,7 +617,7 @@ class Cortribbon(BaseInterface):
         return outputs
 
     def create_sub_node(self, settings):
-        from interface.create_node_structure import create_Parcstats_node
+        from .create_node_structure import create_Parcstats_node
         node = create_Parcstats_node(self.inputs.subject_id, settings)
         return node
 
@@ -687,7 +687,7 @@ class Parcstats(BaseInterface):
         return outputs
 
     def create_sub_node(self, settings):
-        from interface.create_node_structure import create_Aseg7_node
+        from .create_node_structure import create_Aseg7_node
         node = create_Aseg7_node(self.inputs.subject_id, settings)
         return node
 
@@ -838,7 +838,7 @@ class JacobianAvgcurvCortparc(BaseInterface):
         return outputs
 
     def create_sub_node(self, settings):
-        from interface.create_node_structure import create_WhitePialThickness1_node
+        from .create_node_structure import create_WhitePialThickness1_node
         node = create_WhitePialThickness1_node(self.inputs.subject_id, settings)
         return node
 
@@ -954,7 +954,7 @@ class Aseg7(BaseInterface):
         if settings.RECON_ONLY:
             node = []
         else:
-            from interface.create_node_bold import create_Register_node
+            from .create_node_bold import create_Register_node
             node = create_Register_node(self.inputs.subject_id,
                                         settings.FMRI.TASK,
                                         settings.FMRI.ATLAS_SPACE,
