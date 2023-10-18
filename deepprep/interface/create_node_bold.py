@@ -6,11 +6,14 @@
 # @Author : Youjia Zhang   @Email : youjia <ireneyou33@gmail.com>
 # @Author : Zhenyu Sun     @Email : Kid-sunzhenyu <sun25939789@gmail.com>
 
-from deepprep.interface.bold_node import *
-from deepprep.interface.vxm_node import *
-from deepprep.interface.node_source import Source
+from .bold_node import *
+from .vxm_node import *
+from .node_source import Source
 
 from nipype import Node
+
+import torch
+print(torch.__version__)
 
 """环境变量f
 subjects_dir = Path(settings.SUBJECTS_DIR)
@@ -382,10 +385,10 @@ def create_node_t(settings):
     fastcsr_home = pwd / "FastCSR"
     featreg_home = pwd / "FeatReg"
 
-    bids_data_dir_test = '/mnt/ngshare/temp/UKB'
-    subjects_dir_test = Path('/mnt/ngshare/temp/UKB_Recon')
-    bold_preprocess_dir_test = Path('/mnt/ngshare/temp/UKB_BoldPreprocess')
-    workflow_cached_dir_test = '/mnt/ngshare/temp/UKB_Workflow'
+    bids_data_dir_test = '/mnt/ngshare/temp/MSC'
+    subjects_dir_test = Path('/mnt/ngshare/temp/MSC_Recon')
+    bold_preprocess_dir_test = Path('/mnt/ngshare/temp/MSC_BOLD')
+    workflow_cached_dir_test = '/mnt/ngshare/temp/MSC_Cache'
     vxm_model_path_test = '/home/anning/workspace/DeepPrep/deepprep/model/voxelmorph'
     mni152_brain_mask_test = '/usr/local/fsl/data/standard/MNI152_T1_2mm_brain_mask.nii.gz'
     resource_dir_test = '/home/anning/workspace/DeepPrep/deepprep/resource'
@@ -396,7 +399,7 @@ def create_node_t(settings):
     if not bold_preprocess_dir_test.exists():
         bold_preprocess_dir_test.mkdir(parents=True, exist_ok=True)
 
-    subject_id_test = 'sub-1000525'
+    subject_id_test = 'sub-MSC01'
 
     # t1w_files = ['/mnt/ngshare/DeepPrep_workflow_test/UKB_BIDS/sub-1000037/ses-02/anat/sub-1000037_ses-02_T1w.nii.gz']
 
@@ -455,7 +458,7 @@ def create_node_t(settings):
 
     print('#####################################################5#####################################################')
     node = create_VxmRegistraion_node(subject_id=subject_id_test, task=task_test, atlas_type=atlas_type_test,
-                             preprocess_method=preprocess_method_test, settings=settings)
+                                      preprocess_method=preprocess_method_test, settings=settings)
     node.run()
     # sub_node = node.interface.create_sub_node()
     # sub_node.run()

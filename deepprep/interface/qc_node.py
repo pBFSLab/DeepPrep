@@ -8,11 +8,11 @@
 
 from pathlib import Path
 from nipype.interfaces.base import BaseInterfaceInputSpec, BaseInterface, File, TraitedSpec, Directory, Str
-from deepprep.interface.run import run_cmd_with_timing, multipool
 from reports.core import run_reports
 import os
 from uuid import uuid4
 from time import strftime
+
 
 class QCreportInputSpec(BaseInterfaceInputSpec):
     qcreport_dir = Directory(exists=True, desc='QCreport dir path', mandatory=True)

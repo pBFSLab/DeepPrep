@@ -6,11 +6,11 @@
 # @Author : Youjia Zhang   @Email : youjia <ireneyou33@gmail.com>
 # @Author : Zhenyu Sun     @Email : Kid-sunzhenyu <sun25939789@gmail.com>
 
-import os
 from pathlib import Path
 from nipype.interfaces.base import BaseInterfaceInputSpec, BaseInterface, File, TraitedSpec, Directory, \
     traits, traits_extension, Str
-from deepprep.interface.run import run_cmd_with_timing, multipool
+
+from .run import run_cmd_with_timing, multipool
 
 
 class SegmentInputSpec(BaseInterfaceInputSpec):
@@ -88,7 +88,7 @@ class Segment(BaseInterface):
         return outputs
 
     def create_sub_node(self, settings):
-        from interface.create_node_structure import create_Noccseg_node
+        from .create_node_structure import create_Noccseg_node
         node = create_Noccseg_node(self.inputs.subject_id, settings)
         return node
 
@@ -140,7 +140,7 @@ class N4BiasCorrect(BaseInterface):
         return outputs
 
     def create_sub_node(self, settings):
-        from interface.create_node_structure import create_TalairachAndNu_node
+        from .create_node_structure import create_TalairachAndNu_node
         node = create_TalairachAndNu_node(self.inputs.subject_id, settings)
         return node
 
@@ -220,7 +220,7 @@ class TalairachAndNu(BaseInterface):
         return outputs
 
     def create_sub_node(self, settings):
-        from interface.create_node_structure import create_Brainmask_node
+        from .create_node_structure import create_Brainmask_node
         node = create_Brainmask_node(self.inputs.subject_id, settings)
         return node
 
@@ -288,7 +288,7 @@ class Noccseg(BaseInterface):
         return outputs
 
     def create_sub_node(self, settings):
-        from interface.create_node_structure import create_N4BiasCorrect_node
+        from .create_node_structure import create_N4BiasCorrect_node
         node = create_N4BiasCorrect_node(self.inputs.subject_id, settings)
         return node
 
@@ -358,7 +358,7 @@ class UpdateAseg(BaseInterface):
         return outputs
 
     def create_sub_node(self, settings):
-        from interface.create_node_structure import create_Filled_node
+        from .create_node_structure import create_Filled_node
         node = create_Filled_node(self.inputs.subject_id, settings)
         return node
 

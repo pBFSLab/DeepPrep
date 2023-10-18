@@ -6,9 +6,6 @@
 # @Author : Youjia Zhang   @Email : youjia <ireneyou33@gmail.com>
 # @Author : Zhenyu Sun     @Email : Kid-sunzhenyu <sun25939789@gmail.com>
 
-from nipype.interfaces.base import BaseInterface, \
-    BaseInterfaceInputSpec, TraitedSpec, Directory, Str
-from deepprep.interface.run import Pool
 import sys
 import sh
 import nibabel as nib
@@ -17,6 +14,10 @@ from pathlib import Path
 import bids
 import os
 import shutil
+
+from nipype.interfaces.base import BaseInterface, \
+    BaseInterfaceInputSpec, TraitedSpec, Directory, Str
+from .run import Pool
 
 # TODO 现在每个BOLD 的 node 都是又重新获取的BIDS layer，然后获取数据，这样的操作太多其实是冗余的，应该在scheduler的时候获取一次就可以了
 # TODO 将BOLD输出文件的命名放到filename_settings中，以 {bold_filename} 为基础的后缀 比如 _skip.nii.gz，不提供给用户修改接口
