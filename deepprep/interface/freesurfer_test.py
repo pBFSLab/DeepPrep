@@ -7,9 +7,9 @@
 # @Author : Zhenyu Sun     @Email : Kid-sunzhenyu <sun25939789@gmail.com>
 
 import os
-from freesurfer import OrigAndRawavg, WhitePreaparc1, WhitePialThickness1, WhitePialThickness2, Aseg7, Aseg7ToAseg
+from freesurfer_node import OrigAndRawavg, WhitePreaparc1, WhitePialThickness1, WhitePialThickness2, Aseg7, Aseg7ToAseg
 from pathlib import Path
-from freesurfer import Brainmask, Filled, InflatedSphere, Curvstats, Cortribbon, Parcstats, Pctsurfcon, Hyporelabel, \
+from freesurfer_node import Brainmask, Filled, InflatedSphere, Curvstats, Cortribbon, Parcstats, Pctsurfcon, Hyporelabel, \
     JacobianAvgcurvCortparc, Segstats, BalabelsMult
 
 from nipype import Node

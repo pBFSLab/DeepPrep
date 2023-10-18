@@ -23,7 +23,7 @@ BOLD_ONLY = false  # wether or not to run bold precessing workflow only. (defaul
 # ### program set ###
 
 # FreeSurfer: version == 7.2
-FREESURFER_HOME = "/usr/local/freesurfer720"
+FREESURFER_HOME = "/usr/local/freesurfer"
 # ### FreeSurfer THREADS set ###
 FS_THREADS = 8  # default thereads for OpenMP and ITK
 

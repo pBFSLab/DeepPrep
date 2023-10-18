@@ -43,6 +43,7 @@ def native_project_to_fs6(subj_recon_dir, input_path, out_path, reg_path, hemi):
 
 
 def register_dat_to_fslmat(bold_mc_file, norm_fsnative_2mm_file, register_dat_file, fslmat_file):
+    os.environ['FSLOUTPUTTYPE'] = "NIFTI_GZ"
     sh.tkregister2('--mov', bold_mc_file,
                    '--targ', norm_fsnative_2mm_file,
                    '--reg', register_dat_file,

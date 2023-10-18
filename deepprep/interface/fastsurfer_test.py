@@ -7,7 +7,7 @@
 # @Author : Zhenyu Sun     @Email : Kid-sunzhenyu <sun25939789@gmail.com>
 
 from pathlib import Path
-from fastsurfer import Segment, Noccseg, N4BiasCorrect, TalairachAndNu, UpdateAseg, SampleSegmentationToSurfave
+from fastsurfer_node import Segment, Noccseg, N4BiasCorrect, TalairachAndNu, UpdateAseg, SampleSegmentationToSurfave
 from nipype import Node
 import os
 from run import set_envrion

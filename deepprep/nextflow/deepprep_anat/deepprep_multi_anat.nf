@@ -312,6 +312,28 @@ process anat_brainmask {
     """
 }
 
+process anat_ca_register {
+    tag "${subject_id}"
+
+    cpus 1
+
+    input:
+    path(subjects_dir)
+    tuple(val(subject_id), path(brainmask_mgz), path(talairach_lta), path(norm_mgz))
+    path(freesurfer_home)
+
+    output:
+    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/transforms/talairach.m3z"))
+
+    script:
+    fsaverage_m3z = "${freesurfer_home}/average/RB_all_2020-01-02.gca"
+    talairach_m3z = "${subjects_dir}/${subject_id}/mri/transforms/talairach.m3z"
+    threads = 1
+
+    """
+    mri_ca_register -nobigventricles -T ${talairach_lta} -align-after -mask ${brainmask_mgz} ${norm_mgz} ${fsaverage_m3z} ${talairach_m3z}
+    """
+}
 
 process anat_paint_cc_to_aseg {
     tag "${subject_id}"
@@ -947,7 +969,7 @@ process qc_plot_volsurf {
     script:
     qc_plot_aseg_fig_path = "${qc_result_path}/${subject_id}/figures/${subject_id}_desc-volsurf_T1w.svg"
 
-    script_py = "${nextflow_bin_path}/qc_vol_surface.py"
+    script_py = "${nextflow_bin_path}/qc_anat_vol_surface.py"
     vol_Surface_scene = "${nextflow_bin_path}/qc_tool/Vol_Surface.scene"
     affine_mat = "${nextflow_bin_path}/qc_tool/affine.mat"
 
@@ -984,7 +1006,7 @@ process qc_plot_surfparc {
     script:
     qc_plot_aseg_fig_path = "${qc_result_path}/${subject_id}/figures/${subject_id}_desc-surfparc_T1w.svg"
 
-    script_py = "${nextflow_bin_path}/qc_surface_parc.py"
+    script_py = "${nextflow_bin_path}/qc_anat_surface_parc.py"
     surface_parc_scene = "${nextflow_bin_path}/qc_tool/Surface_parc.scene"
     affine_mat = "${nextflow_bin_path}/qc_tool/affine.mat"
 
@@ -1206,7 +1228,7 @@ process qc_plot_aparc_aseg {
     script:
     qc_plot_aseg_fig_path = "${qc_result_path}/${subject_id}/figures/${subject_id}_desc-volparc_T1w.svg"
 
-    script_py = "${nextflow_bin_path}/qc_aparc_aseg.py"
+    script_py = "${nextflow_bin_path}/qc_anat_aparc_aseg.py"
     freesurfer_AllLut = "${nextflow_bin_path}/qc_tool/FreeSurferAllLut.txt"
     volume_parc_scene = "${nextflow_bin_path}/qc_tool/Volume_parc.scene"
     """
@@ -1246,6 +1268,31 @@ process anat_aparc_a2009s2aseg {
     --rh-cortex-mask rh.cortex.label --rh-white rh.white \
     --rh-pial rh.pial
     """
+}
+
+process anat_segstats {
+    tag "${subject_id}"
+
+    cpus 1
+
+    input:
+    path(subjects_dir)
+    tuple(val(subject_id), path(aseg_mgz), path(norm_mgz), path(brainmask_mgz), path(ribbon_mgz))
+    path(fastsurfer_home)
+
+    output:
+    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/stats/aseg.stats"))
+
+    script:
+    aseg_stats = "${subjects_dir}/${subject_id}/stats/aseg.stats"
+    asegstatsLUT_color = "${fastsurfer_home}/ASegStatsLUT.txt"
+    threads = 1
+
+    script:
+    """
+    SUBJECTS_DIR=${subjects_dir}  mri_segstats --seed 1234 --seg ${aseg_mgz} --sum ${aseg_stats} --pv ${norm_mgz} --empty --brainmask ${brainmask_mgz} --brain-vol-from-seg --excludeid 0 --excl-ctxgmwm --supratent --subcortgray --in ${norm_mgz} --in-intensity-name norm --in-intensity-units MR --etiv --surf-wm-vol --surf-ctx-vol --totalgray --euler --ctab ${asegstatsLUT_color} --subject ${subject_id}
+    """
+
 }
 
 
@@ -1352,6 +1399,9 @@ workflow anat_workflow {
 
     anat_brainmask_input = nu_mgz.join(mask_mgz)
     (norm_mgz, brainmask_mgz) = anat_brainmask(subjects_dir, anat_brainmask_input)
+
+//     anat_ca_register_input = brainmask_mgz.join(talairach_lta).join(norm_mgz)
+//     talairach_m3z = anat_ca_register(subjects_dir, anat_ca_register_input, freesurfer_home)   // for app, if for paper, comment out
 
     anat_paint_cc_to_aseg_input = norm_mgz.join(seg_deep_mgz).join(aseg_auto_noccseg_mgz)
     (aseg_auto_mgz, cc_up_lta, seg_deep_withcc_mgz) = anat_paint_cc_to_aseg(subjects_dir, anat_paint_cc_to_aseg_input, fastsurfer_home)
@@ -1473,7 +1523,10 @@ workflow anat_workflow {
     anat_aparc_a2009s2aseg_inputs = aseg_mgz.join(ribbon_mgz).join(lh_anat_aparc_a2009s2aseg_input).join(rh_anat_aparc_a2009s2aseg_input)
     aparc_a2009s_aseg_mgz = anat_aparc_a2009s2aseg(subjects_dir, anat_aparc_a2009s2aseg_inputs)  // if for paper, comment out
 
-    //  *exvivo* labels
+    anat_segstats_input = aseg_mgz.join(norm_mgz).join(brainmask_mgz).join(ribbon_mgz)
+    aseg_stats = anat_segstats(subjects_dir, anat_segstats_input, freesurfer_home)   // for app, if for paper, comment out
+
+    // *exvivo* labels
     balabels_lh = Channel.fromPath("${freesurfer_fsaverage_dir}/label/*lh*exvivo*.label")
     balabels_rh = Channel.fromPath("${freesurfer_fsaverage_dir}/label/*rh*exvivo*.label")
     anat_balabels_input_lh = sphere_reg_surf.join(white_surf, by: [0, 1]).join(subject_id_lh, by: [0, 1])

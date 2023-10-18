@@ -7,7 +7,7 @@
 # @Author : Zhenyu Sun     @Email : Kid-sunzhenyu <sun25939789@gmail.com>
 
 from pathlib import Path
-from fastcsr import FastCSR
+from fastcsr_node import FastCSR
 from nipype import Node
 import os
 import argparse
