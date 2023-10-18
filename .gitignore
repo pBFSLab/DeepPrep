@@ -20,3 +20,11 @@ __pycache__/
 
 *.nextflow*
 work/
+
+*.sif
+
+license.txt
+*.tar.gz
+*.zip
+*.png
+*.html
