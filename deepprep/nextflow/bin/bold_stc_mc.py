@@ -1,8 +1,6 @@
 #! /usr/bin/env python3
 import sys
 import sh
-import nibabel as nib
-import numpy as np
 from pathlib import Path
 import argparse
 import os
@@ -42,6 +40,7 @@ def cmd(subj_func_dir: Path, skip_reorient: Path, run: str, subject_id, bold_nam
         '-nolog']
     sh.stc_sess(*shargs, _out=sys.stdout)
 
+
     # """
     # mktemplate-sess 会生成两个template
     # 1. 一个放到 bold/template.nii.gz，使用的是run 001的first frame，供mc-sess --per-session使用
@@ -57,11 +56,12 @@ def cmd(subj_func_dir: Path, skip_reorient: Path, run: str, subject_id, bold_nam
     boldref = Path(subj_func_dir) / f'{subject_id}_boldref.nii.gz'
     shutil.copyfile(boldref,
                     link_dir / 'template.nii.gz')
+
     # Mc
     shargs = [
         '-s', subject_id,
         '-d', tmp_run,
-        '-per-run',
+        '-per-session',
         '-fsd', 'bold',
         '-fstem', faln_fname,
         '-fmcstem', mc_fname,
@@ -103,9 +103,10 @@ def cmd(subj_func_dir: Path, skip_reorient: Path, run: str, subject_id, bold_nam
                         ori_path / f'{mc_fname}.mcextreg')
             shutil.move(link_dir / 'mcdat2extreg.log',
                         ori_path / f'{mc_fname}.mcdat2extreg.log')
+
+        shutil.rmtree(ori_path / bold_name)
     except:
         pass
-    shutil.rmtree(ori_path / bold_name)
 
 
 if __name__ == '__main__':
@@ -128,4 +129,3 @@ if __name__ == '__main__':
 
     run = '001'
     cmd(subj_func_dir, skip_reorient_file, run, args.subject_id, args.bold_id)
-

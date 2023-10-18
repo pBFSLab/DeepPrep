@@ -6,8 +6,6 @@
 # @Author : Youjia Zhang   @Email : youjia <ireneyou33@gmail.com>
 # @Author : Zhenyu Sun     @Email : Kid-sunzhenyu <sun25939789@gmail.com>
 
-from nipype.interfaces.base import BaseInterface, \
-    BaseInterfaceInputSpec, File, TraitedSpec, Directory, Str, traits, traits_extension
 import sh
 import shutil
 import nibabel as nib
@@ -18,6 +16,8 @@ import os
 import tensorflow as tf
 import ants
 import voxelmorph as vxm
+from nipype.interfaces.base import BaseInterface, \
+    BaseInterfaceInputSpec, File, TraitedSpec, Directory, Str, traits, traits_extension
 
 
 class VxmRegistraionInputSpec(BaseInterfaceInputSpec):
@@ -157,7 +157,7 @@ class VxmRegistraion(BaseInterface):
 
     def create_sub_node(self, settings):
         if settings.BOLD_ONLY:
-            from deepprep.interface.create_node_bold import create_VxmRegNormMNI152_node
+            from .create_node_bold import create_VxmRegNormMNI152_node
             node = create_VxmRegNormMNI152_node(self.inputs.subject_id,
                                                 self.inputs.task,
                                                 self.inputs.atlas_type,
@@ -447,7 +447,7 @@ class VxmRegNormMNI152(BaseInterface):
 
     def create_sub_node(self, settings):
         # if settings.fsaverage6_space:
-        #     from deepprep.interface.create_node_bold import create_fsaverage_node
+        #     .create_node_bold import create_fsaverage_node
         #     node = create_fsaverage_node(self.inputs.subject_id,
         #                                  self.inputs.task,
         #                                  self.inputs.atlas_type,

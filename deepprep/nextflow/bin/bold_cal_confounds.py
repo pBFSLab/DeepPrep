@@ -19,14 +19,14 @@ def qnt_nifti(bpss_path, maskpath, outpath):
 
     # Open mask.
     mask_img = nib.load(maskpath)
-    mask = mask_img.get_data().flatten() > 0
+    mask = mask_img.get_fdata().flatten() > 0
     nvox = float(mask.sum())
     assert nvox > 0, 'Null mask found in %s' % maskpath
 
     p = 0
     with outpath.open('w') as f:
         img = nib.load(bpss_path)
-        data = img.get_data()
+        data = img.get_fdata()
         for iframe in range(data.shape[-1]):
             frame = data[:, :, :, iframe].flatten()
             total = frame[mask].sum()
@@ -58,14 +58,14 @@ def regressors_PCA(bpss_path, maskpath, outpath):
 
     # Open mask.
     mask_img = nib.load(maskpath)
-    mask = mask_img.get_data().swapaxes(0, 1)
+    mask = mask_img.get_fdata().swapaxes(0, 1)
     mask = mask.flatten(order='F') == 0
     nvox = float(mask.sum())
     assert nvox > 0, 'Null mask found in %s' % maskpath
 
     with outpath.open('w') as f:
         img = nib.load(bpss_path)
-        data = img.get_data().swapaxes(0, 1)
+        data = img.get_fdata().swapaxes(0, 1)
         vol_data = data.reshape((data.shape[0] * data.shape[1] * data.shape[2], data.shape[3]), order='F')
         pca_data = vol_data[mask]
         pca_regressor = regressor_PCA_singlebold(pca_data, n)
