@@ -42,19 +42,21 @@ def cmd(subj_func_dir: Path, skip_reorient: Path, run: str, subject_id, bold_nam
         '-nolog']
     sh.stc_sess(*shargs, _out=sys.stdout)
 
-    """
-    mktemplate-sess 会生成两个template
-    1. 一个放到 bold/template.nii.gz，使用的是run 001的first frame，供mc-sess --per-session使用
-    2. 一个放到 bold/run/template.nii.gz 使用的是每个run的mid frame，供mc-sess --per-run参数使用(default)
-    """
-    shargs = [
-        '-s', subject_id,
-        '-d', tmp_run,
-        '-fsd', 'bold',
-        '-funcstem', faln_fname,
-        '-nolog']
-    sh.mktemplate_sess(*shargs, _out=sys.stdout)
-
+    # """
+    # mktemplate-sess 会生成两个template
+    # 1. 一个放到 bold/template.nii.gz，使用的是run 001的first frame，供mc-sess --per-session使用
+    # 2. 一个放到 bold/run/template.nii.gz 使用的是每个run的mid frame，供mc-sess --per-run参数使用(default)
+    # """
+    # shargs = [
+    #     '-s', subject_id,
+    #     '-d', tmp_run,
+    #     '-fsd', 'bold',
+    #     '-funcstem', faln_fname,
+    #     '-nolog']
+    # sh.mktemplate_sess(*shargs, _out=sys.stdout)
+    boldref = Path(subj_func_dir) / f'{subject_id}_boldref.nii.gz'
+    shutil.copyfile(boldref,
+                    link_dir / 'template.nii.gz')
     # Mc
     shargs = [
         '-s', subject_id,
@@ -79,10 +81,11 @@ def cmd(subj_func_dir: Path, skip_reorient: Path, run: str, subject_id, bold_nam
             (ori_path / f'{input_fname}.nii.gz').unlink(missing_ok=True)
 
         # Template reference for mc
+
         shutil.copyfile(link_dir / 'template.nii.gz',
                         ori_path / f'{faln_fname}_boldref.nii.gz')
-        shutil.copyfile(link_dir / 'template.log',
-                        ori_path / f'{faln_fname}_boldref.log')
+        # shutil.copyfile(link_dir / 'template.log',
+        #                 ori_path / f'{faln_fname}_boldref.log')
 
         # Mc
         shutil.move(link_dir / f'{mc_fname}.nii.gz',
