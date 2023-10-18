@@ -2,16 +2,18 @@ process mkdir_subjects_dir_exist {
     cpus 1
 
     input:
-    val subjects_dir
+    path subjects_dir
 
     shell:
     """
     #! /usr/bin/env python3
 
     from pathlib import Path
-    sd = Path('${dir_path}')
-    sd.mkdir(parents=True, exist_ok=True)
-
+    sd = Path('${subjects_dir}')
+    try:
+        sd.mkdir(parents=True, exist_ok=True)
+    except FileExistsError:
+        pass
     """
 }
 
@@ -20,11 +22,11 @@ process make_subjects_dir_and_cp_fsaverage {
     cpus 1
 
     input:
-    val subjects_dir
+    path subjects_dir
     path(freesurfer_fsaverage_dir)
 
     output:
-    val("${subjects_dir}/fsaverage")
+    path("${subjects_dir}/fsaverage")
 
     shell:
     """
@@ -33,8 +35,10 @@ process make_subjects_dir_and_cp_fsaverage {
     import os
     from pathlib import Path
     sd = Path('${subjects_dir}')
-    sd.mkdir(parents=True, exist_ok=True)
-
+    try:
+        sd.mkdir(parents=True, exist_ok=True)
+    except FileExistsError:
+        pass
     os.system('cp -nr ${freesurfer_fsaverage_dir} ${subjects_dir}')
     """
 }
@@ -44,10 +48,11 @@ process make_qc_result_dir {
     cpus 1
 
     input:
-    val qc_result_dir
+    path qc_result_dir
+    path nextflow_bin_path
 
     output:
-    val("${qc_result_dir}")
+    path("${qc_result_dir}")
 
     shell:
     """
@@ -56,7 +61,10 @@ process make_qc_result_dir {
     import os
     from pathlib import Path
     sd = Path('${qc_result_dir}')
-    sd.mkdir(parents=True, exist_ok=True)
+    try:
+        sd.mkdir(parents=True, exist_ok=True)
+    except FileExistsError:
+        pass
     """
 }
 
@@ -82,7 +90,7 @@ process anat_create_subject_dir {
     cpus 1
 
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
-    val(subjects_dir)
+    path(subjects_dir)
     each path(subject_t1wfile_txt)
     path(nextflow_bin_path)
 
@@ -227,7 +235,7 @@ process anat_talairach_and_nu {
     path(subjects_dir)
     tuple(val(subject_id), path(orig_mgz), path(orig_nu_mgz))
 
-    path freesurfer_home
+    val freesurfer_home
 
     output:
     tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/nu.mgz")) // emit: nu_mgz
@@ -780,7 +788,7 @@ process anat_sphere_register {
 
     path surfreg_home
     path surfreg_model_path
-    path freesurfer_home
+    val freesurfer_home
 
     output:
     tuple(val(subject_id), val(hemi), path("${subjects_dir}/${subject_id}/surf/${hemi}.sphere.reg")) // emit: sphere_reg_surf
@@ -827,7 +835,7 @@ process anat_avgcurv {
     path(subjects_dir)
     tuple(val(subject_id), val(hemi), path(sphere_reg_surf))
 
-    path freesurfer_home
+    val freesurfer_home
 
     output:
     tuple(val(subject_id), val(hemi), path("${subjects_dir}/${subject_id}/surf/${hemi}.avg_curv")) // emit: avg_curv
@@ -850,7 +858,7 @@ process anat_cortparc_aparc {
     path(subjects_dir)
     tuple(val(subject_id), val(hemi), path(cortex_label), path(sphere_reg_surf), path(smoothwm_surf), path(aseg_presurf_mgz))
     // smoothwm_surf is hidden needed
-    path freesurfer_home
+    val freesurfer_home
 
     output:
     tuple(val(subject_id), val(hemi), path("${subjects_dir}/${subject_id}/label/${hemi}.aparc.annot")) // emit: aparc_annot
@@ -873,7 +881,7 @@ process anat_cortparc_aparc_a2009s {
     path(subjects_dir)
     tuple(val(subject_id), val(hemi), path(cortex_label), path(sphere_reg_surf), path(smoothwm_surf), path(aseg_presurf_mgz))
     // smoothwm_surf is hidden needed
-    path freesurfer_home
+    val freesurfer_home
 
     output:
     tuple(val(subject_id), val(hemi), path("${subjects_dir}/${subject_id}/label/${hemi}.aparc.a2009s.annot")) // emit: aparc_a2009s_annot
@@ -939,7 +947,7 @@ process qc_plot_volsurf {
 
     path nextflow_bin_path
     path qc_result_path
-    path freesurfer_home
+    val freesurfer_home
 
     output:
     tuple(val(subject_id), path("${qc_result_path}/${subject_id}/figures/${subject_id}_desc-volsurf_T1w.svg"))
@@ -976,7 +984,7 @@ process qc_plot_surfparc {
 
     path nextflow_bin_path
     path qc_result_path
-    path freesurfer_home
+    val freesurfer_home
 
     output:
     tuple(val(subject_id), path("${qc_result_path}/${subject_id}/figures/${subject_id}_desc-surfparc_T1w.svg"))
@@ -1198,7 +1206,7 @@ process qc_plot_aparc_aseg {
 
     path nextflow_bin_path
     path qc_result_path
-    path freesurfer_home
+    val freesurfer_home
 
     output:
     tuple(val(subject_id), path("${qc_result_path}/${subject_id}/figures/${subject_id}_desc-volparc_T1w.svg"))
@@ -1297,10 +1305,10 @@ process make_bold_preprocess_dir {
     cpus 1
 
     input:
-    val(dir_path)
+    path(dir_path)
 
     output:
-    val(dir_path)
+    path(dir_path)
 
     shell:
     """
@@ -1309,7 +1317,10 @@ process make_bold_preprocess_dir {
     import os
     from pathlib import Path
     sd = Path('${dir_path}')
-    sd.mkdir(parents=True, exist_ok=True)
+    try:
+        sd.mkdir(parents=True, exist_ok=True)
+    except FileExistsError:
+        pass
     """
 }
 
@@ -1543,6 +1554,7 @@ process bold_draw_carpet {
 process bold_vxmregistration {
     tag "${subject_id}"
 
+    label "with_gpu"
     cpus 1
     memory '5 GB'
 
@@ -1627,6 +1639,7 @@ process qc_plot_norm2mni152 {
 process bold_vxmregnormmni152 {
     tag "${subject_id}"
 
+    label "with_gpu"
     cpus 1
     maxForks 1
     memory '40 GB'
@@ -1709,7 +1722,7 @@ process qc_plot_bold_to_space {
     path bold_preprocess_path
     path nextflow_bin_path
     path qc_result_path
-    path freesurfer_home
+    val freesurfer_home
 
     output:
     tuple(val(subject_id), val(bold_id), path("${qc_result_path}/${subject_id}/figures/${bold_id}_desc-reg2MNI152_bold.svg"))
@@ -1775,8 +1788,20 @@ workflow anat_workflow {
     nextflow_bin_path = params.nextflow_bin_path
 
     // BIDS and SUBJECTS_DIR
+    _directory = new File(subjects_dir)
+    if (!_directory.exists()) {
+        _directory.mkdirs()
+        println "create dir: ..."
+        println _directory
+    }
+    _directory = new File(qc_result_path)
+    if (!_directory.exists()) {
+        _directory.mkdirs()
+        println "create dir: ..."
+        println _directory
+    }
     subject_t1wfile_txt = anat_get_t1w_file_in_bids(bids_dir, nextflow_bin_path)
-    qc_result_path = make_qc_result_dir(qc_result_path)
+    qc_result_path = make_qc_result_dir(qc_result_path, nextflow_bin_path)
     subjects_fsaverage_dir = make_subjects_dir_and_cp_fsaverage(subjects_dir, freesurfer_fsaverage_dir)
     subject_id = anat_create_subject_dir(subjects_dir, subject_t1wfile_txt, nextflow_bin_path)
 
@@ -2012,15 +2037,21 @@ workflow {
     bold_vxmregnormmni152_standard_space = params.bold_vxmregnormmni152_standard_space
     bold_vxmregnormmni152_fs_native_space = params.bold_vxmregnormmni152_fs_native_space
 
-    // BIDS and SUBJECTS_DIR
-    subjects_fsaverage_dir = make_subjects_dir_and_cp_fsaverage(subjects_dir, freesurfer_fsaverage_dir)
-    bold_preprocess_path = make_bold_preprocess_dir(bold_preprocess_path)
-
-    subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, nextflow_bin_path, bold_task)
-
+    // ///////////////////////////////////// Anat /////////////////////////////////////
     (norm_mgz, bold_bbregister_input_from_anat) = anat_workflow()
 
     // ///////////////////////////////////// BOLD /////////////////////////////////////
+
+    // BIDS and BOLD_Preprocess_dir
+    _directory = new File(bold_preprocess_path)
+    if (!_directory.exists()) {
+        _directory.mkdirs()
+        println "create dir: ..."
+        println _directory
+    }
+    bold_preprocess_path = make_bold_preprocess_dir(bold_preprocess_path)
+    subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, nextflow_bin_path, bold_task)
+
     subjects_bold_file = bold_add_subject_id_to_bold_file(subject_boldfile_txt)
 
     bold_id = bold_skip_reorient(bold_preprocess_path, subjects_bold_file, nextflow_bin_path, bold_skip_reorient_nskip)
