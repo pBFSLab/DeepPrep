@@ -70,11 +70,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='ANTS registration script')
 
     # 添加需要的命令行参数
+    parser.add_argument('--subjects_dir', type=str, help='subjects_dir')
+    parser.add_argument('--bold_preprocess_dir', type=str, help='bold_preprocess_dir')
+    parser.add_argument('--subject_id', type=str, help='subject_id')
+    parser.add_argument('--bold_id', type=str, help='bold_id')
     parser.add_argument('--ref', type=str, help='path to moving image: bold')
     parser.add_argument('--moving', type=str, help='path to moving image: bold')
     parser.add_argument('--fixed', type=str, help='path to fixed image: norm_2mm')
     parser.add_argument('--dat', type=str, help='path to bbregister dat: bbregister.dat')
-    parser.add_argument('--moved', type=str, help='path to moved image: bold_space-native_2mm')
+    # parser.add_argument('--moved', type=str, help='path to moved image: bold_space-native_2mm')
     parser.add_argument('--freesurfer-home', type=str, help='path to freesurfer home', default='/usr/local/freesurfer')
 
     args = parser.parse_args()
@@ -88,10 +92,22 @@ if __name__ == '__main__':
     print(f'<<<-- {args.dat}')
     print(f'<<<-- {args.freesurfer_home}')
 
-    tfm_fsl = args.dat.replace('.dat', '.fsl')
-    tfm_mat = args.dat.replace('.dat', '.mat')
+    cur_path = os.getcwd()
+
+    preprocess_dir = Path(cur_path) / str(args.bold_preprocess_dir) / args.subject_id
+    subj_func_dir = Path(preprocess_dir) / 'func'
+    subj_func_dir.mkdir(parents=True, exist_ok=True)
+
+    ref = subj_func_dir / f'{args.bold_id}_skip_reorient_stc_boldref.nii.gz'
+    moving = subj_func_dir / f'{args.bold_id}_skip_reorient_stc_mc.nii.gz'
+    fixed = subj_func_dir / f'{args.subject_id}_T1_2mm.nii.gz'
+    dat = subj_func_dir / f'{args.bold_id}_skip_reorient_stc_mc_from_mc_to_fsnative_bbregister_rigid.dat'
+    moved = subj_func_dir / f'{args.bold_id}_skip_reorient_stc_mc_bbregister_space-native_2mm.nii.gz'
+
+    tfm_fsl = str(dat).replace('.dat', '.fsl')
+    tfm_mat = str(dat).replace('.dat', '.mat')
     transforms = [tfm_mat]
 
-    bbregister_dat_to_fsl(args.ref, args.fixed, Path(args.dat), tfm_fsl)
-    fsl_to_ants_mat(args.ref, args.fixed, tfm_fsl, tfm_mat)
-    bold_to_native(args.moving, args.fixed, transforms, args.moved)
+    bbregister_dat_to_fsl(ref, fixed, dat, tfm_fsl)
+    fsl_to_ants_mat(str(ref), str(fixed), tfm_fsl, tfm_mat)
+    bold_to_native(str(moving), str(fixed), transforms, moved)
