@@ -55,5 +55,3 @@ if __name__ == '__main__':
 
     cmd(subj_func_dir, bold_file, int(args.nskip_frame))
 
-    with open(subject_id, 'w') as f:
-        f.write(subject_id)

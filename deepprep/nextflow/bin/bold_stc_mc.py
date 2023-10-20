@@ -61,7 +61,7 @@ def cmd(subj_func_dir: Path, skip_reorient: Path, run: str, subject_id, bold_nam
     shargs = [
         '-s', subject_id,
         '-d', tmp_run,
-        '-per-session',
+        '-per-run',
         '-fsd', 'bold',
         '-fstem', faln_fname,
         '-fmcstem', mc_fname,
