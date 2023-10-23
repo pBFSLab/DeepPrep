@@ -1,24 +1,4 @@
-process mkdir_subjects_dir_exist {
-    cpus 1
-
-    input:
-    path subjects_dir
-
-    shell:
-    """
-    #! /usr/bin/env python3
-
-    from pathlib import Path
-    sd = Path('${subjects_dir}')
-    try:
-        sd.mkdir(parents=True, exist_ok=True)
-    except FileExistsError:
-        pass
-    """
-}
-
-
-process make_subjects_dir_and_cp_fsaverage {
+process cp_fsaverage {
     cpus 1
 
     input:
@@ -31,39 +11,8 @@ process make_subjects_dir_and_cp_fsaverage {
     shell:
     """
     #! /usr/bin/env python3
-
     import os
-    from pathlib import Path
-    sd = Path('${subjects_dir}')
-    try:
-        sd.mkdir(parents=True, exist_ok=True)
-    except FileExistsError:
-        pass
     os.system('cp -nr ${freesurfer_fsaverage_dir} ${subjects_dir}')
-    """
-}
-
-
-process make_qc_result_dir {
-    cpus 1
-
-    input:
-    path qc_result_dir
-
-    output:
-    path(qc_result_dir)
-
-    shell:
-    """
-    #! /usr/bin/env python3
-
-    import os
-    from pathlib import Path
-    sd = Path('${qc_result_dir}')
-    try:
-        sd.mkdir(parents=True, exist_ok=True)
-    except FileExistsError:
-        pass
     """
 }
 
@@ -85,7 +34,7 @@ process anat_get_t1w_file_in_bids {
     """
 }
 
-process anat_create_subject_dir {
+process anat_create_subject_orig_dir {
     cpus 1
 
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
@@ -917,7 +866,7 @@ process anat_pial_surface {
     mris_place_surface --adgws-in ${autodet_gwstats} --seg ${aseg_presurf_mgz} --threads ${threads} --wm ${wm_mgz} \
     --invol ${brain_finalsurfs_mgz} --${hemi} --i ${white_surf} --o ${subjects_dir}/${subject_id}/surf/${hemi}.pial.T1 \
     --pial --nsmooth 0 --rip-label ${subjects_dir}/${subject_id}/label/${hemi}.cortex+hipamyg.label --pin-medial-wall ${cortex_label} --aparc ${aparc_annot} --repulse-surf ${white_surf} --white-surf ${white_surf}
-    cp ${subjects_dir}/${subject_id}/surf/${hemi}.pial.T1 ${subjects_dir}/${subject_id}/surf/${hemi}.pial
+    cp -f ${subjects_dir}/${subject_id}/surf/${hemi}.pial.T1 ${subjects_dir}/${subject_id}/surf/${hemi}.pial
 
     mris_place_surface --curv-map ${subjects_dir}/${subject_id}/surf/${hemi}.pial.T1 2 10 ${subjects_dir}/${subject_id}/surf/${hemi}.curv.pial
     mris_place_surface --area-map ${subjects_dir}/${subject_id}/surf/${hemi}.pial.T1 ${subjects_dir}/${subject_id}/surf/${hemi}.area.pial
@@ -1325,7 +1274,6 @@ process make_bold_preprocess_dir {
 
 
 process bold_get_bold_file_in_bids {
-    tag "${subject_id}"
 
     cpus 1
 
@@ -1343,22 +1291,6 @@ process bold_get_bold_file_in_bids {
     python3 ${script_py} \
     --bids-dir ${bids_dir} \
     --task ${bold_task}
-    """
-}
-
-
-process get_anat_file {
-    tag "${subject_id}"
-
-    input:
-    val(subject_id)
-    path subjects_dir
-    output:
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/T1.mgz")) // emit: t1_mgz
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/aparc+aseg.mgz")) // emit: aparc_aseg_mgz
-    script:
-    """
-    echo
     """
 }
 
@@ -1964,7 +1896,7 @@ process anat_test {
 }
 
 
-workflow anat_workflow {
+workflow anat_wf {
 
     main:
     bids_dir = params.bids_dir
@@ -2000,9 +1932,8 @@ workflow anat_workflow {
         println _directory
     }
     subject_t1wfile_txt = anat_get_t1w_file_in_bids(bids_dir, nextflow_bin_path)
-    qc_result_path = make_qc_result_dir(qc_result_path, nextflow_bin_path)
-    subjects_fsaverage_dir = make_subjects_dir_and_cp_fsaverage(subjects_dir, freesurfer_fsaverage_dir)
-    subject_id = anat_create_subject_dir(subjects_dir, subject_t1wfile_txt, nextflow_bin_path)
+    subjects_fsaverage_dir = cp_fsaverage(subjects_dir, freesurfer_fsaverage_dir)
+    subject_id = anat_create_subject_orig_dir(subjects_dir, subject_t1wfile_txt, nextflow_bin_path)
 
     // freesurfer
     (orig_mgz, rawavg_mgz) = anat_motioncor(subjects_dir, subject_id)
@@ -2017,7 +1948,7 @@ workflow anat_workflow {
     anat_talairach_and_nu_input = orig_mgz.join(orig_nu_mgz)
     (nu_mgz, talairach_auto_xfm, talairach_xfm, talairach_xfm_lta, talairach_with_skull_lta, talairach_lta) = anat_talairach_and_nu(subjects_dir, anat_talairach_and_nu_input, freesurfer_home)
 
-    t1_mgz = anat_T1(subjects_dir, nu_mgz)  // if for paper, comment out
+    t1_mgz = anat_T1(subjects_dir, nu_mgz)
 
     anat_brainmask_input = nu_mgz.join(mask_mgz)
     (norm_mgz, brainmask_mgz) = anat_brainmask(subjects_dir, anat_brainmask_input)
@@ -2150,18 +2081,24 @@ workflow anat_workflow {
     balabel_lh = anat_balabels_lh(subjects_dir, anat_balabels_input_lh, balabels_lh, subjects_fsaverage_dir)  // if for paper, comment out
     balabel_rh = anat_balabels_rh(subjects_dir, anat_balabels_input_rh, balabels_rh, subjects_fsaverage_dir)  // if for paper, comment out
 
-    lh_bold_bbregister_input = white_surf.join(thickness_surf, by: [0, 1]).join(cortex_label, by: [0, 1]).join(subject_id_lh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4] }
-    rh_bold_bbregister_input = white_surf.join(thickness_surf, by: [0, 1]).join(cortex_label, by: [0, 1]).join(subject_id_rh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4] }
+//     lh_bold_bbregister_input = white_surf.join(thickness_surf, by: [0, 1]).join(cortex_label, by: [0, 1]).join(subject_id_lh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4] }
+//     rh_bold_bbregister_input = white_surf.join(thickness_surf, by: [0, 1]).join(cortex_label, by: [0, 1]).join(subject_id_rh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4] }
 //     bold_bbregister_input = seg_deep_withcc_mgz.join(lh_bold_bbregister_input).join(rh_bold_bbregister_input)
-    bold_bbregister_input = aparc_aseg_mgz.join(lh_bold_bbregister_input).join(rh_bold_bbregister_input)
+//     bold_bbregister_input = aparc_aseg_mgz.join(lh_bold_bbregister_input).join(rh_bold_bbregister_input)
 
     emit:
-    norm_mgz
-    bold_bbregister_input
+    t1_mgz
+    aparc_aseg_mgz
 }
 
 
-workflow bold_workflow {
+workflow bold_wf {
+
+    take:
+    t1_mgz
+    aparc_aseg_mgz
+
+    main:
     bids_dir = params.bids_dir
     subjects_dir = params.subjects_dir
     nextflow_bin_path = params.nextflow_bin_path
@@ -2180,17 +2117,21 @@ workflow bold_workflow {
     bold_synthmorph_model_path = params.bold_synthmorph_model_path
     bold_synthmorph_template_path = params.bold_synthmorph_template_path
 
+    _directory = new File(bold_preprocess_path)
+        if (!_directory.exists()) {
+            _directory.mkdirs()
+            println "create dir: ..."
+            println _directory
+        }
+
     _directory = new File(qc_result_path)
     if (!_directory.exists()) {
         _directory.mkdirs()
         println "create dir: ..."
         println _directory
     }
-    bold_preprocess_path = make_bold_preprocess_dir(bold_preprocess_path)
-    qc_result_path = make_qc_result_dir(qc_result_path)
 
     subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, nextflow_bin_path, bold_task)
-
     (subject_id, boldfile_id, subject_boldfile_txt) = subject_boldfile_txt.flatten().multiMap { it ->
                                                                                      a: it.name.split('_')[0]
                                                                                      c: it.name
@@ -2199,21 +2140,22 @@ workflow bold_workflow {
     (subject_id_unique, boldfile_id_unique) = subject_id_boldfile_id.groupTuple(sort: true).multiMap { tuple ->
                                                                                                         a: tuple[0]
                                                                                                         b: tuple[1][0] }
-    (t1_mgz, aparc_aseg_mgz) = get_anat_file(subject_id_unique, subjects_dir)
+
     t1_native2mm = bold_T1to2mm(subjects_dir, bold_preprocess_path, nextflow_bin_path, t1_mgz)
     (affine_nii, affine_trans) = synthmorph_affine(subjects_dir, bold_preprocess_path, nextflow_bin_path, t1_native2mm, bold_synthmorph_model_path, bold_synthmorph_template_path)
     synthmorph_norigid_input = t1_native2mm.join(affine_trans, by: [0])
     (norigid_nii, transvoxel) = synthmorph_norigid(subjects_dir, bold_preprocess_path, nextflow_bin_path, synthmorph_norigid_input, bold_synthmorph_model_path, bold_synthmorph_template_path)
+
     subject_boldref_file = bold_get_bold_ref_in_bids(bold_preprocess_path, bids_dir, nextflow_bin_path, subject_id_unique, boldfile_id_unique)  // subject_id, subject_boldref_file
     transvoxel_group = subject_id_boldfile_id.groupTuple(sort: true).join(transvoxel).transpose()
     aparc_aseg_mgz = subject_id_boldfile_id.groupTuple(sort: true).join(aparc_aseg_mgz).transpose()
-    aparc_aseg_mgz.view()
+
     boldfile_id_group = subject_id_boldfile_id.groupTuple(sort: true).join(subject_boldref_file).map { tuple -> tuple[1] }
     boldfile_id_split = split_subject_boldref_file(boldfile_id_group.flatten())
-    boldfile_id_split.view()
+
     bold_info = bold_skip_reorient(bold_preprocess_path, subject_boldfile_txt, nextflow_bin_path, bold_skip_reorient_nskip)
     bold_info = boldfile_id_split.join(bold_info, by: [0, 1])
-    bold_info.view()
+
 //     (vxm_norm_nii, norm_nii, vxm_nonrigid_nii, vxm_affine_npz, vxm_fsnative_affine_mat) = bold_vxmregistration(subjects_dir, bold_preprocess_path, nextflow_bin_path, subject_boldfile_txt, gpuid, atlas_type, vxm_model_path)
 //     norm_to_mni152_svg = qc_plot_norm2mni152(norm_nii, bold_preprocess_path, nextflow_bin_path, qc_result_path)
     (mc_nii, mcdat, boldref) = bold_stc_mc(bold_preprocess_path, nextflow_bin_path, bold_info)
@@ -2221,109 +2163,43 @@ workflow bold_workflow {
     bbregister_dat = bold_bbregister(subjects_dir, bold_preprocess_path, nextflow_bin_path, bbregister_dat_input)
     t1_native2mm_group = subject_id_boldfile_id.groupTuple(sort: true).join(t1_native2mm).transpose()
     bold_bbregister_to_native_input = boldref.join(mc_nii, by: [0, 1]).join(t1_native2mm_group, by: [0, 1]).join(bbregister_dat, by: [0, 1])
-    bold_bbregister_to_native_input.view()
+
     bbregister_native_2mm = bold_bbregister_to_native(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_bbregister_to_native_input, freesurfer_home)
-    bbregister_native_2mm.view()
+
     bold_aparaseg2mc_inputs = aparc_aseg_mgz.join(mc_nii, by: [0,1]).join(bbregister_dat, by: [0,1])
     (anat_wm_nii, anat_csf_nii, anat_aseg_nii, anat_ventricles_nii, anat_brainmask_nii, anat_brainmask_bin_nii) = bold_mkbrainmask(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_aparaseg2mc_inputs)
     bold_synthmorph_norigid_apply_input = t1_native2mm_group.join(mc_nii, by: [0,1]).join(bbregister_native_2mm, by: [0,1]).join(transvoxel_group, by: [0,1])
     synthmorph_norigid_bold = bold_synthmorph_norigid_apply(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_synthmorph_norigid_apply_input, bold_synthmorph_template_path)
-//     qc_plot_mctsnr_input = mc_nii.join(anat_brainmask_nii, by: [0,1])
-//     bold_mc_tsnr_svg = qc_plot_mctsnr(qc_plot_mctsnr_input, bold_preprocess_path, nextflow_bin_path, qc_result_path)
-//     bold_draw_carpet_inputs = mc_nii.join(mcdat, by: [0,1]).join(anat_brainmask_nii, by: [0,1])
-//     (bold_carpet_svg) = bold_draw_carpet(bold_preprocess_path, nextflow_bin_path, qc_result_path, bold_draw_carpet_inputs)
-//
-//     bold_vxmregnormmni152_inputs = mc_nii.join(bbregister_dat, by: [0,1]).join(vxm_nonrigid_nii).join(vxm_fsnative_affine_mat)
-//     (bold_atlas_to_mni152) = bold_vxmregnormmni152(bold_preprocess_path, subjects_dir, atlas_type, vxm_model_path, resource_dir, nextflow_bin_path, bold_vxmregnormmni152_batch_size, gpuid, bold_vxmregnormmni152_standard_space, bold_vxmregnormmni152_fs_native_space, bold_vxmregnormmni152_inputs)
-//     bold_to_mni152_svg = qc_plot_bold_to_space(bold_atlas_to_mni152, bold_vxmregnormmni152_fs_native_space, subjects_dir, bold_preprocess_path, nextflow_bin_path, qc_result_path, freesurfer_home)
-//
-//     bold_confounds_inputs = mc_nii.join(anat_wm_nii, by: [0,1]).join(bbregister_dat, by: [0,1])
-//     bold_confounds(bold_preprocess_path, nextflow_bin_path, bold_confounds_inputs)
-
-}
-
-
-workflow {
-    bids_dir = params.bids_dir
-    subjects_dir = params.subjects_dir
-    qc_result_path = params.qc_result_path
-
-    fsthreads = params.anat_fsthreads
-
-    fastsurfer_home = params.fastsurfer_home
-
-    freesurfer_home = params.freesurfer_home
-    freesurfer_fsaverage_dir = params.freesurfer_fsaverage_dir
-
-    fastcsr_home = params.fastcsr_home
-    fastcsr_model_path = params.fastcsr_model_path
-
-    surfreg_home = params.surfreg_home
-    surfreg_model_path = params.surfreg_model_path
-
-    nextflow_bin_path = params.nextflow_bin_path
-
-    bold_task = params.bold_task
-    bold_preprocess_path = params.bold_preprocess_path
-    vxm_model_path = params.vxm_model_path
-    bold_skip_reorient_nskip = params.bold_skip_reorient_nskip
-    atlas_type = params.atlas_type
-    gpuid = params.device
-    qc_result_path = params.qc_result_path
-    resource_dir = params.bold_vxmregnormmni152_resource_dir
-    bold_vxmregnormmni152_batch_size = params.bold_vxmregnormmni152_batch_size
-    bold_vxmregnormmni152_standard_space = params.bold_vxmregnormmni152_standard_space
-    bold_vxmregnormmni152_fs_native_space = params.bold_vxmregnormmni152_fs_native_space
-
-    // ///////////////////////////////////// Anat /////////////////////////////////////
-    (norm_mgz, bold_bbregister_input_from_anat) = anat_workflow()
-
-    // ///////////////////////////////////// BOLD /////////////////////////////////////
-
-    // BIDS and BOLD_Preprocess_dir
-    _directory = new File(bold_preprocess_path)
-    if (!_directory.exists()) {
-        _directory.mkdirs()
-        println "create dir: ..."
-        println _directory
-    }
-    bold_preprocess_path = make_bold_preprocess_dir(bold_preprocess_path)
-    subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, nextflow_bin_path, bold_task)
-
-    subjects_bold_file = bold_add_subject_id_to_bold_file(subject_boldfile_txt)
-
-    bold_id = bold_skip_reorient(bold_preprocess_path, subjects_bold_file, nextflow_bin_path, bold_skip_reorient_nskip)
-    (vxm_norm_nii, norm_nii, vxm_nonrigid_nii, vxm_affine_npz, vxm_fsnative_affine_mat) = bold_vxmregistration(subjects_dir, bold_preprocess_path, nextflow_bin_path, norm_mgz, gpuid, atlas_type, vxm_model_path)
-    norm_to_mni152_svg = qc_plot_norm2mni152(norm_nii, bold_preprocess_path, nextflow_bin_path, qc_result_path)
-    (mc_nii, mcdat, boldref) = bold_stc_mc(bold_preprocess_path, nextflow_bin_path, bold_id)
-
-    subjects_bold_file_group = subjects_bold_file.groupTuple()
-
-    (bold_id_file, bold_bbregister_input_from_anat) = subjects_bold_file_group.join(bold_bbregister_input_from_anat).multiMap { tuple ->
-                                                                                                                               b: tuple[1]
-                                                                                                                               c: tuple[2]
-                                                                                                                               }
-    bold_bbregister_input = split_bold_bbregister_from_anat_input(bold_id_file.flatten(), bold_bbregister_input_from_anat).join(mc_nii, by: [0, 1])
-    bbregister_dat = bold_bbregister(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_bbregister_input)
-
-    bold_aparaseg2mc_inputs = bold_bbregister_input.join(bbregister_dat, by: [0,1])
-    (anat_wm_nii, anat_csf_nii, anat_aseg_nii, anat_ventricles_nii, anat_brainmask_nii, anat_brainmask_bin_nii) = bold_mkbrainmask(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_aparaseg2mc_inputs)
-
-
     qc_plot_mctsnr_input = mc_nii.join(anat_brainmask_nii, by: [0,1])
     bold_mc_tsnr_svg = qc_plot_mctsnr(qc_plot_mctsnr_input, bold_preprocess_path, nextflow_bin_path, qc_result_path)
     bold_draw_carpet_inputs = mc_nii.join(mcdat, by: [0,1]).join(anat_brainmask_nii, by: [0,1])
     (bold_carpet_svg) = bold_draw_carpet(bold_preprocess_path, nextflow_bin_path, qc_result_path, bold_draw_carpet_inputs)
 
-    (bold_id_file, bold_vxmregnormmni152_input) = subjects_bold_file_group.join(vxm_nonrigid_nii.join(vxm_fsnative_affine_mat)).multiMap { tuple ->
-                                                                                                                                           b: tuple[1]
-                                                                                                                                           c: tuple[2, 3]
-                                                                                                                                           }
-    bold_vxmregnormmni152_inputs_split = split_bold_vxmregnormmni152_input(bold_id_file.flatten(), bold_vxmregnormmni152_input)
-    bold_vxmregnormmni152_inputs = mc_nii.join(bbregister_dat, by: [0,1]).join(bold_vxmregnormmni152_inputs_split, by: [0, 1])
-    (bold_atlas_to_mni152) = bold_vxmregnormmni152(bold_preprocess_path, subjects_dir, atlas_type, vxm_model_path, resource_dir, nextflow_bin_path, bold_vxmregnormmni152_batch_size, gpuid, bold_vxmregnormmni152_standard_space, bold_vxmregnormmni152_fs_native_space, bold_vxmregnormmni152_inputs)
-    bold_to_mni152_svg = qc_plot_bold_to_space(bold_atlas_to_mni152, bold_vxmregnormmni152_fs_native_space, subjects_dir, bold_preprocess_path, nextflow_bin_path, qc_result_path, freesurfer_home)
+//     bold_vxmregnormmni152_inputs = mc_nii.join(bbregister_dat, by: [0,1]).join(vxm_nonrigid_nii).join(vxm_fsnative_affine_mat)
+//     (bold_atlas_to_mni152) = bold_vxmregnormmni152(bold_preprocess_path, subjects_dir, atlas_type, vxm_model_path, resource_dir, nextflow_bin_path, bold_vxmregnormmni152_batch_size, gpuid, bold_vxmregnormmni152_standard_space, bold_vxmregnormmni152_fs_native_space, bold_vxmregnormmni152_inputs)
+//     bold_to_mni152_svg = qc_plot_bold_to_space(bold_atlas_to_mni152, bold_vxmregnormmni152_fs_native_space, subjects_dir, bold_preprocess_path, nextflow_bin_path, qc_result_path, freesurfer_home)
 
     bold_confounds_inputs = mc_nii.join(anat_wm_nii, by: [0,1]).join(bbregister_dat, by: [0,1])
     bold_confounds(bold_preprocess_path, nextflow_bin_path, bold_confounds_inputs)
+
+}
+
+
+workflow {
+    if (params.anat_only.toUpperCase() == 'TRUE') {
+        println "INFO: anat preprocess ONLY"
+        (t1_mgz, aparc_aseg_mgz) = anat_wf()
+    } else if (params.bold_only.toUpperCase() == 'TRUE') {
+        println "INFO: Bold preprocess ONLY"
+        subjects_dir = params.subjects_dir
+        t1_mgz = Channel.fromPath("${subjects_dir}/sub-*/mri/T1.mgz")
+        (t1_mgz, aparc_aseg_mgz) = t1_mgz.multiMap { it ->
+                                                     c: [it.getParent().getParent().getName(), it]
+                                                     b: [it.getParent().getParent().getName(), file("${it.getParent()}/aparc+aseg.mgz")] }
+        bold_wf(t1_mgz, aparc_aseg_mgz)
+    } else {
+        println "INFO: anat && Bold preprocess"
+        (t1_mgz, aparc_aseg_mgz) = anat_wf()
+        bold_wf(t1_mgz, aparc_aseg_mgz)
+    }
 }

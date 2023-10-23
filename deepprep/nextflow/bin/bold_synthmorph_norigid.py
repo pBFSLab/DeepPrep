@@ -32,7 +32,9 @@ if __name__ == '__main__':
     subj_func_dir = Path(preprocess_dir) / 'func'
     subj_func_dir.mkdir(parents=True, exist_ok=True)
 
-    T1_2mm = subj_func_dir / f'{args.subject_id}_T1_2mm.nii.gz'
-    template = Path(cur_path) / str(args.synth_template_path) / 'MNI152_T1_2mm.nii.gz'
+    # T1_2mm = subj_func_dir / f'{args.subject_id}_T1_2mm.nii.gz'
+    # template = Path(args.synth_template_path) / 'MNI152_T1_2mm.nii.gz'
+    T1_2mm = args.t1_native2mm
+    template = Path(args.synth_template_path) / 'MNI152_T1_2mm.nii.gz'
     affine_trans = subj_func_dir / f'{args.subject_id}_T1_2mm_affine_space-MNI152_2mm.xfm.txt'
     run_norigid_registration(args.subject_id, args.synth_script, subj_func_dir, T1_2mm, template, affine_trans, args.synth_model_path)
