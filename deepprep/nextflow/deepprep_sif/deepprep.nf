@@ -49,10 +49,9 @@ process make_qc_result_dir {
 
     input:
     path qc_result_dir
-    path nextflow_bin_path
 
     output:
-    path("${qc_result_dir}")
+    path(qc_result_dir)
 
     shell:
     """
@@ -918,7 +917,7 @@ process anat_pial_surface {
     mris_place_surface --adgws-in ${autodet_gwstats} --seg ${aseg_presurf_mgz} --threads ${threads} --wm ${wm_mgz} \
     --invol ${brain_finalsurfs_mgz} --${hemi} --i ${white_surf} --o ${subjects_dir}/${subject_id}/surf/${hemi}.pial.T1 \
     --pial --nsmooth 0 --rip-label ${subjects_dir}/${subject_id}/label/${hemi}.cortex+hipamyg.label --pin-medial-wall ${cortex_label} --aparc ${aparc_annot} --repulse-surf ${white_surf} --white-surf ${white_surf}
-    cp ${subjects_dir}/${subject_id}/surf/${hemi}.pial.T1 ${subjects_dir}/${subject_id}/surf/${hemi}.pial
+    rm ${subjects_dir}/${subject_id}/surf/${hemi}.pial && cp ${subjects_dir}/${subject_id}/surf/${hemi}.pial.T1 ${subjects_dir}/${subject_id}/surf/${hemi}.pial
 
     mris_place_surface --curv-map ${subjects_dir}/${subject_id}/surf/${hemi}.pial.T1 2 10 ${subjects_dir}/${subject_id}/surf/${hemi}.curv.pial
     mris_place_surface --area-map ${subjects_dir}/${subject_id}/surf/${hemi}.pial.T1 ${subjects_dir}/${subject_id}/surf/${hemi}.area.pial
@@ -1344,6 +1343,146 @@ process bold_get_bold_file_in_bids {
     python3 ${script_py} \
     --bids-dir ${bids_dir} \
     --task ${bold_task}
+    """
+}
+
+
+process get_anat_file {
+    tag "${subject_id}"
+
+    input:
+    val(subject_id)
+    path subjects_dir
+    output:
+    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/T1.mgz")) // emit: t1_mgz
+    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/aparc+aseg.mgz")) // emit: aparc_aseg_mgz
+    script:
+    """
+    echo
+    """
+}
+
+
+process bold_T1to2mm {
+    tag "${subject_id}"
+
+    input:
+    path subjects_dir
+    path bold_preprocess_path
+    path nextflow_bin_path
+    tuple(val(subject_id), path(t1_mgz))
+    output:
+    tuple(val(subject_id), path("${bold_preprocess_path}/${subject_id}/func/${subject_id}_T1_2mm.nii.gz")) //emit: t1_native2mm
+    script:
+    script_py = "${nextflow_bin_path}/bold_T1_to_native2mm.py"
+
+    """
+    python3 ${script_py} \
+    --bold_preprocess_dir ${bold_preprocess_path} \
+    --subjects_dir ${subjects_dir} \
+    --subject_id ${subject_id} \
+    --t1_mgz ${t1_mgz}
+    """
+}
+
+
+process synthmorph_affine {
+    tag "${subject_id}"
+    maxForks 1
+    input:
+    path subjects_dir
+    path bold_preprocess_path
+    path nextflow_bin_path
+    tuple(val(subject_id), path(t1_native2mm))
+    path synth_model_path
+    path synth_template_path
+    output:
+    tuple(val(subject_id), path("${bold_preprocess_path}/${subject_id}/func/${subject_id}_T1_2mm_affine_space-MNI152_2mm.nii.gz")) //emit: affine_nii
+    tuple(val(subject_id), path("${bold_preprocess_path}/${subject_id}/func/${subject_id}_T1_2mm_affine_space-MNI152_2mm.xfm.txt")) //emit: affine_trans
+    script:
+    script_py = "${nextflow_bin_path}/bold_synthmorph_affine.py"
+    synth_script = "${nextflow_bin_path}/mri_bold_synthmorph.py"
+    """
+    python3 ${script_py} \
+    --bold_preprocess_dir ${bold_preprocess_path} \
+    --subject_id ${subject_id} \
+    --synth_script ${synth_script} \
+    --t1_native2mm ${t1_native2mm} \
+    --synth_template_path ${synth_template_path} \
+    --synth_model_path ${synth_model_path}
+    """
+}
+
+
+process synthmorph_norigid {
+    tag "${subject_id}"
+    maxForks 1
+    input:
+    path subjects_dir
+    path bold_preprocess_path
+    path nextflow_bin_path
+    tuple(val(subject_id), path(t1_native2mm), path(affine_trans))
+    path synth_model_path
+    path synth_template_path
+    output:
+    tuple(val(subject_id), path("${bold_preprocess_path}/${subject_id}/func/${subject_id}_T1_2mm_affine_synthmorph_space-MNI152_2mm.nii.gz")) //emit: norigid_nii
+    tuple(val(subject_id), path("${bold_preprocess_path}/${subject_id}/func/${subject_id}_T1_2mm_affine_synthmorph_space-MNI152_2mm_transvoxel.npz")) //emit: transvoxel
+    script:
+    script_py = "${nextflow_bin_path}/bold_synthmorph_norigid.py"
+    synth_script = "${nextflow_bin_path}/mri_bold_synthmorph.py"
+    """
+    python3 ${script_py} \
+    --bold_preprocess_dir ${bold_preprocess_path} \
+    --subject_id ${subject_id} \
+    --synth_script ${synth_script} \
+    --t1_native2mm ${t1_native2mm} \
+    --affine_trans ${affine_trans} \
+    --synth_template_path ${synth_template_path} \
+    --synth_model_path ${synth_model_path}
+    """
+}
+
+
+process bold_get_bold_ref_in_bids {
+    tag "${subject_id}"
+
+    cpus 1
+
+    input:  // https://www.nextflow.io/docs/latest/process.html#inputs
+    path bold_preprocess_path
+    path bids_dir
+    path nextflow_bin_path
+    val subject_id
+    val bold_id
+
+
+    output:
+    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${subject_id}_boldref.nii.gz")) // emit: mc
+
+    script:
+    script_py = "${nextflow_bin_path}/bold_get_bold_ref_in_bids.py"
+    """
+    python3 ${script_py} \
+    --bold_preprocess_dir ${bold_preprocess_path} \
+    --bids_dir ${bids_dir} \
+    --subject_id ${subject_id} \
+    --bold_id ${bold_id}
+    """
+}
+
+process split_subject_boldref_file {
+    cpus 1
+
+    input:
+    val(bold_id)
+
+    output:
+    tuple(val(subject_id), val(bold_id))
+
+    script:
+    subject_id = bold_id.split('_')[0]
+    """
+    echo
     """
 }
 

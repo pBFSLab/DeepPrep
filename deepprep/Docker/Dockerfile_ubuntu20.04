@@ -25,13 +25,15 @@ RUN ln -sf /usr/bin/python3 /usr/bin/python && python -m pip install --upgrade p
 
 ## Install FreeSurfer
 #COPY freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz /opt
-RUN wget -P /opt/ http://30.30.30.204:8000/Docker/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz && tar -C /usr/local -xzvf /opt/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz && rm /opt/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz
+#RUN wget -P /opt/ http://30.30.30.204:8000/Docker/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz && tar -C /usr/local -xzvf /opt/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz && rm /opt/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz
+RUN wget --content-disposition -P http://30.30.30.141:8080/f/cd34b3a9b3d54983b33b/?dl=1 && tar -C /usr/local -xzvf /opt/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz && rm /opt/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz
 RUN sed -i '1c\#!/usr/bin/env python2' /usr/local/freesurfer/bin/slicedelay
 ENV FREESURFER_HOME=/usr/local/freesurfer
 
 ## Install workbench
 #COPY workbench-linux64-v1.5.0.zip /opt
-RUN wget -P /opt/ http://30.30.30.204:8000/Docker/workbench-linux64-v1.5.0.zip && unzip /opt/workbench-linux64-v1.5.0.zip -d /usr/local && rm /opt/workbench-linux64-v1.5.0.zip
+#RUN wget -P /opt/ http://30.30.30.204:8000/Docker/workbench-linux64-v1.5.0.zip && unzip /opt/workbench-linux64-v1.5.0.zip -d /usr/local && rm /opt/workbench-linux64-v1.5.0.zip
+RUN wget --content-disposition -P /opt/ http://30.30.30.141:8080/f/edc6781c767a46d1af00/?dl=1 && unzip /opt/workbench-linux64-v1.5.0.zip -d /usr/local && rm /opt/workbench-linux64-v1.5.0.zip
 ENV PATH="$PATH:/usr/local/workbench/bin_linux64"
 
 ## Install openjdk
@@ -45,7 +47,8 @@ ENV JCC_JDK=/usr/lib/jvm/java-11-openjdk-amd64
 #    python3 -m pip install jcc && alias jcc="python -m jcc" \
 #    cd nighres && ln -sf /usr/lib/jvm/java-11-openjdk-amd64 /usr/lib/jvm/default-java && \
 #    bash build.sh && pip3 install .
-RUN wget -P /opt http://30.30.30.204:8000/Docker/nighres-1.5.0-cp38-cp38-linux_x86_64.whl && pip3 install /opt/nighres-1.5.0-cp38-cp38-linux_x86_64.whl && pip3 cache purge
+#RUN wget -P /opt http://30.30.30.204:8000/Docker/nighres-1.5.0-cp38-cp38-linux_x86_64.whl && pip3 install /opt/nighres-1.5.0-cp38-cp38-linux_x86_64.whl && pip3 cache purge
+RUN wget --content-disposition -P /opt http://30.30.30.141:8080/f/9abd48422ba646c5a5fe/?dl=1 && pip3 install /opt/nighres-1.5.0-cp38-cp38-linux_x86_64.whl && pip3 cache purge
 RUN pip3 install torch==2.0.1+cu118 torchvision==0.15.2+cu118 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cu118 && pip3 cache purge
 RUN pip3 install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.0.1+cu118.html && pip3 cache purge
 RUN pip3 install git+https://github.com/Deep-MI/LaPy.git@v1.0.1 && pip3 cache purge
