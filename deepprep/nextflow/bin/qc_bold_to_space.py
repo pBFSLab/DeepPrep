@@ -197,7 +197,7 @@ if __name__ == '__main__':
         shutil.copyfile(bold2T1_scene, bold2T1_scene_tmp)
         shutil.copyfile(T1_scene, T1_scene_tmp)
 
-        bold2mni152_src = Path(bold_preprocess_dir) / subject_id / 'func' / f'{bold_id}_skip_reorient_stc_mc_space-fsnative2mm_fframe.nii.gz'
+        bold2mni152_src = Path(bold_preprocess_dir) / subject_id / 'func' / f'{bold_id}_skip_reorient_stc_mc_bbregister_space-native_2mm_fframe.nii.gz'
         bold2mni152_trg = subject_bold2T1_workdir / f'bold2T1_tmp_bold.nii.gz'
         shutil.copyfile(bold2mni152_src, bold2mni152_trg)
 
@@ -210,15 +210,3 @@ if __name__ == '__main__':
         write_combine_svg(combine_svg_savepath, bold2T1_savepath, T1_savepath, 2400,
                           1000)
         shutil.rmtree(subject_bold2T1_workdir)
-
-
-
-
-
-
-
-
-
-
-
-
