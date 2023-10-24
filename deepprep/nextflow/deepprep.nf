@@ -1826,8 +1826,8 @@ process bold_confounds {
     tuple(val(subject_id), val(bold_id), path(mc), path(anat_wm_nii), path(anat_brainmask_nii))
 
     output:
-    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/confounds/${bold_id}_confounds.txt")) // emit: bold_atlas_to_mni152
-    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/confounds/${bold_id}_confounds_view.txt")) // emit: bold_atlas_to_mni152
+    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/confounds/${bold_id}_confounds.txt")) // emit: bold_confounds
+    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/confounds/${bold_id}_confounds_view.txt")) // emit: bold_confounds_view
 
     script:
     script_py = "${nextflow_bin_path}/bold_cal_confounds.py"
@@ -1886,6 +1886,30 @@ process qc_anat_create_report {
 
     input:
     tuple(val(subject_id), path(aparc_aseg_svg))
+    path nextflow_bin_path
+    path qc_result_path
+    output:
+    tuple(val(subject_id), path("${qc_result_path}/${subject_id}/${subject_id}.html")) // emit: qc_report
+    script:
+    script_py = "${nextflow_bin_path}/qc_create_report.py"
+
+    """
+    python3 ${script_py} \
+    --subject_id ${subject_id} \
+    --qc_result_path ${qc_result_path} \
+    --nextflow_bin_path ${nextflow_bin_path}
+    """
+
+}
+
+
+process qc_bold_create_report {
+    tag "${subject_id}"
+
+    cpus 1
+
+    input:
+    tuple(val(subject_id), val(bold_id), val(bold_confounds))
     path nextflow_bin_path
     path qc_result_path
     output:
@@ -2184,6 +2208,7 @@ workflow bold_wf {
     bold_info = boldfile_id_split.join(bold_info, by: [0, 1])
 
     (mc_nii, mcdat, boldref) = bold_stc_mc(bold_preprocess_path, nextflow_bin_path, bold_info)
+
     bbregister_dat_input = aparc_aseg_mgz.join(mc_nii, by: [0, 1])
     bbregister_dat = bold_bbregister(subjects_dir, bold_preprocess_path, nextflow_bin_path, bbregister_dat_input)
     t1_native2mm_group = subject_id_boldfile_id.groupTuple(sort: true).join(t1_native2mm).transpose()
@@ -2199,15 +2224,17 @@ workflow bold_wf {
     bold_mc_tsnr_svg = qc_plot_mctsnr(qc_plot_mctsnr_input, bold_preprocess_path, nextflow_bin_path, qc_result_path)
     bold_draw_carpet_inputs = mc_nii.join(mcdat, by: [0,1]).join(anat_brainmask_nii, by: [0,1])
     (bold_carpet_svg) = bold_draw_carpet(bold_preprocess_path, nextflow_bin_path, qc_result_path, bold_draw_carpet_inputs)
-
+    bold_to_mni152_svg = qc_plot_bold_to_space(synthmorph_norigid_bold_fframe, bold_vxmregnormmni152_fs_native_space, subjects_dir, bold_preprocess_path, nextflow_bin_path, qc_result_path, freesurfer_home)
+    qc_bold_create_report_input = bold_to_mni152_svg.groupTuple(by: 0)
+    qc_report = qc_bold_create_report(qc_bold_create_report_input, nextflow_bin_path,qc_result_path)
 //     (vxm_norm_nii, norm_nii, vxm_nonrigid_nii, vxm_affine_npz, vxm_fsnative_affine_mat) = bold_vxmregistration(subjects_dir, bold_preprocess_path, nextflow_bin_path, subject_boldfile_txt, gpuid, atlas_type, vxm_model_path)
 //     norm_to_mni152_svg = qc_plot_norm2mni152(norm_nii, bold_preprocess_path, nextflow_bin_path, qc_result_path)
 //     bold_vxmregnormmni152_inputs = mc_nii.join(bbregister_dat, by: [0,1]).join(vxm_nonrigid_nii).join(vxm_fsnative_affine_mat)
 //     (bold_atlas_to_mni152) = bold_vxmregnormmni152(bold_preprocess_path, subjects_dir, atlas_type, vxm_model_path, resource_dir, nextflow_bin_path, bold_vxmregnormmni152_batch_size, gpuid, bold_vxmregnormmni152_standard_space, bold_vxmregnormmni152_fs_native_space, bold_vxmregnormmni152_inputs)
-    bold_to_mni152_svg = qc_plot_bold_to_space(synthmorph_norigid_bold_fframe, bold_vxmregnormmni152_fs_native_space, subjects_dir, bold_preprocess_path, nextflow_bin_path, qc_result_path, freesurfer_home)
 
     bold_confounds_inputs = mc_nii.join(anat_wm_nii, by: [0,1]).join(bbregister_dat, by: [0,1])
-    bold_confounds(bold_preprocess_path, nextflow_bin_path, bold_confounds_inputs)
+    (bold_confounds_txt, bold_confounds_view_txt) = bold_confounds(bold_preprocess_path, nextflow_bin_path, bold_confounds_inputs)
+
 
 }
 
