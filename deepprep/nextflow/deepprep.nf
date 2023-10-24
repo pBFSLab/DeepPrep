@@ -1620,7 +1620,8 @@ process bold_synthmorph_norigid_apply {
     val(gpu_lock)
 
     output:
-    tuple(val(subject_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_skip_reorient_stc_mc_bbregister_space-native_2mm_synthmorph_space-MNI152_2mm.nii.gz")) //emit: synthmorph_norigid_bold
+    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_skip_reorient_stc_mc_bbregister_space-native_2mm_synthmorph_space-MNI152_2mm.nii.gz")) //emit: synthmorph_norigid_bold
+    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_skip_reorient_stc_mc_bbregister_space-native_2mm_synthmorph_space-MNI152_2mm_fframe.nii.gz")) //emit: synthmorph_norigid_bold_fframe
 
     script:
     gpu_script_py = "${nextflow_bin_path}/gpu_schedule_run.py"
@@ -2255,7 +2256,7 @@ workflow bold_wf {
     bold_aparaseg2mc_inputs = aparc_aseg_mgz.join(mc_nii, by: [0,1]).join(bbregister_dat, by: [0,1])
     (anat_wm_nii, anat_csf_nii, anat_aseg_nii, anat_ventricles_nii, anat_brainmask_nii, anat_brainmask_bin_nii) = bold_mkbrainmask(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_aparaseg2mc_inputs)
     bold_synthmorph_norigid_apply_input = t1_native2mm_group.join(mc_nii, by: [0,1]).join(bbregister_native_2mm, by: [0,1]).join(transvoxel_group, by: [0,1])
-    synthmorph_norigid_bold = bold_synthmorph_norigid_apply(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_synthmorph_norigid_apply_input, bold_synthmorph_template_path, gpu_lock)
+    (synthmorph_norigid_bold, synthmorph_norigid_bold_fframe) = bold_synthmorph_norigid_apply(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_synthmorph_norigid_apply_input, bold_synthmorph_template_path, gpu_lock)
     qc_plot_mctsnr_input = mc_nii.join(anat_brainmask_nii, by: [0,1])
     bold_mc_tsnr_svg = qc_plot_mctsnr(qc_plot_mctsnr_input, bold_preprocess_path, nextflow_bin_path, qc_result_path)
     bold_draw_carpet_inputs = mc_nii.join(mcdat, by: [0,1]).join(anat_brainmask_nii, by: [0,1])
@@ -2265,7 +2266,7 @@ workflow bold_wf {
 //     norm_to_mni152_svg = qc_plot_norm2mni152(norm_nii, bold_preprocess_path, nextflow_bin_path, qc_result_path)
 //     bold_vxmregnormmni152_inputs = mc_nii.join(bbregister_dat, by: [0,1]).join(vxm_nonrigid_nii).join(vxm_fsnative_affine_mat)
 //     (bold_atlas_to_mni152) = bold_vxmregnormmni152(bold_preprocess_path, subjects_dir, atlas_type, vxm_model_path, resource_dir, nextflow_bin_path, bold_vxmregnormmni152_batch_size, gpuid, bold_vxmregnormmni152_standard_space, bold_vxmregnormmni152_fs_native_space, bold_vxmregnormmni152_inputs)
-//     bold_to_mni152_svg = qc_plot_bold_to_space(bold_atlas_to_mni152, bold_vxmregnormmni152_fs_native_space, subjects_dir, bold_preprocess_path, nextflow_bin_path, qc_result_path, freesurfer_home)
+    bold_to_mni152_svg = qc_plot_bold_to_space(synthmorph_norigid_bold_fframe, bold_vxmregnormmni152_fs_native_space, subjects_dir, bold_preprocess_path, nextflow_bin_path, qc_result_path, freesurfer_home)
 
     bold_confounds_inputs = mc_nii.join(anat_wm_nii, by: [0,1]).join(bbregister_dat, by: [0,1])
     bold_confounds(bold_preprocess_path, nextflow_bin_path, bold_confounds_inputs)
