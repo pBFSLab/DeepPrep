@@ -16,22 +16,6 @@ if len(gpu_list) > 0:
         except RuntimeError as e:
             print(e)
 
-# Settings.
-default = {
-    'model': 'deform',
-    'smooth': 1,
-    'extent': 256,
-}
-choices = {
-    'model': ('deform', 'affine', 'rigid'),
-    'smooth': (1,),
-    'extent': (192, 256),
-}
-weights = {
-    'deform': 'synthmorph_deform{smooth}.h5',
-    'affine': 'synthmorph_affine.h5',
-    'rigid': 'synthmorph_rigid.h5',
-}
 
 def vxm_batch_transform(vol, loc_shift,
                         batch_size=None, interp_method='linear', indexing='ij', fill_value=None):
@@ -150,7 +134,7 @@ def batch_transform(im, trans, normalize=False):
     return out_arr[tf.newaxis, ...]
 
 
-def bold_save(path, data, affine, header, dtype=None):
+def bold_save(path, fframe_bold_path, data, affine, header, dtype=None):
     """Save image file.
 
     Helper function for saving a spatial image using NiBabel. Removes singleton
@@ -181,22 +165,21 @@ def bold_save(path, data, affine, header, dtype=None):
     # Use Nifti1Image instead of MGHImage for FP64 support. Set units to avoid
     # warnings when reading with FreeSurfer.
     out = nib.Nifti1Image(data, affine=affine, header=header)
+    fframe_out = nib.Nifti1Image(data[..., 0], affine=affine, header=header)
     # out.header.set_xyzt_units(xyz='mm', t='sec')
     nib.save(out, filename=path)
+    nib.save(fframe_out, filename=fframe_bold_path)
 
 p = argparse.ArgumentParser()
 p.add_argument('moving', type=str, metavar='MOVING')
 p.add_argument('fixed', type=str, metavar='FIXED')
 p.add_argument('-o', '--moved', type=str)
-p.add_argument('-t', '--trans', type=str)
 p.add_argument('-j', '--threads', type=int)
 p.add_argument('-g', '--gpu', action='store_true')
-p.add_argument('-m', '--model', choices=choices['model'], default=default['model'])
-p.add_argument('-w', '--weights', type=str)
-p.add_argument('--inspect', type=str, metavar='OUT_DIR')
 p.add_argument('-b', '--bold', type=str, metavar='BOLD')
 p.add_argument('-bo', '--bold_out', type=str, metavar='BOLD_OUT')
-p.add_argument('-mc', '--mc', type=str, metavar='TR_info')
+p.add_argument('-fbo', '--fframe_bold_out', type=str, metavar='BOLD_OUT')
+p.add_argument('-mc', '--mc', type=str, metavar='TR_INFO')
 p.add_argument('-tv', '--trans_vox', type=str, metavar='TRANS VOXEL')
 
 arg = p.parse_args()
@@ -223,4 +206,4 @@ bold = nib.load(arg.bold)
 trans_vox = tf.convert_to_tensor(np.load(f'{arg.trans_vox}')['arr_0'])
 out_bold = batch_transform(bold, trans=trans_vox)
 mc = nib.load(arg.mc)
-bold_save(arg.bold_out, data=out_bold, affine=fix.affine, header=mc.header, dtype=mov.dataobj.dtype)
+bold_save(arg.bold_out, arg.fframe_bold_out, data=out_bold, affine=fix.affine, header=mc.header, dtype=mov.dataobj.dtype)
