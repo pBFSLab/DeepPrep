@@ -1571,8 +1571,8 @@ process bold_synthmorph_norigid_apply {
 //     path synth_model_path
     path synth_template_path
     output:
-    tuple(val(subject_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_skip_reorient_stc_mc_bbregister_space-native_2mm_synthmorph_space-MNI152_2mm.nii.gz")) //emit: synthmorph_norigid_bold
-    tuple(val(subject_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_skip_reorient_stc_mc_bbregister_space-native_2mm_synthmorph_space-MNI152_2mm_fframe.nii.gz")) //emit: synthmorph_norigid_bold_fframe
+    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_skip_reorient_stc_mc_bbregister_space-native_2mm_synthmorph_space-MNI152_2mm.nii.gz")) //emit: synthmorph_norigid_bold
+    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_skip_reorient_stc_mc_bbregister_space-native_2mm_synthmorph_space-MNI152_2mm_fframe.nii.gz")) //emit: synthmorph_norigid_bold_fframe
     script:
     script_py = "${nextflow_bin_path}/bold_synthmorph_apply.py"
     synth_script = "${nextflow_bin_path}/mri_bold_apply_synthmorph.py"
@@ -2204,7 +2204,7 @@ workflow bold_wf {
 //     norm_to_mni152_svg = qc_plot_norm2mni152(norm_nii, bold_preprocess_path, nextflow_bin_path, qc_result_path)
 //     bold_vxmregnormmni152_inputs = mc_nii.join(bbregister_dat, by: [0,1]).join(vxm_nonrigid_nii).join(vxm_fsnative_affine_mat)
 //     (bold_atlas_to_mni152) = bold_vxmregnormmni152(bold_preprocess_path, subjects_dir, atlas_type, vxm_model_path, resource_dir, nextflow_bin_path, bold_vxmregnormmni152_batch_size, gpuid, bold_vxmregnormmni152_standard_space, bold_vxmregnormmni152_fs_native_space, bold_vxmregnormmni152_inputs)
-    bold_to_mni152_svg = qc_plot_bold_to_space(bold_atlas_to_mni152, bold_vxmregnormmni152_fs_native_space, subjects_dir, bold_preprocess_path, nextflow_bin_path, qc_result_path, freesurfer_home)
+    bold_to_mni152_svg = qc_plot_bold_to_space(synthmorph_norigid_bold_fframe, bold_vxmregnormmni152_fs_native_space, subjects_dir, bold_preprocess_path, nextflow_bin_path, qc_result_path, freesurfer_home)
 
     bold_confounds_inputs = mc_nii.join(anat_wm_nii, by: [0,1]).join(bbregister_dat, by: [0,1])
     bold_confounds(bold_preprocess_path, nextflow_bin_path, bold_confounds_inputs)
