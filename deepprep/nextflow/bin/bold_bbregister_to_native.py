@@ -49,8 +49,14 @@ def bold_to_native(moving, fixed, input_transform, moved):
     header_info = nib.load(fixed).header
 
     # save one frame for plotting
-    nib_fframe_img = nib.Nifti1Image(warped_img.numpy().astype(int), affine=affine_info, header=header_info)
-    nib.save(nib_fframe_img, moved)
+    nib_fframe_img = nib.Nifti1Image(warped_img[..., 0].astype(int), affine=affine_info, header=header_info)
+    fframe_file = moved.parent / moved.name.replace(".nii.gz", "_fframe.nii.gz")
+    nib.save(nib_fframe_img, fframe_file)
+    print(f"-->>> output       : {fframe_file}")
+
+    # save
+    nib_img = nib.Nifti1Image(warped_img.numpy().astype(int), affine=affine_info, header=header_info)
+    nib.save(nib_img, moved)
 
     # 将结果保存为 NIfTI 格式文件
     # image_write(warped_img, moved)
