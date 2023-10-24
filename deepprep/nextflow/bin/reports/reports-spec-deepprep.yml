@@ -1,0 +1,55 @@
+package: niworkflows
+sections:
+- name: Summary
+  reportlets:
+  - bids: {datatype: figures, desc: summary, suffix: T1w}
+- name: Anatomical
+  reportlets:
+  - bids:
+      datatype: figures
+      desc: conform
+      extension: [.html]
+      suffix: T1w
+  - bids: {datatype: figures, desc: volparc, suffix: T1w}
+    caption: This pic shows volume parc!
+    subtitle: Volume aseg pic
+  - bids: {datatype: figures, desc: volsurf, suffix: T1w}
+    caption: This pic shows Surface Recon volsurf
+    static: false
+    subtitle: Surface Recon volsurf pic
+  - bids: {datatype: figures, desc: surfparc, suffix: T1w}
+    caption: This pic shows Surface Recon structure aseg!
+    subtitle: Surface Recon structure parc pic
+  - bids: { datatype: figures, desc: T1toMNI152, suffix: combine}
+    caption: This pic shows T1w to MNI152!
+    static: false
+    subtitle: T1w to MNI152 pic
+- name: Functional
+  ordering: session,task,acquisition,ceagent,reconstruction,direction,run,echo
+  reportlets:
+  - bids: {datatype: figures, desc: reg2MNI152, suffix: bold}
+    caption: This pic shows volume registion to MNI152!
+    static: false
+    subtitle: Volume Registion to MNI152 pic
+  - bids: {datatype: figures, desc: reg2native, suffix: bold}
+    caption: This pic shows volume registion to native!
+    static: false
+    subtitle: Volume Registion to native pic
+  - bids: {datatype: figures, desc: reg, suffix: bold}
+    caption: This pic shows Bold Registration!
+    subtitle: Bold Registration pic
+  - bids: { datatype: figures, desc: tsnr, suffix: bold}
+    caption: This pic shows tsnr!
+    subtitle: TSNR pic
+  - bids: { datatype: figures, desc: tsnr2surf, suffix: bold}
+    caption: This pic shows tsnr2surf!
+    subtitle: TSNR2surf pic
+  - bids: { datatype: figures, desc: mc, suffix: bold}
+    caption: This pic shows head movement!
+    subtitle: Head movement pic
+  - bids: { datatype: figures, desc: carpet, suffix: bold}
+    caption: This pic shows carpet!
+    subtitle: Carpet pic
+  - bids: { datatype: figures, desc: corr, suffix: bold}
+    caption: This pic shows correlation!
+    subtitle: Correlation pic
