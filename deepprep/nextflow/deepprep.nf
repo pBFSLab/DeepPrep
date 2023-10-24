@@ -1878,6 +1878,30 @@ process qc_plot_bold_to_space {
 }
 
 
+process qc_anat_create_report {
+    tag "${subject_id}"
+
+    cpus 1
+
+    input:
+    tuple(val(subject_id), path(aparc_aseg_svg))
+    path nextflow_bin_path
+    path qc_result_path
+    output:
+    tuple(val(subject_id), path("${qc_result_path}/${subject_id}/${subject_id}.html")) // emit: qc_report
+    script:
+    script_py = "${nextflow_bin_path}/qc_create_report.py"
+
+    """
+    python3 ${script_py} \
+    --subject_id ${subject_id} \
+    --qc_result_path ${qc_result_path} \
+    --nextflow_bin_path ${nextflow_bin_path}
+    """
+
+}
+
+
 process anat_test {
     tag "${subject_id}"
 
@@ -2067,6 +2091,7 @@ workflow anat_wf {
 
     qc_plot_aparc_aseg_input = norm_mgz.join(aparc_aseg_mgz)
     aparc_aseg_svg = qc_plot_aparc_aseg(subjects_dir, qc_plot_aparc_aseg_input, nextflow_bin_path, qc_result_path, freesurfer_home)
+    qc_report = qc_anat_create_report(aparc_aseg_svg, nextflow_bin_path, qc_result_path)
 
     lh_anat_aparc_a2009s2aseg_input = white_surf.join(pial_surf, by: [0, 1]).join(cortex_label, by: [0, 1]).join(aparc_a2009s_annot, by: [0, 1]).join(subject_id_lh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4, 5] }
     rh_anat_aparc_a2009s2aseg_input = white_surf.join(pial_surf, by: [0, 1]).join(cortex_label, by: [0, 1]).join(aparc_a2009s_annot, by: [0, 1]).join(subject_id_rh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4, 5] }
