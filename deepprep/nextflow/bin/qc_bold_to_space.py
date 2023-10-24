@@ -147,7 +147,7 @@ if __name__ == '__main__':
     shutil.copyfile(mni152_scene, mni152_scene_tmp)
     shutil.copyfile(bold2mni152_scene, bold2mni152_scene_tmp)
 
-    bold2mni152_src = Path(bold_preprocess_dir) / subject_id / 'func' / f'{bold_id}_skip_reorient_stc_mc_space-MNI152_T1_2mm_fframe.nii.gz'
+    bold2mni152_src = Path(bold_preprocess_dir) / subject_id / 'func' / f'{bold_id}_skip_reorient_stc_mc_bbregister_space-native_2mm_synthmorph_space-MNI152_2mm_fframe.nii.gz'
     bold2mni152_trg = subject_bold2mni152_workdir / f'bold2MNI152_tmp_bold.nii.gz'
     shutil.copyfile(bold2mni152_src, bold2mni152_trg)
 
