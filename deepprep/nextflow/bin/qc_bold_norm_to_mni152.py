@@ -55,7 +55,7 @@ def write_combine_svg(svg, png_back, png_fore, view_height, view_width):
     with open(svg, 'w') as f:
         f.write(svg_img_head.format(view_height=view_height, view_width=view_width))
         f.write(svg_img_style)
-        f.write(svg_img_body_2.format(back_encode=pngdata_back, fore_encode=pngdata_fore))
+        f.write(svg_img_body_2.format(back_encode=pngdata_fore, fore_encode=pngdata_back))
         f.write(svg_img_tail)
 
 
@@ -83,7 +83,7 @@ if __name__ == '__main__':
     subject_workdir.mkdir(parents=True, exist_ok=True)
 
     norm_to_mni152nii = Path(
-        bold_preprocess_dir) / subject_id / 'func' / f'{subject_id}_T1_2mm_affine_synthmorph_space-MNI152_2mm.nii.gz'
+        bold_preprocess_dir) / subject_id / 'func' / f'{subject_id}_norm_2mm_affine_synthmorph_space-MNI152_2mm.nii.gz'
     norm_to_mni152nii_tmp = subject_workdir / 'norm_to_mni152nii.nii.gz'
     shutil.copyfile(norm_to_mni152nii, norm_to_mni152nii_tmp)
 
