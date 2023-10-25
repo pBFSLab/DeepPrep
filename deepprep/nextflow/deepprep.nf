@@ -499,6 +499,7 @@ process anat_fastcsr_levelset {
 
     val(fastcsr_home)
     path(fastcsr_model_path)
+    path(nextflow_bin_path)
 
     each hemi
 
@@ -764,6 +765,7 @@ process anat_sphere_register {
     path(surfreg_model_path)
     val(freesurfer_home)
 
+    path(nextflow_bin_path)
     val(gpu_lock)
 
     output:
@@ -2089,7 +2091,7 @@ workflow anat_wf {
     // fastcsr
     // hemi levelset_nii
     anat_fastcsr_levelset_input = orig_mgz.join(filled_mgz)
-    levelset_nii = anat_fastcsr_levelset(subjects_dir, anat_fastcsr_levelset_input, fastcsr_home, fastcsr_model_path, hemis, gpu_lock)
+    levelset_nii = anat_fastcsr_levelset(subjects_dir, anat_fastcsr_levelset_input, fastcsr_home, fastcsr_model_path, nextflow_bin_path, hemis, gpu_lock)
 
     // hemi orig_surf, orig_premesh_surf
     anat_fastcsr_mksurface_input = levelset_nii.join(hemis_orig_mgz, by: [0, 1]).join(hemis_brainmask_mgz, by: [0, 1]).join(hemis_aseg_presurf_mgz, by: [0, 1])
@@ -2124,7 +2126,7 @@ workflow anat_wf {
 
     // curv_surf, sulc_surf, sphere_surf
     anat_sphere_register_input = curv_surf.join(sulc_surf, by: [0, 1]).join(sphere_surf, by: [0, 1])
-    sphere_reg_surf = anat_sphere_register(subjects_dir, anat_sphere_register_input, surfreg_home, surfreg_model_path, freesurfer_home, gpu_lock)
+    sphere_reg_surf = anat_sphere_register(subjects_dir, anat_sphere_register_input, surfreg_home, surfreg_model_path, freesurfer_home, nextflow_bin_path, gpu_lock)
 
     // white_preaparc_surf, sphere_reg_surf
     anat_jacobian_input = white_preaparc_surf.join(sphere_reg_surf, by: [0, 1])
