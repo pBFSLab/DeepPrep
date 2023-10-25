@@ -3,7 +3,6 @@ import os
 import argparse
 from reports.core import run_reports
 from uuid import uuid4
-import parser
 from pathlib import Path
 from time import strftime
 
