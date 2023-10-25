@@ -1331,9 +1331,10 @@ process bold_T1to2mm {
     path subjects_dir
     path bold_preprocess_path
     path nextflow_bin_path
-    tuple(val(subject_id), path(t1_mgz))
+    tuple(val(subject_id), path(t1_mgz), path(norm_mgz))
     output:
     tuple(val(subject_id), path("${bold_preprocess_path}/${subject_id}/func/${subject_id}_T1_2mm.nii.gz")) //emit: t1_native2mm
+    tuple(val(subject_id), path("${bold_preprocess_path}/${subject_id}/func/${subject_id}_norm_2mm.nii.gz")) //emit: norm_native2mm
     script:
     script_py = "${nextflow_bin_path}/bold_T1_to_native2mm.py"
 
@@ -1342,7 +1343,8 @@ process bold_T1to2mm {
     --bold_preprocess_dir ${bold_preprocess_path} \
     --subjects_dir ${subjects_dir} \
     --subject_id ${subject_id} \
-    --t1_mgz ${t1_mgz}
+    --t1_mgz ${t1_mgz} \
+    --norm_mgz ${norm_mgz}
     """
 }
 
@@ -1391,14 +1393,15 @@ process synthmorph_norigid {
     path(subjects_dir)
     path(bold_preprocess_path)
     path(nextflow_bin_path)
-    tuple(val(subject_id), path(t1_native2mm), path(affine_trans))
+    tuple(val(subject_id), path(t1_native2mm), path(norm_native2mm), path(affine_trans))
     path(synth_model_path)
     path(synth_template_path)
 
     val(gpu_lock)
 
     output:
-    tuple(val(subject_id), path("${bold_preprocess_path}/${subject_id}/func/${subject_id}_T1_2mm_affine_synthmorph_space-MNI152_2mm.nii.gz")) //emit: norigid_nii
+    tuple(val(subject_id), path("${bold_preprocess_path}/${subject_id}/func/${subject_id}_T1_2mm_affine_synthmorph_space-MNI152_2mm.nii.gz")) //emit: t1_norigid_nii
+    tuple(val(subject_id), path("${bold_preprocess_path}/${subject_id}/func/${subject_id}_norm_2mm_affine_synthmorph_space-MNI152_2mm.nii.gz")) //emit: norm_norigid_nii
     tuple(val(subject_id), path("${bold_preprocess_path}/${subject_id}/func/${subject_id}_T1_2mm_affine_synthmorph_space-MNI152_2mm_transvoxel.npz")) //emit: transvoxel
 
     script:
@@ -1411,6 +1414,7 @@ process synthmorph_norigid {
     --subject_id ${subject_id} \
     --synth_script ${synth_script} \
     --t1_native2mm ${t1_native2mm} \
+    --norm_native2mm ${norm_native2mm} \
     --affine_trans ${affine_trans} \
     --synth_template_path ${synth_template_path} \
     --synth_model_path ${synth_model_path}
@@ -2199,6 +2203,7 @@ workflow anat_wf {
 
     emit:
     t1_mgz
+    norm_mgz
     aparc_aseg_mgz
 }
 
@@ -2207,6 +2212,7 @@ workflow bold_wf {
 
     take:
     t1_mgz
+    norm_mgz
     aparc_aseg_mgz
     gpu_lock
 
@@ -2253,11 +2259,12 @@ workflow bold_wf {
                                                                                                         a: tuple[0]
                                                                                                         b: tuple[1][0] }
 
-    t1_native2mm = bold_T1to2mm(subjects_dir, bold_preprocess_path, nextflow_bin_path, t1_mgz)
+    bold_T1to2mm_input = t1_mgz.join(norm_mgz)
+    (t1_native2mm, norm_native2mm) = bold_T1to2mm(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_T1to2mm_input)
     (affine_nii, affine_trans) = synthmorph_affine(subjects_dir, bold_preprocess_path, nextflow_bin_path, t1_native2mm, bold_synthmorph_model_path, bold_synthmorph_template_path, gpu_lock)
-    synthmorph_norigid_input = t1_native2mm.join(affine_trans, by: [0])
-    (norigid_nii, transvoxel) = synthmorph_norigid(subjects_dir, bold_preprocess_path, nextflow_bin_path, synthmorph_norigid_input, bold_synthmorph_model_path, bold_synthmorph_template_path, gpu_lock)
-    norm_to_mni152_svg = qc_plot_norm2mni152(norigid_nii, bold_preprocess_path, nextflow_bin_path, qc_result_path)
+    synthmorph_norigid_input = t1_native2mm.join(norm_native2mm, by: [0]).join(affine_trans, by: [0])
+    (t1_norigid_nii, norm_norigid_nii, transvoxel) = synthmorph_norigid(subjects_dir, bold_preprocess_path, nextflow_bin_path, synthmorph_norigid_input, bold_synthmorph_model_path, bold_synthmorph_template_path, gpu_lock)
+    norm_to_mni152_svg = qc_plot_norm2mni152(norm_norigid_nii, bold_preprocess_path, nextflow_bin_path, qc_result_path)
 
     subject_boldref_file = bold_get_bold_ref_in_bids(bold_preprocess_path, bids_dir, nextflow_bin_path, subject_id_unique, boldfile_id_unique)  // subject_id, subject_boldref_file
     transvoxel_group = subject_id_boldfile_id.groupTuple(sort: true).join(transvoxel).transpose()
@@ -2268,7 +2275,6 @@ workflow bold_wf {
 
     bold_info = bold_skip_reorient(bold_preprocess_path, subject_boldfile_txt, nextflow_bin_path, bold_skip_reorient_nskip)
     bold_info = boldfile_id_split.join(bold_info, by: [0, 1])
-
     (mc_nii, mcdat, boldref) = bold_stc_mc(bold_preprocess_path, nextflow_bin_path, bold_info)
 
     bbregister_dat_input = aparc_aseg_mgz.join(mc_nii, by: [0, 1])
@@ -2308,18 +2314,18 @@ workflow {
 
     if (params.anat_only.toString().toUpperCase() == 'TRUE') {
         println "INFO: anat preprocess ONLY"
-        (t1_mgz, aparc_aseg_mgz) = anat_wf(gpu_lock)
+        (t1_mgz, norm_mgz, aparc_aseg_mgz) = anat_wf(gpu_lock)
     } else if (params.bold_only.toString().toUpperCase() == 'TRUE') {
         println "INFO: Bold preprocess ONLY"
         subjects_dir = params.subjects_dir
         t1_mgz = Channel.fromPath("${subjects_dir}/sub-*/mri/T1.mgz")
-        (t1_mgz, aparc_aseg_mgz) = t1_mgz.multiMap { it ->
+        (t1_mgz, norm_mgz, aparc_aseg_mgz) = t1_mgz.multiMap { it ->
                                                      c: [it.getParent().getParent().getName(), it]
                                                      b: [it.getParent().getParent().getName(), file("${it.getParent()}/aparc+aseg.mgz")] }
-        bold_wf(t1_mgz, aparc_aseg_mgz, gpu_lock)
+        bold_wf(t1_mgz, norm_mgz, aparc_aseg_mgz, gpu_lock)
     } else {
         println "INFO: anat && Bold preprocess"
-        (t1_mgz, aparc_aseg_mgz) = anat_wf(gpu_lock)
-        bold_wf(t1_mgz, aparc_aseg_mgz, gpu_lock)
+        (t1_mgz, norm_mgz, aparc_aseg_mgz) = anat_wf(gpu_lock)
+        bold_wf(t1_mgz, norm_mgz, aparc_aseg_mgz, gpu_lock)
     }
 }
