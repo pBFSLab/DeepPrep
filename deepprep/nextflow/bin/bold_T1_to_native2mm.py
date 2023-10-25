@@ -5,12 +5,17 @@ import argparse
 import os
 
 
-def cmd(subject_id: str, subj_func_dir: Path, T1_fsnative_file):
+def cmd(subject_id: str, subj_func_dir: Path, T1_file, norm_file):
     T1_fsnative2mm_file = subj_func_dir / f'{subject_id}_T1_2mm.nii.gz'
+    norm_fsnative2mm_file = subj_func_dir / f'{subject_id}_norm_2mm.nii.gz'
     if not T1_fsnative2mm_file.exists():
         sh.mri_convert('-ds', 2, 2, 2,
-                       '-i', T1_fsnative_file,
+                       '-i', T1_file,
                        '-o', T1_fsnative2mm_file)
+    if not norm_fsnative2mm_file.exists():
+        sh.mri_convert('-ds', 2, 2, 2,
+                       '-i', norm_file,
+                       '-o', norm_fsnative2mm_file)
 
 
 if __name__ == '__main__':
@@ -22,6 +27,7 @@ if __name__ == '__main__':
     parser.add_argument("--subjects_dir", required=True)
     parser.add_argument("--subject_id", required=True)
     parser.add_argument("--t1_mgz", required=True)
+    parser.add_argument("--norm_mgz", required=True)
     args = parser.parse_args()
 
     cur_path = os.getcwd()
@@ -31,5 +37,6 @@ if __name__ == '__main__':
     subj_func_dir.mkdir(parents=True, exist_ok=True)
     subject_dir = Path(cur_path) / str(args.subjects_dir) / args.subject_id
     t1_mgz = subject_dir / 'mri' / 'T1.mgz'
+    norm_mgz = subject_dir / 'mri' / 'norm.mgz'
 
-    cmd(args.subject_id, subj_func_dir, t1_mgz)
+    cmd(args.subject_id, subj_func_dir, t1_mgz, norm_mgz)
