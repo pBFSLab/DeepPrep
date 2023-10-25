@@ -734,6 +734,8 @@ p.add_argument('-b', '--bold', type=str, metavar='BOLD')
 p.add_argument('-bo', '--bold_out', type=str, metavar='BOLD_OUT')
 p.add_argument('-mp', '--model_path', type=str, metavar='MODEL PATH')
 p.add_argument('-mc', '--mc', type=str, metavar='TR_info')
+p.add_argument('-a', '--apply', type=str, metavar='APPLY_TRANS')
+p.add_argument('-ao', '--apply_out', type=str, metavar='APPLY_TRANS_OUT')
 
 if len(sys.argv) == 1 or '-h' in sys.argv or '--help' in sys.argv:
     print(rewrap(doc), end='\n\n')
@@ -903,6 +905,10 @@ if arg.moved:
     else:
         out = transform(mov, trans=trans_vox, shape=fix.shape)
         save(arg.moved, dat=out, affine=fix.affine, dtype=mov.dataobj.dtype)
+        if arg.apply:
+            apply_mov = nib.load(arg.apply)
+            apply_out = transform(apply_mov, trans=trans_vox, shape=fix.shape)
+            save(arg.apply_out, dat=apply_out, affine=fix.affine, dtype=apply_mov.dataobj.dtype)
 
 # print('Thank you for using SynthMorph. Please cite:')
 # print(rewrap(ref))
