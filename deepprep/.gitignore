@@ -1,3 +1,4 @@
 
 # Ignore dynaconf secret files
 .secrets.*
+*version*current*
