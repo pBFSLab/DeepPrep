@@ -2269,7 +2269,6 @@ workflow bold_wf {
     subject_boldref_file = bold_get_bold_ref_in_bids(bold_preprocess_path, bids_dir, nextflow_bin_path, subject_id_unique, boldfile_id_unique)  // subject_id, subject_boldref_file
     transvoxel_group = subject_id_boldfile_id.groupTuple(sort: true).join(transvoxel).transpose()
     aparc_aseg_mgz = subject_id_boldfile_id.groupTuple(sort: true).join(aparc_aseg_mgz).transpose()
-
     boldfile_id_group = subject_id_boldfile_id.groupTuple(sort: true).join(subject_boldref_file).map { tuple -> tuple[1] }
     boldfile_id_split = split_subject_boldref_file(boldfile_id_group.flatten())
 
@@ -2319,9 +2318,11 @@ workflow {
         println "INFO: Bold preprocess ONLY"
         subjects_dir = params.subjects_dir
         t1_mgz = Channel.fromPath("${subjects_dir}/sub-*/mri/T1.mgz")
+        norm_mgz = Channel.fromPath("${subjects_dir}/sub-*/mri/norm.mgz")
         (t1_mgz, norm_mgz, aparc_aseg_mgz) = t1_mgz.multiMap { it ->
                                                      c: [it.getParent().getParent().getName(), it]
-                                                     b: [it.getParent().getParent().getName(), file("${it.getParent()}/aparc+aseg.mgz")] }
+                                                     b: [it.getParent().getParent().getName(), file("${it.getParent()}/norm.mgz")]
+                                                     a: [it.getParent().getParent().getName(), file("${it.getParent()}/aparc+aseg.mgz")] }
         bold_wf(t1_mgz, norm_mgz, aparc_aseg_mgz, gpu_lock)
     } else {
         println "INFO: anat && Bold preprocess"
