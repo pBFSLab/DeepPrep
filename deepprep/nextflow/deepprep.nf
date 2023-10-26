@@ -35,6 +35,8 @@ process anat_get_t1w_file_in_bids {
 }
 
 process anat_create_subject_orig_dir {
+    tag "${subject_id}"
+
     cpus 1
 
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
@@ -1452,6 +1454,7 @@ process bold_get_bold_ref_in_bids {
 }
 
 process split_subject_boldref_file {
+    tag "${subject_id}"
     cpus 1
 
     input:
@@ -1520,6 +1523,7 @@ process bold_stc_mc {
 }
 
 process bold_add_subject_id_to_bold_file {
+    tag "${subject_id}"
     cpus 1
 
     input:
@@ -1536,6 +1540,7 @@ process bold_add_subject_id_to_bold_file {
     """
 }
 process split_bold_bbregister_from_anat_input {
+    tag "${subject_id}"
     cpus 1
 
     input:
@@ -1781,6 +1786,7 @@ process bold_vxmregistration {
 
 
 process split_bold_vxmregnormmni152_input {
+    tag "${subject_id}"
     cpus 1
 
     input:
