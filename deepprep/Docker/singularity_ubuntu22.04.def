@@ -8,7 +8,6 @@ Stage: build
     /home/anning/workspace/DeepPrep/deepprep/FastCSR /root/workspace/DeepPrep/deepprep/FastCSR
     /home/anning/workspace/DeepPrep/deepprep/FastSurfer /root/workspace/DeepPrep/deepprep/FastSurfer
     /home/anning/workspace/DeepPrep/deepprep/FreeSurfer /root/workspace/DeepPrep/deepprep/FreeSurfer
-    /home/anning/workspace/DeepPrep/deepprep/interface /root/workspace/DeepPrep/deepprep/interface
     /home/anning/workspace/DeepPrep/deepprep/resource /root/workspace/DeepPrep/deepprep/resource
     /home/anning/workspace/DeepPrep/deepprep/SageReg /root/workspace/DeepPrep/deepprep/SageReg
     /home/anning/workspace/DeepPrep/deepprep/nextflow /root/workspace/DeepPrep/deepprep/nextflow
@@ -16,6 +15,7 @@ Stage: build
     /home/anning/workspace/DeepPrep/deepprep/scheduler.py /root/workspace/DeepPrep/deepprep/scheduler.py
     /home/anning/workspace/DeepPrep/deepprep/settings.toml /root/workspace/DeepPrep/deepprep/settings.toml
     /home/anning/workspace/DeepPrep/deepprep/model /usr/share/deepprep/model
+    /home/anning/workspace/DeepPrep/deepprep/Docker/nextflow.sh /opt/nextflow.sh
 
 
 %environment
