@@ -11,3 +11,7 @@ if __name__ == '__main__':
             cmd = "python3 " + " ".join(sys.argv[3:])
             print(cmd)
             os.system(cmd)
+    else:
+        cmd = "python3 " + " ".join(sys.argv[3:])
+        print(cmd)
+        os.system(cmd)
