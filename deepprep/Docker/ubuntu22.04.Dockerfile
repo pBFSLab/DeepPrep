@@ -75,5 +75,8 @@ RUN git clone https://github.com/adalca/neurite && cd neurite && pip3 install . 
 ### echo to .bashrc
 RUN echo "source /usr/local/freesurfer/SetUpFreeSurfer.sh" >> ~/.bashrc
 
-COPY start.sh /opt/start.sh
-RUN chmod +x /opt/start.sh
+COPY nextflow.sh /opt/nextflow.sh
+RUN chmod +x /opt/nextflow.sh
+
+### CMD
+ENTRYPOINT service redis-server start && bash

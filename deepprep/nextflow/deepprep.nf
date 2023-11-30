@@ -35,6 +35,8 @@ process anat_get_t1w_file_in_bids {
 }
 
 process anat_create_subject_orig_dir {
+    tag "${subject_id}"
+
     cpus 1
 
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
@@ -99,8 +101,8 @@ process anat_segment {
     tag "${subject_id}"
 
     label "with_gpu"
-    cpus 1
-    memory '10 GB'
+    cpus 3
+    memory '7 GB'
 
     input:
     path(subjects_dir)
@@ -143,7 +145,8 @@ process anat_segment {
 process anat_reduce_to_aseg {
     tag "${subject_id}"
 
-    cpus 1
+    cpus 2
+    memory '1 GB'
 
     input:
     path(subjects_dir)
@@ -174,6 +177,7 @@ process anat_N4_bias_correct {
     tag "${subject_id}"
 
     cpus 1
+    memory '350 MB'
 
     input:
     path(subjects_dir)
@@ -203,6 +207,7 @@ process anat_talairach_and_nu {
     tag "${subject_id}"
 
     cpus 1
+    memory '200 MB'
 
     input:
     path(subjects_dir)
@@ -250,6 +255,7 @@ process anat_T1 {
     tag "${subject_id}"
 
     cpus 1
+    memory '1 GB'
 
     input:
     path(subjects_dir)
@@ -298,6 +304,7 @@ process anat_paint_cc_to_aseg {
     tag "${subject_id}"
 
     cpus 1
+    memory '200 MB'
 
     input:
     path(subjects_dir)
@@ -327,6 +334,7 @@ process anat_fill {
     tag "${subject_id}"
 
     cpus 1
+    memory '1.5 GB'
 
     input:
     path(subjects_dir)
@@ -491,7 +499,7 @@ process anat_fastcsr_levelset {
 
     label "with_gpu"
     cpus 1
-    memory '6.5 GB'
+    memory '6 GB'
 
     input:
     path(subjects_dir)
@@ -527,7 +535,7 @@ process anat_fastcsr_mksurface {
     tag "${subject_id}"
 
     cpus 1
-    memory '3.5 GB'
+    memory '4 GB'
 
     input:
     path(subjects_dir)
@@ -559,6 +567,7 @@ process anat_autodet_gwstats {
     tag "${subject_id}"
 
     cpus 1
+    memory '250 MB'
 
     input:
     path(subjects_dir)
@@ -622,6 +631,7 @@ process anat_cortex_label {
     tag "${subject_id}"
 
     cpus 1
+    memory '250 MB'
 
     input:
     path(subjects_dir)
@@ -643,6 +653,7 @@ process anat_cortex_hipamyg_label {
     tag "${subject_id}"
 
     cpus 1
+    memory '300 MB'
 
     input:
     path(subjects_dir)
@@ -664,6 +675,7 @@ process anat_hyporelabel {
     tag "${subject_id}"
 
     cpus 1
+    memory '500 MB'
 
     input:
     path(subjects_dir)
@@ -687,6 +699,7 @@ process anat_smooth_inflated {
     tag "${subject_id}"
 
     cpus 1
+    memory '250 MB'
 
     input:
     path(subjects_dir)
@@ -711,6 +724,7 @@ process anat_curv_stats {
     tag "${subject_id}"
 
     cpus 1
+    memory '200 MB'
 
     input:
     path(subjects_dir)
@@ -734,6 +748,7 @@ process anat_sphere {
     tag "${subject_id}"
 
     cpus 1
+    memory '300 MB'
 
     input:
     path(subjects_dir)
@@ -917,7 +932,7 @@ process anat_pial_surface {
 process qc_plot_volsurf {
     tag "${subject_id}"
 
-    cpus 1
+    cpus 5
 
     input:
     path subjects_dir
@@ -992,6 +1007,7 @@ process anat_pctsurfcon {
     tag "${subject_id}"
 
     cpus 1
+    memory '250 MB'
 
     input:
     path(subjects_dir)
@@ -1016,6 +1032,7 @@ process anat_parcstats {
     tag "${subject_id}"
 
     cpus 1
+    memory '500 MB'
 
     input:
     path(subjects_dir)
@@ -1044,6 +1061,7 @@ process anat_parcstats2 {
     tag "${subject_id}"
 
     cpus 1
+    memory '500 MB'
 
     input:
     path(subjects_dir)
@@ -1072,6 +1090,7 @@ process lh_anat_ribbon_inputs {
     tag "${subject_id}"
 
     cpus 1
+    memory '1 GB'
 
     input:
     tuple(val(subject_id), path(aseg_presurf_mgz))
@@ -1123,7 +1142,7 @@ process anat_ribbon {
 process anat_apas2aseg {
     tag "${subject_id}"
 
-    cpus 1
+    cpus 3
 
     input:
     path(subjects_dir)
@@ -1151,6 +1170,7 @@ process anat_aparc2aseg {
     tag "${subject_id}"
 
     cpus 1
+    memory '1 GB'
 
     input:
     path(subjects_dir)
@@ -1177,7 +1197,8 @@ process anat_aparc2aseg {
 process qc_plot_aparc_aseg {
     tag "${subject_id}"
 
-    cpus 1
+    cpus 5
+    memory '1 GB'
 
     input:
     path subjects_dir
@@ -1213,6 +1234,7 @@ process anat_aparc_a2009s2aseg {
     tag "${subject_id}"
 
     cpus 1
+    memory '1 GB'
 
     input:
     path(subjects_dir)
@@ -1240,6 +1262,7 @@ process anat_balabels_lh {
     tag "${subject_id}"
 
     cpus 1
+    memory '500 MB'
 
     input:
     path(subjects_dir)
@@ -1329,6 +1352,8 @@ process bold_get_bold_file_in_bids {
 process bold_T1to2mm {
     tag "${subject_id}"
 
+    cpus 1
+
     input:
     path subjects_dir
     path bold_preprocess_path
@@ -1355,6 +1380,8 @@ process synthmorph_affine {
     tag "${subject_id}"
 
     label "with_gpu"
+    cpus 1
+    memory '5 GB'
 
     input:
     path(subjects_dir)
@@ -1389,7 +1416,9 @@ process synthmorph_affine {
 process synthmorph_norigid {
     tag "${subject_id}"
 
+    cpus 2
     label "with_gpu"
+    memory '5 GB'
 
     input:
     path(subjects_dir)
@@ -1452,6 +1481,7 @@ process bold_get_bold_ref_in_bids {
 }
 
 process split_subject_boldref_file {
+    tag "${subject_id}"
     cpus 1
 
     input:
@@ -1520,6 +1550,7 @@ process bold_stc_mc {
 }
 
 process bold_add_subject_id_to_bold_file {
+    tag "${subject_id}"
     cpus 1
 
     input:
@@ -1536,6 +1567,7 @@ process bold_add_subject_id_to_bold_file {
     """
 }
 process split_bold_bbregister_from_anat_input {
+    tag "${subject_id}"
     cpus 1
 
     input:
@@ -1556,6 +1588,7 @@ process bold_bbregister {
     tag "${subject_id}"
 
     cpus 1
+    memory '1 GB'
 
     input:
     path subjects_dir
@@ -1582,6 +1615,7 @@ process bold_bbregister_to_native {
     tag "${subject_id}"
 
     cpus 1
+    memory '4 GB'
 
     input:
     path subjects_dir
@@ -1612,8 +1646,9 @@ process bold_bbregister_to_native {
 process bold_synthmorph_norigid_apply {
     tag "${subject_id}"
 
-    cpus 1
+    cpus 2
     label "with_gpu"
+    memory '5 GB'
 
     input:
     path(subjects_dir)
@@ -1684,6 +1719,7 @@ process qc_plot_mctsnr {
     tag "${subject_id}"
 
     cpus 1
+    memory '200 MB'
 
     input:
     tuple(val(subject_id), val(bold_id), path(mc), path(anat_brainmask))
@@ -1717,6 +1753,7 @@ process bold_draw_carpet {
     tag "${subject_id}"
 
     cpus 1
+    memory '400 MB'
 
     input:
     path bold_preprocess_path
@@ -1781,6 +1818,7 @@ process bold_vxmregistration {
 
 
 process split_bold_vxmregnormmni152_input {
+    tag "${subject_id}"
     cpus 1
 
     input:
@@ -1882,7 +1920,8 @@ process bold_vxmregnormmni152 {
 process bold_confounds {
     tag "${subject_id}"
 
-    cpus 1
+    cpus 3
+    memory '200 MB'
 
     input:
     path bold_preprocess_path
@@ -1909,7 +1948,8 @@ process bold_confounds {
 process qc_plot_bold_to_space {
     tag "${subject_id}"
 
-    cpus 1
+    cpus 5
+    memory '1.5 GB'
 
     input:
     tuple(val(subject_id), val(bold_id), path(bold_atlas_to_mni152))

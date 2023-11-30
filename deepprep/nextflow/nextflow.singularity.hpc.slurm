@@ -14,4 +14,6 @@
 #SBATCH --mail-type=end  # 运行结束后发送邮件
 #SBATCH --mail-user=ninganme@qq.com  # 收邮件的邮箱
 
-nextflow run /lustre/grp/lhslab/sunzy/anning/DeepPrep/deepprep/nextflow/deepprep_hpc/deepprep.nf -resume -with-dag flowchart.png -with-timeline timeline.html -with-report report.html
+nextflow run /lustre/grp/lhslab/sunzy/anning/DeepPrep/deepprep/nextflow/deepprep.nf \
+-c /lustre/grp/lhslab/sunzy/anning/DeepPrep/deepprep/nextflow/nextflow.singularity.hpc.config \
+-resume -with-dag flowchart.png -with-timeline timeline.html -with-report report.html
