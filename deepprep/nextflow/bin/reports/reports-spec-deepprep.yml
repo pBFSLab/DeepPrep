@@ -3,7 +3,7 @@ sections:
 - name: Summary
   reportlets:
   - bids: {datatype: figures, desc: summary, suffix: T1w}
-- name: Anatomical
+- name: Anatomical processing
   reportlets:
   - bids:
       datatype: figures
@@ -11,45 +11,39 @@ sections:
       extension: [.html]
       suffix: T1w
   - bids: {datatype: figures, desc: volparc, suffix: T1w}
-    caption: This pic shows volume parc!
-    subtitle: Volume aseg pic
+    caption: Results of the brain extraction and the segmentation of the T1w image, which shows the brain tissue segmentation and brain cortical surface structural parcellations.
+    subtitle: Brain mask and brain tissue segmentation of the T1w
   - bids: {datatype: figures, desc: volsurf, suffix: T1w}
-    caption: This pic shows Surface Recon volsurf
+    caption: Surfaces (white and pial) were reconstructed with FastCSR overlaied on the T1w space.
     static: false
-    subtitle: Surface Recon volsurf pic
+    subtitle: Surface reconstuction
   - bids: {datatype: figures, desc: surfparc, suffix: T1w}
-    caption: This pic shows Surface Recon structure aseg!
-    subtitle: Surface Recon structure parc pic
+    caption: The parcellations were created based on the registration result generated from SUGAR, which aligns participants' surfaces with fsavreage template surfaces.
+    subtitle: Cortical surface structural parcellations
   - bids: { datatype: figures, desc: T1toMNI152, suffix: combine}
-    caption: This pic shows T1w to MNI152!
+    caption: The picture shows nonlinear alignment results, which registers participants' T1w with (MNI152) template T1w.
     static: false
-    subtitle: T1w to MNI152 pic
+    subtitle: Spatial normalization of the T1w
 - name: Functional
   ordering: session,task,acquisition,ceagent,reconstruction,direction,run,echo
   reportlets:
+  - bids: { datatype: figures, desc: reg2native, suffix: bold }
+    caption: bbregister was used to generate transormations from EPI-space to T1w-space.
+    static: false
+    subtitle: Alignment of function and anatomical MRI data
   - bids: {datatype: figures, desc: reg2MNI152, suffix: bold}
-    caption: This pic shows volume registion to MNI152!
+    caption: SynthMorph used anatomical MRI data to generate transformations from T1w-space to standard-template-space, and then applied the transformations to functional data in T1w-space.
     static: false
-    subtitle: Volume Registion to MNI152 pic
-  - bids: {datatype: figures, desc: reg2native, suffix: bold}
-    caption: This pic shows volume registion to native!
-    static: false
-    subtitle: Volume Registion to native pic
+    subtitle: Resample function MRI data to standard template space
   - bids: {datatype: figures, desc: reg, suffix: bold}
     caption: This pic shows Bold Registration!
     subtitle: Bold Registration pic
   - bids: { datatype: figures, desc: tsnr, suffix: bold}
-    caption: This pic shows tsnr!
-    subtitle: TSNR pic
+    caption: TSNR from nipype was used to compute the temporal SNR maps.
+    subtitle: time-course SNR(tSNR)
   - bids: { datatype: figures, desc: tsnr2surf, suffix: bold}
     caption: This pic shows tsnr2surf!
-    subtitle: TSNR2surf pic
-  - bids: { datatype: figures, desc: mc, suffix: bold}
-    caption: This pic shows head movement!
-    subtitle: Head movement pic
+    subtitle:  tSNR of BOLD in surface space
   - bids: { datatype: figures, desc: carpet, suffix: bold}
-    caption: This pic shows carpet!
-    subtitle: Carpet pic
-  - bids: { datatype: figures, desc: corr, suffix: bold}
-    caption: This pic shows correlation!
-    subtitle: Correlation pic
+    caption: The picture was ploted by the FMRISunmmary from the nipype and these values were calculated by the following methods.\n Global signals (GS) were calculated within the whole-brain, and the white-matter (GSWM) and the cerebro-spinal fluid (GSCSF) were calculated with their corresponding masks. The standardized DVARS was calculated by ComputeDVARS from the nipype. The framewise-displacement measures (FD) were calculated by FramewiseDisplacement from the nipype. The relative head motion (RHM) was calculated in this pipeline. \n A carpet plot shows the time series for all voxels within the brain mask. Cortical gray matter (Ctx GM), subcortical gray matter (dGM), white matter and CSF (WM+CSF), and the rest of brain (The rest) were devided into four groups.
+    subtitle: BOLD Summary

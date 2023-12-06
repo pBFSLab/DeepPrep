@@ -71,11 +71,11 @@ def _nifti_timeseries(
     # Map segmentation
     if remap_rois or lut is not None:
         if lut is None:
-            lut = np.zeros((2036,), dtype="uint8")
+            lut = np.full((2036,), 4, dtype="uint8")  # the rest of brain
+            lut[0] = 0  # None
             lut[1000:2036] = 1  # Ctx GM
-            lut[30:99] = 2    # dGM
-            lut[[2,28,41,60]] = 3     # WM+CSF
-            lut[251:256] = 4      # Cerebellum
+            lut[[10, 11, 12, 13, 17, 18, 26, 28, 31, 49, 50, 51, 52, 53, 54, 58, 60, 63]] = 2    # dGM
+            lut[[2, 24, 41]] = 3     # WM+CSF
         # Apply lookup table
         segmentation = lut[segmentation]
 
@@ -133,7 +133,7 @@ class FMRISummary(SimpleInterface):
             nb.load(seg_file),
             remap_rois=False,
             labels=(
-                ("WM+CSF", "Edge") if has_cifti else ("Ctx GM", "dGM", "WM+CSF", "Cb", "Edge", "RHM")
+                ("WM+CSF", "Edge") if has_cifti else ("Ctx GM", "dGM", "WM+CSF", "The rest", "Edge", "RHM")
             ),
         )
 
