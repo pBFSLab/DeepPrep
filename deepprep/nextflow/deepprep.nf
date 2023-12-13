@@ -1335,7 +1335,7 @@ process bold_get_bold_file_in_bids {
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
     path bids_dir
     path nextflow_bin_path
-    val bold_task
+    val bold_task_type
     output:
     path "sub-*" // emit: subject_boldfile_txt
 
@@ -1344,8 +1344,8 @@ process bold_get_bold_file_in_bids {
 
     """
     python3 ${script_py} \
-    --bids-dir ${bids_dir} \
-    --task ${bold_task}
+    --bids_dir ${bids_dir} \
+    --task_type ${bold_task_type}
     """
 }
 
@@ -1509,7 +1509,8 @@ process bold_skip_reorient {
     path bold_preprocess_path
     each path(subject_boldfile_txt)
     path nextflow_bin_path
-    val nskip
+    val reorient
+    val skip_frame
     output:
     tuple(val(subject_id), val(bold_id)) // emit: bold_info
     script:
@@ -1521,7 +1522,8 @@ process bold_skip_reorient {
     python3 ${script_py} \
     --bold_preprocess_dir ${bold_preprocess_path} \
     --boldfile_path ${subject_boldfile_txt} \
-    --nskip_frame ${nskip}
+    --reorient ${reorient} \
+    --skip_frame ${skip_frame}
     """
 
 }
@@ -2140,18 +2142,26 @@ workflow bold_wf {
     gpu_lock
 
     main:
+    // set dir path
     bids_dir = params.bids_dir
     subjects_dir = params.subjects_dir
-    nextflow_bin_path = params.nextflow_bin_path
-    freesurfer_home = params.freesurfer_home
-    bold_task = params.bold_task
     bold_preprocess_path = params.bold_preprocess_path
-    vxm_model_path = params.vxm_model_path
-    bold_skip_reorient_nskip = params.bold_skip_reorient_nskip
+    qc_result_path = params.qc_result_path
+
+    // set bold processing config
+    bold_task_type = params.bold_task_type
+    bold_skip_frame = params.bold_skip_frame
     atlas_type = params.atlas_type
     gpuid = params.device
-    qc_result_path = params.qc_result_path
     bold_fs_native_space = params.bold_fs_native_space
+
+    // set software path
+    nextflow_bin_path = params.nextflow_bin_path
+    freesurfer_home = params.freesurfer_home
+
+    vxm_model_path = params.vxm_model_path
+    bold_reorient = params.bold_reorient
+
     bold_synthmorph_model_path = params.bold_synthmorph_model_path
     bold_synthmorph_template_path = params.bold_synthmorph_template_path
 
@@ -2169,7 +2179,7 @@ workflow bold_wf {
         println _directory
     }
 
-    subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, nextflow_bin_path, bold_task)
+    subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, nextflow_bin_path, bold_task_type)
     (subject_id, boldfile_id, subject_boldfile_txt) = subject_boldfile_txt.flatten().multiMap { it ->
                                                                                      a: it.name.split('_')[0]
                                                                                      c: it.name
@@ -2196,7 +2206,7 @@ workflow bold_wf {
     boldfile_id_group = subject_id_boldfile_id.groupTuple(sort: true).join(subject_boldref_file).map { tuple -> tuple[1] }
     boldfile_id_split = split_subject_boldref_file(boldfile_id_group.flatten())
 
-    bold_info = bold_skip_reorient(bold_preprocess_path, subject_boldfile_txt, nextflow_bin_path, bold_skip_reorient_nskip)
+    bold_info = bold_skip_reorient(bold_preprocess_path, subject_boldfile_txt, nextflow_bin_path, bold_reorient, bold_skip_frame)
     bold_info = boldfile_id_split.join(bold_info, by: [0, 1])
     (mc_nii, mcdat, boldref) = bold_stc_mc(bold_preprocess_path, nextflow_bin_path, bold_info)
 
