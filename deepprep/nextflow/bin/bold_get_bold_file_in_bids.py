@@ -9,16 +9,16 @@ if __name__ == '__main__':
         description="DeepPrep: Bold PreProcessing workflows -- get_bold_files"
     )
 
-    parser.add_argument("--bids-dir", required=True, help="directory of BIDS type: /mnt/ngshare2/BIDS/MSC")
-    parser.add_argument("--task", required=True, type=str, help="rest or etc..")
+    parser.add_argument("--bids_dir", required=True, help="directory of BIDS type: /mnt/ngshare2/BIDS/MSC")
+    parser.add_argument("--task_type", required=True, type=str, help="rest or etc..")
     args = parser.parse_args()
 
     layout = bids.BIDSLayout(args.bids_dir, derivatives=False)
     subject_dict = {}
     subject_ids = []
     bold_filess = []
-    if args.task is not None:
-        bids_bolds = layout.get(return_type='filename', task=args.task, suffix='bold', extension='.nii.gz')
+    if args.task_type is not None:
+        bids_bolds = layout.get(return_type='filename', task=args.task_type, suffix='bold', extension='.nii.gz')
     else:
         bids_bolds = layout.get(return_type='filename', suffix='bold', extension='.nii.gz')
 
