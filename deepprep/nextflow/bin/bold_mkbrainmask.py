@@ -5,20 +5,21 @@ from pathlib import Path
 import argparse
 import os
 
+
 def cmd(subj_func_dir: Path, mc: Path, bbregister_dat: Path, subjects_dir: Path, subject_id: str):
     mov = mc
     reg = bbregister_dat
 
     # project aparc+aseg to mc
     seg = Path(subjects_dir) / subject_id / 'mri' / 'aparc+aseg.mgz'  # Recon
-    func = subj_func_dir / mc.name.replace('.nii.gz', '.anat.aseg.nii.gz')
-    wm = subj_func_dir / mc.name.replace('.nii.gz', '.anat.wm.nii.gz')
-    vent = subj_func_dir / mc.name.replace('.nii.gz', '.anat.ventricles.nii.gz')
-    csf = subj_func_dir / mc.name.replace('.nii.gz', '.anat.csf.nii.gz')
+    func = subj_func_dir / mc.name.replace('bold.nii.gz', 'aseg.nii.gz')
+    wm = subj_func_dir / mc.name.replace('bold.nii.gz', 'wm.nii.gz')
+    vent = subj_func_dir / mc.name.replace('bold.nii.gz', 'ventricles.nii.gz')
+    csf = subj_func_dir / mc.name.replace('bold.nii.gz', 'csf.nii.gz')
     # project brainmask.mgz to mc
     targ = Path(subjects_dir) / subject_id / 'mri' / 'brainmask.mgz'  # Recon
-    mask = subj_func_dir / mc.name.replace('.nii.gz', '.anat.brainmask.nii.gz')
-    binmask = subj_func_dir / mc.name.replace('.nii.gz', '.anat.brainmask.bin.nii.gz')
+    mask = subj_func_dir / mc.name.replace('bold.nii.gz', 'brainmask.nii.gz')
+    binmask = subj_func_dir / mc.name.replace('bold.nii.gz', 'brainmask.bin.nii.gz')
 
     shargs = [
         '--seg', seg,
@@ -30,7 +31,7 @@ def cmd(subj_func_dir: Path, mc: Path, bbregister_dat: Path, subjects_dir: Path,
     shargs = [
         '--i', func,
         '--wm',
-        '--erode', 1, #TODO
+        '--erode', 1,
         '--o', wm]
     sh.mri_binarize(*shargs, _out=sys.stdout)
 
@@ -61,6 +62,7 @@ def cmd(subj_func_dir: Path, mc: Path, bbregister_dat: Path, subjects_dir: Path,
         '--min', 0.0001]
     sh.mri_binarize(*shargs, _out=sys.stdout)
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="DeepPrep: Bold PreProcessing workflows -- MKbrainmask"
@@ -81,6 +83,6 @@ if __name__ == '__main__':
     subj_func_dir = Path(preprocess_dir) / 'func'
     subj_func_dir.mkdir(parents=True, exist_ok=True)
 
-    mc_file = subj_func_dir / f'{args.bold_id}_skip_reorient_stc_mc.nii.gz'
-    bbregister_dat = subj_func_dir / f'{args.bold_id}_skip_reorient_stc_mc_from_mc_to_fsnative_bbregister_rigid.dat'
+    mc_file = subj_func_dir / os.path.basename(args.mc)
+    bbregister_dat = subj_func_dir / os.path.basename(args.bbregister_dat)
     cmd(subj_func_dir, mc_file, bbregister_dat, args.subjects_dir, args.subject_id)

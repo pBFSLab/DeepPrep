@@ -6,8 +6,8 @@ import os
 
 
 def cmd(subject_id: str, subj_func_dir: Path, T1_file, norm_file):
-    T1_fsnative2mm_file = subj_func_dir / f'{subject_id}_T1_2mm.nii.gz'
-    norm_fsnative2mm_file = subj_func_dir / f'{subject_id}_norm_2mm.nii.gz'
+    T1_fsnative2mm_file = subj_func_dir / f'{subject_id}_space-T1w_res-2mm_desc-skull_T1w.nii.gz'
+    norm_fsnative2mm_file = subj_func_dir / f'{subject_id}_space-T1w_res-2mm_desc-noskull_T1w.nii.gz'
     if not T1_fsnative2mm_file.exists():
         sh.mri_convert('-ds', 2, 2, 2,
                        '-i', T1_file,

@@ -6,12 +6,12 @@ import os
 
 
 def run_rigid_registration(subject_id, script, subj_anat_dir, T1_file, template, mp):
-    save_name = f'{subject_id}_T1_2mm_affine_space-MNI152_2mm'
-    trans = Path(subj_anat_dir) / f'{save_name}.xfm.txt'
-    moved = Path(subj_anat_dir) / f'{save_name}.nii.gz'
+    moved = Path(subj_anat_dir) / f'{subject_id}_space-MNI152_res-2mm_desc-affine_T1w.nii.gz'
+    trans = Path(subj_anat_dir) / f'{subject_id}_from-T1w_to-MNI152_desc-affine_xfm.txt'
 
     cmd = f'python3 {script} -g -m affine -t {trans} -o {moved} {T1_file} {template} -mp {mp}'
     os.system(cmd)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -32,8 +32,7 @@ if __name__ == '__main__':
     subj_func_dir = Path(preprocess_dir) / 'func'
     subj_func_dir.mkdir(parents=True, exist_ok=True)
 
-    # T1_2mm = subj_func_dir / f'{args.subject_id}_T1_2mm.nii.gz'
+    # T1_2mm = subj_func_dir / f'{args.subject_id}_space-T1w_res-2mm_desc-skull_T1w.nii.gz'
     # template = Path(args.synth_template_path) / 'MNI152_T1_2mm.nii.gz'
-    T1_2mm = args.t1_native2mm
     template = Path(args.synth_template_path) / 'MNI152_T1_2mm.nii.gz'
-    run_rigid_registration(args.subject_id, args.synth_script, subj_func_dir, T1_2mm, template, args.synth_model_path)
+    run_rigid_registration(args.subject_id, args.synth_script, subj_func_dir, args.t1_native2mm, template, args.synth_model_path)

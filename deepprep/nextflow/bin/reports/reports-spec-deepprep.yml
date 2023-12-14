@@ -24,10 +24,10 @@ sections:
     caption: The picture shows nonlinear alignment results, which registers participants' T1w with (MNI152) template T1w.
     static: false
     subtitle: Spatial normalization of the T1w
-- name: Functional
+- name: Functional processing
   ordering: session,task,acquisition,ceagent,reconstruction,direction,run,echo
   reportlets:
-  - bids: { datatype: figures, desc: reg2native, suffix: bold }
+  - bids: { datatype: figures, desc: reg2native, suffix: bold}
     caption: bbregister was used to generate transormations from EPI-space to T1w-space.
     static: false
     subtitle: Alignment of function and anatomical MRI data

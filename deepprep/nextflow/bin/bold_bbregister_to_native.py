@@ -50,7 +50,7 @@ def bold_to_native(moving, fixed, input_transform, moved):
 
     # save one frame for plotting
     nib_fframe_img = nib.Nifti1Image(warped_img[..., 0].astype(int), affine=affine_info, header=header_info)
-    fframe_file = moved.parent / moved.name.replace(".nii.gz", "_fframe.nii.gz")
+    fframe_file = moved.parent / moved.name.replace("bold.nii.gz", "boldref.nii.gz")
     nib.save(nib_fframe_img, fframe_file)
     print(f"-->>> output       : {fframe_file}")
 
@@ -64,14 +64,6 @@ def bold_to_native(moving, fixed, input_transform, moved):
 
 
 if __name__ == '__main__':
-    """
-    --ref /mnt/ngshare/temp/synthmorph/sub-MSC01_0925/sub-MSC01_ses-func01_task-rest_bold_skip_reorient_stc_boldref.nii.gz
-    --moving /mnt/ngshare/temp/synthmorph/sub-MSC01_0925/sub-MSC01_ses-func01_task-rest_bold_skip_reorient_stc_mc.nii.gz
-    --fixed /mnt/ngshare/temp/synthmorph/sub-MSC01_0925/sub-MSC01_norm_2mm.nii.gz 
-    --dat /mnt/ngshare/temp/synthmorph/sub-MSC01_0925/sub-MSC01_ses-func01_task-rest_bold_skip_reorient_stc_mc_from_mc_to_fsnative_bbregister_rigid.dat
-    --moved /mnt/ngshare/temp/synthmorph/sub-MSC01_0925/sub-MSC01_ses-func01_task-rest_bold_skip_reorient_stc_boldref_bbregister_space-native_2mm.nii.gz
-    --freesurfer-home /usr/local/freesurfer
-    """
     # 创建一个命令行解析器
     parser = argparse.ArgumentParser(description='ANTS registration script')
 
@@ -104,11 +96,12 @@ if __name__ == '__main__':
     subj_func_dir = Path(preprocess_dir) / 'func'
     subj_func_dir.mkdir(parents=True, exist_ok=True)
 
-    ref = subj_func_dir / f'{args.bold_id}_skip_reorient_stc_boldref.nii.gz'
-    moving = subj_func_dir / f'{args.bold_id}_skip_reorient_stc_mc.nii.gz'
-    fixed = subj_func_dir / f'{args.subject_id}_T1_2mm.nii.gz'
-    dat = subj_func_dir / f'{args.bold_id}_skip_reorient_stc_mc_from_mc_to_fsnative_bbregister_rigid.dat'
-    moved = subj_func_dir / f'{args.bold_id}_skip_reorient_stc_mc_bbregister_space-native_2mm.nii.gz'
+    ref = subj_func_dir / os.path.basename(args.ref)
+    moving = subj_func_dir / os.path.basename(args.moving)
+    fixed = subj_func_dir / os.path.basename(args.fixed)
+    dat = subj_func_dir / os.path.basename(args.dat)
+
+    moved = subj_func_dir / f'{args.bold_id}_space-T1w_res-2mm_desc-rigid_bold.nii.gz'  # output
 
     tfm_fsl = str(dat).replace('.dat', '.fsl')
     tfm_mat = str(dat).replace('.dat', '.mat')

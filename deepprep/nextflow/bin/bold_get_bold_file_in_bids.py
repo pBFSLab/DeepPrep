@@ -31,6 +31,7 @@ if __name__ == '__main__':
     for subject_id, bold_files in zip(subject_ids, bold_filess):
         for bold_file in bold_files:
             filename = os.path.basename(bold_file).split('.')[0]
-            with open(f'{filename}', 'w') as f:
+            bold_id = filename.replace('_bold', '')
+            with open(f'{bold_id}', 'w') as f:
                 f.write(subject_id + '\n')
                 f.writelines(bold_file)
