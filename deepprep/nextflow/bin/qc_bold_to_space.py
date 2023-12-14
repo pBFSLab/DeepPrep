@@ -32,21 +32,6 @@ svg_img_body_2 = '''    <g class="background-svg">
 svg_img_tail = '</svg>'
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="plot subject bold space fig")
-    parser.add_argument('--subject_id', help='输入的subjects id', required=True)
-    parser.add_argument('--bold_id', help='输入的bold id', required=True)
-    parser.add_argument('--fs_native_space', help='是否投到个体T1空间', required=True)
-    parser.add_argument('--subjects_dir', help='subjects_dir', required=True)
-    parser.add_argument('--bold_preprocess_path', help='bold preprocess', required=True)
-    parser.add_argument('--qc_tool_package', help='qc画图的辅助文件包', required=True)
-    parser.add_argument('--svg_outpath', help='输出的svg图片保存路径', required=True)
-    parser.add_argument('--freesurfer_home', help='freesurfer home', required=True)
-    args = parser.parse_args()
-
-    return args
-
-
 def scene_plot(scene_file, savepath, length, width):
     cmd = f'wb_command -show-scene {scene_file} 1  {savepath} {length} {width}'
     os.system(cmd)
@@ -105,7 +90,18 @@ def set_environ(freesurfer_home):
 
 
 if __name__ == '__main__':
-    args = parse_args()
+    parser = argparse.ArgumentParser(description="plot subject bold space fig")
+    parser.add_argument('--subject_id', help='输入的subjects id', required=True)
+    parser.add_argument('--bold_id', help='输入的bold id', required=True)
+    parser.add_argument('--fs_native_space', help='是否投到个体T1空间', required=True)
+    parser.add_argument('--subjects_dir', help='subjects_dir', required=True)
+    parser.add_argument('--bold_preprocess_path', help='bold preprocess', required=True)
+    parser.add_argument('--space_mni152_bold_path', help='space_mni152_bold_path', required=True)
+    parser.add_argument('--space_t1w_bold_path', help='space_t1w_bold_path', required=True)
+    parser.add_argument('--qc_tool_package', help='qc画图的辅助文件包', required=True)
+    parser.add_argument('--svg_outpath', help='输出的svg图片保存路径', required=True)
+    parser.add_argument('--freesurfer_home', help='freesurfer home', required=True)
+    args = parser.parse_args()
 
     subject_id = args.subject_id
     bold_id = args.bold_id
@@ -147,7 +143,7 @@ if __name__ == '__main__':
     shutil.copyfile(mni152_scene, mni152_scene_tmp)
     shutil.copyfile(bold2mni152_scene, bold2mni152_scene_tmp)
 
-    bold2mni152_src = Path(bold_preprocess_dir) / subject_id / 'func' / f'{bold_id}_skip_reorient_stc_mc_bbregister_space-native_2mm_synthmorph_space-MNI152_2mm_fframe.nii.gz'
+    bold2mni152_src = args.space_mni152_bold_path
     bold2mni152_trg = subject_bold2mni152_workdir / f'bold2MNI152_tmp_bold.nii.gz'
     shutil.copyfile(bold2mni152_src, bold2mni152_trg)
 
@@ -197,7 +193,7 @@ if __name__ == '__main__':
         shutil.copyfile(bold2T1_scene, bold2T1_scene_tmp)
         shutil.copyfile(T1_scene, T1_scene_tmp)
 
-        bold2mni152_src = Path(bold_preprocess_dir) / subject_id / 'func' / f'{bold_id}_skip_reorient_stc_mc_bbregister_space-native_2mm_fframe.nii.gz'
+        bold2mni152_src = args.space_t1w_bold_path
         bold2mni152_trg = subject_bold2T1_workdir / f'bold2T1_tmp_bold.nii.gz'
         shutil.copyfile(bold2mni152_src, bold2mni152_trg)
 

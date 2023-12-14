@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 import nibabel as nib
 from sklearn.decomposition import PCA
+import shutil
 
 
 def qnt_nifti(bpss_path, maskpath, outpath):
@@ -171,36 +172,33 @@ def build_movement_regressors(subject, movement_path: Path, fcmri_path: Path, mc
         f.write('\n'.join(regressor_dat_txt))
 
 
-def compile_regressors(func_path: Path, subject, bold_id: str, bpss_path: Path, confounds_dir_path):
+def compile_regressors(func_path: Path, subject, bold_id: str, bpss_path: Path, confounds_dir_path,
+                       mcdat_file, aseg_wm, aseg_brainmask, aseg_brainmask_bin, aseg_ventricles
+                       ):
     # Compile the regressors.
 
     # wipe mov regressors, if there
-    mcdat_file = func_path / bpss_path.name.replace('.nii.gz',  '.mcdat')
     mov_regressor_common_path = confounds_dir_path / ('%s_mov_regressor.dat' % subject)
     build_movement_regressors(subject, confounds_dir_path, confounds_dir_path, mcdat_file)
     mov_regressor_path = confounds_dir_path / ('%s_mov_regressor.dat' % subject)
     os.rename(mov_regressor_common_path, mov_regressor_path)
 
-    mask_path = func_path / bpss_path.name.replace('.nii.gz',  '.anat.brainmask.bin.nii.gz')
     out_path = confounds_dir_path / ('%s_WB_regressor_dt.dat' % subject)
-    qnt_nifti(bpss_path, str(mask_path), out_path)
+    qnt_nifti(bpss_path, str(aseg_brainmask_bin), out_path)
 
-    mask_path = func_path / bpss_path.name.replace('.nii.gz',  '.anat.ventricles.nii.gz')
     vent_out_path = confounds_dir_path / ('%s_ventricles_regressor_dt.dat' % subject)
-    qnt_nifti(bpss_path, str(mask_path), vent_out_path)
+    qnt_nifti(bpss_path, str(aseg_ventricles), vent_out_path)
 
-    mask_path = func_path / bpss_path.name.replace('.nii.gz',  '.anat.wm.nii.gz')
     wm_out_path = confounds_dir_path / ('%s_wm_regressor_dt.dat' % subject)
-    qnt_nifti(bpss_path, str(mask_path), wm_out_path)
+    qnt_nifti(bpss_path, str(aseg_wm), wm_out_path)
 
     pasted_out_path = confounds_dir_path / ('%s_vent_wm_dt.dat' % subject)
     with pasted_out_path.open('w') as f:
         sh.paste(vent_out_path, wm_out_path, _out=f)
 
     # Generate PCA regressors of bpss nifti.
-    mask_path = func_path / bpss_path.name.replace('.nii.gz',  '.anat.brainmask.nii.gz')
     pca_out_path = confounds_dir_path / ('%s_pca_regressor_dt.dat' % subject)
-    regressors_PCA(bpss_path, str(mask_path), pca_out_path)
+    regressors_PCA(bpss_path, str(aseg_brainmask), pca_out_path)
 
     fnames = [
         confounds_dir_path / ('%s_mov_regressor.dat' % subject),
@@ -233,6 +231,8 @@ def compile_regressors(func_path: Path, subject, bold_id: str, bpss_path: Path, 
         csv.writer(f, delimiter=' ').writerows([label_header])
         writer = csv.writer(f, delimiter=' ')
         writer.writerows(download_regressors)
+    shutil.copyfile(download_all_regressors_path, func_path / f'{bold_id}_desc-confounds_timeseries.txt')
+
 
     return all_regressors_path
 
@@ -246,10 +246,16 @@ if __name__ == '__main__':
     parser.add_argument("--subject_id", required=True)
     parser.add_argument("--bold_id", required=True)
     parser.add_argument("--bold_file", required=True)
+    parser.add_argument("--mcdat", required=True)
+    parser.add_argument("--aseg_wm", required=True)
+    parser.add_argument("--aseg_brainmask", required=True)
+    parser.add_argument("--aseg_brainmask_bin", required=True)
+    parser.add_argument("--aseg_ventricles", required=True)
     args = parser.parse_args()
 
     func_path = Path(args.bold_preprocess_dir) / args.subject_id / 'func'
-    confounds_dir_path = func_path / 'confounds' / args.bold_id
+    tmp_path = Path(args.bold_preprocess_dir) / args.subject_id / 'tmp'
+    confounds_dir_path = tmp_path / 'confounds' / args.bold_id
     try:
         confounds_dir_path.mkdir(parents=True, exist_ok=True)
     except:
@@ -257,4 +263,13 @@ if __name__ == '__main__':
 
     bold_file = Path(args.bold_file)
     assert bold_file.exists()
-    compile_regressors(func_path, args.subject_id, args.bold_id, bold_file, confounds_dir_path)
+
+    mcdat_file = args.mcdat
+    aseg_wm = args.aseg_wm
+    aseg_brainmask = args.aseg_brainmask
+    aseg_brainmask_bin = args.aseg_brainmask_bin
+    aseg_ventricles = args.aseg_ventricles
+
+    compile_regressors(func_path, args.subject_id, args.bold_id, bold_file, confounds_dir_path,
+                       mcdat_file, aseg_wm, aseg_brainmask, aseg_brainmask_bin, aseg_ventricles
+                       )

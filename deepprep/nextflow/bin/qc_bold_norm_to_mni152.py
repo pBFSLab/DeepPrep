@@ -31,18 +31,6 @@ svg_img_body_2 = '''    <g class="background-svg">
 svg_img_tail = '</svg>'
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="plot subject norm to mni152 fig")
-    parser.add_argument('--subject_id', help='输入的subjects id', required=True)
-    parser.add_argument('--bold_preprocess_path', help='bold preprocess', required=True)
-    parser.add_argument('--scene_file', help='画图所需要的scene文件', required=True)
-    parser.add_argument('--mni152_norm_png', help='模板MNI152的norm png图片', required=True)
-    parser.add_argument('--svg_outpath', help='输出的svg图片保存路径', required=True)
-    args = parser.parse_args()
-
-    return args
-
-
 def scene_plot(scene_file, savepath, length, width):
     cmd = f'wb_command -show-scene {scene_file} 1  {savepath} {length} {width}'
     os.system(cmd)
@@ -68,7 +56,14 @@ def encode_png(png_img):
 
 
 if __name__ == '__main__':
-    args = parse_args()
+    parser = argparse.ArgumentParser(description="plot subject norm to mni152 fig")
+    parser.add_argument('--subject_id', help='输入的subjects id', required=True)
+    parser.add_argument('--bold_preprocess_path', help='bold preprocess', required=True)
+    parser.add_argument('--norm_to_mni152', help='norm to MNI152 nii.gz', required=True)  # f'{subject_id}_space-MNI152_res-2mm_desc-noskull_T1w.nii.gz'
+    parser.add_argument('--scene_file', help='画图所需要的scene文件', required=True)
+    parser.add_argument('--mni152_norm_png', help='模板MNI152的norm png图片', required=True)
+    parser.add_argument('--svg_outpath', help='输出的svg图片保存路径', required=True)
+    args = parser.parse_args()
 
     subject_id = args.subject_id
     bold_preprocess_dir = args.bold_preprocess_path
@@ -82,10 +77,8 @@ if __name__ == '__main__':
     subject_workdir = Path(subject_resultdir) / 'norm2mni152'
     subject_workdir.mkdir(parents=True, exist_ok=True)
 
-    norm_to_mni152nii = Path(
-        bold_preprocess_dir) / subject_id / 'func' / f'{subject_id}_norm_2mm_affine_synthmorph_space-MNI152_2mm.nii.gz'
     norm_to_mni152nii_tmp = subject_workdir / 'norm_to_mni152nii.nii.gz'
-    shutil.copyfile(norm_to_mni152nii, norm_to_mni152nii_tmp)
+    shutil.copyfile(args.norm_to_mni152, norm_to_mni152nii_tmp)
 
     NormtoMNI152_savepath = subject_workdir / 'NormtoMNI152.png'
     NormtoMNI152_scene = subject_workdir / 'NormtoMNI152.scene'

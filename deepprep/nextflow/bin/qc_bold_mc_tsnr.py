@@ -29,19 +29,6 @@ svg_img_body_1 = '''    <g class="background-svg">
 svg_img_tail = '</svg>'
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="plot subject mc tsnr fig")
-    parser.add_argument('--subject_id', help='输入的subjects id', required=True)
-    parser.add_argument('--bold_id', help='输入的bold id', required=True)
-    parser.add_argument('--bold_preprocess_path', help='bold preprocess', required=True)
-    parser.add_argument('--scene_file', help='画图所需要的scene文件', required=True)
-    parser.add_argument('--color_bar_png', help='画图所需要的color bar png', required=True)
-    parser.add_argument('--svg_outpath', help='输出的svg图片保存路径', required=True)
-    args = parser.parse_args()
-
-    return args
-
-
 def scene_plot(scene_file, savepath, length, width):
     cmd = f'wb_command -show-scene {scene_file} 1  {savepath} {length} {width}'
     os.system(cmd)
@@ -101,7 +88,16 @@ def combine_bar(output_tsnr_savepath, color_bar_png):
 
 
 if __name__ == '__main__':
-    args = parse_args()
+    parser = argparse.ArgumentParser(description="plot subject mc tsnr fig")
+    parser.add_argument('--subject_id', help='输入的subjects id', required=True)
+    parser.add_argument('--bold_id', help='输入的bold id', required=True)
+    parser.add_argument('--bold_preprocess_path', help='bold preprocess', required=True)
+    parser.add_argument('--mc', help='bold_mc_file', required=True)
+    parser.add_argument('--mc_brainmask', help='bold_mc_brainlmask_file', required=True)
+    parser.add_argument('--scene_file', help='画图所需要的scene文件', required=True)
+    parser.add_argument('--color_bar_png', help='画图所需要的color bar png', required=True)
+    parser.add_argument('--svg_outpath', help='输出的svg图片保存路径', required=True)
+    args = parser.parse_args()
 
     subject_id = args.subject_id
     bold_id = args.bold_id
@@ -118,11 +114,14 @@ if __name__ == '__main__':
 
     cur_path = os.getcwd()
 
-    bold_mc = Path(cur_path) / bold_preprocess_dir / subject_id / 'func' / f'{bold_id}_skip_reorient_stc_mc.nii.gz'
+    bold_mc = os.path.basename(args.mc)
+    mc_brainmask = args.mc_brainmask
+
     mc_tsnr_path = Path(cur_path) / str(subject_workdir) / 'mc_tsnr.nii.gz'
-    TSNR_test(bold_mc, mc_tsnr_path)
-    mc_brainmask = str(bold_mc).replace('.nii.gz', '.anat.brainmask.nii.gz')
+
+    TSNR_test(Path(cur_path) / bold_mc, mc_tsnr_path)
     rewrite_tsnr(mc_tsnr_path, mc_brainmask)
+
     output_tsnr_savepath = subject_workdir / f'{bold_id}_mc_tsnr.png'
     McTSNR_scene = subject_workdir / 'McTSNR.scene'
     if McTSNR_scene.exists() is False:
