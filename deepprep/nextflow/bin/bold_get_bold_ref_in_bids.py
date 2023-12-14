@@ -19,41 +19,33 @@ def reorient_to_ras(input_path, output_path):
     else:
         newimg = img.as_reoriented(orig_ornt)
         nib.save(newimg, output_path)
+        print('orig_ornt: \n', orig_ornt)
         print(f"Successfully reorient {input_path} to RAS orientation and saved to {output_path}.")
 
 
-def cmd(subj_func_dir: Path, bold: Path, run: str, subject_id, bold_name: str):
-    boldref = Path(subj_func_dir) / Path(bold).name.replace('.nii.gz', '_boldref.nii.gz')
-    reorient_bold = Path(subj_func_dir) / Path(boldref).name.replace('.nii.gz', '_reorient.nii.gz')
-    open(f'{subj_func_dir}/{subject_id}_boldref.log', 'w').write(str(bold))
-
-    # boldref
-    cmd = f'mri_convert {bold} {boldref} --frame 0'
-    os.system(cmd)
-
-    # reorient
-    reorient_to_ras(boldref, reorient_bold)
-
-    ori_path = subj_func_dir
-    tmp_run = subj_func_dir / bold_name / run
+def cmd(bids_dir: Path, subj_func_dir: Path, subj_tmp_dir: Path, bold_id: str, run: str, subject_id):
+    bold = Path(bids_dir) / f'{bold_id}_bold.nii.gz'
+    # tmp dir
+    tmp_run = subj_tmp_dir / 'get_bold_ref' / bold_id
     if tmp_run.exists():
         shutil.rmtree(tmp_run)
     link_dir = tmp_run / subject_id / 'bold' / run
     if not link_dir.exists():
         link_dir.mkdir(parents=True, exist_ok=True)
-    link_files = os.listdir(subj_func_dir)
-    nii_files = [file for file in link_files if file.endswith('_boldref_reorient.nii.gz')]
-    for link_file in nii_files:
-        try:
-            src_file = subj_func_dir / link_file
-            dst_file = link_dir / link_file
-            dst_file.symlink_to(src_file)
-        except:
-            continue
+
+    bold_first_frame = Path(link_dir) / f'{bold_id}_desc-fframe_bold.nii.gz'
+    reorient_bold = Path(link_dir) / bold_first_frame.name.replace('.nii.gz', '_reorient.nii.gz')
+
+    # boldref
+    cmd = f'mri_convert {bold} {bold_first_frame} --frame 0'
+    os.system(cmd)
+
+    # reorient
+    reorient_to_ras(bold_first_frame, reorient_bold)
 
     # STC
     faln_fname = reorient_bold.name.replace('_reorient.nii.gz', '_reorient')
-    stc_fname = reorient_bold.name.replace('_reorient', '_reorient_stc')
+    stc_fname = reorient_bold.name.replace('_reorient.nii.gz', '_reorient_stc')
     shargs = [
         '-s', subject_id,
         '-d', tmp_run,
@@ -64,12 +56,14 @@ def cmd(subj_func_dir: Path, bold: Path, run: str, subject_id, bold_name: str):
         '-o', stc_fname,
         '-nolog']
     sh.stc_sess(*shargs, _out=sys.stdout)
-    shutil.move(link_dir / f'{stc_fname}.nii.gz',
-                ori_path / f'{subject_id}_boldref.nii.gz')
-    cmd = f'rm -rf {boldref}'
-    os.system(cmd)
-    cmd = f'rm -rf {reorient_bold}'
-    os.system(cmd)
+
+    shutil.copyfile(link_dir / f'{stc_fname}.nii.gz', subj_func_dir / f'{subject_id}_boldref.nii.gz')
+    open(subj_func_dir / f'{subject_id}_boldref.log', 'w').write(f'{bold} \n-> mc \n-> stc')
+
+    DEBUG = True
+    if not DEBUG:
+        shutil.rmtree(tmp_run, ignore_errors=True)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -88,10 +82,13 @@ if __name__ == '__main__':
     subj_func_dir = Path(preprocess_dir) / 'func'
     subj_func_dir.mkdir(parents=True, exist_ok=True)
 
-    bids_dir = Path(cur_path) / str(args.bids_dir) / args.subject_id
-    session = args.bold_id.split('_')[1]
-    bold_file = bids_dir / session / 'func' / f'{args.bold_id}.nii.gz'
+    subj_tmp_dir = Path(preprocess_dir) / 'tmp'
+    subj_tmp_dir.mkdir(parents=True, exist_ok=True)
+
+    if 'ses-' in args.bold_id:
+        session = args.bold_id.split('_')[1]
+        subj_bids_dir = Path(cur_path) / str(args.bids_dir) / args.subject_id / session / 'func'
+    else:
+        subj_bids_dir = Path(cur_path) / str(args.bids_dir) / args.subject_id / 'func'
     run = '001'
-    cmd(subj_func_dir, bold_file, run, args.subject_id, args.bold_id)
-
-
+    cmd(subj_bids_dir, subj_func_dir, subj_tmp_dir, args.bold_id, run, args.subject_id)
