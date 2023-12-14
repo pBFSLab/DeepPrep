@@ -201,7 +201,7 @@ def VxmRegNormMNI152(subj_recon_dir, deepprep_subj_path, subject_id, atlas_type,
     subj_func_dir.mkdir(parents=True, exist_ok=True)
 
     norm_fsnative_file = Path(subjects_dir) / subject_id / 'mri' / 'norm.mgz'
-    norm_fsnative2mm_file = subj_anat_dir / f'{subject_id}_norm_2mm.nii.gz'
+    norm_fsnative2mm_file = subj_anat_dir / f'{subject_id}_space-T1w_res-2mm_desc-noskull_T1w.nii.gz'
     if not norm_fsnative2mm_file.exists():
         sh.mri_convert('-ds', 2, 2, 2,
                        '-i', norm_fsnative_file,

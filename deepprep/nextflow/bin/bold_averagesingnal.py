@@ -6,7 +6,6 @@ import nibabel as nib
 import numpy as np
 from nipype import Node
 import pandas as pd
-import re
 import argparse
 import shutil
 
@@ -58,9 +57,9 @@ class FMRISummaryNode:
             ("rel_transform", None, "RHM")]
         FMRISummary_node = Node(FMRISummary(), f'FMRISummary_node')
         FMRISummary_node.inputs.in_nifti = in_nifti
-        FMRISummary_node.inputs.in_segm = Path(in_nifti).parent / Path(in_nifti).name.replace('.nii.gz', '.anat.aseg.nii.gz')
+        FMRISummary_node.inputs.in_segm = Path(in_nifti).parent / Path(in_nifti).name.replace('bold.nii.gz', 'aseg.nii.gz')
         FMRISummary_node.inputs.confounds_list = confounds_list
-        FMRISummary_node.inputs.confounds_file = Path(in_nifti).parent / Path(in_nifti).name.replace('.nii.gz', '.anat.average_singnal.tsv')
+        FMRISummary_node.inputs.confounds_file = Path(in_nifti).parent / Path(in_nifti).name.replace('bold.nii.gz', 'averagesingnal.tsv')
         FMRISummary_node.base_dir = base_dir
 
         result = FMRISummary_node.run()
@@ -83,20 +82,19 @@ def AverageSingnal(bold_preprocess_dir, save_svg_dir, subject_id, bold_id, mc):
     roi_inf = {'global_signal': 'brainmask.bin', 'white_matter': 'wm', 'csf': 'csf'}
     results = []
     for key in roi_inf.keys():
-        annot_file = Path(
-            bold_preprocess_dir) / 'func' / f'{bold_id}_skip_reorient_stc_mc.anat.{roi_inf[key]}.nii.gz'
+        annot_file = Path(bold_preprocess_dir) / 'func' / mc.name.replace('bold.nii.gz', f'{roi_inf[key]}.nii.gz')
         parc_annot = reshape_annot(annot_file)
         roi_mean = np.mean(bold[np.where(parc_annot == 1.0)[0]], axis=0)
         results.append(np.expand_dims(roi_mean, 1))
     columns = list(roi_inf.keys())
-    bold_mask = Path(bold_preprocess_dir) / 'func' / mc.name.replace('.nii.gz', '.anat.brainmask.nii.gz')
+    bold_mask = Path(bold_preprocess_dir) / 'func' / mc.name.replace('bold.nii.gz', 'brainmask.nii.gz')
     compute_dvars = ComputeDVARSNode()
     std_dvars_path = compute_dvars(mc, bold_mask, base_dir)
     std_dvars = pd.read_csv(std_dvars_path, header=None).values
     std_dvars = np.insert(std_dvars, 0, np.array([np.nan]), axis=0)
     results.append(std_dvars)
     columns.append('std_dvars')
-    mcdat = Path(bold_preprocess_dir) / 'func' / mc.name.replace('.nii.gz', '.mcdat')
+    mcdat = Path(bold_preprocess_dir) / 'func' / f'{bold_id}_from-stc_to-mc_xfm.mcdat'
     framewisedisplacement = FramewiseDisplacementNode()
     fd_path = framewisedisplacement(mcdat, base_dir)
     fd = pd.read_csv(fd_path, sep='\t', encoding='utf-8').values
@@ -108,7 +106,7 @@ def AverageSingnal(bold_preprocess_dir, save_svg_dir, subject_id, bold_id, mc):
     columns.append('rel_transform')
     data = np.concatenate(results, axis=1).astype(np.float32)
     data_df = pd.DataFrame(data=data, columns=columns)
-    csv_file = Path(bold_preprocess_dir) / 'func' / mc.name.replace('.nii.gz', '.anat.average_singnal.tsv')
+    csv_file = Path(bold_preprocess_dir) / 'func' / mc.name.replace('bold.nii.gz', 'averagesingnal.tsv')
     data_df.to_csv(csv_file, sep="\t")
 
     summary = FMRISummaryNode()
@@ -117,6 +115,7 @@ def AverageSingnal(bold_preprocess_dir, save_svg_dir, subject_id, bold_id, mc):
     cmd = f'cp {summary_path} {carpet_path}'
     os.system(cmd)
     shutil.rmtree(base_dir)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -138,7 +137,7 @@ if __name__ == '__main__':
     subj_func_dir = Path(preprocess_dir) / 'func'
     subj_func_dir.mkdir(parents=True, exist_ok=True)
     # bold_preprocess_path = Path(cur_path) / Path(args.bold_preprocess_dir).name
-    mc_file = subj_func_dir / f'{args.bold_id}_skip_reorient_stc_mc.nii.gz'
+    mc_file = subj_func_dir / f'{args.bold_id}_desc-mc_bold.nii.gz'
     svg_path = Path(cur_path) / str(args.save_svg_dir) / args.subject_id / 'figures'
     svg_path.mkdir(parents=True, exist_ok=True)
     AverageSingnal(preprocess_dir, svg_path, args.subject_id, args.bold_id, mc_file)
