@@ -20,6 +20,6 @@ setuptools.setup(
         "Development Status :: 3 - Alpha",
         "License :: OSI Approved :: "
     ],
-    python_requires='>=3.3',
+    python_requires='>=3.8',
     install_requires=['numpy', 'scipy'],
 )
