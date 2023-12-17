@@ -22,7 +22,7 @@ def reorient_to_ras(input_path, output_path):
 
 def cmd(subj_func_dir: Path, bold: str, reorient: str, nskip_frame: int):
     skip_bold = Path(subj_func_dir) / Path(bold).name.replace('_bold.nii.gz', '_desc-skip_bold.nii.gz')
-    reorient_skip_bold = Path(subj_func_dir) / Path(bold).name.replace('_bold.nii.gz', '_desc-reorient_bold.nii.gz')
+    reorient_skip_bold = Path(subj_func_dir) / Path(bold).name.replace('_bold.nii.gz', '_space-reorient_bold.nii.gz')
 
     # skip 0 frame
     if nskip_frame > 0:

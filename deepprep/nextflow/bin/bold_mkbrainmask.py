@@ -12,14 +12,14 @@ def cmd(subj_func_dir: Path, mc: Path, bbregister_dat: Path, subjects_dir: Path,
 
     # project aparc+aseg to mc
     seg = Path(subjects_dir) / subject_id / 'mri' / 'aparc+aseg.mgz'  # Recon
-    func = subj_func_dir / mc.name.replace('bold.nii.gz', 'aseg.nii.gz')
-    wm = subj_func_dir / mc.name.replace('bold.nii.gz', 'wm.nii.gz')
-    vent = subj_func_dir / mc.name.replace('bold.nii.gz', 'ventricles.nii.gz')
-    csf = subj_func_dir / mc.name.replace('bold.nii.gz', 'csf.nii.gz')
+    func = subj_func_dir / mc.name.replace('bold.nii.gz', 'desc-aparcaseg_dseg.nii.gz')
+    wm = subj_func_dir / mc.name.replace('bold.nii.gz', 'desc-wm_mask.nii.gz')
+    vent = subj_func_dir / mc.name.replace('bold.nii.gz', 'desc-ventricles_mask.nii.gz')
+    csf = subj_func_dir / mc.name.replace('bold.nii.gz', 'desc-csf_mask.nii.gz')
     # project brainmask.mgz to mc
     targ = Path(subjects_dir) / subject_id / 'mri' / 'brainmask.mgz'  # Recon
-    mask = subj_func_dir / mc.name.replace('bold.nii.gz', 'brainmask.nii.gz')
-    binmask = subj_func_dir / mc.name.replace('bold.nii.gz', 'brainmask.bin.nii.gz')
+    mask = subj_func_dir / mc.name.replace('bold.nii.gz', 'desc-brain_mask.nii.gz')
+    binmask = subj_func_dir / mc.name.replace('bold.nii.gz', 'desc-brain_maskbin.nii.gz')
 
     shargs = [
         '--seg', seg,

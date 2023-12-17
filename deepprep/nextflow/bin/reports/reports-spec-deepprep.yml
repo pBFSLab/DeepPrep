@@ -2,14 +2,10 @@ package: niworkflows
 sections:
 - name: Summary
   reportlets:
-  - bids: {datatype: figures, desc: summary, suffix: T1w}
+  - bids: {datatype: figures, desc: subjectsummary, extension:[.html], suffix: report}
 - name: Anatomical processing
   reportlets:
-  - bids:
-      datatype: figures
-      desc: conform
-      extension: [.html]
-      suffix: T1w
+  - bids: {datatype: figures, desc: templatedimensions, extension:[.html], suffix: report}
   - bids: {datatype: figures, desc: volparc, suffix: T1w}
     caption: Results of the brain extraction and the segmentation of the T1w image, which shows the brain tissue segmentation and brain cortical surface structural parcellations.
     subtitle: Brain mask and brain tissue segmentation of the T1w
@@ -27,6 +23,7 @@ sections:
 - name: Functional processing
   ordering: session,task,acquisition,ceagent,reconstruction,direction,run,echo
   reportlets:
+  - bids: { datatype: figures, desc: functionalsummary, extension:[.html], suffix: report}
   - bids: { datatype: figures, desc: reg2native, suffix: bold}
     caption: bbregister was used to generate transormations from EPI-space to T1w-space.
     static: false
@@ -47,3 +44,6 @@ sections:
   - bids: { datatype: figures, desc: carpet, suffix: bold}
     caption: The picture was ploted by the FMRISunmmary from the nipype and these values were calculated by the following methods.\n Global signals (GS) were calculated within the whole-brain, and the white-matter (GSWM) and the cerebro-spinal fluid (GSCSF) were calculated with their corresponding masks. The standardized DVARS was calculated by ComputeDVARS from the nipype. The framewise-displacement measures (FD) were calculated by FramewiseDisplacement from the nipype. The relative head motion (RHM) was calculated in this pipeline. \n A carpet plot shows the time series for all voxels within the brain mask. Cortical gray matter (Ctx GM), subcortical gray matter (dGM), white matter and CSF (WM+CSF), and the rest of brain (The rest) were devided into four groups.
     subtitle: BOLD Summary
+- name: About
+  reportlets:
+    - bids: { datatype: figures, desc: aboutsummary, extension: [ .html ], suffix: report }
