@@ -10,6 +10,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--subjects-dir", required=True)
     parser.add_argument("--t1wfile-path", required=True)
+    parser.add_argument("--deepprep-version", default='v0.0.1')
     args = parser.parse_args()
 
     with open(args.t1wfile_path, 'r') as f:
@@ -24,3 +25,10 @@ if __name__ == '__main__':
         if not output_file.exists():
             os.system(f"mri_convert {t1w_file} {output_file}")
             print(f"mri_convert {t1w_file} {output_file}")
+
+
+    scripts_dir = Path(args.subjects_dir) / subject_id / "scripts"
+    scripts_dir.mkdir(parents=True, exist_ok=True)
+    deepprep_version_file = scripts_dir / 'deepprep_version.txt'
+    with open(deepprep_version_file, 'w') as f:
+        f.write(f'{args.deepprep_version}')

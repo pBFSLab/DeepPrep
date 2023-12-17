@@ -22,8 +22,8 @@ def cmd(subj_func_dir: Path, subj_tmp_dir: Path, skip_reorient: Path, run: str, 
 
     # STC
     input_fname = skip_reorient.name.replace('.nii.gz', '')
-    stc_fname = f'{bold_id}_desc-stc_bold'
-    mc_fname = f'{bold_id}_desc-mc_bold'
+    stc_fname = f'{bold_id}_space-stc_bold'
+    mc_fname = f'{bold_id}_space-mc_bold'
     shargs = [
         '-s', subject_id,
         '-d', tmp_run,
@@ -68,7 +68,7 @@ def cmd(subj_func_dir: Path, subj_tmp_dir: Path, skip_reorient: Path, run: str, 
 
     # Template reference for mc
     # shutil.copyfile(link_dir / 'template.nii.gz',
-    #                 ori_path / f'{mc_fname}ref.nii.gz')  # _desc-mc_boldref.nii.gz
+    #                 ori_path / f'{mc_fname}ref.nii.gz')  # _space-mc_boldref.nii.gz
     # shutil.copyfile(link_dir / 'template.log',
     #                 ori_path / f'{mc_fname}ref.log')
 
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     parser.add_argument("--bold_preprocess_dir", required=True)
     parser.add_argument("--subject_id", required=True)
     parser.add_argument("--bold_id", required=True)
-    parser.add_argument("--reorient", required=True)  # _desc-reorient_bold.nii.gz
+    parser.add_argument("--reorient", required=True)  # _space-reorient_bold.nii.gz
     args = parser.parse_args()
 
     cur_path = os.getcwd()
