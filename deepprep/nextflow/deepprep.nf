@@ -52,7 +52,7 @@ process anat_create_subject_orig_dir {
     subject_id =  subject_t1wfile_txt.name
     script_py = "${nextflow_bin_path}/anat_create_subject_orig_dir.py"
     """
-    python3 ${script_py} --subjects-dir ${subjects_dir} --t1wfile-path ${subject_t1wfile_txt}
+    python3 ${script_py} --subjects-dir ${subjects_dir} --t1wfile-path ${subject_t1wfile_txt} --deepprep-version v0.0.1
     """
 }
 
@@ -1512,7 +1512,7 @@ process bold_skip_reorient {
     val reorient
     val skip_frame
     output:
-    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_desc-reorient_bold.nii.gz")) // emit: mc
+    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-reorient_bold.nii.gz")) // emit: mc
     script:
     bold_id = subject_boldfile_txt.name
     subject_id = bold_id.split('_')[0]
@@ -1539,9 +1539,9 @@ process bold_stc_mc {
     path nextflow_bin_path
     tuple(val(subject_id), val(bold_id), path(reorient))
     output:
-    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_desc-mc_bold.nii.gz")) // emit: mc
+    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_bold.nii.gz")) // emit: mc
     tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_from-stc_to-mc_xfm.mcdat")) // emit: mcdat
-    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_desc-mc_boldref.nii.gz")) // emit: boldref
+    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_boldref.nii.gz")) // emit: boldref
     script:
     script_py = "${nextflow_bin_path}/bold_stc_mc.py"
 
@@ -1700,12 +1700,12 @@ process bold_mkbrainmask {
     path nextflow_bin_path
     tuple(val(subject_id), val(bold_id), path(aparc_aseg), path(mc), path(bbregister_dat))
     output:
-    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_desc-mc_wm.nii.gz")) // emit: anat_wm
-    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_desc-mc_csf.nii.gz")) // emit: anat_csf
-    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_desc-mc_aseg.nii.gz")) // emit: anat_aseg
-    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_desc-mc_ventricles.nii.gz")) // emit: anat_ventricles
-    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_desc-mc_brainmask.nii.gz")) // emit: anat_brainmask
-    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_desc-mc_brainmask.bin.nii.gz")) // emit: anat_brainmask_bin
+    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_desc-wm_mask.nii.gz")) // emit: anat_wm
+    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_desc-csf_mask.nii.gz")) // emit: anat_csf
+    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_desc-aparcaseg_dseg.nii.gz")) // emit: anat_aseg
+    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_desc-ventricles_mask.nii.gz")) // emit: anat_ventricles
+    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_desc-brain_mask.nii.gz")) // emit: anat_brainmask
+    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_desc-brain_maskbin.nii.gz")) // emit: anat_brainmask_bin
     script:
     script_py = "${nextflow_bin_path}/bold_mkbrainmask.py"
 
@@ -1767,7 +1767,7 @@ process qc_plot_carpet {
     path bold_preprocess_path
     path nextflow_bin_path
     path qc_result_path
-    tuple(val(subject_id), val(bold_id), path(mc), path(mcdat), path(anat_brainmask))
+    tuple(val(subject_id), val(bold_id), path(mc_nii), path(mcdat), path(anat_aseg_nii), path(anat_brainmask_nii), path(anat_brainmask_bin_nii), path(anat_wm_nii), path(anat_csf_nii))
     output:
     tuple(val(subject_id), val(bold_id), path("${qc_result_path}/${subject_id}/figures/${bold_id}_desc-carpet_bold.svg")) // emit: bold_carpet_svg
     script:
@@ -1776,9 +1776,13 @@ process qc_plot_carpet {
     python3 ${script_py} \
     --bold_preprocess_dir ${bold_preprocess_path} \
     --subject_id ${subject_id} \
-    --mc ${mc} \
+    --mc ${mc_nii} \
     --mcdat ${mcdat} \
-    --anat_brainmask ${anat_brainmask} \
+    --anat_aseg ${anat_aseg_nii} \
+    --anat_brainmask ${anat_brainmask_nii} \
+    --anat_brainmaskbin ${anat_brainmask_bin_nii} \
+    --anat_wm ${anat_wm_nii} \
+    --anat_csf ${anat_csf_nii} \
     --bold_id ${bold_id} \
     --save_svg_dir ${qc_result_path}
     """
@@ -2238,7 +2242,7 @@ workflow bold_wf {
 
     qc_plot_mctsnr_input = mc_nii.join(anat_brainmask_nii, by: [0,1])
     bold_mc_tsnr_svg = qc_plot_mctsnr(qc_plot_mctsnr_input, bold_preprocess_path, nextflow_bin_path, qc_result_path)
-    qc_plot_carpet_inputs = mc_nii.join(mcdat, by: [0,1]).join(anat_brainmask_nii, by: [0,1])
+    qc_plot_carpet_inputs = mc_nii.join(mcdat, by: [0,1]).join(anat_aseg_nii, by: [0,1]).join(anat_brainmask_nii, by: [0,1]).join(anat_brainmask_bin_nii, by: [0,1]).join(anat_wm_nii, by: [0,1]).join(anat_csf_nii, by: [0,1])
     (bold_carpet_svg) = qc_plot_carpet(bold_preprocess_path, nextflow_bin_path, qc_result_path, qc_plot_carpet_inputs)
     bold_to_mni152_svg = qc_plot_bold_to_space(synthmorph_norigid_bold_fframe, bbregister_native_2mm, bold_fs_native_space, subjects_dir, bold_preprocess_path, nextflow_bin_path, qc_result_path, freesurfer_home)
     qc_bold_create_report_input = bold_to_mni152_svg.groupTuple(by: 0)
