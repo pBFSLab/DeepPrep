@@ -12,6 +12,8 @@ process cp_fsaverage {
     """
     #! /usr/bin/env python3
     import os
+    if os.path.exists('${subjects_dir}/fsaverage'):
+        os.system('rm -r ${subjects_dir}/fsaverage')
     os.system('cp -nr ${freesurfer_fsaverage_dir} ${subjects_dir}')
     """
 }
@@ -1507,10 +1509,12 @@ process bold_skip_reorient {
 
     input:
     path bold_preprocess_path
-    each path(subject_boldfile_txt)
     path nextflow_bin_path
+    path qc_result_path
+    each path(subject_boldfile_txt)
     val reorient
     val skip_frame
+    val sdc
     output:
     tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-reorient_bold.nii.gz")) // emit: mc
     script:
@@ -1521,9 +1525,11 @@ process bold_skip_reorient {
     """
     python3 ${script_py} \
     --bold_preprocess_dir ${bold_preprocess_path} \
+    --qc_report_dir ${qc_result_path} \
     --boldfile_path ${subject_boldfile_txt} \
     --reorient ${reorient} \
-    --skip_frame ${skip_frame}
+    --skip_frame ${skip_frame} \
+    --sdc ${sdc}
     """
 
 }
@@ -1903,7 +1909,11 @@ process qc_anat_create_report {
     input:
     tuple(val(subject_id), path(aparc_aseg_svg))
     path nextflow_bin_path
+    path bids_dir
+    path subjects_dir
     path qc_result_path
+    val bold_task_type
+    val deepprep_version
     output:
     tuple(val(subject_id), path("${qc_result_path}/${subject_id}/${subject_id}.html")) // emit: qc_report
     script:
@@ -1911,9 +1921,14 @@ process qc_anat_create_report {
 
     """
     python3 ${script_py} \
+    --nextflow_bin_path ${nextflow_bin_path} \
     --subject_id ${subject_id} \
+    --bids_dir ${bids_dir} \
+    --subjects_dir ${subjects_dir} \
     --qc_result_path ${qc_result_path} \
-    --nextflow_bin_path ${nextflow_bin_path}
+    --bold_task_type ${bold_task_type} \
+    --deepprep_version ${deepprep_version} \
+    --nextflow_log ${launchDir}/.nextflow.log
     """
 
 }
@@ -1927,7 +1942,11 @@ process qc_bold_create_report {
     input:
     tuple(val(subject_id), val(bold_id), val(bold_confounds))
     path nextflow_bin_path
+    path bids_dir
+    path subjects_dir
     path qc_result_path
+    val bold_task_type
+    val deepprep_version
     output:
     tuple(val(subject_id), path("${qc_result_path}/${subject_id}/${subject_id}.html")) // emit: qc_report
     script:
@@ -1935,9 +1954,14 @@ process qc_bold_create_report {
 
     """
     python3 ${script_py} \
+    --nextflow_bin_path ${nextflow_bin_path} \
     --subject_id ${subject_id} \
+    --bids_dir ${bids_dir} \
+    --subjects_dir ${subjects_dir} \
     --qc_result_path ${qc_result_path} \
-    --nextflow_bin_path ${nextflow_bin_path}
+    --bold_task_type ${bold_task_type} \
+    --deepprep_version ${deepprep_version} \
+    --nextflow_log ${launchDir}/.nextflow.log
     """
 
 }
@@ -1952,6 +1976,7 @@ workflow anat_wf {
     bids_dir = params.bids_dir
     subjects_dir = params.subjects_dir
     qc_result_path = params.qc_result_path
+    bold_task_type = params.bold_task_type
 
     fsthreads = params.anat_fsthreads
 
@@ -1967,6 +1992,8 @@ workflow anat_wf {
     surfreg_model_path = params.surfreg_model_path
 
     nextflow_bin_path = params.nextflow_bin_path
+
+    deepprep_version = params.deepprep_version
 
     // BIDS and SUBJECTS_DIR
     _directory = new File(subjects_dir)
@@ -2119,7 +2146,7 @@ workflow anat_wf {
 
     qc_plot_aparc_aseg_input = norm_mgz.join(aparc_aseg_mgz)
     aparc_aseg_svg = qc_plot_aparc_aseg(subjects_dir, qc_plot_aparc_aseg_input, nextflow_bin_path, qc_result_path, freesurfer_home)
-    qc_report = qc_anat_create_report(aparc_aseg_svg, nextflow_bin_path, qc_result_path)
+    qc_report = qc_anat_create_report(aparc_aseg_svg, nextflow_bin_path, bids_dir, subjects_dir, qc_result_path, bold_task_type, deepprep_version)
 
 //     lh_anat_aparc_a2009s2aseg_input = white_surf.join(pial_surf, by: [0, 1]).join(cortex_label, by: [0, 1]).join(aparc_a2009s_annot, by: [0, 1]).join(subject_id_lh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4, 5] }
 //     rh_anat_aparc_a2009s2aseg_input = white_surf.join(pial_surf, by: [0, 1]).join(cortex_label, by: [0, 1]).join(aparc_a2009s_annot, by: [0, 1]).join(subject_id_rh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4, 5] }
@@ -2157,6 +2184,9 @@ workflow bold_wf {
     gpu_lock
 
     main:
+    // GPU
+    gpuid = params.device  // not used
+
     // set dir path
     bids_dir = params.bids_dir
     subjects_dir = params.subjects_dir
@@ -2166,19 +2196,20 @@ workflow bold_wf {
     // set bold processing config
     bold_task_type = params.bold_task_type
     bold_skip_frame = params.bold_skip_frame
-    atlas_type = params.atlas_type  // not used
-    gpuid = params.device  // not used
+    bold_reorient = params.bold_reorient
+    bold_susceptibility_distortion_correction = params.bold_susceptibility_distortion_correction
+
+    bold_atlas_type = params.bold_atlas_type  // not used
     bold_fs_native_space = params.bold_fs_native_space
 
     // set software path
     nextflow_bin_path = params.nextflow_bin_path
     freesurfer_home = params.freesurfer_home
 
-    vxm_model_path = params.vxm_model_path
-    bold_reorient = params.bold_reorient
-
     bold_synthmorph_model_path = params.bold_synthmorph_model_path
     bold_synthmorph_template_path = params.bold_synthmorph_template_path
+
+    deepprep_version = params.deepprep_version
 
     _directory = new File(bold_preprocess_path)
         if (!_directory.exists()) {
@@ -2221,7 +2252,7 @@ workflow bold_wf {
     boldfile_id_group = subject_id_boldfile_id.groupTuple(sort: true).join(subject_boldref_file).map { tuple -> tuple[1] }
     boldfile_id_split = split_subject_boldref_file(boldfile_id_group.flatten())
 
-    bold_info = bold_skip_reorient(bold_preprocess_path, subject_boldfile_txt, nextflow_bin_path, bold_reorient, bold_skip_frame)
+    bold_info = bold_skip_reorient(bold_preprocess_path, nextflow_bin_path, qc_result_path, subject_boldfile_txt, bold_reorient, bold_skip_frame, bold_susceptibility_distortion_correction)
     bold_info = boldfile_id_split.join(bold_info, by: [0, 1])
     (mc_nii, mcdat, boldref) = bold_stc_mc(bold_preprocess_path, nextflow_bin_path, bold_info)
 
@@ -2246,7 +2277,7 @@ workflow bold_wf {
     (bold_carpet_svg) = qc_plot_carpet(bold_preprocess_path, nextflow_bin_path, qc_result_path, qc_plot_carpet_inputs)
     bold_to_mni152_svg = qc_plot_bold_to_space(synthmorph_norigid_bold_fframe, bbregister_native_2mm, bold_fs_native_space, subjects_dir, bold_preprocess_path, nextflow_bin_path, qc_result_path, freesurfer_home)
     qc_bold_create_report_input = bold_to_mni152_svg.groupTuple(by: 0)
-    qc_report = qc_bold_create_report(qc_bold_create_report_input, nextflow_bin_path,qc_result_path)
+    qc_report = qc_bold_create_report(qc_bold_create_report_input, nextflow_bin_path, bids_dir, subjects_dir, qc_result_path, bold_task_type, deepprep_version)
 
 }
 

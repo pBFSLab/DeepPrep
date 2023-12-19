@@ -1,9 +1,10 @@
+#!/bin/bash
 service redis-server start
 service redis-server status
 source /usr/local/freesurfer/SetUpFreeSurfer.sh
 
 # 定义目录路径
-work_dir="/mnt/workDir"
+work_dir="/nextflow/workDir"
 
 # 判断目录是否存在
 if [ ! -d "$work_dir" ]; then

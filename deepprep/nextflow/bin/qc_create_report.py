@@ -5,9 +5,10 @@ from reports.core import run_reports
 from uuid import uuid4
 from pathlib import Path
 from time import strftime
-from reports.reports_node import SubjectSummary, TemplateDimensions, FunctionalSummary, AboutSummary
+from reports.reports_node import SubjectSummary, TemplateDimensions, AboutSummary
 from nipype import Node
 import shutil
+import bids
 
 
 def is_deepprep_recon(subjects_dir, subject_id):
@@ -15,17 +16,20 @@ def is_deepprep_recon(subjects_dir, subject_id):
     return deepprep_version_file.exists()
 
 
-def SubjectSummary_run():
-    # 这个步骤使用BIDS的输出作为输入就可以了
+def get_t1w_and_bold(bids_dir, subject_id, bold_task_type):
+    layout = bids.BIDSLayout(bids_dir, derivatives=False)
+    t1w_files = []
+    bold_files = []
 
-    t1w = ['/mnt/ssd/temp/UKB_1/sub-1000037ses02/ses-02/anat/sub-1000037ses02_ses-02_T1w.nii.gz']
-    t2w = []
-    bold = ['/mnt/ssd/temp/UKB_1/sub-1000037ses02/ses-02/func/sub-1000037ses02_ses-02_task-rest_run-01_bold.nii.gz']
-    qc_report_dir = '/mnt/ssd/temp/UKB_1/UKB_1_QC'
-    subjects_dir = '/mnt/ssd/temp/UKB_1/UKB_1_Recon'
-    subject_id = 'sub-1000037ses02'
-    std_spaces = ['MNI152NLin2009cAsym']
-    nstd_spaces = ['T1w']
+    for t1w_file in layout.get(return_type='filename', subject=subject_id.split('-')[1], suffix="T1w", extension='.nii.gz'):
+        t1w_files.append(t1w_file)
+
+    for bold_file in layout.get(return_type='filename', task=bold_task_type, suffix='bold', extension='.nii.gz'):
+        bold_files.append(bold_file)
+    return t1w_files, bold_files
+
+
+def SubjectSummary_run(subject_id, t1w_files, bold_files, subjects_dir, qc_report_path, std_spaces, nstd_spaces):
 
     if is_deepprep_recon(subjects_dir, subject_id):
         freesurfer_status = 'Run by DeepPrep'
@@ -36,108 +40,107 @@ def SubjectSummary_run():
     Reports_node = Node(SubjectSummary(), node_name)
 
     Reports_node.interface.freesurfer_status = freesurfer_status
-    Reports_node.inputs.t1w = t1w
-    Reports_node.inputs.t2w = t2w
+    Reports_node.inputs.t1w = t1w_files
+    Reports_node.inputs.t2w = []
     Reports_node.inputs.subjects_dir = subjects_dir
     Reports_node.inputs.subject_id = subject_id
-    Reports_node.inputs.bold = bold
+    Reports_node.inputs.bold = bold_files
     Reports_node.inputs.std_spaces = std_spaces
     Reports_node.inputs.nstd_spaces = nstd_spaces
 
     Reports_node.base_dir = Path().cwd()
     Reports_node.run()
     shutil.copyfile(Path(node_name) / 'report.html',
-                    Path(qc_report_dir) / subject_id / 'figures' / f'{subject_id}_desc-subjectsummary_report.html')
+                    Path(qc_report_path) / subject_id / 'figures' / f'{subject_id}_desc-subjectsummary_report.html')
 
 
 
-def TemplateDimensions_run():
+def TemplateDimensions_run(subject_id, t1w_files, qc_report_path):
     # 这个步骤需要每个subject执行一次，将T1w作为输入
-
-    subject_id = 'sub-1000037ses02'
-    t1w = ['/mnt/ssd/temp/UKB_1/sub-1000037ses02/ses-02/anat/sub-1000037ses02_ses-02_T1w.nii.gz']
 
     node_name = 'T1w_Reports_run_node'
     TemplateDimensions_node = Node(TemplateDimensions(), node_name)
-    TemplateDimensions_node.inputs.t1w_list = t1w
+    TemplateDimensions_node.inputs.t1w_list = t1w_files
 
     TemplateDimensions_node.base_dir = Path().cwd()
     TemplateDimensions_node.run()
     shutil.copyfile(Path(node_name) / 'report.html',
-                    Path(qc_report_dir) / subject_id / 'figures' / f'{subject_id}_desc-templatedimensions_report.html')
+                    Path(qc_report_path) / subject_id / 'figures' / f'{subject_id}_desc-templatedimensions_report.html')
 
 
-def FunctionalSummary_run():
-    subject_id = 'sub-1000037ses02'
-    bold_id = ''  # 这个步骤需要每个func使用一次
-
-    node_name = 'functional_Reports_run_node'
-    FunctionalSummary_node = Node(FunctionalSummary(), node_name)
-
-    FunctionalSummary_node.inputs.orientation = 'LAS'
-    FunctionalSummary_node.inputs.tr = 2
-    FunctionalSummary_node.inputs.slice_timing = True
-    FunctionalSummary_node.inputs.distortion_correction = 'None'
-
-    # TODO these are not valid
-    FunctionalSummary_node.inputs.pe_direction = 'i'
-    FunctionalSummary_node.inputs.registration = 'FreeSurfer and SynthMorph'
-    FunctionalSummary_node.inputs.registration_dof = 9
-    FunctionalSummary_node.inputs.registration_init = 'register'
-    FunctionalSummary_node.inputs.fallback = True
-
-    FunctionalSummary_node.base_dir = Path().cwd()
-    FunctionalSummary_node.run()
-    shutil.copyfile(Path(node_name) / 'report.html',
-                    Path(qc_report_dir) / subject_id / 'figures' / f'{bold_id}_desc-functionalsummary_report.html')
-
-
-def AboutSummary_run():
-    subject_id = 'sub-1000037ses02'
+def AboutSummary_run(subject_id, command, version):
 
     node_name = 'AboutSummary_Reports_run_node'
     AboutSummary_node = Node(AboutSummary(), node_name)
 
-    AboutSummary_node.inputs.version = 'v0.0.1'
-    AboutSummary_node.inputs.command = 'nextflow run /root/workspace/DeepPrep/deepprep/nextflow/deepprep.nf -resume    -c /root/workspace/DeepPrep/deepprep/nextflow/nextflow.docker.local.config     -with-report /mnt/ssd/temp/UKB_1/UKB_1_QC/report.html     -with-timeline /mnt/ssd/temp/UKB_1/UKB_1_QC/timeline.html     --bids_dir /mnt/ssd/temp/UKB_1     --subjects_dir /mnt/ssd/temp/UKB_1/UKB_1_Recon --bold_preprocess_path /mnt/ssd/temp/UKB_1/UKB_1_BOLD     --qc_result_path /mnt/ssd/temp/UKB_1/UKB_1_QC     --bold_type rest  --bold_only true'
+    AboutSummary_node.inputs.version = version
+    AboutSummary_node.inputs.command = command
 
     AboutSummary_node.base_dir = Path().cwd()
     AboutSummary_node.run()
     shutil.copyfile(Path(node_name) / 'report.html',
-                    Path(qc_report_dir) / subject_id / 'figures' / f'{subject_id}_desc-aboutsummary_report.html')
+                    Path(qc_report_path) / subject_id / 'figures' / f'{subject_id}_desc-aboutsummary_report.html')
 
 
-def create_report(subj_qc_report_dir, qc_report_dir, subject_id, nextflow_bin_path):
-    log_dir = subj_qc_report_dir / 'logs'
+def create_report(subj_qc_report_path, qc_report_path, subject_id, nextflow_bin_path):
+    log_dir = subj_qc_report_path / 'logs'
     reports_spec = nextflow_bin_path / 'reports' / 'reports-spec-deepprep.yml'
     boilerplate_dir = nextflow_bin_path / 'reports' / 'logs'
     run_uuid = f"{strftime('%Y%m%d-%H%M%S')}_{uuid4()}"
     if not log_dir.exists():
         cmd = f'cp -r {boilerplate_dir} {log_dir}'
         os.system(cmd)
-    run_reports(subj_qc_report_dir, subject_id, run_uuid,
+    run_reports(subj_qc_report_path, subject_id, run_uuid,
                 config=reports_spec, packagename='deepprep',
-                reportlets_dir=qc_report_dir)
+                reportlets_dir=qc_report_path)
+
+
+def copy_config_and_get_command(qc_result_dir: Path, nextflow_log: Path):
+    cmd_index = 'DEBUG nextflow.cli.Launcher - $> '
+    config_index = 'User config file: '
+    with open(nextflow_log, 'r') as f:
+        lines = f.readlines()
+    command = ''
+    for line in lines:
+        if cmd_index in line:
+            command = line.strip().split(cmd_index)[1]
+            command_file = qc_result_dir / 'nextflow.run.command'
+            with open(command_file, 'w') as f:
+                f.write(command)
+        elif config_index in line:
+            config_file = line.strip().split(config_index)[1]
+            shutil.copyfile(config_file, qc_result_dir / os.path.basename(config_file))
+    return command
+
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="DeepPrep: create qc report"
     )
+    parser.add_argument("--nextflow_bin_path", required=True)
+    parser.add_argument("--bids_dir", help="BIDS dir path", required=True)
+    parser.add_argument("--subjects_dir", help="SUBJECTS_DIR path", required=True)
     parser.add_argument("--qc_result_path", help="save qc report path", required=True)
     parser.add_argument("--subject_id", required=True)
-    parser.add_argument("--nextflow_bin_path", required=True)
+    parser.add_argument("--bold_task_type", help="save qc report path", required=True)
+    parser.add_argument("--deepprep_version", help="DeepPrep version", required=True)
+    parser.add_argument("--nextflow_log", help="nextflow run log", required=True)
     args = parser.parse_args()
 
-    cur_path = os.getcwd()
-    qc_report_dir = Path(cur_path) / str(args.qc_result_path)
-    subj_qc_report_dir = qc_report_dir / args.subject_id
-    subj_qc_report_dir.mkdir(parents=True, exist_ok=True)
-    nextflow_bin_path = Path(cur_path) / str(args.nextflow_bin_path)
+    qc_report_path = Path(args.qc_result_path)
+    subj_qc_report_path = qc_report_path / args.subject_id
+    subj_qc_report_path.mkdir(parents=True, exist_ok=True)
+    nextflow_bin_path = Path(args.nextflow_bin_path)
 
-    SubjectSummary_run()
-    TemplateDimensions_run()
-    FunctionalSummary_run()
-    AboutSummary_run()
+    t1w_files, bold_files = get_t1w_and_bold(args.bids_dir, args.subject_id, args.bold_task_type)
 
-    create_report(subj_qc_report_dir, qc_report_dir, args.subject_id, nextflow_bin_path)
+    std_spaces = ["MNI152_T1_2mm"]
+    nstd_spaces = ["reorient", "mc", "T1w_2mm"]
+    command = copy_config_and_get_command(qc_report_path, Path(args.nextflow_log))
+
+    SubjectSummary_run(args.subject_id, t1w_files, bold_files, args.subjects_dir, qc_report_path, std_spaces, nstd_spaces)
+    TemplateDimensions_run(args.subject_id, t1w_files, qc_report_path)
+    AboutSummary_run(args.subject_id, command, args.deepprep_version)
+
+    create_report(subj_qc_report_path, qc_report_path, args.subject_id, nextflow_bin_path)
