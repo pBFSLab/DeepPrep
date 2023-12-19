@@ -84,9 +84,9 @@ FUNCTIONAL_TEMPLATE = """\
 \t\t<ul class="elem-desc">
 \t\t\t<li>Original orientation: {ornt}</li>
 \t\t\t<li>Repetition time (TR): {tr:.03g}s</li>
-\t\t\t<li>Phase-encoding (PE) direction: {pedir}</li>
 \t\t\t<li>{multiecho}</li>
 \t\t\t<li>Slice timing correction: {stc}</li>
+\t\t\t<li>Motion correction: {mc}</li>
 \t\t\t<li>Susceptibility distortion correction: {sdc}</li>
 \t\t\t<li>Registration: {registration}</li>
 \t\t\t<li>Non-steady-state volumes: {dummy_scan_desc}</li>
@@ -106,7 +106,7 @@ ABOUT_TEMPLATE = """\t<ul>
 CONFORMATION_TEMPLATE = """\t\t<h3 class="elem-title">Anatomical Conformation</h3>
 \t\t<ul class="elem-desc">
 \t\t\t<li>Input T1w images: {n_t1w}</li>
-\t\t\t<li>Output orientation: RAS</li>
+\t\t\t<li>Output orientation: {reorients}</li>
 \t\t\t<li>Output dimensions: {dims}</li>
 \t\t\t<li>Output voxel size: {zooms}</li>
 \t\t\t<li>Discarded images: {n_discards}</li>
@@ -115,6 +115,7 @@ CONFORMATION_TEMPLATE = """\t\t<h3 class="elem-title">Anatomical Conformation</h
 """
 
 DISCARD_TEMPLATE = """\t\t\t\t<li><abbr title="{path}">{basename}</abbr></li>"""
+
 
 class SummaryOutputSpec(TraitedSpec):
     out_report = File(exists=True, desc='HTML segment containing summary')
@@ -226,6 +227,7 @@ class SubjectSummary(SummaryInterface):
 
 
 class FunctionalSummaryInputSpec(BaseInterfaceInputSpec):
+    skip_frame = traits.Int(desc='number of skip frame', mandatory=True)
     slice_timing = traits.Enum(
         False, True, 'TooShort', usedefault=True, desc='Slice timing correction used'
     )
@@ -289,9 +291,9 @@ class FunctionalSummary(SummaryInterface):
         #     ],
         # }[self.inputs.registration][self.inputs.fallback]
 
-        reg = 'FreeSurfer <code>bbregister</code> ; SynthMorph Nonlinear registration;'
+        reg = 'FreeSurfer <code>bbregister</code> ; <code>SynthMorph</code> Nonlinear registration;'
 
-        pedir = get_world_pedir(self.inputs.orientation, self.inputs.pe_direction)
+        # pedir = get_world_pedir(self.inputs.orientation, self.inputs.pe_direction)
 
         # if isdefined(self.inputs.confounds_file):
         #     with open(self.inputs.confounds_file) as cfh:
@@ -323,8 +325,9 @@ class FunctionalSummary(SummaryInterface):
             multiecho = f"Multi-echo EPI sequence: {n_echos} echoes."
 
         return FUNCTIONAL_TEMPLATE.format(
-            pedir=pedir,
+            # pedir=pedir,
             stc=stc,
+            mc='True',
             sdc=self.inputs.distortion_correction,
             registration=reg,
             # confounds=re.sub(r'[\t ]+', ', ', conflist),
@@ -457,7 +460,7 @@ class TemplateDimensions(SimpleInterface):
     input_spec = _TemplateDimensionsInputSpec
     output_spec = _TemplateDimensionsOutputSpec
 
-    def _generate_segment(self, discards, dims, zooms):
+    def _generate_segment(self, discards, dims, zooms, reorientds):
         items = [
             DISCARD_TEMPLATE.format(path=path, basename=os.path.basename(path))
             for path in discards
@@ -468,6 +471,7 @@ class TemplateDimensions(SimpleInterface):
         zoom_fmt = "{:.02g}mm x {:.02g}mm x {:.02g}mm".format(*zooms)
         return CONFORMATION_TEMPLATE.format(
             n_t1w=len(self.inputs.t1w_list),
+            reorients=" ".join(reorientds),
             dims="x".join(map(str, dims)),
             zooms=zoom_fmt,
             n_discards=len(discards),
@@ -476,11 +480,17 @@ class TemplateDimensions(SimpleInterface):
 
     def _run_interface(self, runtime):
         # Load images, orient as RAS, collect shape and zoom data
+        # reoriented = np.vectorize(nb.as_closest_canonical)(orig_imgs)
+        # all_zooms = np.array([img.header.get_zooms()[:3] for img in reoriented])
+        # all_shapes = np.array([img.shape[:3] for img in reoriented])
+
+        # delete orient as RAS  anning
         in_names = np.array(self.inputs.t1w_list)
         orig_imgs = np.vectorize(nb.load)(in_names)
-        reoriented = np.vectorize(nb.as_closest_canonical)(orig_imgs)
-        all_zooms = np.array([img.header.get_zooms()[:3] for img in reoriented])
-        all_shapes = np.array([img.shape[:3] for img in reoriented])
+        all_axcodes = [nb.orientations.ornt2axcodes(nb.orientations.io_orientation(img.header.get_sform())) for img in orig_imgs]
+        all_reorientds = [''.join(zxcode) for zxcode in all_axcodes[:1]]
+        all_zooms = np.array([img.header.get_zooms()[:3] for img in orig_imgs])
+        all_shapes = np.array([img.shape[:3] for img in orig_imgs])
 
         # Identify images that would require excessive up-sampling
         valid = np.ones(all_zooms.shape[0], dtype=bool)
@@ -504,7 +514,7 @@ class TemplateDimensions(SimpleInterface):
 
         # Create report
         dropped_images = in_names[~valid]
-        segment = self._generate_segment(dropped_images, target_shape, target_zooms)
+        segment = self._generate_segment(dropped_images, target_shape, target_zooms, all_reorientds)
         out_report = os.path.join(runtime.cwd, "report.html")
         with open(out_report, "w") as fobj:
             fobj.write(segment)
