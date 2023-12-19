@@ -75,8 +75,8 @@ RUN git clone https://github.com/adalca/neurite && cd neurite && pip3 install . 
 ### echo to .bashrc
 RUN echo "source /usr/local/freesurfer/SetUpFreeSurfer.sh" >> ~/.bashrc
 
-COPY nextflow.sh /opt/nextflow.sh
-RUN chmod +x /opt/nextflow.sh
+COPY deepprep /deepprep
+RUN chmod +x /deepprep/Docker/deepprep.sh
 
 ### CMD
-ENTRYPOINT service redis-server start && bash
+ENTRYPOINT ["/bin/bash", "/deepprep/Docker/deepprep.sh", "run", "/deepprep/nextflow/deepprep.nf"]
