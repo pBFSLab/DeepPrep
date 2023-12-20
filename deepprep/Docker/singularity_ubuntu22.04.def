@@ -1,21 +1,9 @@
 Bootstrap: docker-daemon
-From: deepprep:runtime-ubuntu22.04
+From: deepprep:v0.0.6ubuntu22.04
 Stage: build
 
 %files
-    /usr/local/freesurfer/license.txt /usr/local/freesurfer
-    /home/anning/workspace/DeepPrep/deepprep/app /root/workspace/DeepPrep/deepprep/app
-    /home/anning/workspace/DeepPrep/deepprep/FastCSR /root/workspace/DeepPrep/deepprep/FastCSR
-    /home/anning/workspace/DeepPrep/deepprep/FastSurfer /root/workspace/DeepPrep/deepprep/FastSurfer
-    /home/anning/workspace/DeepPrep/deepprep/FreeSurfer /root/workspace/DeepPrep/deepprep/FreeSurfer
-    /home/anning/workspace/DeepPrep/deepprep/resource /root/workspace/DeepPrep/deepprep/resource
-    /home/anning/workspace/DeepPrep/deepprep/SageReg /root/workspace/DeepPrep/deepprep/SageReg
-    /home/anning/workspace/DeepPrep/deepprep/nextflow /root/workspace/DeepPrep/deepprep/nextflow
-    /home/anning/workspace/DeepPrep/deepprep/config.py /root/workspace/DeepPrep/deepprep/config.py
-    /home/anning/workspace/DeepPrep/deepprep/scheduler.py /root/workspace/DeepPrep/deepprep/scheduler.py
-    /home/anning/workspace/DeepPrep/deepprep/settings.toml /root/workspace/DeepPrep/deepprep/settings.toml
-    /home/anning/workspace/DeepPrep/deepprep/model /usr/share/deepprep/model
-    /home/anning/workspace/DeepPrep/deepprep/Docker/nextflow.sh /opt/nextflow.sh
+    deepprep/README.md /README.md
 
 
 %environment
@@ -45,7 +33,7 @@ Stage: build
 
 %labels
     Author anning@cpl.ac.cn
-    Version v0.0.1
+    Version v0.0.6
 
 %help
     This is a demo container used to illustrate a def file that uses all

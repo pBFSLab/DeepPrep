@@ -131,5 +131,6 @@ if __name__ == '__main__':
 
     combine_bar(str(output_tsnr_savepath), str(color_bar_png))
     mctsnr_savepath_svg = subject_resultdir / f'{bold_id}_desc-tsnr_bold.svg'
+    print(f'>>> {mctsnr_savepath_svg}')
     write_single_svg(mctsnr_savepath_svg, output_tsnr_savepath, 2400, 1000)
     shutil.rmtree(subject_workdir)

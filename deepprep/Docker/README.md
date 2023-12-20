@@ -29,8 +29,9 @@ docker exec -it \
     
 
 # Singularity build
-sudo singularity build --notest DeepPrep_runtime_ubuntu20.04.sif singularity_ubuntu20.04.def
-sudo singularity build --notest DeepPrep_runtime_ubuntu22.04.sif singularity_ubuntu22.04.def
+export OUTPUT_PATH=''
+sudo singularity build --notest ${OUTPUT_PATH}/deepprep_v0.0.6ubuntu20.04.sif deepprep/Docker/singularity_ubuntu20.04.def
+sudo singularity build --notest ${OUTPUT_PATH}/deepprep_v0.0.6ubuntu22.04.sif deepprep/Docker/singularity_ubuntu22.04.def
 
 # Singularity test
 singularity exec -e --nv -B /mnt/ngshare:/mnt/ngshare \
