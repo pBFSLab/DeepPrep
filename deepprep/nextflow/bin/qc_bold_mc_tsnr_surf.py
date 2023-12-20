@@ -29,22 +29,6 @@ svg_img_body_1 = '''    <g class="background-svg">
 svg_img_tail = '</svg>'
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="plot subject mc tsnr surf fig")
-    parser.add_argument('--subject_id', help='输入的subjects id', required=True)
-    parser.add_argument('--bold_id', help='输入的bold id', required=True)
-    parser.add_argument('--subjects_dir', help='subjects dir', required=True)
-    parser.add_argument('--bold_preprocess_path', help='bold preprocess', required=True)
-    parser.add_argument('--fs6_scene_file', help='画图所需要的scene文件', required=True)
-    parser.add_argument('--native_scene_file', help='画图所需要的scene文件', required=True)
-    parser.add_argument('--color_bar', help='画图所需要的color bar png', required=True)
-    parser.add_argument('--svg_outpath', help='输出的svg图片保存路径', required=True)
-    parser.add_argument('--freesurfer_home', help='freesurfer home', required=True)
-    args = parser.parse_args()
-
-    return args
-
-
 def scene_plot(scene_file, savepath, length, width):
     cmd = f'wb_command -show-scene {scene_file} 1  {savepath} {length} {width}'
     os.system(cmd)
@@ -146,7 +130,18 @@ def combine_png(image_1, image_2, color_bar, combine_png_path):
 
 
 if __name__ == '__main__':
-    args = parse_args()
+    parser = argparse.ArgumentParser(description="plot subject mc tsnr surf fig")
+    parser.add_argument('--subject_id', help='输入的subjects id', required=True)
+    parser.add_argument('--bold_id', help='输入的bold id', required=True)
+    parser.add_argument('--subjects_dir', help='subjects dir', required=True)
+    parser.add_argument('--bold_preprocess_path', help='bold preprocess', required=True)
+    parser.add_argument('--qc_result_path', help='QC result path', required=True)
+    parser.add_argument('--fs6_scene_file', help='画图所需要的scene文件', required=True)
+    parser.add_argument('--native_scene_file', help='画图所需要的scene文件', required=True)
+    parser.add_argument('--color_bar', help='画图所需要的color bar png', required=True)
+    parser.add_argument('--svg_outpath', help='输出的svg图片保存路径', required=True)
+    parser.add_argument('--freesurfer_home', help='freesurfer home', required=True)
+    args = parser.parse_args()
 
     subject_id = args.subject_id
     bold_id = args.bold_id
@@ -159,9 +154,8 @@ if __name__ == '__main__':
     freesurfer_home = args.freesurfer_home
     set_environ(freesurfer_home, subjects_dir)
 
-    subject_resultdir = Path(savepath_svg).parent
-    if subject_resultdir.exists() is False:
-        subject_resultdir.mkdir(parents=True, exist_ok=True)
+    subject_resultdir = Path(args.qc_result_path) / subject_id / 'figures'
+    subject_resultdir.mkdir(parents=True, exist_ok=True)
     subject_workdir = Path(subject_resultdir) / f'{bold_id}_mctsnr_surf'
     subject_workdir.mkdir(parents=True, exist_ok=True)
 

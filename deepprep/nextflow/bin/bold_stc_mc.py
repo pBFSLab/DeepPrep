@@ -86,7 +86,7 @@ def cmd(subj_func_dir: Path, subj_tmp_dir: Path, skip_reorient: Path, run: str, 
                 subj_func_dir / f'{bold_id}_from-stc_to-mc_xfm.mcdat')
 
 
-    DEBUG = True
+    DEBUG = False
     if not DEBUG:
         shutil.rmtree(tmp_run, ignore_errors=True)
 
