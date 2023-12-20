@@ -143,5 +143,6 @@ if __name__ == '__main__':
         shutil.copyfile(scene_file, Surface_parc_scene)
     scene_plot(Surface_parc_scene, Surface_parc_savepath, 2400, 1000)
     Surface_parc_savepath_svg = subject_resultdir / f'{subject_id}_desc-surfparc_T1w.svg'
+    print(f'>>> {Surface_parc_savepath_svg}')
     write_single_svg(Surface_parc_savepath_svg, Surface_parc_savepath, 2400, 1000)
     shutil.rmtree(subject_workdir)

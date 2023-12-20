@@ -1,6 +1,13 @@
 #!/bin/bash
-service redis-server start
-service redis-server status
+if pgrep redis-server > /dev/null
+then
+  echo "Redis is already running."
+else
+  echo "Starting Redis..."
+  nohup redis-server > /dev/null 2>&1 &
+  echo "Redis is running."
+fi
+
 source /usr/local/freesurfer/SetUpFreeSurfer.sh
 
 # 定义目录路径
