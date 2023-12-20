@@ -96,6 +96,7 @@ if __name__ == '__main__':
     parser.add_argument('--fs_native_space', help='是否投到个体T1空间', required=True)
     parser.add_argument('--subjects_dir', help='subjects_dir', required=True)
     parser.add_argument('--bold_preprocess_path', help='bold preprocess', required=True)
+    parser.add_argument('--qc_result_path', help='QC result path', required=True)
     parser.add_argument('--space_mni152_bold_path', help='space_mni152_bold_path', required=True)
     parser.add_argument('--space_t1w_bold_path', help='space_t1w_bold_path', required=True)
     parser.add_argument('--qc_tool_package', help='qc画图的辅助文件包', required=True)
@@ -113,9 +114,8 @@ if __name__ == '__main__':
     freesurfer_home = args.freesurfer_home
     set_environ(freesurfer_home)
 
-    subject_resultdir = Path(svg_outpath).parent
-    if subject_resultdir.exists() is False:
-        subject_resultdir.mkdir(parents=True, exist_ok=True)
+    subject_resultdir = Path(args.qc_result_path) / subject_id / 'figures'
+    subject_resultdir.mkdir(parents=True, exist_ok=True)
     subject_bold2mni152_workdir = Path(subject_resultdir) / f'{bold_id}_bold2min152'
     subject_bold2mni152_workdir.mkdir(parents=True, exist_ok=True)
 

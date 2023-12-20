@@ -60,7 +60,7 @@ def cmd(bids_dir: Path, subj_func_dir: Path, subj_tmp_dir: Path, bold_id: str, r
     shutil.copyfile(link_dir / f'{stc_fname}.nii.gz', subj_func_dir / f'{subject_id}_boldref.nii.gz')
     open(subj_func_dir / f'{subject_id}_boldref.log', 'w').write(f'{bold} \n-> mc \n-> stc')
 
-    DEBUG = True
+    DEBUG = False
     if not DEBUG:
         shutil.rmtree(tmp_run, ignore_errors=True)
 

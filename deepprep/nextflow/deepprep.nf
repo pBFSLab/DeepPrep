@@ -947,7 +947,7 @@ process qc_plot_volsurf {
     val freesurfer_home
 
     output:
-    tuple(val(subject_id), path("${qc_result_path}/${subject_id}/figures/${subject_id}_desc-volsurf_T1w.svg"))
+    tuple(val(subject_id), path("${qc_plot_aseg_fig_path}"))
 
     script:
     qc_plot_aseg_fig_path = "${qc_result_path}/${subject_id}/figures/${subject_id}_desc-volsurf_T1w.svg"
@@ -960,6 +960,7 @@ process qc_plot_volsurf {
     python3 ${script_py} \
     --subject_id ${subject_id} \
     --subjects_dir ${subjects_dir} \
+    --qc_result_path ${qc_result_path} \
     --affine_mat ${affine_mat} \
     --scene_file ${vol_Surface_scene} \
     --svg_outpath ${qc_plot_aseg_fig_path} \
@@ -984,7 +985,7 @@ process qc_plot_surfparc {
     val freesurfer_home
 
     output:
-    tuple(val(subject_id), path("${qc_result_path}/${subject_id}/figures/${subject_id}_desc-surfparc_T1w.svg"))
+    tuple(val(subject_id), path("${qc_plot_aseg_fig_path}"))
 
     script:
     qc_plot_aseg_fig_path = "${qc_result_path}/${subject_id}/figures/${subject_id}_desc-surfparc_T1w.svg"
@@ -997,6 +998,7 @@ process qc_plot_surfparc {
     python3 ${script_py} \
     --subject_id ${subject_id} \
     --subjects_dir ${subjects_dir} \
+    --qc_result_path ${qc_result_path} \
     --affine_mat ${affine_mat} \
     --scene_file ${surface_parc_scene} \
     --svg_outpath ${qc_plot_aseg_fig_path} \
@@ -1212,7 +1214,7 @@ process qc_plot_aparc_aseg {
     val freesurfer_home
 
     output:
-    tuple(val(subject_id), path("${qc_result_path}/${subject_id}/figures/${subject_id}_desc-volparc_T1w.svg"))
+    tuple(val(subject_id), path("${qc_plot_aseg_fig_path}"))
 
     script:
     qc_plot_aseg_fig_path = "${qc_result_path}/${subject_id}/figures/${subject_id}_desc-volparc_T1w.svg"
@@ -1224,6 +1226,7 @@ process qc_plot_aparc_aseg {
     python3 ${script_py} \
     --subject_id ${subject_id} \
     --subjects_dir ${subjects_dir} \
+    --qc_result_path ${qc_result_path} \
     --dlabel_info ${freesurfer_AllLut} \
     --scene_file ${volume_parc_scene} \
     --svg_outpath ${qc_plot_aseg_fig_path} \
@@ -1753,6 +1756,7 @@ process qc_plot_mctsnr {
     --subject_id ${subject_id} \
     --bold_id ${bold_id} \
     --bold_preprocess_path  ${bold_preprocess_path} \
+    --qc_result_path  ${qc_result_path} \
     --mc  ${mc} \
     --mc_brainmask  ${anat_brainmask} \
     --scene_file ${mctsnr_scene} \
@@ -1780,8 +1784,9 @@ process qc_plot_carpet {
     script_py = "${nextflow_bin_path}/bold_averagesingnal.py"
     """
     python3 ${script_py} \
-    --bold_preprocess_dir ${bold_preprocess_path} \
     --subject_id ${subject_id} \
+    --bold_preprocess_dir ${bold_preprocess_path} \
+    --qc_result_path ${qc_result_path} \
     --mc ${mc_nii} \
     --mcdat ${mcdat} \
     --anat_aseg ${anat_aseg_nii} \
@@ -1790,7 +1795,6 @@ process qc_plot_carpet {
     --anat_wm ${anat_wm_nii} \
     --anat_csf ${anat_csf_nii} \
     --bold_id ${bold_id} \
-    --save_svg_dir ${qc_result_path}
     """
 }
 
@@ -1851,6 +1855,7 @@ process qc_plot_norm_to_mni152 {
     python3 ${script_py} \
     --subject_id ${subject_id} \
     --bold_preprocess_path  ${bold_preprocess_path} \
+    --qc_result_path  ${qc_result_path} \
     --norm_to_mni152 ${norm_to_mni152_nii} \
     --scene_file ${normtoMNI152_scene} \
     --mni152_norm_png ${mni152_norm_png} \
@@ -1891,6 +1896,7 @@ process qc_plot_bold_to_space {
     --fs_native_space ${fs_native_space} \
     --subjects_dir ${subjects_dir} \
     --bold_preprocess_path  ${bold_preprocess_path} \
+    --qc_result_path  ${qc_result_path} \
     --space_mni152_bold_path  ${bold_atlas_to_mni152} \
     --space_t1w_bold_path  ${bold_to_T1w} \
     --qc_tool_package  ${qc_tool_package} \
@@ -1912,7 +1918,6 @@ process qc_anat_create_report {
     path bids_dir
     path subjects_dir
     path qc_result_path
-    val bold_task_type
     val deepprep_version
     output:
     tuple(val(subject_id), path("${qc_result_path}/${subject_id}/${subject_id}.html")) // emit: qc_report
@@ -1926,7 +1931,6 @@ process qc_anat_create_report {
     --bids_dir ${bids_dir} \
     --subjects_dir ${subjects_dir} \
     --qc_result_path ${qc_result_path} \
-    --bold_task_type ${bold_task_type} \
     --deepprep_version ${deepprep_version} \
     --nextflow_log ${launchDir}/.nextflow.log
     """
@@ -2146,7 +2150,7 @@ workflow anat_wf {
 
     qc_plot_aparc_aseg_input = norm_mgz.join(aparc_aseg_mgz)
     aparc_aseg_svg = qc_plot_aparc_aseg(subjects_dir, qc_plot_aparc_aseg_input, nextflow_bin_path, qc_result_path, freesurfer_home)
-    qc_report = qc_anat_create_report(aparc_aseg_svg, nextflow_bin_path, bids_dir, subjects_dir, qc_result_path, bold_task_type, deepprep_version)
+    qc_report = qc_anat_create_report(aparc_aseg_svg, nextflow_bin_path, bids_dir, subjects_dir, qc_result_path, deepprep_version)
 
 //     lh_anat_aparc_a2009s2aseg_input = white_surf.join(pial_surf, by: [0, 1]).join(cortex_label, by: [0, 1]).join(aparc_a2009s_annot, by: [0, 1]).join(subject_id_lh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4, 5] }
 //     rh_anat_aparc_a2009s2aseg_input = white_surf.join(pial_surf, by: [0, 1]).join(cortex_label, by: [0, 1]).join(aparc_a2009s_annot, by: [0, 1]).join(subject_id_rh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4, 5] }
