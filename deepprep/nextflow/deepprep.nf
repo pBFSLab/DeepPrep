@@ -2230,6 +2230,7 @@ workflow bold_wf {
     }
 
     subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, nextflow_bin_path, bold_task_type)
+    subject_boldfile_txt.view()
     (subject_id, boldfile_id, subject_boldfile_txt) = subject_boldfile_txt.flatten().multiMap { it ->
                                                                                      a: it.name.split('_')[0]
                                                                                      c: it.name
@@ -2238,6 +2239,13 @@ workflow bold_wf {
     (subject_id_unique, boldfile_id_unique) = subject_id_boldfile_id.groupTuple(sort: true).multiMap { tuple ->
                                                                                                         a: tuple[0]
                                                                                                         b: tuple[1][0] }
+    if (params.bold_only.toString().toUpperCase() == 'TRUE') {
+        t1_mgz = subject_id_unique.join(t1_mgz)
+        norm_mgz = subject_id_unique.join(norm_mgz)
+        aparc_aseg_mgz = subject_id_unique.join(aparc_aseg_mgz)
+        w_g_pct_mgh = subject_id_unique.join(w_g_pct_mgh)
+    }
+
 
     bold_T1_to_2mm_input = t1_mgz.join(norm_mgz)
     (t1_native2mm, norm_native2mm) = bold_T1_to_2mm(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_T1_to_2mm_input)
