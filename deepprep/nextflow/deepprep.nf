@@ -2230,7 +2230,6 @@ workflow bold_wf {
     }
 
     subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, nextflow_bin_path, bold_task_type)
-    subject_boldfile_txt.view()
     (subject_id, boldfile_id, subject_boldfile_txt) = subject_boldfile_txt.flatten().multiMap { it ->
                                                                                      a: it.name.split('_')[0]
                                                                                      c: it.name
