@@ -124,7 +124,9 @@ if __name__ == '__main__':
     )
 
     parser.add_argument("--bold_preprocess_dir", required=True)
+    parser.add_argument("--qc_result_path", required=True)
     parser.add_argument("--subject_id", required=True)
+    parser.add_argument("--bold_id", required=True)
     parser.add_argument("--mc", required=True)
     parser.add_argument("--mcdat", required=True)
     parser.add_argument("--anat_aseg", required=True)
@@ -132,8 +134,6 @@ if __name__ == '__main__':
     parser.add_argument("--anat_brainmaskbin", required=True)
     parser.add_argument("--anat_wm", required=True)
     parser.add_argument("--anat_csf", required=True)
-    parser.add_argument("--bold_id", required=True)
-    parser.add_argument("--save_svg_dir", required=True)
     args = parser.parse_args()
 
     cur_path = os.getcwd()
@@ -150,7 +150,7 @@ if __name__ == '__main__':
     brainmaskbin_file = subj_func_dir / os.path.basename(args.anat_brainmaskbin)
     wm_file = subj_func_dir / os.path.basename(args.anat_wm)
     csf_file = subj_func_dir / os.path.basename(args.anat_csf)
-    svg_path = Path(cur_path) / str(args.save_svg_dir) / args.subject_id / 'figures'
+    svg_path = Path(cur_path) / str(args.qc_result_path) / args.subject_id / 'figures'
     svg_path.mkdir(parents=True, exist_ok=True)
     AverageSingnal(preprocess_dir, svg_path, args.subject_id, args.bold_id,
                    mc_file, mcdat_file, aseg_file, brainmask_file, brainmaskbin_file, wm_file, csf_file)

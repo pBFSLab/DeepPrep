@@ -24,8 +24,9 @@ def get_t1w_and_bold(bids_dir, subject_id, bold_task_type):
     for t1w_file in layout.get(return_type='filename', subject=subject_id.split('-')[1], suffix="T1w", extension='.nii.gz'):
         t1w_files.append(t1w_file)
 
-    for bold_file in layout.get(return_type='filename', task=bold_task_type, suffix='bold', extension='.nii.gz'):
-        bold_files.append(bold_file)
+    if bold_task_type is not None:
+        for bold_file in layout.get(return_type='filename', task=bold_task_type, suffix='bold', extension='.nii.gz'):
+            bold_files.append(bold_file)
     return t1w_files, bold_files
 
 
@@ -123,7 +124,7 @@ if __name__ == '__main__':
     parser.add_argument("--subjects_dir", help="SUBJECTS_DIR path", required=True)
     parser.add_argument("--qc_result_path", help="save qc report path", required=True)
     parser.add_argument("--subject_id", required=True)
-    parser.add_argument("--bold_task_type", help="save qc report path", required=True)
+    parser.add_argument("--bold_task_type", help="save qc report path", default=None)
     parser.add_argument("--deepprep_version", help="DeepPrep version", required=True)
     parser.add_argument("--nextflow_log", help="nextflow run log", required=True)
     args = parser.parse_args()
@@ -140,7 +141,8 @@ if __name__ == '__main__':
     command = copy_config_and_get_command(qc_report_path, Path(args.nextflow_log))
 
     SubjectSummary_run(args.subject_id, t1w_files, bold_files, args.subjects_dir, qc_report_path, std_spaces, nstd_spaces)
-    TemplateDimensions_run(args.subject_id, t1w_files, qc_report_path)
+    if len(t1w_files) > 0:
+        TemplateDimensions_run(args.subject_id, t1w_files, qc_report_path)
     AboutSummary_run(args.subject_id, command, args.deepprep_version)
 
     create_report(subj_qc_report_path, qc_report_path, args.subject_id, nextflow_bin_path)
