@@ -62,7 +62,7 @@ RUN pip3 install tensorflow==2.11.1 torch-geometric==2.2.0 nnunet==1.7.1 \
 RUN pip3 install --no-index --no-cache-dir pytorch3d==0.7.4 -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/py310_cu118_pyt201/download.html  && pip3 cache purge
 
 ### Install nextflow
-RUN wget -qO- https://get.nextflow.io | bash && chmod +x nextflow && mv nextflow /usr/bin && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN wget -qO- https://get.nextflow.io | bash && chmod 755 nextflow && mv nextflow /usr/local/bin && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 ### Install Redis
 RUN apt-get update && apt-get --no-install-recommends -y install redis-server && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -76,7 +76,7 @@ RUN git clone https://github.com/adalca/neurite && cd neurite && pip3 install . 
 RUN echo "source /usr/local/freesurfer/SetUpFreeSurfer.sh" >> ~/.bashrc
 
 COPY deepprep /deepprep
-RUN chmod +x /deepprep/Docker/deepprep.sh
+RUN chmod 755 /deepprep/Docker/deepprep.sh  && cp /deepprep/Docker/deepprep.sh /usr/local/bin/deepprep
 
 ### CMD
-ENTRYPOINT ["/bin/bash", "/deepprep/Docker/deepprep.sh", "run", "/deepprep/nextflow/deepprep.nf"]
+ENTRYPOINT ["/usr/local/bin/deepprep", "run", "/deepprep/nextflow/deepprep.nf"]

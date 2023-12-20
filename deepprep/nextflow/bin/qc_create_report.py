@@ -110,9 +110,8 @@ def copy_config_and_get_command(qc_result_dir: Path, nextflow_log: Path):
                 f.write(command)
         elif config_index in line:
             config_file = line.strip().split(config_index)[1]
-            shutil.copyfile(config_file, qc_result_dir / os.path.basename(config_file))
+            shutil.copyfile(config_file, qc_result_dir / 'nextflow.run.config')
     return command
-
 
 
 if __name__ == '__main__':
@@ -129,7 +128,8 @@ if __name__ == '__main__':
     parser.add_argument("--nextflow_log", help="nextflow run log", required=True)
     args = parser.parse_args()
 
-    qc_report_path = Path(args.qc_result_path)
+    cur_path = os.getcwd()  # 必须添加这一行，否则生成的html会有图片重复
+    qc_report_path = Path(cur_path) / os.path.basename(args.qc_result_path)
     subj_qc_report_path = qc_report_path / args.subject_id
     subj_qc_report_path.mkdir(parents=True, exist_ok=True)
     nextflow_bin_path = Path(args.nextflow_bin_path)
