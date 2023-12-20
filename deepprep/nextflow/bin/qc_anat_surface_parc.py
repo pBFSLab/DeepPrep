@@ -33,20 +33,6 @@ def set_environ(freesurfer_home):
     os.environ['PATH'] = f'{freesurfer_home}/bin:' + os.environ['PATH']
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="plot subject surf parc fig")
-    parser.add_argument('--subject_id', help='输入的subjects id', required=True)
-    parser.add_argument('--subjects_dir', help='输入的subjects dir文件', required=True)
-    parser.add_argument('--affine_mat', help='surf转换格式配准的affine', required=True)
-    parser.add_argument('--scene_file', help='画图所需要的scene文件', required=True)
-    parser.add_argument('--svg_outpath', help='输出的svg图片保存路径', required=True)
-    parser.add_argument('--freesurfer_home', help='freesurfer 的环境变量', default="/usr/local/freesurfer720",
-                        required=False)
-    args = parser.parse_args()
-
-    return args
-
-
 def label_nii2gii(nii_label, nii_white, gii_label):
     cmd = f'mris_convert --annot {nii_label} {nii_white} {gii_label}'
     os.system(cmd)
@@ -99,19 +85,26 @@ def encode_png(png_img):
 
 
 if __name__ == '__main__':
-    args = parse_args()
+    parser = argparse.ArgumentParser(description="plot subject surf parc fig")
+    parser.add_argument('--subject_id', help='输入的subjects id', required=True)
+    parser.add_argument('--subjects_dir', help='输入的subjects dir文件', required=True)
+    parser.add_argument('--qc_result_path', help='QC result path', required=True)
+    parser.add_argument('--affine_mat', help='surf转换格式配准的affine', required=True)
+    parser.add_argument('--scene_file', help='画图所需要的scene文件', required=True)
+    parser.add_argument('--svg_outpath', help='输出的svg图片保存路径', required=True)
+    parser.add_argument('--freesurfer_home', help='freesurfer 的环境变量', default="/usr/local/freesurfer720",
+                        required=False)
+    args = parser.parse_args()
 
     subject_id = args.subject_id
     subjects_dir = args.subjects_dir
     affine_mat_atlas = args.affine_mat
     scene_file = args.scene_file
-    savepath_svg = args.svg_outpath
     freesurfer_home = args.freesurfer_home
     set_environ(freesurfer_home)
 
-    subject_resultdir = Path(savepath_svg).parent
-    if subject_resultdir.exists() is False:
-        subject_resultdir.mkdir(parents=True, exist_ok=True)
+    subject_resultdir = Path(args.qc_result_path) / subject_id / 'figures'
+    subject_resultdir.mkdir(parents=True, exist_ok=True)
     subject_workdir = Path(subject_resultdir) / 'surfparc'
     subject_workdir.mkdir(parents=True, exist_ok=True)
     affine_mat = subject_workdir / 'affine.mat'

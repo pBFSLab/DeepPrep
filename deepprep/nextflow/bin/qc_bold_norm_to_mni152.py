@@ -59,6 +59,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="plot subject norm to mni152 fig")
     parser.add_argument('--subject_id', help='输入的subjects id', required=True)
     parser.add_argument('--bold_preprocess_path', help='bold preprocess', required=True)
+    parser.add_argument('--qc_result_path', help='QC result path', required=True)
     parser.add_argument('--norm_to_mni152', help='norm to MNI152 nii.gz', required=True)  # f'{subject_id}_space-MNI152_res-2mm_desc-noskull_T1w.nii.gz'
     parser.add_argument('--scene_file', help='画图所需要的scene文件', required=True)
     parser.add_argument('--mni152_norm_png', help='模板MNI152的norm png图片', required=True)
@@ -71,9 +72,8 @@ if __name__ == '__main__':
     mni152_norm_png = args.mni152_norm_png
     savepath_svg = args.svg_outpath
 
-    subject_resultdir = Path(savepath_svg).parent
-    if subject_resultdir.exists() is False:
-        subject_resultdir.mkdir(parents=True, exist_ok=True)
+    subject_resultdir = Path(args.qc_result_path) / subject_id / 'figures'
+    subject_resultdir.mkdir(parents=True, exist_ok=True)
     subject_workdir = Path(subject_resultdir) / 'norm2mni152'
     subject_workdir.mkdir(parents=True, exist_ok=True)
 

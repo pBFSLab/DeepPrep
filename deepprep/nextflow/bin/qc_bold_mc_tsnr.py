@@ -92,6 +92,7 @@ if __name__ == '__main__':
     parser.add_argument('--subject_id', help='输入的subjects id', required=True)
     parser.add_argument('--bold_id', help='输入的bold id', required=True)
     parser.add_argument('--bold_preprocess_path', help='bold preprocess', required=True)
+    parser.add_argument('--qc_result_path', help='QC result path', required=True)
     parser.add_argument('--mc', help='bold_mc_file', required=True)
     parser.add_argument('--mc_brainmask', help='bold_mc_brainlmask_file', required=True)
     parser.add_argument('--scene_file', help='画图所需要的scene文件', required=True)
@@ -102,13 +103,13 @@ if __name__ == '__main__':
     subject_id = args.subject_id
     bold_id = args.bold_id
     bold_preprocess_dir = args.bold_preprocess_path
+    qc_result_path = args.qc_result_path
     scene_file = args.scene_file
     color_bar_png = args.color_bar_png
     savepath_svg = args.svg_outpath
 
-    subject_resultdir = Path(savepath_svg).parent
-    if subject_resultdir.exists() is False:
-        subject_resultdir.mkdir(parents=True, exist_ok=True)
+    subject_resultdir = Path(args.qc_result_path) / subject_id / 'figures'
+    subject_resultdir.mkdir(parents=True, exist_ok=True)
     subject_workdir = Path(subject_resultdir) / f'{bold_id}_mctsnr'
     subject_workdir.mkdir(parents=True, exist_ok=True)
 
