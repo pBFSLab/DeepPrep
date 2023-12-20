@@ -153,6 +153,7 @@ if __name__ == '__main__':
     scene_plot(bold2mni152_scene_tmp, bold2MNI152_savepath, 2400, 1000)
     scene_plot(mni152_scene_tmp, MNI152_savepath, 2400, 1000)
     combine_svg_savepath = subject_resultdir / f'{bold_id}_desc-reg2MNI152_bold.svg'
+    print(f'>>> {combine_svg_savepath}')
     write_combine_svg(combine_svg_savepath, bold2MNI152_savepath, MNI152_savepath, 2400,
                       1000)
     shutil.rmtree(subject_bold2mni152_workdir)
@@ -203,6 +204,7 @@ if __name__ == '__main__':
         scene_plot(bold2T1_scene_tmp, bold2T1_savepath, 2400, 1000)
         scene_plot(T1_scene_tmp, T1_savepath, 2400, 1000)
         combine_svg_savepath = subject_resultdir / f'{bold_id}_desc-reg2native_bold.svg'
+        print(f'>>> {combine_svg_savepath}')
         write_combine_svg(combine_svg_savepath, bold2T1_savepath, T1_savepath, 2400,
                           1000)
         shutil.rmtree(subject_bold2T1_workdir)

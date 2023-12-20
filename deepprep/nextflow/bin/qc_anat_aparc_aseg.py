@@ -106,5 +106,6 @@ if __name__ == '__main__':
         shutil.copyfile(scene_file, Volume_parc_scene)
     scene_plot(Volume_parc_scene, png_savepath, 2400, 1000)
     Volume_parc_savepath_svg = subject_resultdir / f'{subject_id}_desc-volparc_T1w.svg'
+    print(f'>>> {Volume_parc_savepath_svg}')
     write_single_svg(Volume_parc_savepath_svg, png_savepath, 2400, 1000)
     shutil.rmtree(subject_workdir)
