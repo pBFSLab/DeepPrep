@@ -1,5 +1,5 @@
 Bootstrap: docker-daemon
-From: deepprep:v0.0.6ubuntu22.04
+From: deepprep:v0.0.8ubuntu22.04
 Stage: build
 
 %files
@@ -33,7 +33,7 @@ Stage: build
 
 %labels
     Author anning@cpl.ac.cn
-    Version v0.0.6
+    Version v0.0.8
 
 %help
     This is a demo container used to illustrate a def file that uses all
