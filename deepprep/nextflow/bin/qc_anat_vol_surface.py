@@ -111,8 +111,8 @@ if __name__ == '__main__':
     affine_mat = subject_workdir / 'affine.mat'
     shutil.copyfile(affine_mat_atlas, affine_mat)
 
-    T1_mgz = Path(subjects_dir) / subject_id / 'mri' / 'T1.mgz'
-    T1_nii = subject_workdir / 'T1.nii.gz'
+    T1_mgz = Path(subjects_dir) / subject_id / 'mri' / 'norm.mgz'
+    T1_nii = subject_workdir / 'norm.nii.gz'
     mgz2nii(T1_mgz, T1_nii)
     lh_white = Path(subjects_dir) / subject_id / 'surf' / 'lh.white'
     rh_white = Path(subjects_dir) / subject_id / 'surf' / 'rh.white'
