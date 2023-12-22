@@ -92,9 +92,9 @@ if __name__ == '__main__':
     subject_workdir = Path(subject_resultdir) / 'aseg_aparc'
     subject_workdir.mkdir(parents=True, exist_ok=True)
 
-    norm_mgz = Path(subjects_dir) / subject_id / 'mri' / 'T1.mgz'
+    norm_mgz = Path(subjects_dir) / subject_id / 'mri' / 'norm.mgz'
     aseg_mgz = Path(subjects_dir) / subject_id / 'mri' / 'aparc+aseg.mgz'
-    norm_nii = subject_workdir / 'T1.nii.gz'
+    norm_nii = subject_workdir / 'norm.nii.gz'
     aparc_asge_nii = subject_workdir / 'aparc+aseg.nii.gz'
     mgz2nii(norm_mgz, norm_nii)
     mgz2nii(aseg_mgz, aparc_asge_nii)
