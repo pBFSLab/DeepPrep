@@ -29,4 +29,4 @@ if __name__ == '__main__':
     for subject_id, t1w_files in zip(subject_ids, t1w_filess):
         with open(f'{subject_id}', 'w') as f:
             f.write(subject_id + '\n')
-            f.writelines(t1w_files)
+            f.write('\n'.join(t1w_files))
