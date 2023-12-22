@@ -31,7 +31,7 @@ def set_environ(freesurfer_home):
     # FreeSurfer
     os.environ['FREESURFER_HOME'] = freesurfer_home
     os.environ['SUBJECTS_DIR'] = f'{freesurfer_home}/subjects'
-    os.environ['PATH'] = f'{freesurfer_home}/bin:' + os.environ['PATH']
+    os.environ['PATH'] = f'{freesurfer_home}/bin:' + '/usr/local/workbench/bin_linux64:' + os.environ['PATH']
 
 
 def mgz2nii(mgz_file, nii_file):
@@ -92,11 +92,11 @@ if __name__ == '__main__':
     subject_workdir = Path(subject_resultdir) / 'aseg_aparc'
     subject_workdir.mkdir(parents=True, exist_ok=True)
 
-    norm_mgz = Path(subjects_dir) / subject_id / 'mri' / 'norm.mgz'
+    T1_mgz = Path(subjects_dir) / subject_id / 'mri' / 'T1.mgz'
     aseg_mgz = Path(subjects_dir) / subject_id / 'mri' / 'aparc+aseg.mgz'
-    norm_nii = subject_workdir / 'norm.nii.gz'
+    T1_nii = subject_workdir / 'T1.nii.gz'
     aparc_asge_nii = subject_workdir / 'aparc+aseg.nii.gz'
-    mgz2nii(norm_mgz, norm_nii)
+    mgz2nii(T1_mgz, T1_nii)
     mgz2nii(aseg_mgz, aparc_asge_nii)
     aparc_asge_cifti = subject_workdir / 'aparc+aseg_dlabel.nii.gz'
     asge_nii2dlabel(aparc_asge_nii, dlabel_info_txt, aparc_asge_cifti)

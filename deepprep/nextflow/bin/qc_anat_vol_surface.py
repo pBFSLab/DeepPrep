@@ -30,7 +30,7 @@ def set_environ(freesurfer_home):
     # FreeSurfer
     os.environ['FREESURFER_HOME'] = freesurfer_home
     os.environ['SUBJECTS_DIR'] = f'{freesurfer_home}/subjects'
-    os.environ['PATH'] = f'{freesurfer_home}/bin:' + os.environ['PATH']
+    os.environ['PATH'] = f'{freesurfer_home}/bin:' + '/usr/local/workbench/bin_linux64:' + os.environ['PATH']
 
 
 def mgz2nii(mgz_file, nii_file):
@@ -111,9 +111,9 @@ if __name__ == '__main__':
     affine_mat = subject_workdir / 'affine.mat'
     shutil.copyfile(affine_mat_atlas, affine_mat)
 
-    T1_mgz = Path(subjects_dir) / subject_id / 'mri' / 'T1.mgz'
-    T1_nii = subject_workdir / 'T1.nii.gz'
-    mgz2nii(T1_mgz, T1_nii)
+    norm_mgz = Path(subjects_dir) / subject_id / 'mri' / 'norm.mgz'
+    norm_nii = subject_workdir / 'norm.nii.gz'
+    mgz2nii(norm_mgz, norm_nii)
     lh_white = Path(subjects_dir) / subject_id / 'surf' / 'lh.white'
     rh_white = Path(subjects_dir) / subject_id / 'surf' / 'rh.white'
     lh_pial = Path(subjects_dir) / subject_id / 'surf' / 'lh.pial'
