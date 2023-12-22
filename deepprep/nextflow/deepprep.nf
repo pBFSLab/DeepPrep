@@ -1640,6 +1640,7 @@ process bold_bbregister_to_native {
     path freesurfer_home
     output:
     tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-T1w_res-2mm_desc-rigid_bold.nii.gz")) // emit: bbregister_native_2mm
+    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-T1w_res-2mm_desc-rigid_boldref.nii.gz")) // emit: bbregister_native_2mm_fframe
     script:
     script_py = "${nextflow_bin_path}/bold_bbregister_to_native.py"
 
@@ -2272,7 +2273,7 @@ workflow bold_wf {
     t1_native2mm_group = subject_id_boldfile_id.groupTuple(sort: true).join(t1_native2mm).transpose()
     bold_bbregister_to_native_input = boldref.join(mc_nii, by: [0, 1]).join(t1_native2mm_group, by: [0, 1]).join(bbregister_dat, by: [0, 1])
 
-    bbregister_native_2mm = bold_bbregister_to_native(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_bbregister_to_native_input, freesurfer_home)
+    (bbregister_native_2mm, bbregister_native_2mm_fframe) = bold_bbregister_to_native(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_bbregister_to_native_input, freesurfer_home)
 
     bold_aparaseg2mc_inputs = aparc_aseg_mgz.join(mc_nii, by: [0,1]).join(bbregister_dat, by: [0,1])
     (anat_wm_nii, anat_csf_nii, anat_aseg_nii, anat_ventricles_nii, anat_brainmask_nii, anat_brainmask_bin_nii) = bold_mkbrainmask(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_aparaseg2mc_inputs)
@@ -2286,7 +2287,7 @@ workflow bold_wf {
     bold_mc_tsnr_svg = qc_plot_mctsnr(qc_plot_mctsnr_input, bold_preprocess_path, nextflow_bin_path, qc_result_path)
     qc_plot_carpet_inputs = mc_nii.join(mcdat, by: [0,1]).join(anat_aseg_nii, by: [0,1]).join(anat_brainmask_nii, by: [0,1]).join(anat_brainmask_bin_nii, by: [0,1]).join(anat_wm_nii, by: [0,1]).join(anat_csf_nii, by: [0,1])
     (bold_carpet_svg) = qc_plot_carpet(bold_preprocess_path, nextflow_bin_path, qc_result_path, qc_plot_carpet_inputs)
-    bold_to_mni152_svg = qc_plot_bold_to_space(synthmorph_norigid_bold_fframe, bbregister_native_2mm, bold_fs_native_space, subjects_dir, bold_preprocess_path, nextflow_bin_path, qc_result_path, freesurfer_home)
+    bold_to_mni152_svg = qc_plot_bold_to_space(synthmorph_norigid_bold_fframe, bbregister_native_2mm_fframe, bold_fs_native_space, subjects_dir, bold_preprocess_path, nextflow_bin_path, qc_result_path, freesurfer_home)
     qc_bold_create_report_input = bold_to_mni152_svg.groupTuple(by: 0)
     qc_report = qc_bold_create_report(qc_bold_create_report_input, nextflow_bin_path, bids_dir, subjects_dir, qc_result_path, bold_task_type, deepprep_version)
 
