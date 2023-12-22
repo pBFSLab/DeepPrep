@@ -75,6 +75,7 @@ def combine_bar(output_tsnr_savepath, color_bar_png):
     image1 = image_plt.open(output_tsnr_savepath)
     image2 = image_plt.open(color_bar_png)
 
+    image1 = image1.resize((2000, 760))
     width, height = image1.size
     _, height_ = image2.size
 
@@ -127,10 +128,9 @@ if __name__ == '__main__':
     McTSNR_scene = subject_workdir / 'McTSNR.scene'
     if McTSNR_scene.exists() is False:
         shutil.copyfile(scene_file, McTSNR_scene)
-    scene_plot(McTSNR_scene, output_tsnr_savepath, 2400, 1000)
-
+    scene_plot(McTSNR_scene, output_tsnr_savepath, 2000, 815)
     combine_bar(str(output_tsnr_savepath), str(color_bar_png))
     mctsnr_savepath_svg = subject_resultdir / f'{bold_id}_desc-tsnr_bold.svg'
     print(f'>>> {mctsnr_savepath_svg}')
-    write_single_svg(mctsnr_savepath_svg, output_tsnr_savepath, 2400, 1000)
+    write_single_svg(mctsnr_savepath_svg, output_tsnr_savepath, 2000, 815)
     shutil.rmtree(subject_workdir)
