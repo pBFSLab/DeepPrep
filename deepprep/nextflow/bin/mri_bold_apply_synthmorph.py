@@ -8,14 +8,6 @@ import nibabel as nib
 import tensorflow as tf
 import voxelmorph as vxm
 
-gpu_list = tf.config.experimental.list_physical_devices('GPU')
-if len(gpu_list) > 0:
-    for gpu in gpu_list:
-        try:
-            tf.config.experimental.set_memory_growth(gpu, True)
-        except RuntimeError as e:
-            print(e)
-
 
 def vxm_batch_transform(vol, loc_shift,
                         batch_size=None, interp_method='linear', indexing='ij', fill_value=None):
