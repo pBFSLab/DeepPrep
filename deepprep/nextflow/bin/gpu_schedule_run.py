@@ -3,8 +3,13 @@ import sys
 import redis_lock
 from redis_lock import StrictRedis
 
+from gpu_manage import GPUManager
+
 
 if __name__ == '__main__':
+    gpu_manager = GPUManager()
+    gpu = gpu_manager.auto_choice()
+    os.environ['CUDA_VISIBLE_DEVICES'] = gpu
     print(sys.argv)
     if sys.argv[2].lower() == 'local':
         conn = StrictRedis()

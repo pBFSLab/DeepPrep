@@ -112,7 +112,7 @@ def get_pooling_index(ico_level, device='cuda'):
     return edge_index
 
 
-def get_unpooling_index(ico_level, device='cuda:0'):
+def get_unpooling_index(ico_level, device='cuda'):
     upsample_neighbors_file = os.path.join(abspath, 'auxi_data', f'{ico_level}_upsample_neighbors.npz')
     upsample_neighbors_load = np.load(upsample_neighbors_file)
     upsample_index = upsample_neighbors_load['upsample_neighbors']
