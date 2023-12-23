@@ -146,7 +146,7 @@ if __name__ == '__main__':
 
     # 深度学习模型运行设备
     if torch.cuda.is_available():
-        device = torch.device(type='cuda', index=0)
+        device = torch.device()
     else:
         device = torch.device('cpu')
     # 模型初始化

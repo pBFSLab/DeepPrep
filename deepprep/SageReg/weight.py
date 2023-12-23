@@ -41,7 +41,7 @@ def get_sucu(sub):
     moving_xyz = torch.from_numpy(moving_xyz)
     fixed_sulc = torch.as_tensor(np.expand_dims(fixed_sulc.astype(np.float64), 1))
     fixed_curv = torch.as_tensor(np.expand_dims(fixed_curv.astype(np.float64), 1))
-    device = torch.device('cuda:0')
+    device = torch.device('cuda')
 
     res_sulc = resample_sphere_surface_barycentric(fixed_xyz, moving_xyz, fixed_sulc,
                                                            device=device)
