@@ -5,12 +5,12 @@ from gpu_manage import check_gpus
 
 
 if __name__ == '__main__':
-    gpu_available, info = check_gpus(11.8, 23500)
-    if not gpu_available:
-        raise ImportError(info)
-
 
     if sys.argv[1].lower() == 'local':
+        gpu_available, info = check_gpus(11.8, 23500)
+        if not gpu_available:
+            raise ImportError(info)
+
         print("set gpu lock")
         conn = StrictRedis()
         redis_lock.reset_all(conn)
