@@ -289,8 +289,8 @@ if __name__ == '__main__':
         use_residual=True,
         ico_level='fsaverage6'
     )
-    model = GatUNet(**model_params).to('cuda:0')
-    data_x = torch.ones((40962, 2), dtype=torch.float).to('cuda:0')
-    data_xyz = torch.ones((40962, 3), dtype=torch.float).to('cuda:0')
+    model = GatUNet(**model_params).to('cuda')
+    data_x = torch.ones((40962, 2), dtype=torch.float).to('cuda')
+    data_xyz = torch.ones((40962, 3), dtype=torch.float).to('cuda')
     model(data_x, data_xyz)
     print(model)

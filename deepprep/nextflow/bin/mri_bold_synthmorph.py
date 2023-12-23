@@ -12,14 +12,6 @@ import time
 
 import tensorflow as tf
 
-gpu_list = tf.config.experimental.list_physical_devices('GPU')
-if len(gpu_list) > 0:
-    for gpu in gpu_list:
-        try:
-            tf.config.experimental.set_memory_growth(gpu, True)
-        except RuntimeError as e:
-            print(e)
-
 # Settings.
 default = {
     'model': 'deform',
