@@ -1383,6 +1383,7 @@ process bold_T1_to_2mm {
 
 
 process synthmorph_affine {
+    // 17550
     tag "${subject_id}"
 
     label "with_gpu"
@@ -1420,6 +1421,7 @@ process synthmorph_affine {
 
 
 process synthmorph_norigid {
+    // 22202
     tag "${subject_id}"
 
     cpus 2
@@ -1660,6 +1662,7 @@ process bold_bbregister_to_native {
 
 
 process bold_synthmorph_norigid_apply {
+    // 8660
     tag "${subject_id}"
 
     cpus 2
