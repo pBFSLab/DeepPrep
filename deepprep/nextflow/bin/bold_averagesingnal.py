@@ -1,3 +1,4 @@
+#! /usr/bin/env python3
 from nipype.algorithms.confounds import ComputeDVARS, FramewiseDisplacement
 from pathlib import Path
 from confounds import FMRISummary

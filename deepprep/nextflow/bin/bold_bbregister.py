@@ -37,9 +37,9 @@ if __name__ == '__main__':
     parser.add_argument("--bold_id", required=True)
     args = parser.parse_args()
 
-    cur_path = os.getcwd()
-
-    preprocess_dir = Path(cur_path) / str(args.bold_preprocess_dir) / args.subject_id
+    # cur_path = os.getcwd()
+    # preprocess_dir = Path(cur_path) / str(args.bold_preprocess_dir) / args.subject_id
+    preprocess_dir = Path(args.bold_preprocess_dir) / args.subject_id
     subj_func_dir = Path(preprocess_dir) / 'func'
     subj_func_dir.mkdir(parents=True, exist_ok=True)
 
