@@ -1,45 +1,72 @@
-# build image
-docker buildx build --progress=plain -t deepprep:runtime-ubuntu22.04 -f ubuntu22.04.Dockerfile .
-docker buildx build --progress=plain -t deepprep:runtime-ubuntu20.04 -f ubuntu20.04.Dockerfile .
+# Docker
 
-# run docker contaniter and nextflow
-docker run -it --gpus all -v /mnt/ngshare:/mnt/ngshare -v /home/anning/workspace/DeepPrep:/root/workspace/DeepPrep -v /home/anning/workspace/DeepPrep/deepprep/model:/usr/share/deepprep/model -v /usr/local/freesurfer/license.txt:/usr/local/freesurfer/license.txt deepprep:runtime-ubuntu22.04 /bin/bash
-docker run -it --gpus all -v /mnt/ngshare:/mnt/ngshare -v /home/anning/workspace/DeepPrep:/root/workspace/DeepPrep -v /home/anning/workspace/DeepPrep/deepprep/model:/usr/share/deepprep/model -v /usr/local/freesurfer/license.txt:/usr/local/freesurfer/license.txt deepprep:runtime-ubuntu20.04 /bin/bash
+export DEEPPREP_IMAGE_OUTPUT_PATH='/mnt/ngshare/SeaFile/Seafile/DeepPrep_Docker_Singularity'
+export DEEPPREP_VERSION='v0.0.9ubuntu22.04'
 
+## build Docker image
+docker buildx build --progress=plain -t deepprep:${DEEPPREP_VERSION} -f deepprep/Docker/ubuntu22.04.Dockerfile .
+docker save deepprep:${DEEPPREP_VERSION} -o ${DEEPPREP_IMAGE_OUTPUT_PATH}/deepprep_${DEEPPREP_VERSION}.tar.gz
+
+## build Singularity image
+sed -i "2c\From: deepprep:${DEEPPREP_VERSION}" deepprep/Docker/singularity_ubuntu22.04.def
+sed -i "36c\    Version ${DEEPPREP_VERSION}" deepprep/Docker/singularity_ubuntu22.04.def
+sudo singularity build --notest ${DEEPPREP_IMAGE_OUTPUT_PATH}/deepprep_${DEEPPREP_VERSION}.sif deepprep/Docker/singularity_ubuntu22.04.def
+
+## remove docker tmp cache (opt)
+docker system df
+docker builder prune
+
+## run Docker contaniter and nextflow
+export DEEPPREP_WORKDIR=$HOME/DEEPPREP_WORKDIR  # (required)
+export DEEPPREP_RUN_CONFIG=${DEEPPREP_WORKDIR}/nextflow.docker.local.config  # (required)
+export FREESURFER_LICENSE=/usr/local/freesurfer/license.txt  # (required)
+mkdir ${DEEPPREP_WORKDIR}
+
+export DEEPPREP_VERSION=v0.0.8ubuntu22.04  # (required)
+export BIDS_DATASET=UKB1  # (required)
+export DEEPPREP_RESULT_DIR=${DEEPPREP_WORKDIR}/${BIDS_DATASET}_${DEEPPREP_VERSION}D
+mkdir ${DEEPPREP_RESULT_DIR}
+mkdir ${DEEPPREP_RESULT_DIR}/nextflow_workDir
+
+docker run -it --rm --gpus all --entrypoint /bin/bash \
+-v ${DEEPPREP_WORKDIR}/${BIDS_DATASET}:/BIDS_DATASET \
+-v ${DEEPPREP_RESULT_DIR}:/DEEPPREP_RESULT_DIR \
+-v ${DEEPPREP_RESULT_DIR}/nextflow_workDir:/nextflow/workDir \
+-v ${FREESURFER_LICENSE}:/usr/local/freesurfer/license.txt \
+-v /home/anning/workspace/DeepPrep/deepprep:/deepprep \
+-v ${DEEPPREP_RUN_CONFIG}:/nextflow.docker.local.config \
+deepprep:${DEEPPREP_VERSION}
+
+/deepprep/Docker/deepprep.sh run /deepprep/nextflow/deepprep.nf \
+-resume \
+-c /nextflow.docker.local.config --bids_dir /BIDS_DATASET \
+--subjects_dir /DEEPPREP_RESULT_DIR/Recon \
+--bold_preprocess_path /DEEPPREP_RESULT_DIR/BOLD \
+--qc_result_path /DEEPPREP_RESULT_DIR/QC \
+-with-report /DEEPPREP_RESULT_DIR/QC/report.html \
+-with-timeline /DEEPPREP_RESULT_DIR/QC/timeline.html \
+--bold_task_type rest --anat_only True
+
+## Singularity test
+
+singularity exec -e --nv \
+-B ${DEEPPREP_WORKDIR}/${BIDS_DATASET}:/BIDS_DATASET \
+-B ${DEEPPREP_RESULT_DIR}:/DEEPPREP_RESULT_DIR \
+-B ${DEEPPREP_RESULT_DIR}/nextflow_workDir:/nextflow/workDir \
+-B ${FREESURFER_LICENSE}:/usr/local/freesurfer/license.txt \
+-B ${DEEPPREP_RUN_CONFIG}:/nextflow.docker.local.config \
+${DEEPPREP_WORKDIR}/deepprep_${DEEPPREP_VERSION}.sif \
+/usr/local/bin/deepprep run /deepprep/nextflow/deepprep.nf \
+-resume \
+-c /nextflow.docker.local.config --bids_dir /BIDS_DATASET \
+--subjects_dir /DEEPPREP_RESULT_DIR/Recon \
+--bold_preprocess_path /DEEPPREP_RESULT_DIR/BOLD \
+--qc_result_path /DEEPPREP_RESULT_DIR/QC \
+-with-report /DEEPPREP_RESULT_DIR/QC/report.html \
+-with-timeline /DEEPPREP_RESULT_DIR/QC/timeline.html \
+--bold_task_type rest
+
+# Dev
 service start redis-server
 cd /root/workspace/DeepPrep/deepprep/nextflow 
 nextflow run -c nextflow.docker.config deepprep.nf
-
-# run docker image and nextflow run
-docker run -it --gpus all \
-    -v /mnt/ngshare:/mnt/ngshare \
-    -v /mnt/ngshare/temp/MSC_Docker_nf_workDir:/mnt/workDir \
-    -v /home/anning/workspace/DeepPrep:/root/workspace/DeepPrep \
-    -v /home/anning/workspace/DeepPrep/deepprep/model:/usr/share/deepprep/model \
-    -v /usr/local/freesurfer/license.txt:/usr/local/freesurfer/license.txt \
-    deepprep:runtime-ubuntu20.04 /opt/nextflow.sh run /root/workspace/DeepPrep/deepprep/nextflow/deepprep.nf \
-    -c /root/workspace/DeepPrep/deepprep/nextflow/nextflow.docker.config
-    
-
-# exec docker container and nextflow run -resume
-docker exec -it \
-    <container_id#Warning:change this in the actual situation> \
-    bash /opt/nextflow.sh run /root/workspace/DeepPrep/deepprep/nextflow/deepprep.nf \
-    -c /root/workspace/DeepPrep/deepprep/nextflow/nextflow.docker.config
-    
-
-# Singularity build
-export OUTPUT_PATH=''
-sudo singularity build --notest ${OUTPUT_PATH}/deepprep_v0.0.6ubuntu20.04.sif deepprep/Docker/singularity_ubuntu20.04.def
-sudo singularity build --notest ${OUTPUT_PATH}/deepprep_v0.0.6ubuntu22.04.sif deepprep/Docker/singularity_ubuntu22.04.def
-
-# Singularity test
-singularity exec -e --nv -B /mnt/ngshare:/mnt/ngshare \
-    -B /mnt/ngshare/temp/MSC_Singularity_nf_workDir:/mnt/workDir \
-    -B /home/anning/workspace/DeepPrep/deepprep/nextflow:/mnt/nextflow \
-    /home/anning/workspace/DeepPrep/deepprep/Docker/DeepPrep_runtime_ubuntu20.04.sif \
-    /opt/nextflow.sh run -resume /mnt/nextflow/deepprep.nf -c /mnt/nextflow/nextflow.singularity.local.config
-
-# remove docker tmp cache
-docker system df
-docker builder prune
