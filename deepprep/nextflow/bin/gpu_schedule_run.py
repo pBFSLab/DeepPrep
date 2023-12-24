@@ -32,6 +32,10 @@ if __name__ == '__main__':
                 print(cmd)
                 os.system(cmd)
     else:
-        cmd = "python3 " + " ".join(sys.argv[3:])
-        print(cmd)
-        os.system(cmd)
+        conn = StrictRedis()
+        hostname = os.popen('hostname').readlines()[0].strip()
+        redis_lock.Lock(conn, f'hostname-{hostname}-gpu-{gpu}')
+        with redis_lock.Lock(conn, f'hostname-{hostname}-gpu-{gpu}'):
+            cmd = "python3 " + " ".join(sys.argv[3:])
+            print(cmd)
+            os.system(cmd)
