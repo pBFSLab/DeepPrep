@@ -1,3 +1,4 @@
+#! /usr/bin/env python3
 import os
 import argparse
 import sh
@@ -10,15 +11,20 @@ import nibabel as nib
 
 
 def bbregister_dat_to_fsl(moving, fixed, register_dat_file, fslmat_file):
+    """
+    this process changed the timestamp of register_dat_file
+    """
     os.environ['FSLOUTPUTTYPE'] = "NIFTI_GZ"
-
+    tmp_dat = register_dat_file.parent / register_dat_file.name.replace('.dat', '.tmp.dat')
+    sh.cp(register_dat_file, tmp_dat)
     sh.tkregister2('--mov', moving,
                    '--targ', fixed,
-                   '--reg', register_dat_file,
+                   '--reg', tmp_dat,
                    '--fslregout', fslmat_file,
                    '--noedit')
     print(f'-->>> {fslmat_file}')
-    (register_dat_file.parent / register_dat_file.name.replace('.dat', '.dat~')).unlink(missing_ok=True)
+    tmp_dat.unlink(missing_ok=True)
+    (tmp_dat.parent / tmp_dat.name.replace('.dat', '.dat~')).unlink(missing_ok=True)
 
 
 def fsl_to_ants_mat(moving_file, fixed_file, fsl_file, ants_file):
@@ -77,7 +83,7 @@ if __name__ == '__main__':
     parser.add_argument('--fixed', type=str, help='path to fixed image: norm_2mm')
     parser.add_argument('--dat', type=str, help='path to bbregister dat: bbregister.dat')
     # parser.add_argument('--moved', type=str, help='path to moved image: bold_space-native_2mm')
-    parser.add_argument('--freesurfer-home', type=str, help='path to freesurfer home', default='/usr/local/freesurfer')
+    parser.add_argument('--freesurfer_home', type=str, help='path to freesurfer home', default='/usr/local/freesurfer')
 
     args = parser.parse_args()
 
@@ -90,9 +96,9 @@ if __name__ == '__main__':
     print(f'<<<-- {args.dat}')
     print(f'<<<-- {args.freesurfer_home}')
 
-    cur_path = os.getcwd()
-
-    preprocess_dir = Path(cur_path) / str(args.bold_preprocess_dir) / args.subject_id
+    # cur_path = os.getcwd()
+    # preprocess_dir = Path(cur_path) / str(args.bold_preprocess_dir) / args.subject_id
+    preprocess_dir = Path(args.bold_preprocess_dir) / args.subject_id
     subj_func_dir = Path(preprocess_dir) / 'func'
     subj_func_dir.mkdir(parents=True, exist_ok=True)
 

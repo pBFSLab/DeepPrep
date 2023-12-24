@@ -1,3 +1,4 @@
+#! /usr/bin/env python3
 import os
 import sys
 import redis_lock
@@ -11,13 +12,15 @@ if __name__ == '__main__':
     gpu = gpu_manager.auto_choice()
     os.environ['CUDA_VISIBLE_DEVICES'] = gpu
     print(sys.argv)
+    assert os.path.exists(sys.argv[3]), f"{sys.argv[3]}"
     if sys.argv[2].lower() == 'local':
         conn = StrictRedis()
         if sys.argv[1] == 'double':
             with redis_lock.Lock(conn, 'nextflow-local-gpu-1'), redis_lock.Lock(conn, 'nextflow-local-gpu-2'):
                 cmd = "python3 " + " ".join(sys.argv[3:])
                 print(cmd)
-                os.system(cmd)
+                results = os.popen(cmd).readlines()
+                print(results)
         else:
             if 'lh' in sys.argv:
                 lock_name = 'nextflow-local-gpu-1'
