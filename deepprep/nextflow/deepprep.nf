@@ -1,12 +1,12 @@
-process cp_fsaverage {
+process anat_cp_fsaverage {
     cpus 1
 
     input:
-    path subjects_dir
-    path(freesurfer_fsaverage_dir)
+    val(subjects_dir)
+    val(freesurfer_fsaverage_dir)
 
     output:
-    path("${subjects_dir}/fsaverage")
+    val("${subjects_dir}/fsaverage")
 
     shell:
     """
@@ -15,6 +15,7 @@ process cp_fsaverage {
     if os.path.exists('${subjects_dir}/fsaverage'):
         os.system('rm -r ${subjects_dir}/fsaverage')
     os.system('cp -nr ${freesurfer_fsaverage_dir} ${subjects_dir}')
+    assert os.listdir('${subjects_dir}/fsaverage') == os.listdir('${freesurfer_fsaverage_dir}')
     """
 }
 
@@ -23,16 +24,15 @@ process anat_get_t1w_file_in_bids {
     cpus 1
 
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
-    path bids_dir
-    path nextflow_bin_path
+    val(bids_dir)
 
     output:
     path "sub-*"
 
     script:
-    script_py = "${nextflow_bin_path}/anat_get_t1w_file_in_bids.py"
+    script_py = "anat_get_t1w_file_in_bids.py"
     """
-    python3 ${script_py} --bids-dir ${bids_dir}
+    ${script_py} --bids-dir ${bids_dir}
     """
 }
 
@@ -43,18 +43,17 @@ process anat_create_subject_orig_dir {
     cpus 1
 
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
-    path(subjects_dir)
+    val(subjects_dir)
     each path(subject_t1wfile_txt)
-    path(nextflow_bin_path)
+    val(deepprep_version)
 
     output:
     val(subject_id)
 
     script:
     subject_id =  subject_t1wfile_txt.name
-    script_py = "${nextflow_bin_path}/anat_create_subject_orig_dir.py"
     """
-    python3 ${script_py} --subjects-dir ${subjects_dir} --t1wfile-path ${subject_t1wfile_txt} --deepprep-version v0.0.1
+    anat_create_subject_orig_dir.py --subjects-dir ${subjects_dir} --t1wfile-path ${subject_t1wfile_txt} --deepprep-version ${deepprep_version}
     """
 }
 
@@ -64,17 +63,17 @@ process anat_motioncor {
     cpus 1
 
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
-    path(subjects_dir)
+    val(subjects_dir)
     val(subject_id)
+    val(fsthreads)
 
     output:
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/orig.mgz")) // emit: orig_mgz
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/rawavg.mgz")) // emit: rawavg_mgz
+    tuple(val(subject_id), val("${subjects_dir}/${subject_id}/mri/orig.mgz")) // emit: orig_mgz
+    tuple(val(subject_id), val("${subjects_dir}/${subject_id}/mri/rawavg.mgz")) // emit: rawavg_mgz
 
     script:
-    threads = 1
     """
-    recon-all -sd ${subjects_dir} -subject ${subject_id} -motioncor -threads ${threads} -itkthreads ${threads} -no-isrunning
+    recon-all -sd ${subjects_dir} -subject ${subject_id} -motioncor -threads ${fsthreads} -itkthreads ${fsthreads} -no-isrunning
     """
 }
 
@@ -85,22 +84,20 @@ process gpu_schedule_lock {
     memory '100 MB'
     cache false
 
-    input:
-    path(nextflow_bin_path)
-
     output:
     val(output)
 
     script:
-    script_py = "${nextflow_bin_path}/gpu_schedule_lock.py"
+    script_py = "gpu_schedule_lock.py"
     output = "create-lock"
     """
-    python3 ${script_py} ${task.executor}
+    ${script_py} ${task.executor}
     """
 }
 
 
 process anat_segment {
+    // 7750
     tag "${subject_id}"
 
     label "with_gpu"
@@ -108,30 +105,27 @@ process anat_segment {
     memory '7 GB'
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), path(orig_mgz))
 
     path(fastsurfer_home)
-    path(nextflow_bin_path)
 
-    val gpu_lock
+    val(gpu_lock)
 
     output:
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/aparc.DKTatlas+aseg.deep.mgz")) // emit: seg_deep_mgz
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/aparc.DKTatlas+aseg.orig.mgz")) // emit: seg_orig_mgz
+    tuple(val(subject_id), val("${seg_deep_mgz}")) // emit: seg_deep_mgz
 
     script:
-    gpu_script_py = "${nextflow_bin_path}/gpu_schedule_run.py"
+    gpu_script_py = "gpu_schedule_run.py"
     script_py = "${fastsurfer_home}/FastSurferCNN/eval.py"
 
     seg_deep_mgz = "${subjects_dir}/${subject_id}/mri/aparc.DKTatlas+aseg.deep.mgz"
-    seg_orig_mgz = "${subjects_dir}/${subject_id}/mri/aparc.DKTatlas+aseg.orig.mgz"
 
     network_sagittal_path = "${fastsurfer_home}/checkpoints/Sagittal_Weights_FastSurferCNN/ckpts/Epoch_30_training_state.pkl"
     network_coronal_path = "${fastsurfer_home}/checkpoints/Coronal_Weights_FastSurferCNN/ckpts/Epoch_30_training_state.pkl"
     network_axial_path = "${fastsurfer_home}/checkpoints/Axial_Weights_FastSurferCNN/ckpts/Epoch_30_training_state.pkl"
     """
-    python3 ${gpu_script_py} single ${task.executor} ${script_py} \
+    ${gpu_script_py} single ${task.executor} ${script_py} \
     --in_name ${orig_mgz} \
     --out_name ${seg_deep_mgz} \
     --conformed_name ${subjects_dir}/${subject_id}/mri/conformed.mgz \
@@ -140,8 +134,6 @@ process anat_segment {
     --network_coronal_path ${network_coronal_path} \
     --network_axial_path ${network_axial_path} \
     --batch_size 1 --simple_run --run_viewagg_on check
-
-    cp ${seg_deep_mgz} ${seg_orig_mgz}
     """
 }
 
@@ -152,14 +144,14 @@ process anat_reduce_to_aseg {
     memory '1 GB'
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), path(seg_deep_mgz))
 
-    path fastsurfer_home
+    val(fastsurfer_home)
 
     output:
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/aseg.auto_noCCseg.mgz")) // emit: aseg_auto_noccseg_mgz
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/mask.mgz")) // emit: mask_mgz
+    tuple(val(subject_id), val("${aseg_auto_noccseg_mgz}")) // emit: aseg_auto_noccseg_mgz
+    tuple(val(subject_id), val("${mask_mgz}")) // emit: mask_mgz
 
     script:
     aseg_auto_noccseg_mgz = "${subjects_dir}/${subject_id}/mri/aseg.auto_noCCseg.mgz"
@@ -183,25 +175,27 @@ process anat_N4_bias_correct {
     memory '350 MB'
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), path(orig_mgz), path(mask_mgz))
 
-    path fastsurfer_home
+    val(fastsurfer_home)
+    
+    val(fsthreads)
 
     output:
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/orig_nu.mgz")) // emit: orig_nu_mgz
+    tuple(val(subject_id), val("${orig_nu_mgz}")) // emit: orig_nu_mgz
 
     script:
     orig_nu_mgz = "${subjects_dir}/${subject_id}/mri/orig_nu.mgz"
 
     script_py = "${fastsurfer_home}/recon_surf/N4_bias_correct.py"
-    threads = 1
+    fsthreads = 1
     """
     python3 ${script_py} \
     --in ${orig_mgz} \
     --out ${orig_nu_mgz} \
     --mask ${mask_mgz} \
-    --threads ${threads}
+    --threads ${fsthreads}
     """
 }
 
@@ -213,21 +207,20 @@ process anat_talairach_and_nu {
     memory '200 MB'
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), path(orig_mgz), path(orig_nu_mgz))
 
-    val freesurfer_home
+    val(freesurfer_home) 
 
     output:
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/nu.mgz")) // emit: nu_mgz
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/transforms/talairach.auto.xfm")) // emit: talairach_auto_xfm
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/transforms/talairach.xfm")) // emit: talairach_xfm
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/transforms/talairach.xfm.lta")) // emit: talairach_xfm_lta
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/transforms/talairach_with_skull.lta")) // emit: talairach_with_skull_lta
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/transforms/talairach.lta")) // emit: talairach_lta
+    tuple(val(subject_id), val("${nu_mgz}")) // emit: nu_mgz
+    tuple(val(subject_id), val("${talairach_auto_xfm}")) // emit: talairach_auto_xfm
+    tuple(val(subject_id), val("${talairach_xfm}")) // emit: talairach_xfm
+    tuple(val(subject_id), val("${talairach_xfm_lta}")) // emit: talairach_xfm_lta
+    tuple(val(subject_id), val("${talairach_with_skull_lta}")) // emit: talairach_with_skull_lta
+    tuple(val(subject_id), val("${talairach_lta}")) // emit: talairach_lta
 
     script:
-    threads = 1
 
     nu_mgz = "${subjects_dir}/${subject_id}/mri/nu.mgz"
     talairach_auto_xfm = "${subjects_dir}/${subject_id}/mri/transforms/talairach.auto.xfm"
@@ -261,15 +254,13 @@ process anat_T1 {
     memory '1 GB'
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), path(nu_mgz))
 
     output:
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/T1.mgz")) // emit: t1_mgz
+    tuple(val(subject_id), val("${t1_mgz}")) // emit: t1_mgz
 
     script:
-    threads = 1
-
     t1_mgz = "${subjects_dir}/${subject_id}/mri/T1.mgz"
 
     """
@@ -284,15 +275,14 @@ process anat_brainmask {
     cpus 1
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), path(nu_mgz), path(mask_mgz))
 
     output:
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/norm.mgz")) // emit: norm_mgz
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/brainmask.mgz")) // emit: brainmask_mgz
+    tuple(val(subject_id), val("${norm_mgz}")) // emit: norm_mgz
+    tuple(val(subject_id), val("${brainmask_mgz}")) // emit: brainmask_mgz
 
     script:
-    threads = 1
     norm_mgz = "${subjects_dir}/${subject_id}/mri/norm.mgz"
     brainmask_mgz = "${subjects_dir}/${subject_id}/mri/brainmask.mgz"
 
@@ -310,21 +300,20 @@ process anat_paint_cc_to_aseg {
     memory '200 MB'
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), path(norm_mgz), path(seg_deep_mgz), path(aseg_auto_noccseg_mgz))
 
-    path fastsurfer_home
+    path(fastsurfer_home)
 
     output:
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/aseg.auto.mgz")) // emit: aseg_auto_mgz
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/aparc.DKTatlas+aseg.deep.withCC.mgz")) // emit: seg_deep_withcc_mgz
+    tuple(val(subject_id), val("${aseg_auto_mgz}")) // emit: aseg_auto_mgz
+    tuple(val(subject_id), val("${seg_deep_withcc_mgz}")) // emit: seg_deep_withcc_mgz
 
     script:
     aseg_auto_mgz = "${subjects_dir}/${subject_id}/mri/aseg.auto.mgz"
     seg_deep_withcc_mgz = "${subjects_dir}/${subject_id}/mri/aparc.DKTatlas+aseg.deep.withCC.mgz"
 
     script_py = "${fastsurfer_home}/recon_surf/paint_cc_into_pred.py"
-    threads = 1
     """
     mri_cc -aseg aseg.auto_noCCseg.mgz -norm norm.mgz -o aseg.auto.mgz -lta cc_up.lta -sdir ${subjects_dir} ${subject_id}
 
@@ -340,24 +329,23 @@ process anat_fill {
     memory '1.5 GB'
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), path(aseg_auto_mgz), path(norm_mgz), path(brainmask_mgz), path(talairach_lta))
 
-    val fsthreads
+    val(fsthreads)
 
     output:
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/aseg.presurf.mgz")) // emit: aseg_presurf_mgz
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/brain.mgz")) // emit: brain_mgz
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/brain.finalsurfs.mgz")) // emit: brain_finalsurfs_mgz
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/wm.mgz")) // emit: wm_mgz
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/filled.mgz")) // emit: filled_mgz
+    tuple(val(subject_id), val("${subjects_dir}/${subject_id}/mri/aseg.presurf.mgz")) // emit: aseg_presurf_mgz
+    tuple(val(subject_id), val("${subjects_dir}/${subject_id}/mri/brain.mgz")) // emit: brain_mgz
+    tuple(val(subject_id), val("${subjects_dir}/${subject_id}/mri/brain.finalsurfs.mgz")) // emit: brain_finalsurfs_mgz
+    tuple(val(subject_id), val("${subjects_dir}/${subject_id}/mri/wm.mgz")) // emit: wm_mgz
+    tuple(val(subject_id), val("${subjects_dir}/${subject_id}/mri/filled.mgz")) // emit: filled_mgz
 
     script:
-    threads = 1
     """
     recon-all -sd ${subjects_dir} -subject ${subject_id} \
     -asegmerge -normalization2 -maskbfs -segmentation -fill \
-    -threads ${threads} -itkthreads ${threads} -no-isrunning
+    -threads ${fsthreads} -itkthreads ${fsthreads} -no-isrunning
     """
 }
 
@@ -498,6 +486,7 @@ process split_hemi_filled_mgz {
 
 
 process anat_fastcsr_levelset {
+    // 3150
     tag "${subject_id}"
 
     label "with_gpu"
@@ -505,27 +494,25 @@ process anat_fastcsr_levelset {
     memory '6 GB'
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), path(orig_mgz),path(filled_mgz))
 
     val(fastcsr_home)
-    path(fastcsr_model_path)
-    path(nextflow_bin_path)
+    val(fastcsr_model_path)
 
     each hemi
 
     val(gpu_lock)
 
     output:
-    tuple(val(subject_id), val(hemi), path("${subjects_dir}/${subject_id}/mri/${hemi}_levelset.nii.gz"))// emit: levelset
+    tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/mri/${hemi}_levelset.nii.gz"))// emit: levelset
 
     script:
-    gpu_script_py = "${nextflow_bin_path}/gpu_schedule_run.py"
+    gpu_script_py = "gpu_schedule_run.py"
     script_py = "${fastcsr_home}/fastcsr_model_infer.py"
-    threads = 1
 
     """
-    python3 ${gpu_script_py} single ${task.executor} ${script_py} \
+    ${gpu_script_py} single ${task.executor} ${script_py} \
     --fastcsr_subjects_dir ${subjects_dir} \
     --subj ${subject_id} \
     --hemi ${hemi} \
@@ -541,18 +528,17 @@ process anat_fastcsr_mksurface {
     memory '4 GB'
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
 
     tuple(val(subject_id), val(hemi), path(levelset_nii), path(orig_mgz), path(brainmask_mgz), path(aseg_presurf_mgz))
-    val fastcsr_home
+    val(fastcsr_home)
 
     output:
-    tuple(val(subject_id), val(hemi), path("${subjects_dir}/${subject_id}/surf/${hemi}.orig")) // emit: orig_surf
-    tuple(val(subject_id), val(hemi), path("${subjects_dir}/${subject_id}/surf/${hemi}.orig.premesh")) // emit: orig_premesh_surf
+    tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/surf/${hemi}.orig")) // emit: orig_surf
+    tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/surf/${hemi}.orig.premesh")) // emit: orig_premesh_surf
 
     script:
     script_py = "${fastcsr_home}/levelset2surf.py"
-    threads = 1
 
     """
     python3 ${script_py} \
@@ -573,11 +559,11 @@ process anat_autodet_gwstats {
     memory '250 MB'
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), val(hemi), path(orig_premesh_surf), path(brain_finalsurfs_mgz), path(wm_mgz))
 
     output:
-    tuple(val(subject_id), val(hemi), path("${subjects_dir}/${subject_id}/surf/autodet.gw.stats.${hemi}.dat")) // emit: autodet_gwstats
+    tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/surf/autodet.gw.stats.${hemi}.dat")) // emit: autodet_gwstats
 
     script:
 
@@ -595,14 +581,14 @@ process anat_white_surface {
     memory '2 GB'
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), val(hemi), path(orig_surf), path(autodet_gwstats), path(aseg_presurf_mgz), path(brain_finalsurfs_mgz), path(wm_mgz), path(filled_mgz))
 
     output:
-    tuple(val(subject_id), val(hemi), path("${subjects_dir}/${subject_id}/surf/${hemi}.white.preaparc")) // emit: white_preaparc_surf
-    tuple(val(subject_id), val(hemi), path("${subjects_dir}/${subject_id}/surf/${hemi}.white")) // emit: white_surf
-    tuple(val(subject_id), val(hemi), path("${subjects_dir}/${subject_id}/surf/${hemi}.curv")) // emit: curv_surf
-    tuple(val(subject_id), val(hemi), path("${subjects_dir}/${subject_id}/surf/${hemi}.area")) // emit: area_surf
+    tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/surf/${hemi}.white.preaparc")) // emit: white_preaparc_surf
+    tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/surf/${hemi}.white")) // emit: white_surf
+    tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/surf/${hemi}.curv")) // emit: curv_surf
+    tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/surf/${hemi}.area")) // emit: area_surf
 
 //     errorStrategy 'ignore'
 
@@ -637,11 +623,11 @@ process anat_cortex_label {
     memory '250 MB'
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), val(hemi), path(white_preaparc_surf), path(aseg_presurf_mgz))
 
     output:
-    tuple(val(subject_id), val(hemi), path("${subjects_dir}/${subject_id}/label/${hemi}.cortex.label")) // emit: cortex_label
+    tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/label/${hemi}.cortex.label")) // emit: cortex_label
 
     script:
     threads = 1
@@ -659,11 +645,11 @@ process anat_cortex_hipamyg_label {
     memory '300 MB'
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), val(hemi), path(white_preaparc_surf), path(aseg_presurf_mgz))
 
     output:
-    tuple(val(subject_id), val(hemi), path("${subjects_dir}/${subject_id}/label/${hemi}.cortex+hipamyg.label")) // emit: cortex_hipamyg_label
+    tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/label/${hemi}.cortex+hipamyg.label")) // emit: cortex_hipamyg_label
 
     script:
     threads = 1
@@ -681,11 +667,11 @@ process anat_hyporelabel {
     memory '500 MB'
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), path(aseg_presurf_mgz), path(lh_white_surf), path(rh_white_surf))
 
     output:
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/aseg.presurf.hypos.mgz")) // emit: aseg_presurf_hypos_mgz
+    tuple(val(subject_id), val("${subjects_dir}/${subject_id}/mri/aseg.presurf.hypos.mgz")) // emit: aseg_presurf_hypos_mgz
 
     script:
     threads = 1
@@ -705,13 +691,13 @@ process anat_smooth_inflated {
     memory '250 MB'
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), val(hemi), path(white_preaparc_surf))
 
     output:
-    tuple(val(subject_id),val(hemi), path("${subjects_dir}/${subject_id}/surf/${hemi}.smoothwm")) // emit: smoothwm_surf
-    tuple(val(subject_id),val(hemi), path("${subjects_dir}/${subject_id}/surf/${hemi}.inflated")) // emit: inflated_surf
-    tuple(val(subject_id),val(hemi), path("${subjects_dir}/${subject_id}/surf/${hemi}.sulc")) // emit: sulc_surf
+    tuple(val(subject_id),val(hemi), val("${subjects_dir}/${subject_id}/surf/${hemi}.smoothwm")) // emit: smoothwm_surf
+    tuple(val(subject_id),val(hemi), val("${subjects_dir}/${subject_id}/surf/${hemi}.inflated")) // emit: inflated_surf
+    tuple(val(subject_id),val(hemi), val("${subjects_dir}/${subject_id}/surf/${hemi}.sulc")) // emit: sulc_surf
 
     script:
     threads = 1
@@ -730,11 +716,11 @@ process anat_curv_stats {
     memory '200 MB'
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), val(hemi), path(smoothwm_surf), path(curv_surf), path(sulc_surf))
 
     output:
-    tuple(val(hemi), path("${subjects_dir}/${subject_id}/stats/${hemi}.curv.stats")) // emit: curv_stats
+    tuple(val(hemi), val("${subjects_dir}/${subject_id}/stats/${hemi}.curv.stats")) // emit: curv_stats
 
     script:
     threads = 1
@@ -754,11 +740,11 @@ process anat_sphere {
     memory '300 MB'
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), val(hemi), path(inflated_surf))
 
     output:
-    tuple(val(subject_id), val(hemi), path("${subjects_dir}/${subject_id}/surf/${hemi}.sphere")) // emit: sphere_surf
+    tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/surf/${hemi}.sphere")) // emit: sphere_surf
 
     script:
     threads = 1
@@ -776,27 +762,26 @@ process anat_sphere_register {
     memory '5 GB'
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), val(hemi), path(curv_surf), path(sulc_surf), path(sphere_surf))
 
-    path(surfreg_home)
-    path(surfreg_model_path)
+    val(surfreg_home)
+    val(surfreg_model_path)
     val(freesurfer_home)
 
-    path(nextflow_bin_path)
     val(gpu_lock)
 
     output:
-    tuple(val(subject_id), val(hemi), path("${subjects_dir}/${subject_id}/surf/${hemi}.sphere.reg")) // emit: sphere_reg_surf
+    tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/surf/${hemi}.sphere.reg")) // emit: sphere_reg_surf
 
     script:
-    gpu_script_py = "${nextflow_bin_path}/gpu_schedule_run.py"
+    gpu_script_py = "gpu_schedule_run.py"
     script_py = "${surfreg_home}/predict.py"
     threads = 1
     device = "cuda"
 
     """
-    python3 ${gpu_script_py} single ${task.executor} ${script_py} --sd ${subjects_dir} --sid ${subject_id} --fsd ${freesurfer_home} \
+    ${gpu_script_py} single ${task.executor} ${script_py} --sd ${subjects_dir} --sid ${subject_id} --fsd ${freesurfer_home} \
     --hemi ${hemi} --model_path ${surfreg_model_path} --device ${device}
     """
 }
@@ -808,11 +793,11 @@ process anat_jacobian {
     cpus 1
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), val(hemi), path(white_preaparc_surf), path(sphere_reg_surf))
 
     output:
-    tuple(val(subject_id), val(hemi), path("${subjects_dir}/${subject_id}/surf/${hemi}.jacobian_white")) // emit: jacobian_white
+    tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/surf/${hemi}.jacobian_white")) // emit: jacobian_white
 
     script:
     """
@@ -829,13 +814,13 @@ process anat_avgcurv {
     cpus 1
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), val(hemi), path(sphere_reg_surf))
 
-    val freesurfer_home
+    val(freesurfer_home)
 
     output:
-    tuple(val(subject_id), val(hemi), path("${subjects_dir}/${subject_id}/surf/${hemi}.avg_curv")) // emit: avg_curv
+    tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/surf/${hemi}.avg_curv")) // emit: avg_curv
 
     script:
     """
@@ -852,13 +837,13 @@ process anat_cortparc_aparc {
     cpus 1
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), val(hemi), path(cortex_label), path(sphere_reg_surf), path(smoothwm_surf), path(aseg_presurf_mgz))
     // smoothwm_surf is hidden needed
-    val freesurfer_home
+    val(freesurfer_home)
 
     output:
-    tuple(val(subject_id), val(hemi), path("${subjects_dir}/${subject_id}/label/${hemi}.aparc.annot")) // emit: aparc_annot
+    tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/label/${hemi}.aparc.annot")) // emit: aparc_annot
 
     script:
     """
@@ -875,13 +860,13 @@ process anat_cortparc_aparc_a2009s {
     cpus 1
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), val(hemi), path(cortex_label), path(sphere_reg_surf), path(smoothwm_surf), path(aseg_presurf_mgz))
     // smoothwm_surf is hidden needed
-    val freesurfer_home
+    val(freesurfer_home)
 
     output:
-    tuple(val(subject_id), val(hemi), path("${subjects_dir}/${subject_id}/label/${hemi}.aparc.a2009s.annot")) // emit: aparc_a2009s_annot
+    tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/label/${hemi}.aparc.a2009s.annot")) // emit: aparc_a2009s_annot
 
     script:
     """
@@ -899,15 +884,15 @@ process anat_pial_surface {
     memory '1.5 GB'
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), val(hemi), path(orig_surf), path(white_surf), path(autodet_gwstats), path(cortex_hipamyg_label), path(cortex_label), path(aparc_annot), path(aseg_presurf_mgz), path(wm_mgz), path(brain_finalsurfs_mgz))
 
     output:
-    tuple(val(subject_id), val(hemi), path("${subjects_dir}/${subject_id}/surf/${hemi}.pial")) // emit: pial_surf
-    tuple(val(subject_id), val(hemi), path("${subjects_dir}/${subject_id}/surf/${hemi}.pial.T1")) // emit: pial_t1_surf
-    tuple(val(subject_id), val(hemi), path("${subjects_dir}/${subject_id}/surf/${hemi}.curv.pial")) // emit: curv_pial_surf
-    tuple(val(subject_id), val(hemi), path("${subjects_dir}/${subject_id}/surf/${hemi}.area.pial")) // emit: area_pial_surf
-    tuple(val(subject_id), val(hemi), path("${subjects_dir}/${subject_id}/surf/${hemi}.thickness")) // emit: thickness_surf
+    tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/surf/${hemi}.pial")) // emit: pial_surf
+    tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/surf/${hemi}.pial.T1")) // emit: pial_t1_surf
+    tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/surf/${hemi}.curv.pial")) // emit: curv_pial_surf
+    tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/surf/${hemi}.area.pial")) // emit: area_pial_surf
+    tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/surf/${hemi}.thickness")) // emit: thickness_surf
 
     script:
     threads = 1
@@ -932,82 +917,6 @@ process anat_pial_surface {
 }
 
 
-process qc_plot_volsurf {
-    tag "${subject_id}"
-
-    cpus 5
-
-    input:
-    path subjects_dir
-
-    tuple(val(subject_id), path(lh_white_surf), path(lh_pial_surf), path(rh_white_surf), path(rh_pial_surf), path(t1_mgz))
-
-    path nextflow_bin_path
-    path qc_result_path
-    val freesurfer_home
-
-    output:
-    tuple(val(subject_id), path("${qc_plot_aseg_fig_path}"))
-
-    script:
-    qc_plot_aseg_fig_path = "${qc_result_path}/${subject_id}/figures/${subject_id}_desc-volsurf_T1w.svg"
-
-    script_py = "${nextflow_bin_path}/qc_anat_vol_surface.py"
-    vol_Surface_scene = "${nextflow_bin_path}/qc_tool/Vol_Surface.scene"
-    affine_mat = "${nextflow_bin_path}/qc_tool/affine.mat"
-
-    """
-    python3 ${script_py} \
-    --subject_id ${subject_id} \
-    --subjects_dir ${subjects_dir} \
-    --qc_result_path ${qc_result_path} \
-    --affine_mat ${affine_mat} \
-    --scene_file ${vol_Surface_scene} \
-    --svg_outpath ${qc_plot_aseg_fig_path} \
-    --freesurfer_home ${freesurfer_home}
-
-    """
-}
-
-
-process qc_plot_surfparc {
-    tag "${subject_id}"
-
-    cpus 1
-
-    input:
-    path subjects_dir
-
-    tuple(val(subject_id), path(lh_aparc_annot), path(lh_white_surf), path(lh_pial_surf), path(rh_aparc_annot),path(rh_white_surf), path(rh_pial_surf))
-
-    path nextflow_bin_path
-    path qc_result_path
-    val freesurfer_home
-
-    output:
-    tuple(val(subject_id), path("${qc_plot_aseg_fig_path}"))
-
-    script:
-    qc_plot_aseg_fig_path = "${qc_result_path}/${subject_id}/figures/${subject_id}_desc-surfparc_T1w.svg"
-
-    script_py = "${nextflow_bin_path}/qc_anat_surface_parc.py"
-    surface_parc_scene = "${nextflow_bin_path}/qc_tool/Surface_parc.scene"
-    affine_mat = "${nextflow_bin_path}/qc_tool/affine.mat"
-
-    """
-    python3 ${script_py} \
-    --subject_id ${subject_id} \
-    --subjects_dir ${subjects_dir} \
-    --qc_result_path ${qc_result_path} \
-    --affine_mat ${affine_mat} \
-    --scene_file ${surface_parc_scene} \
-    --svg_outpath ${qc_plot_aseg_fig_path} \
-    --freesurfer_home ${freesurfer_home}
-
-    """
-}
-
-
 process anat_pctsurfcon {
     tag "${subject_id}"
 
@@ -1015,15 +924,14 @@ process anat_pctsurfcon {
     memory '250 MB'
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), val(hemi), path(cortex_label), path(white_surf), path(thickness_surf), path(rawavg_mgz), path(orig_mgz))
 
     output:
-    tuple(val(subject_id), val(hemi), path("${subjects_dir}/${subject_id}/surf/${hemi}.w-g.pct.mgh")) // emit: w_g_pct_mgh
-    tuple(val(subject_id), val(hemi), path("${subjects_dir}/${subject_id}/stats/${hemi}.w-g.pct.stats")) // emit: w_g_pct_stats
+    tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/surf/${hemi}.w-g.pct.mgh")) // emit: w_g_pct_mgh
+    tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/stats/${hemi}.w-g.pct.stats")) // emit: w_g_pct_stats
 
     script:
-    threads = 1
 //     """
 //     recon-all -sd ${subjects_dir} -subject ${subject_id} -pctsurfcon -threads ${threads} -itkthreads ${threads}
 //     """
@@ -1040,14 +948,14 @@ process anat_parcstats {
     memory '500 MB'
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), path(lh_white_surf), path(lh_cortex_label), path(lh_pial_surf), path(lh_aparc_annot), path(rh_white_surf), path(rh_cortex_label), path(rh_pial_surf), path(rh_aparc_annot), path(wm_mgz))
 
     output:
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/stats/lh.aparc.pial.stats")) // emit: aparc_pial_stats
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/stats/rh.aparc.pial.stats")) // emit: aparc_pial_stats
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/stats/lh.aparc.stats")) // emit: aparc_stats
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/stats/rh.aparc.stats")) // emit: aparc_stats
+    tuple(val(subject_id), val("${subjects_dir}/${subject_id}/stats/lh.aparc.pial.stats")) // emit: aparc_pial_stats
+    tuple(val(subject_id), val("${subjects_dir}/${subject_id}/stats/rh.aparc.pial.stats")) // emit: aparc_pial_stats
+    tuple(val(subject_id), val("${subjects_dir}/${subject_id}/stats/lh.aparc.stats")) // emit: aparc_stats
+    tuple(val(subject_id), val("${subjects_dir}/${subject_id}/stats/rh.aparc.stats")) // emit: aparc_stats
 
     script:
 //     """
@@ -1069,14 +977,14 @@ process anat_parcstats2 {
     memory '500 MB'
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), path(lh_white_surf), path(lh_cortex_label), path(lh_pial_surf), path(lh_aparc_annot), path(rh_white_surf), path(rh_cortex_label), path(rh_pial_surf), path(rh_aparc_annot), path(wm_mgz))
 
     output:
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/stats/lh.aparc.a2009s.pial.stats")) // emit: aparc_pial_stats
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/stats/rh.aparc.a2009s.pial.stats")) // emit: aparc_pial_stats
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/stats/lh.aparc.a2009s.stats")) // emit: aparc_stats
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/stats/rh.aparc.a2009s.stats")) // emit: aparc_stats
+    tuple(val(subject_id), val("${subjects_dir}/${subject_id}/stats/lh.aparc.a2009s.pial.stats")) // emit: aparc_pial_stats
+    tuple(val(subject_id), val("${subjects_dir}/${subject_id}/stats/rh.aparc.a2009s.pial.stats")) // emit: aparc_pial_stats
+    tuple(val(subject_id), val("${subjects_dir}/${subject_id}/stats/lh.aparc.a2009s.stats")) // emit: aparc_stats
+    tuple(val(subject_id), val("${subjects_dir}/${subject_id}/stats/rh.aparc.a2009s.stats")) // emit: aparc_stats
 
     script:
 //     """
@@ -1128,16 +1036,15 @@ process anat_ribbon {
     cpus 1
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), path(aseg_presurf_mgz), path(lh_white_surf), path(lh_pial_surf), path(rh_white_surf), path(rh_pial_surf))
 
     output:
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/ribbon.mgz")) // emit: ribbon_mgz
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/lh.ribbon.mgz")) // emit: lh_ribbon_mgz
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/rh.ribbon.mgz")) // emit: rh_ribbon_mgz
+    tuple(val(subject_id), val("${subjects_dir}/${subject_id}/mri/ribbon.mgz")) // emit: ribbon_mgz
+    tuple(val(subject_id), val("${subjects_dir}/${subject_id}/mri/lh.ribbon.mgz")) // emit: lh_ribbon_mgz
+    tuple(val(subject_id), val("${subjects_dir}/${subject_id}/mri/rh.ribbon.mgz")) // emit: rh_ribbon_mgz
 
     script:
-    threads = 1
     """
     mris_volmask --sd ${subjects_dir} --aseg_name aseg.presurf --label_left_white 2 --label_left_ribbon 3 --label_right_white 41 --label_right_ribbon 42 --save_ribbon ${subject_id}
     """
@@ -1150,19 +1057,19 @@ process anat_apas2aseg {
     cpus 3
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), path(aseg_presurf_hypos_mgz), path(ribbon_mgz), path(lh_white_surf), path(lh_pial_surf), path(lh_cortex_label), path(rh_white_surf), path(rh_pial_surf), path(rh_cortex_label))
+    val(fsthreads)
 
     output:
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/aseg.mgz")) // emit: parcstats
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/stats/brainvol.stats")) // emit: brainvol_stats
+    tuple(val(subject_id), val("${subjects_dir}/${subject_id}/mri/aseg.mgz")) // emit: parcstats
+    tuple(val(subject_id), val("${subjects_dir}/${subject_id}/stats/brainvol.stats")) // emit: brainvol_stats
 
     script:
-    threads = 1
     """
     SUBJECTS_DIR=${subjects_dir} mri_surf2volseg --o ${subjects_dir}/${subject_id}/mri/aseg.mgz --i ${aseg_presurf_hypos_mgz} \
     --fix-presurf-with-ribbon ${ribbon_mgz} \
-    --threads ${threads} \
+    --threads ${fsthreads} \
     --lh-cortex-mask lh.cortex.label --lh-white lh.white --lh-pial lh.pial \
     --rh-cortex-mask rh.cortex.label --rh-white rh.white --rh-pial rh.pial
 
@@ -1178,60 +1085,23 @@ process anat_aparc2aseg {
     memory '1 GB'
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), path(aseg_mgz), path(ribbon_mgz), path(lh_white_surf), path(lh_pial_surf), path(lh_cortex_label), path(lh_aparc_annot), path(rh_white_surf), path(rh_pial_surf), path(rh_cortex_label), path(rh_aparc_annot))
+    val(fsthreads)
 
     output:
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/aparc+aseg.mgz")) // emit: parcstats
+    tuple(val(subject_id), val("${subjects_dir}/${subject_id}/mri/aparc+aseg.mgz")) // emit: parcstats
 
     script:
-    threads = 1
     """
     SUBJECTS_DIR=${subjects_dir} mri_surf2volseg --o ${subjects_dir}/${subject_id}/mri/aparc+aseg.mgz --label-cortex --i ${aseg_mgz} \
-    --threads ${threads} \
+    --threads ${fsthreads} \
     --lh-annot lh.aparc.annot 1000 \
     --lh-cortex-mask lh.cortex.label --lh-white lh.white \
     --lh-pial lh.pial \
     --rh-annot rh.aparc.annot 2000 \
     --rh-cortex-mask rh.cortex.label --rh-white rh.white \
     --rh-pial rh.pial
-    """
-}
-
-
-process qc_plot_aparc_aseg {
-    tag "${subject_id}"
-
-    cpus 5
-    memory '1 GB'
-
-    input:
-    path subjects_dir
-    tuple(val(subject_id), path(norm_mgz), path(aparc_aseg))
-
-    path nextflow_bin_path
-    path qc_result_path
-    val freesurfer_home
-
-    output:
-    tuple(val(subject_id), path("${qc_plot_aseg_fig_path}"))
-
-    script:
-    qc_plot_aseg_fig_path = "${qc_result_path}/${subject_id}/figures/${subject_id}_desc-volparc_T1w.svg"
-
-    script_py = "${nextflow_bin_path}/qc_anat_aparc_aseg.py"
-    freesurfer_AllLut = "${nextflow_bin_path}/qc_tool/FreeSurferAllLut.txt"
-    volume_parc_scene = "${nextflow_bin_path}/qc_tool/Volume_parc.scene"
-    """
-    python3 ${script_py} \
-    --subject_id ${subject_id} \
-    --subjects_dir ${subjects_dir} \
-    --qc_result_path ${qc_result_path} \
-    --dlabel_info ${freesurfer_AllLut} \
-    --scene_file ${volume_parc_scene} \
-    --svg_outpath ${qc_plot_aseg_fig_path} \
-    --freesurfer_home ${freesurfer_home}
-
     """
 }
 
@@ -1243,17 +1113,17 @@ process anat_aparc_a2009s2aseg {
     memory '1 GB'
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), path(aseg_mgz), path(ribbon_mgz), path(lh_white_surf), path(lh_pial_surf), path(lh_cortex_label), path(lh_aparc_annot), path(rh_white_surf), path(rh_pial_surf), path(rh_cortex_label), path(rh_aparc_annot))
+    val(fsthreads)
 
     output:
-    tuple(val(subject_id), path("${subjects_dir}/${subject_id}/mri/aparc.a2009s+aseg.mgz")) // emit: parcstats
+    tuple(val(subject_id), val("${subjects_dir}/${subject_id}/mri/aparc.a2009s+aseg.mgz")) // emit: parcstats
 
     script:
-    threads = 1
     """
     SUBJECTS_DIR=${subjects_dir} mri_surf2volseg --o ${subjects_dir}/${subject_id}/mri/aparc.a2009s+aseg.mgz --label-cortex --i ${aseg_mgz} \
-    --threads ${threads} \
+    --threads ${fsthreads} \
     --lh-annot lh.aparc.a2009s.annot 11100 \
     --lh-cortex-mask lh.cortex.label --lh-white lh.white \
     --lh-pial lh.pial \
@@ -1271,13 +1141,13 @@ process anat_balabels_lh {
     memory '500 MB'
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), val(hemi), path(sphere_reg_surf), path(white_surf))
     each path(label)
-    path(subjects_fsaverage_dir)
+    val(subjects_fsaverage_dir)
 
     output:
-    tuple(val(subject_id), val(hemi), path("${subjects_dir}/${subject_id}/label/${label}")) // emit: balabel
+    tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/label/${label}")) // emit: balabel
 
     script:
     """
@@ -1292,43 +1162,17 @@ process anat_balabels_rh {
     cpus 1
 
     input:
-    path(subjects_dir)
+    val(subjects_dir)
     tuple(val(subject_id), val(hemi), path(sphere_reg_surf), path(white_surf))
     each path(label)
-    path(subjects_fsaverage_dir)
+    val(subjects_fsaverage_dir)
 
     output:
-    tuple(val(subject_id), val(hemi), path("${subjects_dir}/${subject_id}/label/${label}")) // emit: balabel
+    tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/label/${label}")) // emit: balabel
 
     script:
     """
     SUBJECTS_DIR=${subjects_dir} mri_label2label --srcsubject fsaverage --srclabel ${label} --trgsubject ${subject_id} --trglabel ${subjects_dir}/${subject_id}/label/${label} --hemi rh --regmethod surface
-    """
-}
-
-
-process make_bold_preprocess_dir {
-    tag "${subject_id}"
-
-    cpus 1
-
-    input:
-    path(dir_path)
-
-    output:
-    path(dir_path)
-
-    shell:
-    """
-    #! /usr/bin/env python3
-
-    import os
-    from pathlib import Path
-    sd = Path('${dir_path}')
-    try:
-        sd.mkdir(parents=True, exist_ok=True)
-    except FileExistsError:
-        pass
     """
 }
 
@@ -1338,17 +1182,17 @@ process bold_get_bold_file_in_bids {
     cpus 1
 
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
-    path bids_dir
-    path nextflow_bin_path
-    val bold_task_type
+    val(bids_dir)
+    val(bold_task_type)
+
     output:
     path "sub-*" // emit: subject_boldfile_txt
 
     script:
-    script_py = "${nextflow_bin_path}/bold_get_bold_file_in_bids.py"
+    script_py = "bold_get_bold_file_in_bids.py"
 
     """
-    python3 ${script_py} \
+    ${script_py} \
     --bids_dir ${bids_dir} \
     --task_type ${bold_task_type}
     """
@@ -1361,102 +1205,22 @@ process bold_T1_to_2mm {
     cpus 1
 
     input:
-    path subjects_dir
-    path bold_preprocess_path
-    path nextflow_bin_path
+    val(subjects_dir)
+    val(bold_preprocess_path)
     tuple(val(subject_id), path(t1_mgz), path(norm_mgz))
     output:
-    tuple(val(subject_id), path("${bold_preprocess_path}/${subject_id}/func/${subject_id}_space-T1w_res-2mm_desc-skull_T1w.nii.gz")) //emit: t1_native2mm
-    tuple(val(subject_id), path("${bold_preprocess_path}/${subject_id}/func/${subject_id}_space-T1w_res-2mm_desc-noskull_T1w.nii.gz")) //emit: norm_native2mm
+    tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/func/${subject_id}_space-T1w_res-2mm_desc-skull_T1w.nii.gz")) //emit: t1_native2mm
+    tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/func/${subject_id}_space-T1w_res-2mm_desc-noskull_T1w.nii.gz")) //emit: norm_native2mm
     script:
-    script_py = "${nextflow_bin_path}/bold_T1_to_2mm.py"
+    script_py = "bold_T1_to_2mm.py"
 
     """
-    python3 ${script_py} \
+    ${script_py} \
     --bold_preprocess_dir ${bold_preprocess_path} \
     --subjects_dir ${subjects_dir} \
     --subject_id ${subject_id} \
     --t1_mgz ${t1_mgz} \
     --norm_mgz ${norm_mgz}
-    """
-}
-
-
-process synthmorph_affine {
-    // 17550
-    tag "${subject_id}"
-
-    label "with_gpu"
-    cpus 1
-    memory '5 GB'
-
-    input:
-    path(subjects_dir)
-    path(bold_preprocess_path)
-    path(nextflow_bin_path)
-    tuple(val(subject_id), path(t1_native2mm), val(schedule_control), val(schedule), path(schedule_control)) // schedule_control for running this process in right time
-    path(synth_model_path)
-    path(synth_template_path)
-
-    val(gpu_lock)
-
-    output:
-    tuple(val(subject_id), path("${bold_preprocess_path}/${subject_id}/func/${subject_id}_space-MNI152_res-2mm_desc-affine_T1w.nii.gz")) //emit: affine_nii
-    tuple(val(subject_id), path("${bold_preprocess_path}/${subject_id}/func/${subject_id}_from-T1w_to-MNI152_desc-affine_xfm.txt")) //emit: affine_trans
-
-    script:
-    gpu_script_py = "${nextflow_bin_path}/gpu_schedule_run.py"
-    script_py = "${nextflow_bin_path}/bold_synthmorph_affine.py"
-    synth_script = "${nextflow_bin_path}/mri_bold_synthmorph.py"
-    """
-    python3 ${gpu_script_py} double ${task.executor} ${script_py} \
-    --bold_preprocess_dir ${bold_preprocess_path} \
-    --subject_id ${subject_id} \
-    --synth_script ${synth_script} \
-    --t1_native2mm ${t1_native2mm} \
-    --synth_template_path ${synth_template_path} \
-    --synth_model_path ${synth_model_path}
-    """
-}
-
-
-process synthmorph_norigid {
-    // 22202
-    tag "${subject_id}"
-
-    cpus 2
-    label "with_gpu"
-    memory '5 GB'
-
-    input:
-    path(subjects_dir)
-    path(bold_preprocess_path)
-    path(nextflow_bin_path)
-    tuple(val(subject_id), path(t1_native2mm), path(norm_native2mm), path(affine_trans))
-    path(synth_model_path)
-    path(synth_template_path)
-
-    val(gpu_lock)
-
-    output:
-    tuple(val(subject_id), path("${bold_preprocess_path}/${subject_id}/func/${subject_id}_space-MNI152_res-2mm_desc-skull_T1w.nii.gz")) //emit: t1_norigid_nii
-    tuple(val(subject_id), path("${bold_preprocess_path}/${subject_id}/func/${subject_id}_space-MNI152_res-2mm_desc-noskull_T1w.nii.gz")) //emit: norm_norigid_nii
-    tuple(val(subject_id), path("${bold_preprocess_path}/${subject_id}/func/${subject_id}_from-T1w_to_MNI152_desc-nonlinear_xfm.npz")) //emit: transvoxel
-
-    script:
-    gpu_script_py = "${nextflow_bin_path}/gpu_schedule_run.py"
-    script_py = "${nextflow_bin_path}/bold_synthmorph_norigid.py"
-    synth_script = "${nextflow_bin_path}/mri_bold_synthmorph.py"
-    """
-    python3 ${gpu_script_py} double ${task.executor} ${script_py} \
-    --bold_preprocess_dir ${bold_preprocess_path} \
-    --subject_id ${subject_id} \
-    --synth_script ${synth_script} \
-    --t1_native2mm ${t1_native2mm} \
-    --norm_native2mm ${norm_native2mm} \
-    --affine_trans ${affine_trans} \
-    --synth_template_path ${synth_template_path} \
-    --synth_model_path ${synth_model_path}
     """
 }
 
@@ -1467,20 +1231,18 @@ process bold_get_bold_ref_in_bids {
     cpus 1
 
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
-    path bold_preprocess_path
-    path bids_dir
-    path nextflow_bin_path
-    val subject_id
-    val bold_id
-
+    val(bold_preprocess_path)
+    val(bids_dir)
+    val(subject_id)
+    val(bold_id)
 
     output:
-    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${subject_id}_boldref.nii.gz")) // emit: mc
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${subject_id}_boldref.nii.gz")) // emit: mc
 
     script:
-    script_py = "${nextflow_bin_path}/bold_get_bold_ref_in_bids.py"
+    script_py = "bold_get_bold_ref_in_bids.py"
     """
-    python3 ${script_py} \
+    ${script_py} \
     --bold_preprocess_dir ${bold_preprocess_path} \
     --bids_dir ${bids_dir} \
     --subject_id ${subject_id} \
@@ -1513,22 +1275,21 @@ process bold_skip_reorient {
     cpus 1
 
     input:
-    path bold_preprocess_path
-    path nextflow_bin_path
-    path qc_result_path
+    val(bold_preprocess_path)
+    val(qc_result_path)
     each path(subject_boldfile_txt)
-    val reorient
-    val skip_frame
-    val sdc
+    val(reorient)
+    val(skip_frame)
+    val(sdc)
     output:
-    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-reorient_bold.nii.gz")) // emit: mc
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-reorient_bold.nii.gz")) // emit: mc
     script:
     bold_id = subject_boldfile_txt.name
     subject_id = bold_id.split('_')[0]
-    script_py = "${nextflow_bin_path}/bold_skip_reorient.py"
+    script_py = "bold_skip_reorient.py"
 
     """
-    python3 ${script_py} \
+    ${script_py} \
     --bold_preprocess_dir ${bold_preprocess_path} \
     --qc_report_dir ${qc_result_path} \
     --boldfile_path ${subject_boldfile_txt} \
@@ -1546,18 +1307,17 @@ process bold_stc_mc {
     cpus 1
 
     input:
-    path bold_preprocess_path
-    path nextflow_bin_path
+    val(bold_preprocess_path)
     tuple(val(subject_id), val(bold_id), path(reorient))
     output:
-    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_bold.nii.gz")) // emit: mc
-    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_from-stc_to-mc_xfm.mcdat")) // emit: mcdat
-    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_boldref.nii.gz")) // emit: boldref
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_bold.nii.gz")) // emit: mc
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_from-stc_to-mc_xfm.mcdat")) // emit: mcdat
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_boldref.nii.gz")) // emit: boldref
     script:
-    script_py = "${nextflow_bin_path}/bold_stc_mc.py"
+    script_py = "bold_stc_mc.py"
 
     """
-    python3 ${script_py} \
+    ${script_py} \
     --bold_preprocess_dir ${bold_preprocess_path} \
     --subject_id ${subject_id} \
     --bold_id ${bold_id} \
@@ -1607,17 +1367,16 @@ process bold_bbregister {
     memory '1 GB'
 
     input:
-    path subjects_dir
-    path bold_preprocess_path
-    path nextflow_bin_path
+    val(subjects_dir)
+    val(bold_preprocess_path)
     tuple(val(subject_id), val(bold_id), path(aparc_aseg_mgz), path(mc))
     output:
-    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_from-mc_to-T1w_desc-rigid_xfm.dat")) // emit: bbregister_dat
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_from-mc_to-T1w_desc-rigid_xfm.dat")) // emit: bbregister_dat
     script:
-    script_py = "${nextflow_bin_path}/bold_bbregister.py"
+    script_py = "bold_bbregister.py"
 
     """
-    python3 ${script_py} \
+    ${script_py} \
     --subjects_dir ${subjects_dir} \
     --bold_preprocess_dir ${bold_preprocess_path} \
     --subject_id ${subject_id} \
@@ -1635,19 +1394,18 @@ process bold_bbregister_to_native {
     memory '18 GB'
 
     input:
-    path subjects_dir
-    path bold_preprocess_path
-    path nextflow_bin_path
+    val(subjects_dir)
+    val(bold_preprocess_path)
     tuple(val(subject_id), val(bold_id), path(boldref), path(mc), path(t1_native2mm), path(bbregister_dat))
-    path freesurfer_home
+    val(freesurfer_home)
     output:
-    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-T1w_res-2mm_desc-rigid_bold.nii.gz")) // emit: bbregister_native_2mm
-    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-T1w_res-2mm_desc-rigid_boldref.nii.gz")) // emit: bbregister_native_2mm_fframe
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-T1w_res-2mm_desc-rigid_bold.nii.gz")) // emit: bbregister_native_2mm
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-T1w_res-2mm_desc-rigid_boldref.nii.gz")) // emit: bbregister_native_2mm_fframe
     script:
-    script_py = "${nextflow_bin_path}/bold_bbregister_to_native.py"
+    script_py = "bold_bbregister_to_native.py"
 
     """
-    python3 ${script_py} \
+    ${script_py} \
     --subjects_dir ${subjects_dir} \
     --bold_preprocess_dir ${bold_preprocess_path} \
     --subject_id ${subject_id} \
@@ -1656,12 +1414,93 @@ process bold_bbregister_to_native {
     --fixed ${t1_native2mm} \
     --dat ${bbregister_dat} \
     --bold_id ${bold_id} \
-    --freesurfer-home ${freesurfer_home}
+    --freesurfer_home ${freesurfer_home}
     """
 }
 
 
-process bold_synthmorph_norigid_apply {
+
+
+process synthmorph_affine {
+    // 17550
+    tag "${subject_id}"
+
+    label "with_gpu"
+    cpus 1
+    memory '5 GB'
+
+    input:
+    val(subjects_dir)
+    val(bold_preprocess_path)
+    val(synthmorph_home)
+    tuple(val(subject_id), path(t1_native2mm), val(schedule_control), val(schedule), path(schedule_control)) // schedule_control for running this process in right time
+    val(synth_model_path)
+    val(synth_template_path)
+
+    val(gpu_lock)
+
+    output:
+    tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/func/${subject_id}_space-MNI152_res-2mm_desc-affine_T1w.nii.gz")) //emit: affine_nii
+    tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/func/${subject_id}_from-T1w_to-MNI152_desc-affine_xfm.txt")) //emit: affine_trans
+
+    script:
+    gpu_script_py = "gpu_schedule_run.py"
+    script_py = "${synthmorph_home}/bold_synthmorph_affine.py"
+    synth_script = "${synthmorph_home}/mri_bold_synthmorph.py"
+    """
+    ${gpu_script_py} double ${task.executor} ${script_py} \
+    --bold_preprocess_dir ${bold_preprocess_path} \
+    --subject_id ${subject_id} \
+    --synth_script ${synth_script} \
+    --t1_native2mm ${t1_native2mm} \
+    --synth_template_path ${synth_template_path} \
+    --synth_model_path ${synth_model_path}
+    """
+}
+
+
+process synthmorph_norigid {
+    // 22202
+    tag "${subject_id}"
+
+    cpus 2
+    label "with_gpu"
+    memory '5 GB'
+
+    input:
+    val(subjects_dir)
+    val(bold_preprocess_path)
+    val(synthmorph_home)
+    tuple(val(subject_id), path(t1_native2mm), path(norm_native2mm), path(affine_trans))
+    val(synth_model_path)
+    val(synth_template_path)
+
+    val(gpu_lock)
+
+    output:
+    tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/func/${subject_id}_space-MNI152_res-2mm_desc-skull_T1w.nii.gz")) //emit: t1_norigid_nii
+    tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/func/${subject_id}_space-MNI152_res-2mm_desc-noskull_T1w.nii.gz")) //emit: norm_norigid_nii
+    tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/func/${subject_id}_from-T1w_to_MNI152_desc-nonlinear_xfm.npz")) //emit: transvoxel
+
+    script:
+    gpu_script_py = "gpu_schedule_run.py"
+    script_py = "${synthmorph_home}/bold_synthmorph_norigid.py"
+    synth_script = "${synthmorph_home}/mri_bold_synthmorph.py"
+    """
+    ${gpu_script_py} double ${task.executor} ${script_py} \
+    --bold_preprocess_dir ${bold_preprocess_path} \
+    --subject_id ${subject_id} \
+    --synth_script ${synth_script} \
+    --t1_native2mm ${t1_native2mm} \
+    --norm_native2mm ${norm_native2mm} \
+    --affine_trans ${affine_trans} \
+    --synth_template_path ${synth_template_path} \
+    --synth_model_path ${synth_model_path}
+    """
+}
+
+
+process synthmorph_norigid_apply {
     // 8660
     tag "${subject_id}"
 
@@ -1670,25 +1509,25 @@ process bold_synthmorph_norigid_apply {
     memory '15 GB'
 
     input:
-    path(subjects_dir)
-    path(bold_preprocess_path)
-    path(nextflow_bin_path)
+    val(subjects_dir)
+    val(bold_preprocess_path)
+    val(synthmorph_home)
     tuple(val(subject_id), val(bold_id), path(t1_native2mm), path(mc), path(bbregister_native_2mm), path(transvoxel))
 //     path synth_model_path
-    path(synth_template_path)
+    val(synth_template_path)
 
     val(gpu_lock)
 
     output:
-    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-MNI152_res-2mm_bold.nii.gz")) //emit: synthmorph_norigid_bold
-    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-MNI152_res-2mm_boldref.nii.gz")) //emit: synthmorph_norigid_bold_fframe
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-MNI152_res-2mm_bold.nii.gz")) //emit: synthmorph_norigid_bold
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-MNI152_res-2mm_boldref.nii.gz")) //emit: synthmorph_norigid_bold_fframe
 
     script:
-    gpu_script_py = "${nextflow_bin_path}/gpu_schedule_run.py"
-    script_py = "${nextflow_bin_path}/bold_synthmorph_apply.py"
-    synth_script = "${nextflow_bin_path}/mri_bold_apply_synthmorph.py"
+    gpu_script_py = "gpu_schedule_run.py"
+    script_py = "${synthmorph_home}/bold_synthmorph_apply.py"
+    synth_script = "${synthmorph_home}/mri_bold_apply_synthmorph.py"
     """
-    python3 ${gpu_script_py} single ${task.executor} ${script_py} \
+    ${gpu_script_py} single ${task.executor} ${script_py} \
     --bold_preprocess_dir ${bold_preprocess_path} \
     --subject_id ${subject_id} \
     --bold_id ${bold_id} \
@@ -1708,28 +1547,58 @@ process bold_mkbrainmask {
     cpus 1
 
     input:
-    path subjects_dir
-    path bold_preprocess_path
-    path nextflow_bin_path
+    val(subjects_dir)
+    val(bold_preprocess_path)
     tuple(val(subject_id), val(bold_id), path(aparc_aseg), path(mc), path(bbregister_dat))
     output:
-    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_desc-wm_mask.nii.gz")) // emit: anat_wm
-    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_desc-csf_mask.nii.gz")) // emit: anat_csf
-    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_desc-aparcaseg_dseg.nii.gz")) // emit: anat_aseg
-    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_desc-ventricles_mask.nii.gz")) // emit: anat_ventricles
-    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_desc-brain_mask.nii.gz")) // emit: anat_brainmask
-    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_desc-brain_maskbin.nii.gz")) // emit: anat_brainmask_bin
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_desc-wm_mask.nii.gz")) // emit: anat_wm
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_desc-csf_mask.nii.gz")) // emit: anat_csf
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_desc-aparcaseg_dseg.nii.gz")) // emit: anat_aseg
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_desc-ventricles_mask.nii.gz")) // emit: anat_ventricles
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_desc-brain_mask.nii.gz")) // emit: anat_brainmask
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_desc-brain_maskbin.nii.gz")) // emit: anat_brainmask_bin
     script:
-    script_py = "${nextflow_bin_path}/bold_mkbrainmask.py"
+    script_py = "bold_mkbrainmask.py"
 
     """
-    python3 ${script_py} \
+    ${script_py} \
     --bold_preprocess_dir ${bold_preprocess_path} \
     --subjects_dir ${subjects_dir} \
     --subject_id ${subject_id} \
     --mc ${mc} \
     --bbregister_dat ${bbregister_dat} \
     --bold_id ${bold_id}
+    """
+}
+
+
+process bold_confounds {
+    tag "${subject_id}"
+
+    cpus 3
+    memory '7 GB'
+
+    input:
+    val(bold_preprocess_path)
+    tuple(val(subject_id), val(bold_id), path(mc), path(mcdat), path(anat_wm_nii), path(anat_brainmask_nii), path(anat_brainmask_bin_nii), path(anat_ventricles_nii))
+
+    output:
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_desc-confounds_timeseries.txt")) // emit: bold_confounds_view
+
+    script:
+    script_py = "bold_cal_confounds.py"
+
+    """
+    ${script_py} \
+    --bold_preprocess_dir ${bold_preprocess_path} \
+    --subject_id ${subject_id} \
+    --bold_id ${bold_id} \
+    --bold_file ${mc} \
+    --mcdat ${mcdat} \
+    --aseg_wm ${anat_wm_nii} \
+    --aseg_brainmask ${anat_brainmask_nii} \
+    --aseg_brainmask_bin ${anat_brainmask_bin_nii} \
+    --aseg_ventricles ${anat_ventricles_nii}
     """
 }
 
@@ -1742,21 +1611,21 @@ process qc_plot_mctsnr {
 
     input:
     tuple(val(subject_id), val(bold_id), path(mc), path(anat_brainmask))
-    path bold_preprocess_path
-    path nextflow_bin_path
-    path qc_result_path
+    val(bold_preprocess_path)
+    val(qc_utils_path)
+    val(qc_result_path)
 
     output:
-    tuple(val(subject_id), val(bold_id), path("${qc_plot_mctsnr_fig_path}"))
+    tuple(val(subject_id), val(bold_id), val("${qc_plot_mctsnr_fig_path}"))
 
     script:
     qc_plot_mctsnr_fig_path = "${qc_result_path}/${subject_id}/figures/${bold_id}_desc-tsnr_bold.svg"
-    script_py = "${nextflow_bin_path}/qc_bold_mc_tsnr.py"
-    mctsnr_scene = "${nextflow_bin_path}/qc_tool/McTSNR.scene"
-    color_bar_png = "${nextflow_bin_path}/qc_tool/color_bar.png"
+    script_py = "qc_bold_mc_tsnr.py"
+    mctsnr_scene = "${qc_utils_path}/McTSNR.scene"
+    color_bar_png = "${qc_utils_path}/color_bar.png"
 
     """
-    python3 ${script_py} \
+    ${script_py} \
     --subject_id ${subject_id} \
     --bold_id ${bold_id} \
     --bold_preprocess_path  ${bold_preprocess_path} \
@@ -1778,16 +1647,16 @@ process qc_plot_carpet {
     memory '400 MB'
 
     input:
-    path bold_preprocess_path
-    path nextflow_bin_path
-    path qc_result_path
+    val(bold_preprocess_path)
+    val(qc_utils_path)
+    val(qc_result_path)
     tuple(val(subject_id), val(bold_id), path(mc_nii), path(mcdat), path(anat_aseg_nii), path(anat_brainmask_nii), path(anat_brainmask_bin_nii), path(anat_wm_nii), path(anat_csf_nii))
     output:
-    tuple(val(subject_id), val(bold_id), path("${qc_result_path}/${subject_id}/figures/${bold_id}_desc-carpet_bold.svg")) // emit: bold_carpet_svg
+    tuple(val(subject_id), val(bold_id), val("${qc_result_path}/${subject_id}/figures/${bold_id}_desc-carpet_bold.svg")) // emit: bold_carpet_svg
     script:
-    script_py = "${nextflow_bin_path}/bold_averagesingnal.py"
+    script_py = "bold_averagesingnal.py"
     """
-    python3 ${script_py} \
+    ${script_py} \
     --subject_id ${subject_id} \
     --bold_preprocess_dir ${bold_preprocess_path} \
     --qc_result_path ${qc_result_path} \
@@ -1803,34 +1672,113 @@ process qc_plot_carpet {
 }
 
 
-process bold_confounds {
+process qc_plot_aparc_aseg {
     tag "${subject_id}"
 
-    cpus 3
-    memory '7 GB'
+    cpus 5
+    memory '1 GB'
 
     input:
-    path bold_preprocess_path
-    path nextflow_bin_path
-    tuple(val(subject_id), val(bold_id), path(mc), path(mcdat), path(anat_wm_nii), path(anat_brainmask_nii), path(anat_brainmask_bin_nii), path(anat_ventricles_nii))
+    val(subjects_dir)
+    tuple(val(subject_id), path(norm_mgz), path(aparc_aseg))
+
+    val(qc_utils_path)
+    val(qc_result_path)
+    val(freesurfer_home)
 
     output:
-    tuple(val(subject_id), val(bold_id), path("${bold_preprocess_path}/${subject_id}/func/${bold_id}_desc-confounds_timeseries.txt")) // emit: bold_confounds_view
+    tuple(val(subject_id), val("${aparc_aseg_svg}"))
 
     script:
-    script_py = "${nextflow_bin_path}/bold_cal_confounds.py"
+    aparc_aseg_svg = "${qc_result_path}/${subject_id}/figures/${subject_id}_desc-volparc_T1w.svg"
+
+    script_py = "qc_anat_aparc_aseg.py"
+    freesurfer_AllLut = "${qc_utils_path}/FreeSurferAllLut.txt"
+    volume_parc_scene = "${qc_utils_path}/Volume_parc.scene"
+    """
+    ${script_py} \
+    --subject_id ${subject_id} \
+    --subjects_dir ${subjects_dir} \
+    --qc_result_path ${qc_result_path} \
+    --dlabel_info ${freesurfer_AllLut} \
+    --scene_file ${volume_parc_scene} \
+    --svg_outpath ${aparc_aseg_svg} \
+    --freesurfer_home ${freesurfer_home}
 
     """
-    python3 ${script_py} \
-    --bold_preprocess_dir ${bold_preprocess_path} \
+}
+
+
+process qc_plot_volsurf {
+    tag "${subject_id}"
+
+    cpus 5
+
+    input:
+    val(subjects_dir)
+    tuple(val(subject_id), path(lh_white_surf), path(lh_pial_surf), path(rh_white_surf), path(rh_pial_surf), path(t1_mgz))
+
+    val(qc_utils_path)
+    val(qc_result_path)
+    val(freesurfer_home)
+
+    output:
+    tuple(val(subject_id), val("${qc_plot_aseg_fig_path}"))
+
+    script:
+    qc_plot_aseg_fig_path = "${qc_result_path}/${subject_id}/figures/${subject_id}_desc-volsurf_T1w.svg"
+
+    script_py = "qc_anat_vol_surface.py"
+    vol_Surface_scene = "${qc_utils_path}/Vol_Surface.scene"
+    affine_mat = "${qc_utils_path}/affine.mat"
+
+    """
+    ${script_py} \
     --subject_id ${subject_id} \
-    --bold_id ${bold_id} \
-    --bold_file ${mc} \
-    --mcdat ${mcdat} \
-    --aseg_wm ${anat_wm_nii} \
-    --aseg_brainmask ${anat_brainmask_nii} \
-    --aseg_brainmask_bin ${anat_brainmask_bin_nii} \
-    --aseg_ventricles ${anat_ventricles_nii}
+    --subjects_dir ${subjects_dir} \
+    --qc_result_path ${qc_result_path} \
+    --affine_mat ${affine_mat} \
+    --scene_file ${vol_Surface_scene} \
+    --svg_outpath ${qc_plot_aseg_fig_path} \
+    --freesurfer_home ${freesurfer_home}
+
+    """
+}
+
+
+process qc_plot_surfparc {
+    tag "${subject_id}"
+
+    cpus 1
+
+    input:
+    val(subjects_dir)
+    tuple(val(subject_id), path(lh_aparc_annot), path(lh_white_surf), path(lh_pial_surf), path(rh_aparc_annot),path(rh_white_surf), path(rh_pial_surf))
+
+    val(qc_utils_path)
+    val(qc_result_path)
+    val(freesurfer_home)
+
+    output:
+    tuple(val(subject_id), val("${qc_plot_aseg_fig_path}"))
+
+    script:
+    qc_plot_aseg_fig_path = "${qc_result_path}/${subject_id}/figures/${subject_id}_desc-surfparc_T1w.svg"
+
+    script_py = "qc_anat_surface_parc.py"
+    surface_parc_scene = "${qc_utils_path}/Surface_parc.scene"
+    affine_mat = "${qc_utils_path}/affine.mat"
+
+    """
+    ${script_py} \
+    --subject_id ${subject_id} \
+    --subjects_dir ${subjects_dir} \
+    --qc_result_path ${qc_result_path} \
+    --affine_mat ${affine_mat} \
+    --scene_file ${surface_parc_scene} \
+    --svg_outpath ${qc_plot_aseg_fig_path} \
+    --freesurfer_home ${freesurfer_home}
+
     """
 }
 
@@ -1842,21 +1790,21 @@ process qc_plot_norm_to_mni152 {
 
     input:
     tuple(val(subject_id), path(norm_to_mni152_nii))
-    path bold_preprocess_path
-    path nextflow_bin_path
-    path qc_result_path
+    val(bold_preprocess_path)
+    val(qc_utils_path)
+    val(qc_result_path)
 
     output:
-    tuple(val(subject_id), path("${qc_plot_norm_to_mni152_fig_path}"))
+    tuple(val(subject_id), val("${qc_plot_norm_to_mni152_fig_path}"))
 
     script:
-    script_py = "${nextflow_bin_path}/qc_bold_norm_to_mni152.py"
-    normtoMNI152_scene = "${nextflow_bin_path}/qc_tool/NormtoMNI152.scene"
-    mni152_norm_png = "${nextflow_bin_path}/qc_tool/MNI152_norm.png"
+    script_py = "qc_bold_norm_to_mni152.py"
+    normtoMNI152_scene = "${qc_utils_path}/NormtoMNI152.scene"
+    mni152_norm_png = "${qc_utils_path}/MNI152_norm.png"
     qc_plot_norm_to_mni152_fig_path = "${qc_result_path}/${subject_id}/figures/${subject_id}_desc-T1toMNI152_combine.svg"
 
     """
-    python3 ${script_py} \
+    ${script_py} \
     --subject_id ${subject_id} \
     --bold_preprocess_path  ${bold_preprocess_path} \
     --qc_result_path  ${qc_result_path} \
@@ -1878,23 +1826,23 @@ process qc_plot_bold_to_space {
     input:
     tuple(val(subject_id), val(bold_id), path(bold_atlas_to_mni152))
     tuple(val(subject_id), val(bold_id), path(bold_to_T1w))
-    val fs_native_space
-    path subjects_dir
-    path bold_preprocess_path
-    path nextflow_bin_path
-    path qc_result_path
-    val freesurfer_home
+    val(fs_native_space)
+    val(subjects_dir)
+    val(bold_preprocess_path)
+    val(qc_utils_path)
+    val(qc_result_path)
+    val(freesurfer_home)
 
     output:
-    tuple(val(subject_id), val(bold_id), path("${qc_plot_norm_to_mni152_fig_path}"))
+    tuple(val(subject_id), val(bold_id), val("${qc_plot_norm_to_mni152_fig_path}"))
 
     script:
     qc_plot_norm_to_mni152_fig_path = "${qc_result_path}/${subject_id}/figures/${bold_id}_desc-reg2MNI152_bold.svg"
-    script_py = "${nextflow_bin_path}/qc_bold_to_space.py"
-    qc_tool_package = "${nextflow_bin_path}/qc_tool"
+    script_py = "qc_bold_to_space.py"
+    qc_tool_package = "${qc_utils_path}"
 
     """
-    python3 ${script_py} \
+    ${script_py} \
     --subject_id ${subject_id} \
     --bold_id ${bold_id} \
     --fs_native_space ${fs_native_space} \
@@ -1917,20 +1865,20 @@ process qc_anat_create_report {
     cpus 1
 
     input:
-    tuple(val(subject_id), path(aparc_aseg_svg))
-    path nextflow_bin_path
-    path bids_dir
-    path subjects_dir
-    path qc_result_path
-    val deepprep_version
+    val(bids_dir)
+    val(subjects_dir)
+    val(qc_result_path)
+    tuple(val(subject_id), path(anything))
+    val(reports_utils_path)
+    val(deepprep_version)
     output:
-    tuple(val(subject_id), path("${qc_result_path}/${subject_id}/${subject_id}.html")) // emit: qc_report
+    tuple(val(subject_id), val("${qc_result_path}/${subject_id}/${subject_id}.html")) // emit: qc_report
     script:
-    script_py = "${nextflow_bin_path}/qc_create_report.py"
+    script_py = "qc_create_report.py"
 
     """
-    python3 ${script_py} \
-    --nextflow_bin_path ${nextflow_bin_path} \
+    ${script_py} \
+    --reports_utils_path ${reports_utils_path} \
     --subject_id ${subject_id} \
     --bids_dir ${bids_dir} \
     --subjects_dir ${subjects_dir} \
@@ -1948,21 +1896,21 @@ process qc_bold_create_report {
     cpus 1
 
     input:
-    tuple(val(subject_id), val(bold_id), val(bold_confounds))
-    path nextflow_bin_path
-    path bids_dir
-    path subjects_dir
-    path qc_result_path
-    val bold_task_type
-    val deepprep_version
+    tuple(val(subject_id), val(anything), path(anything))
+    val(reports_utils_path)
+    val(bids_dir)
+    val(subjects_dir)
+    val(qc_result_path)
+    val(bold_task_type)
+    val(deepprep_version)
     output:
-    tuple(val(subject_id), path("${qc_result_path}/${subject_id}/${subject_id}.html")) // emit: qc_report
+    tuple(val(subject_id), val("${qc_result_path}/${subject_id}/${subject_id}.html")) // emit: qc_report
     script:
-    script_py = "${nextflow_bin_path}/qc_create_report.py"
+    script_py = "qc_create_report.py"
 
     """
-    python3 ${script_py} \
-    --nextflow_bin_path ${nextflow_bin_path} \
+    ${script_py} \
+    --reports_utils_path ${reports_utils_path} \
     --subject_id ${subject_id} \
     --bids_dir ${bids_dir} \
     --subjects_dir ${subjects_dir} \
@@ -1999,9 +1947,10 @@ workflow anat_wf {
     surfreg_home = params.surfreg_home
     surfreg_model_path = params.surfreg_model_path
 
-    nextflow_bin_path = params.nextflow_bin_path
-
     deepprep_version = params.deepprep_version
+
+    qc_utils_path = params.qc_utils_path
+    reports_utils_path = params.reports_utils_path
 
     // BIDS and SUBJECTS_DIR
     _directory = new File(subjects_dir)
@@ -2016,19 +1965,19 @@ workflow anat_wf {
         println "create dir: ..."
         println _directory
     }
-    subject_t1wfile_txt = anat_get_t1w_file_in_bids(bids_dir, nextflow_bin_path)
-    subjects_fsaverage_dir = cp_fsaverage(subjects_dir, freesurfer_fsaverage_dir)
-    subject_id = anat_create_subject_orig_dir(subjects_dir, subject_t1wfile_txt, nextflow_bin_path)
+    subject_t1wfile_txt = anat_get_t1w_file_in_bids(bids_dir)
+    subjects_fsaverage_dir = anat_cp_fsaverage(subjects_dir, freesurfer_fsaverage_dir)
+    subject_id = anat_create_subject_orig_dir(subjects_dir, subject_t1wfile_txt, deepprep_version)
 
     // freesurfer
-    (orig_mgz, rawavg_mgz) = anat_motioncor(subjects_dir, subject_id)
+    (orig_mgz, rawavg_mgz) = anat_motioncor(subjects_dir, subject_id, fsthreads)
 
     // fastsurfer
-    (seg_deep_mgz, seg_orig_mgz) = anat_segment(subjects_dir, orig_mgz, fastsurfer_home, nextflow_bin_path, gpu_lock)
+    seg_deep_mgz = anat_segment(subjects_dir, orig_mgz, fastsurfer_home, gpu_lock)
     (aseg_auto_noccseg_mgz, mask_mgz) = anat_reduce_to_aseg(subjects_dir, seg_deep_mgz, fastsurfer_home)
 
     anat_N4_bias_correct_input = orig_mgz.join(mask_mgz)
-    orig_nu_mgz = anat_N4_bias_correct(subjects_dir, anat_N4_bias_correct_input, fastsurfer_home)
+    orig_nu_mgz = anat_N4_bias_correct(subjects_dir, anat_N4_bias_correct_input, fastsurfer_home, fsthreads)
 
     anat_talairach_and_nu_input = orig_mgz.join(orig_nu_mgz)
     (nu_mgz, talairach_auto_xfm, talairach_xfm, talairach_xfm_lta, talairach_with_skull_lta, talairach_lta) = anat_talairach_and_nu(subjects_dir, anat_talairach_and_nu_input, freesurfer_home)
@@ -2060,7 +2009,7 @@ workflow anat_wf {
     // fastcsr
     // hemi levelset_nii
     anat_fastcsr_levelset_input = orig_mgz.join(filled_mgz)
-    levelset_nii = anat_fastcsr_levelset(subjects_dir, anat_fastcsr_levelset_input, fastcsr_home, fastcsr_model_path, nextflow_bin_path, hemis, gpu_lock)
+    levelset_nii = anat_fastcsr_levelset(subjects_dir, anat_fastcsr_levelset_input, fastcsr_home, fastcsr_model_path, hemis, gpu_lock)
 
     // hemi orig_surf, orig_premesh_surf
     anat_fastcsr_mksurface_input = levelset_nii.join(hemis_orig_mgz, by: [0, 1]).join(hemis_brainmask_mgz, by: [0, 1]).join(hemis_aseg_presurf_mgz, by: [0, 1])
@@ -2095,32 +2044,18 @@ workflow anat_wf {
 
     // curv_surf, sulc_surf, sphere_surf
     anat_sphere_register_input = curv_surf.join(sulc_surf, by: [0, 1]).join(sphere_surf, by: [0, 1])
-    sphere_reg_surf = anat_sphere_register(subjects_dir, anat_sphere_register_input, surfreg_home, surfreg_model_path, freesurfer_home, nextflow_bin_path, gpu_lock)
+    sphere_reg_surf = anat_sphere_register(subjects_dir, anat_sphere_register_input, surfreg_home, surfreg_model_path, freesurfer_home, gpu_lock)
 
     // white_preaparc_surf, sphere_reg_surf
     anat_jacobian_input = white_preaparc_surf.join(sphere_reg_surf, by: [0, 1])
     jacobian_white = anat_jacobian(subjects_dir, anat_jacobian_input)
 
-//     avg_curv = anat_avgcurv(subjects_dir, sphere_reg_surf, freesurfer_home)  // if for paper, comment out
-
     // cortex_label, sphere_reg_surf, smoothwm_surf
     anat_cortparc_aparc_input = cortex_label.join(sphere_reg_surf, by: [0, 1]).join(smoothwm_surf, by: [0, 1]).join(hemis_aseg_presurf_mgz, by: [0, 1])
     aparc_annot = anat_cortparc_aparc(subjects_dir, anat_cortparc_aparc_input, freesurfer_home)
 
-//     aparc_a2009s_annot = anat_cortparc_aparc_a2009s(subjects_dir, anat_cortparc_aparc_input, freesurfer_home)  // if for paper, comment out
-
     anat_pial_surface_input = orig_surf.join(white_surf, by: [0, 1]).join(autodet_gwstats, by: [0, 1]).join(cortex_hipamyg_label, by: [0, 1]).join(cortex_label, by: [0, 1]).join(aparc_annot, by: [0, 1]).join(hemis_aseg_presurf_mgz, by: [0, 1]).join(hemis_wm_mgz, by: [0, 1]).join(hemis_brain_finalsurfs_mgz, by: [0, 1])
     (pial_surf, pial_t1_surf, curv_pial_surf, area_pial_surf, thickness_surf) = anat_pial_surface(subjects_dir, anat_pial_surface_input)
-
-    qc_plot_volsurf_input_lh = white_surf.join(pial_surf, by: [0, 1]).join(subject_id_lh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3] }
-    qc_plot_volsurf_input_rh = white_surf.join(pial_surf, by: [0, 1]).join(subject_id_rh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3] }
-    qc_plot_volsurf_input = qc_plot_volsurf_input_lh.join(qc_plot_volsurf_input_rh).join(t1_mgz)
-    vol_surface_svg = qc_plot_volsurf(subjects_dir, qc_plot_volsurf_input, nextflow_bin_path, qc_result_path, freesurfer_home)
-
-    qc_plot_surfparc_input_lh = aparc_annot.join(white_surf, by: [0, 1]).join(pial_surf, by: [0, 1]).join(subject_id_lh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4] }
-    qc_plot_surfparc_input_rh = aparc_annot.join(white_surf, by: [0, 1]).join(pial_surf, by: [0, 1]).join(subject_id_rh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4] }
-    qc_plot_surfparc_input = qc_plot_surfparc_input_lh.join(qc_plot_surfparc_input_rh)
-    surface_parc_svg = qc_plot_surfparc(subjects_dir, qc_plot_surfparc_input, nextflow_bin_path, qc_result_path, freesurfer_home)
 
     anat_pctsurfcon_input = cortex_label.join(white_surf, by: [0, 1]).join(thickness_surf, by: [0, 1]).join(hemis_rawavg_mgz, by: [0, 1]).join(hemis_orig_mgz, by: [0, 1])
     (w_g_pct_mgh, w_g_pct_stats) = anat_pctsurfcon(subjects_dir, anat_pctsurfcon_input)
@@ -2131,11 +2066,6 @@ workflow anat_wf {
     anat_parcstats_input = lh_anat_parcstats_input.join(rh_anat_parcstats_input).join(wm_mgz)
     (aparc_pial_stats, aparc_stats) = anat_parcstats(subjects_dir, anat_parcstats_input)
 
-//     lh_anat_parcstats2_input = white_surf.join(cortex_label, by: [0, 1]).join(pial_surf, by: [0, 1]).join(aparc_a2009s_annot, by: [0, 1]).join(subject_id_lh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4, 5] }
-//     rh_anat_parcstats2_input = white_surf.join(cortex_label, by: [0, 1]).join(pial_surf, by: [0, 1]).join(aparc_a2009s_annot, by: [0, 1]).join(subject_id_rh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4, 5] }
-//     anat_parcstats2_input = lh_anat_parcstats2_input.join(rh_anat_parcstats2_input).join(wm_mgz)
-//     (aparc_pial_stats, aparc_stats) = anat_parcstats2(subjects_dir, anat_parcstats2_input)  // if for paper, comment out
-
     // aparc2aseg: create aparc+aseg and aseg
     lh_anat_ribbon_mgz_input = white_surf.join(pial_surf, by: [0, 1]).join(subject_id_lh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3] }
     rh_anat_ribbon_mgz_input = white_surf.join(pial_surf, by: [0, 1]).join(subject_id_rh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3] }
@@ -2145,34 +2075,54 @@ workflow anat_wf {
     lh_anat_apas2aseg_input = white_surf.join(pial_surf, by: [0, 1]).join(cortex_label, by: [0, 1]).join(subject_id_lh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4] }
     rh_anat_apas2aseg_input = white_surf.join(pial_surf, by: [0, 1]).join(cortex_label, by: [0, 1]).join(subject_id_rh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4] }
     anat_apas2aseg_inputs = aseg_presurf_hypos_mgz.join(ribbon_mgz).join(lh_anat_apas2aseg_input).join(rh_anat_apas2aseg_input)
-    (aseg_mgz, brainvol_stats) = anat_apas2aseg(subjects_dir, anat_apas2aseg_inputs)
+    (aseg_mgz, brainvol_stats) = anat_apas2aseg(subjects_dir, anat_apas2aseg_inputs, fsthreads)
 
     lh_anat_aparc2aseg_input = white_surf.join(pial_surf, by: [0, 1]).join(cortex_label, by: [0, 1]).join(aparc_annot, by: [0, 1]).join(subject_id_lh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4, 5] }
     rh_anat_aparc2aseg_input = white_surf.join(pial_surf, by: [0, 1]).join(cortex_label, by: [0, 1]).join(aparc_annot, by: [0, 1]).join(subject_id_rh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4, 5] }
     anat_aparc2aseg_inputs = aseg_mgz.join(ribbon_mgz).join(lh_anat_aparc2aseg_input).join(rh_anat_aparc2aseg_input)
-    aparc_aseg_mgz = anat_aparc2aseg(subjects_dir, anat_aparc2aseg_inputs)
+    aparc_aseg_mgz = anat_aparc2aseg(subjects_dir, anat_aparc2aseg_inputs, fsthreads)
+
+    // QC report
+    qc_plot_volsurf_input_lh = white_surf.join(pial_surf, by: [0, 1]).join(subject_id_lh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3] }
+    qc_plot_volsurf_input_rh = white_surf.join(pial_surf, by: [0, 1]).join(subject_id_rh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3] }
+    qc_plot_volsurf_input = qc_plot_volsurf_input_lh.join(qc_plot_volsurf_input_rh).join(t1_mgz)
+    vol_surface_svg = qc_plot_volsurf(subjects_dir, qc_plot_volsurf_input, qc_utils_path, qc_result_path, freesurfer_home)
+
+    qc_plot_surfparc_input_lh = aparc_annot.join(white_surf, by: [0, 1]).join(pial_surf, by: [0, 1]).join(subject_id_lh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4] }
+    qc_plot_surfparc_input_rh = aparc_annot.join(white_surf, by: [0, 1]).join(pial_surf, by: [0, 1]).join(subject_id_rh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4] }
+    qc_plot_surfparc_input = qc_plot_surfparc_input_lh.join(qc_plot_surfparc_input_rh)
+    surface_parc_svg = qc_plot_surfparc(subjects_dir, qc_plot_surfparc_input, qc_utils_path, qc_result_path, freesurfer_home)
 
     qc_plot_aparc_aseg_input = norm_mgz.join(aparc_aseg_mgz)
-    aparc_aseg_svg = qc_plot_aparc_aseg(subjects_dir, qc_plot_aparc_aseg_input, nextflow_bin_path, qc_result_path, freesurfer_home)
-    qc_report = qc_anat_create_report(aparc_aseg_svg, nextflow_bin_path, bids_dir, subjects_dir, qc_result_path, deepprep_version)
+    aparc_aseg_svg = qc_plot_aparc_aseg(subjects_dir, qc_plot_aparc_aseg_input, qc_utils_path, qc_result_path, freesurfer_home)
 
-//     lh_anat_aparc_a2009s2aseg_input = white_surf.join(pial_surf, by: [0, 1]).join(cortex_label, by: [0, 1]).join(aparc_a2009s_annot, by: [0, 1]).join(subject_id_lh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4, 5] }
-//     rh_anat_aparc_a2009s2aseg_input = white_surf.join(pial_surf, by: [0, 1]).join(cortex_label, by: [0, 1]).join(aparc_a2009s_annot, by: [0, 1]).join(subject_id_rh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4, 5] }
-//     anat_aparc_a2009s2aseg_inputs = aseg_mgz.join(ribbon_mgz).join(lh_anat_aparc_a2009s2aseg_input).join(rh_anat_aparc_a2009s2aseg_input)
-//     aparc_a2009s_aseg_mgz = anat_aparc_a2009s2aseg(subjects_dir, anat_aparc_a2009s2aseg_inputs)  // if for paper, comment out
+    qc_report = qc_anat_create_report(bids_dir, subjects_dir, qc_result_path, aparc_aseg_svg, reports_utils_path, deepprep_version)
 
-    //  *exvivo* labels
-//     balabels_lh = Channel.fromPath("${freesurfer_fsaverage_dir}/label/*lh*exvivo*.label")
-//     balabels_rh = Channel.fromPath("${freesurfer_fsaverage_dir}/label/*rh*exvivo*.label")
-//     anat_balabels_input_lh = sphere_reg_surf.join(white_surf, by: [0, 1]).join(subject_id_lh, by: [0, 1])
-//     anat_balabels_input_rh = sphere_reg_surf.join(white_surf, by: [0, 1]).join(subject_id_rh, by: [0, 1])
-//     balabel_lh = anat_balabels_lh(subjects_dir, anat_balabels_input_lh, balabels_lh, subjects_fsaverage_dir)  // if for paper, comment out
-//     balabel_rh = anat_balabels_rh(subjects_dir, anat_balabels_input_rh, balabels_rh, subjects_fsaverage_dir)  // if for paper, comment out
+    // APP
+    if (params.preprocess_others.toString().toUpperCase() == 'TRUE') {
+        println "INFO: anat preprocess others == TURE"
+        avg_curv = anat_avgcurv(subjects_dir, sphere_reg_surf, freesurfer_home)  // if for paper, comment out
 
-//     lh_bold_bbregister_input = white_surf.join(thickness_surf, by: [0, 1]).join(cortex_label, by: [0, 1]).join(subject_id_lh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4] }
-//     rh_bold_bbregister_input = white_surf.join(thickness_surf, by: [0, 1]).join(cortex_label, by: [0, 1]).join(subject_id_rh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4] }
-//     bold_bbregister_input = seg_deep_withcc_mgz.join(lh_bold_bbregister_input).join(rh_bold_bbregister_input)
-//     bold_bbregister_input = aparc_aseg_mgz.join(lh_bold_bbregister_input).join(rh_bold_bbregister_input)
+        aparc_a2009s_annot = anat_cortparc_aparc_a2009s(subjects_dir, anat_cortparc_aparc_input, freesurfer_home)  // if for paper, comment out
+
+        lh_anat_parcstats2_input = white_surf.join(cortex_label, by: [0, 1]).join(pial_surf, by: [0, 1]).join(aparc_a2009s_annot, by: [0, 1]).join(subject_id_lh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4, 5] }
+        rh_anat_parcstats2_input = white_surf.join(cortex_label, by: [0, 1]).join(pial_surf, by: [0, 1]).join(aparc_a2009s_annot, by: [0, 1]).join(subject_id_rh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4, 5] }
+        anat_parcstats2_input = lh_anat_parcstats2_input.join(rh_anat_parcstats2_input).join(wm_mgz)
+        (aparc_pial_stats, aparc_stats) = anat_parcstats2(subjects_dir, anat_parcstats2_input)  // if for paper, comment out
+
+        lh_anat_aparc_a2009s2aseg_input = white_surf.join(pial_surf, by: [0, 1]).join(cortex_label, by: [0, 1]).join(aparc_a2009s_annot, by: [0, 1]).join(subject_id_lh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4, 5] }
+        rh_anat_aparc_a2009s2aseg_input = white_surf.join(pial_surf, by: [0, 1]).join(cortex_label, by: [0, 1]).join(aparc_a2009s_annot, by: [0, 1]).join(subject_id_rh, by: [0, 1]).map { tuple -> return tuple[0, 2, 3, 4, 5] }
+        anat_aparc_a2009s2aseg_inputs = aseg_mgz.join(ribbon_mgz).join(lh_anat_aparc_a2009s2aseg_input).join(rh_anat_aparc_a2009s2aseg_input)
+        aparc_a2009s_aseg_mgz = anat_aparc_a2009s2aseg(subjects_dir, anat_aparc_a2009s2aseg_inputs, fsthreads)  // if for paper, comment out
+
+        //  *exvivo* labels
+        balabels_lh = Channel.fromPath("${freesurfer_fsaverage_dir}/label/*lh*exvivo*.label")
+        balabels_rh = Channel.fromPath("${freesurfer_fsaverage_dir}/label/*rh*exvivo*.label")
+        anat_balabels_input_lh = sphere_reg_surf.join(white_surf, by: [0, 1]).join(subject_id_lh, by: [0, 1])
+        anat_balabels_input_rh = sphere_reg_surf.join(white_surf, by: [0, 1]).join(subject_id_rh, by: [0, 1])
+        balabel_lh = anat_balabels_lh(subjects_dir, anat_balabels_input_lh, balabels_lh, subjects_fsaverage_dir)  // if for paper, comment out
+        balabel_rh = anat_balabels_rh(subjects_dir, anat_balabels_input_rh, balabels_rh, subjects_fsaverage_dir)  // if for paper, comment out
+    }
 
     emit:
     t1_mgz
@@ -2211,11 +2161,14 @@ workflow bold_wf {
     bold_fs_native_space = params.bold_fs_native_space
 
     // set software path
-    nextflow_bin_path = params.nextflow_bin_path
     freesurfer_home = params.freesurfer_home
 
-    bold_synthmorph_model_path = params.bold_synthmorph_model_path
-    bold_synthmorph_template_path = params.bold_synthmorph_template_path
+    synthmorph_home = params.synthmorph_home
+    synthmorph_model_path = params.synthmorph_model_path
+    synthmorph_template_path = params.synthmorph_template_path
+
+    qc_utils_path = params.qc_utils_path
+    reports_utils_path = params.reports_utils_path
 
     deepprep_version = params.deepprep_version
 
@@ -2233,7 +2186,7 @@ workflow bold_wf {
         println _directory
     }
 
-    subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, nextflow_bin_path, bold_task_type)
+    subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, bold_task_type)
     (subject_id, boldfile_id, subject_boldfile_txt) = subject_boldfile_txt.flatten().multiMap { it ->
                                                                                      a: it.name.split('_')[0]
                                                                                      c: it.name
@@ -2251,56 +2204,55 @@ workflow bold_wf {
 
 
     bold_T1_to_2mm_input = t1_mgz.join(norm_mgz)
-    (t1_native2mm, norm_native2mm) = bold_T1_to_2mm(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_T1_to_2mm_input)
+    (t1_native2mm, norm_native2mm) = bold_T1_to_2mm(subjects_dir, bold_preprocess_path, bold_T1_to_2mm_input)
 
     // add aparc+aseg to synthmorph process to make synthmorph and bbregister processes running at the same time
     t1_native2mm_aparc_aseg = t1_native2mm.join(aparc_aseg_mgz).join(w_g_pct_mgh)
-    (affine_nii, affine_trans) = synthmorph_affine(subjects_dir, bold_preprocess_path, nextflow_bin_path, t1_native2mm_aparc_aseg, bold_synthmorph_model_path, bold_synthmorph_template_path, gpu_lock)
+    (affine_nii, affine_trans) = synthmorph_affine(subjects_dir, bold_preprocess_path, synthmorph_home, t1_native2mm_aparc_aseg, synthmorph_model_path, synthmorph_template_path, gpu_lock)
     synthmorph_norigid_input = t1_native2mm.join(norm_native2mm, by: [0]).join(affine_trans, by: [0])
-    (t1_norigid_nii, norm_norigid_nii, transvoxel) = synthmorph_norigid(subjects_dir, bold_preprocess_path, nextflow_bin_path, synthmorph_norigid_input, bold_synthmorph_model_path, bold_synthmorph_template_path, gpu_lock)
+    (t1_norigid_nii, norm_norigid_nii, transvoxel) = synthmorph_norigid(subjects_dir, bold_preprocess_path, synthmorph_home, synthmorph_norigid_input, synthmorph_model_path, synthmorph_template_path, gpu_lock)
 
-    norm_to_mni152_svg = qc_plot_norm_to_mni152(norm_norigid_nii, bold_preprocess_path, nextflow_bin_path, qc_result_path)
-
-    subject_boldref_file = bold_get_bold_ref_in_bids(bold_preprocess_path, bids_dir, nextflow_bin_path, subject_id_unique, boldfile_id_unique)  // subject_id, subject_boldref_file
+    subject_boldref_file = bold_get_bold_ref_in_bids(bold_preprocess_path, bids_dir, subject_id_unique, boldfile_id_unique)  // subject_id, subject_boldref_file
     transvoxel_group = subject_id_boldfile_id.groupTuple(sort: true).join(transvoxel).transpose()
     aparc_aseg_mgz = subject_id_boldfile_id.groupTuple(sort: true).join(aparc_aseg_mgz).transpose()
     boldfile_id_group = subject_id_boldfile_id.groupTuple(sort: true).join(subject_boldref_file).map { tuple -> tuple[1] }
     boldfile_id_split = split_subject_boldref_file(boldfile_id_group.flatten())
 
-    bold_info = bold_skip_reorient(bold_preprocess_path, nextflow_bin_path, qc_result_path, subject_boldfile_txt, bold_reorient, bold_skip_frame, bold_susceptibility_distortion_correction)
+    bold_info = bold_skip_reorient(bold_preprocess_path, qc_result_path, subject_boldfile_txt, bold_reorient, bold_skip_frame, bold_susceptibility_distortion_correction)
     bold_info = boldfile_id_split.join(bold_info, by: [0, 1])
-    (mc_nii, mcdat, boldref) = bold_stc_mc(bold_preprocess_path, nextflow_bin_path, bold_info)
+    (mc_nii, mcdat, boldref) = bold_stc_mc(bold_preprocess_path, bold_info)
 
     bbregister_dat_input = aparc_aseg_mgz.join(mc_nii, by: [0, 1])
-    bbregister_dat = bold_bbregister(subjects_dir, bold_preprocess_path, nextflow_bin_path, bbregister_dat_input)
-    t1_native2mm_group = subject_id_boldfile_id.groupTuple(sort: true).join(t1_native2mm).transpose()
+    bbregister_dat = bold_bbregister(subjects_dir, bold_preprocess_path, bbregister_dat_input)
+    t1_native2mm_group = subject_id_boldfile_id.groupTuple(sort: true).join(t1_native2mm).transpose()  // TODO from here can't resume
     bold_bbregister_to_native_input = boldref.join(mc_nii, by: [0, 1]).join(t1_native2mm_group, by: [0, 1]).join(bbregister_dat, by: [0, 1])
 
-    (bbregister_native_2mm, bbregister_native_2mm_fframe) = bold_bbregister_to_native(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_bbregister_to_native_input, freesurfer_home)
+    (bbregister_native_2mm, bbregister_native_2mm_fframe) = bold_bbregister_to_native(subjects_dir, bold_preprocess_path, bold_bbregister_to_native_input, freesurfer_home)
 
     bold_aparaseg2mc_inputs = aparc_aseg_mgz.join(mc_nii, by: [0,1]).join(bbregister_dat, by: [0,1])
-    (anat_wm_nii, anat_csf_nii, anat_aseg_nii, anat_ventricles_nii, anat_brainmask_nii, anat_brainmask_bin_nii) = bold_mkbrainmask(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_aparaseg2mc_inputs)
-    bold_synthmorph_norigid_apply_input = t1_native2mm_group.join(mc_nii, by: [0,1]).join(bbregister_native_2mm, by: [0,1]).join(transvoxel_group, by: [0,1])
-    (synthmorph_norigid_bold, synthmorph_norigid_bold_fframe) = bold_synthmorph_norigid_apply(subjects_dir, bold_preprocess_path, nextflow_bin_path, bold_synthmorph_norigid_apply_input, bold_synthmorph_template_path, gpu_lock)
+    (anat_wm_nii, anat_csf_nii, anat_aseg_nii, anat_ventricles_nii, anat_brainmask_nii, anat_brainmask_bin_nii) = bold_mkbrainmask(subjects_dir, bold_preprocess_path, bold_aparaseg2mc_inputs)
+    synthmorph_norigid_apply_input = t1_native2mm_group.join(mc_nii, by: [0,1]).join(bbregister_native_2mm, by: [0,1]).join(transvoxel_group, by: [0,1])
+    (synthmorph_norigid_bold, synthmorph_norigid_bold_fframe) = synthmorph_norigid_apply(subjects_dir, bold_preprocess_path, synthmorph_home, synthmorph_norigid_apply_input, synthmorph_template_path, gpu_lock)
 
     bold_confounds_inputs = mc_nii.join(mcdat, by: [0,1]).join(anat_wm_nii, by: [0,1]).join(anat_brainmask_nii, by: [0,1]).join(anat_brainmask_bin_nii, by: [0,1]).join(anat_ventricles_nii, by: [0,1])
-    (bold_confounds_txt, bold_confounds_view_txt) = bold_confounds(bold_preprocess_path, nextflow_bin_path, bold_confounds_inputs)
+    (bold_confounds_txt, bold_confounds_view_txt) = bold_confounds(bold_preprocess_path, bold_confounds_inputs)
+
+    norm_to_mni152_svg = qc_plot_norm_to_mni152(norm_norigid_nii, bold_preprocess_path, qc_utils_path, qc_result_path)
 
     qc_plot_mctsnr_input = mc_nii.join(anat_brainmask_nii, by: [0,1])
-    bold_mc_tsnr_svg = qc_plot_mctsnr(qc_plot_mctsnr_input, bold_preprocess_path, nextflow_bin_path, qc_result_path)
+    bold_mc_tsnr_svg = qc_plot_mctsnr(qc_plot_mctsnr_input, bold_preprocess_path, qc_utils_path, qc_result_path)
     qc_plot_carpet_inputs = mc_nii.join(mcdat, by: [0,1]).join(anat_aseg_nii, by: [0,1]).join(anat_brainmask_nii, by: [0,1]).join(anat_brainmask_bin_nii, by: [0,1]).join(anat_wm_nii, by: [0,1]).join(anat_csf_nii, by: [0,1])
-    (bold_carpet_svg) = qc_plot_carpet(bold_preprocess_path, nextflow_bin_path, qc_result_path, qc_plot_carpet_inputs)
-    bold_to_mni152_svg = qc_plot_bold_to_space(synthmorph_norigid_bold_fframe, bbregister_native_2mm_fframe, bold_fs_native_space, subjects_dir, bold_preprocess_path, nextflow_bin_path, qc_result_path, freesurfer_home)
+    (bold_carpet_svg) = qc_plot_carpet(bold_preprocess_path, qc_utils_path, qc_result_path, qc_plot_carpet_inputs)
+    bold_to_mni152_svg = qc_plot_bold_to_space(synthmorph_norigid_bold_fframe, bbregister_native_2mm_fframe, bold_fs_native_space, subjects_dir, bold_preprocess_path, qc_utils_path, qc_result_path, freesurfer_home)
     qc_bold_create_report_input = bold_to_mni152_svg.groupTuple(by: 0)
-    qc_report = qc_bold_create_report(qc_bold_create_report_input, nextflow_bin_path, bids_dir, subjects_dir, qc_result_path, bold_task_type, deepprep_version)
+    qc_report = qc_bold_create_report(qc_bold_create_report_input, reports_utils_path, bids_dir, subjects_dir, qc_result_path, bold_task_type, deepprep_version)
 
 }
 
 
 workflow {
 
-    nextflow_bin_path = params.nextflow_bin_path
-    gpu_lock = gpu_schedule_lock(nextflow_bin_path)
+    gpu_lock = gpu_schedule_lock()
 
     if (params.anat_only.toString().toUpperCase() == 'TRUE') {
         println "INFO: anat preprocess ONLY"

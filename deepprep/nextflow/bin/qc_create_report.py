@@ -83,10 +83,10 @@ def AboutSummary_run(subject_id, command, version):
                     Path(qc_report_path) / subject_id / 'figures' / f'{subject_id}_desc-aboutsummary_report.html')
 
 
-def create_report(subj_qc_report_path, qc_report_path, subject_id, nextflow_bin_path):
+def create_report(subj_qc_report_path, qc_report_path, subject_id, reports_utils_path):
     log_dir = subj_qc_report_path / 'logs'
-    reports_spec = nextflow_bin_path / 'reports' / 'reports-spec-deepprep.yml'
-    boilerplate_dir = nextflow_bin_path / 'reports' / 'logs'
+    reports_spec = reports_utils_path / 'reports-spec-deepprep.yml'
+    boilerplate_dir = reports_utils_path / 'logs'
     run_uuid = f"{strftime('%Y%m%d-%H%M%S')}_{uuid4()}"
     if not log_dir.exists():
         cmd = f'cp -r {boilerplate_dir} {log_dir}'
@@ -118,7 +118,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="DeepPrep: create qc report"
     )
-    parser.add_argument("--nextflow_bin_path", required=True)
+    parser.add_argument("--reports_utils_path", required=True)
     parser.add_argument("--bids_dir", help="BIDS dir path", required=True)
     parser.add_argument("--subjects_dir", help="SUBJECTS_DIR path", required=True)
     parser.add_argument("--qc_result_path", help="save qc report path", required=True)
@@ -128,11 +128,12 @@ if __name__ == '__main__':
     parser.add_argument("--nextflow_log", help="nextflow run log", required=True)
     args = parser.parse_args()
 
-    cur_path = os.getcwd()  # 必须添加这一行，否则生成的html会有图片重复
-    qc_report_path = Path(cur_path) / os.path.basename(args.qc_result_path)
+    # cur_path = os.getcwd()  # 必须添加这一行，否则生成的html会有图片重复
+    # qc_report_path = Path(cur_path) / os.path.basename(args.qc_result_path)
+    qc_report_path = Path(args.qc_result_path)
     subj_qc_report_path = qc_report_path / args.subject_id
     subj_qc_report_path.mkdir(parents=True, exist_ok=True)
-    nextflow_bin_path = Path(args.nextflow_bin_path)
+    reports_utils_path = Path(args.reports_utils_path)
 
     t1w_files, bold_files = get_t1w_and_bold(args.bids_dir, args.subject_id, args.bold_task_type)
 
@@ -145,4 +146,4 @@ if __name__ == '__main__':
         TemplateDimensions_run(args.subject_id, t1w_files, qc_report_path)
     AboutSummary_run(args.subject_id, command, args.deepprep_version)
 
-    create_report(subj_qc_report_path, qc_report_path, args.subject_id, nextflow_bin_path)
+    create_report(subj_qc_report_path, qc_report_path, args.subject_id, reports_utils_path)
