@@ -1,5 +1,5 @@
 Bootstrap: docker-daemon
-From: deepprep:v0.0.9ubuntu22.04
+From: deepprep:v0.0.10ubuntu22.04
 Stage: build
 
 %files
@@ -33,7 +33,7 @@ Stage: build
 
 %labels
     Author anning@cpl.ac.cn
-    Version v0.0.9ubuntu22.04
+    Version v0.0.10ubuntu22.04
 
 %help
     This is a DeepPrep container used to preprocess sMRI and fMRI
