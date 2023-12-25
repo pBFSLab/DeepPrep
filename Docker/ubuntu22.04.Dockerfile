@@ -76,7 +76,7 @@ RUN git clone https://github.com/adalca/neurite && cd neurite && pip3 install . 
 RUN echo "source /usr/local/freesurfer/SetUpFreeSurfer.sh" >> ~/.bashrc
 
 COPY deepprep /deepprep
-RUN chmod 755 /deepprep/Docker/deepprep.sh  && cp /deepprep/Docker/deepprep.sh /usr/local/bin/deepprep
+RUN chmod 755 /deepprep/deepprep.sh
 
 ### CMD
-ENTRYPOINT ["/usr/local/bin/deepprep", "run", "/deepprep/nextflow/deepprep.nf"]
+ENTRYPOINT ["/deepprep/deepprep.sh", "run", "/deepprep/nextflow/deepprep.nf"]
