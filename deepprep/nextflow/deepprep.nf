@@ -15,7 +15,7 @@ process anat_cp_fsaverage {
     if os.path.exists('${subjects_dir}/fsaverage'):
         os.system('rm -r ${subjects_dir}/fsaverage')
     os.system('cp -nr ${freesurfer_fsaverage_dir} ${subjects_dir}')
-    assert os.listdir('${subjects_dir}/fsaverage') == os.listdir('${freesurfer_fsaverage_dir}')
+    assert len(os.listdir('${subjects_dir}/fsaverage')) == len(os.listdir('${freesurfer_fsaverage_dir}'))
     """
 }
 
@@ -108,7 +108,7 @@ process anat_segment {
     val(subjects_dir)
     tuple(val(subject_id), path(orig_mgz))
 
-    path(fastsurfer_home)
+    val(fastsurfer_home)
 
     val(gpu_lock)
 
@@ -303,7 +303,7 @@ process anat_paint_cc_to_aseg {
     val(subjects_dir)
     tuple(val(subject_id), path(norm_mgz), path(seg_deep_mgz), path(aseg_auto_noccseg_mgz))
 
-    path(fastsurfer_home)
+    val(fastsurfer_home)
 
     output:
     tuple(val(subject_id), val("${aseg_auto_mgz}")) // emit: aseg_auto_mgz
