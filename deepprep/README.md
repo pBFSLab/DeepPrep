@@ -86,7 +86,7 @@ mkdir ${DEEPPREP_RESULT_DIR}/nextflow_workDir
 
 ### docker run 
 docker run -it --rm --gpus all --entrypoint /bin/bash \
--v ${DEEPPREP_WORKDIR}/${BIDS_DATASET}:/BIDS_DATASET \
+-v ${BIDS_DATASET_DIR}:/BIDS_DATASET \
 -v ${DEEPPREP_RESULT_DIR}:/DEEPPREP_RESULT_DIR \
 -v ${DEEPPREP_RESULT_DIR}/nextflow_workDir:/nextflow/workDir \
 -v ${FREESURFER_LICENSE}:/usr/local/freesurfer/license.txt \
