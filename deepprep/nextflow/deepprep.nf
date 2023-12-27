@@ -179,7 +179,7 @@ process anat_N4_bias_correct {
     tuple(val(subject_id), path(orig_mgz), path(mask_mgz))
 
     val(fastsurfer_home)
-    
+
     val(fsthreads)
 
     output:
@@ -210,7 +210,7 @@ process anat_talairach_and_nu {
     val(subjects_dir)
     tuple(val(subject_id), path(orig_mgz), path(orig_nu_mgz))
 
-    val(freesurfer_home) 
+    val(freesurfer_home)
 
     output:
     tuple(val(subject_id), val("${nu_mgz}")) // emit: nu_mgz
@@ -1480,13 +1480,14 @@ process synthmorph_affine {
     val(synthmorph_home)
     tuple(val(subject_id), path(t1_native2mm), val(schedule_control), val(schedule), path(schedule_control)) // schedule_control for running this process in right time
     val(synth_model_path)
-    val(synth_template_path)
+     val(template_space)
+    val(template_resolution)
 
     val(gpu_lock)
 
     output:
-    tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/func/${subject_id}_space-MNI152_res-2mm_desc-affine_T1w.nii.gz")) //emit: affine_nii
-    tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/func/${subject_id}_from-T1w_to-MNI152_desc-affine_xfm.txt")) //emit: affine_trans
+    tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/func/${subject_id}_space-${template_space}_res-${template_resolution}_desc-affine_T1w.nii.gz")) //emit: affine_nii
+    tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/func/${subject_id}_from-T1w_to-${template_space}_desc-affine_xfm.txt")) //emit: affine_trans
 
     script:
     gpu_script_py = "gpu_schedule_run.py"
@@ -1498,7 +1499,8 @@ process synthmorph_affine {
     --subject_id ${subject_id} \
     --synth_script ${synth_script} \
     --t1_native2mm ${t1_native2mm} \
-    --synth_template_path ${synth_template_path} \
+    --template_space ${template_space} \
+    --template_resolution ${template_resolution} \
     --synth_model_path ${synth_model_path}
     """
 }
@@ -1518,14 +1520,15 @@ process synthmorph_norigid {
     val(synthmorph_home)
     tuple(val(subject_id), path(t1_native2mm), path(norm_native2mm), path(affine_trans))
     val(synth_model_path)
-    val(synth_template_path)
+    val(template_space)
+    val(template_resolution)
 
     val(gpu_lock)
 
     output:
-    tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/func/${subject_id}_space-MNI152_res-2mm_desc-skull_T1w.nii.gz")) //emit: t1_norigid_nii
-    tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/func/${subject_id}_space-MNI152_res-2mm_desc-noskull_T1w.nii.gz")) //emit: norm_norigid_nii
-    tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/func/${subject_id}_from-T1w_to_MNI152_desc-nonlinear_xfm.npz")) //emit: transvoxel
+    tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/func/${subject_id}_space-${template_space}_res-${template_resolution}_desc-skull_T1w.nii.gz")) //emit: t1_norigid_nii
+    tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/func/${subject_id}_space-${template_space}_res-${template_resolution}_desc-noskull_T1w.nii.gz")) //emit: norm_norigid_nii
+    tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/func/${subject_id}_from-T1w_to_${template_space}_desc-nonlinear_xfm.npz")) //emit: transvoxel
 
     script:
     gpu_script_py = "gpu_schedule_run.py"
@@ -1539,7 +1542,8 @@ process synthmorph_norigid {
     --t1_native2mm ${t1_native2mm} \
     --norm_native2mm ${norm_native2mm} \
     --affine_trans ${affine_trans} \
-    --synth_template_path ${synth_template_path} \
+    --template_space ${template_space} \
+    --template_resolution ${template_resolution} \
     --synth_model_path ${synth_model_path}
     """
 }
@@ -1559,13 +1563,14 @@ process synthmorph_norigid_apply {
     val(synthmorph_home)
     tuple(val(subject_id), val(bold_id), path(t1_native2mm), path(mc), path(bbregister_native_2mm), path(transvoxel))
 //     path synth_model_path
-    val(synth_template_path)
+    val(template_space)
+    val(template_resolution)
 
     val(gpu_lock)
 
     output:
-    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-MNI152_res-2mm_bold.nii.gz")) //emit: synthmorph_norigid_bold
-    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-MNI152_res-2mm_boldref.nii.gz")) //emit: synthmorph_norigid_bold_fframe
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-${template_space}_res-${template_resolution}_bold.nii.gz")) //emit: synthmorph_norigid_bold
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-${template_space}_res-${template_resolution}_boldref.nii.gz")) //emit: synthmorph_norigid_bold_fframe
 
     script:
     gpu_script_py = "gpu_schedule_run.py"
@@ -1580,7 +1585,8 @@ process synthmorph_norigid_apply {
     --mc ${mc} \
     --bold ${bbregister_native_2mm} \
     --trans_vox ${transvoxel} \
-    --synth_template_path ${synth_template_path} \
+    --template_space ${template_space} \
+    --template_resolution ${template_resolution} \
     --synth_script ${synth_script}
     """
 }
@@ -2213,7 +2219,8 @@ workflow bold_wf {
 
     synthmorph_home = params.synthmorph_home
     synthmorph_model_path = params.synthmorph_model_path
-    synthmorph_template_path = params.synthmorph_template_path
+    template_space = params.bold_template_space  // templateflow
+    template_resolution = params.bold_template_resolution  // templateflow
 
     qc_utils_path = params.qc_utils_path
     reports_utils_path = params.reports_utils_path
@@ -2253,9 +2260,9 @@ workflow bold_wf {
     (t1_native2mm, norm_native2mm) = bold_T1_to_2mm(subjects_dir, bold_preprocess_path, bold_T1_to_2mm_input)
     // add aparc+aseg to synthmorph process to make synthmorph and bbregister processes running at the same time
     t1_native2mm_aparc_aseg = t1_native2mm.join(aparc_aseg_mgz).join(w_g_pct_mgh)
-    (affine_nii, affine_trans) = synthmorph_affine(subjects_dir, bold_preprocess_path, synthmorph_home, t1_native2mm_aparc_aseg, synthmorph_model_path, synthmorph_template_path, gpu_lock)
+    (affine_nii, affine_trans) = synthmorph_affine(subjects_dir, bold_preprocess_path, synthmorph_home, t1_native2mm_aparc_aseg, synthmorph_model_path, template_space, template_resolution, gpu_lock)
     synthmorph_norigid_input = t1_native2mm.join(norm_native2mm, by: [0]).join(affine_trans, by: [0])
-    (t1_norigid_nii, norm_norigid_nii, transvoxel) = synthmorph_norigid(subjects_dir, bold_preprocess_path, synthmorph_home, synthmorph_norigid_input, synthmorph_model_path, synthmorph_template_path, gpu_lock)
+    (t1_norigid_nii, norm_norigid_nii, transvoxel) = synthmorph_norigid(subjects_dir, bold_preprocess_path, synthmorph_home, synthmorph_norigid_input, synthmorph_model_path, template_space, template_resolution, gpu_lock)
 
     subject_boldref_file = bold_get_bold_ref_in_bids(bold_preprocess_path, bids_dir, subject_id_unique, boldfile_id_unique)  // subject_id, subject_boldref_file
     transvoxel_group = subject_id_boldfile_id.groupTuple(sort: true).join(transvoxel).transpose()
@@ -2281,7 +2288,7 @@ workflow bold_wf {
     bold_aparaseg2mc_inputs = aparc_aseg_mgz.join(mc_nii, by: [0,1]).join(bbregister_dat, by: [0,1])
     (anat_wm_nii, anat_csf_nii, anat_aseg_nii, anat_ventricles_nii, anat_brainmask_nii, anat_brainmask_bin_nii) = bold_mkbrainmask(subjects_dir, bold_preprocess_path, bold_aparaseg2mc_inputs)
     synthmorph_norigid_apply_input = t1_native2mm_group.join(mc_nii, by: [0,1]).join(bbregister_native_2mm, by: [0,1]).join(transvoxel_group, by: [0,1])
-    (synthmorph_norigid_bold, synthmorph_norigid_bold_fframe) = synthmorph_norigid_apply(subjects_dir, bold_preprocess_path, synthmorph_home, synthmorph_norigid_apply_input, synthmorph_template_path, gpu_lock)
+    (synthmorph_norigid_bold, synthmorph_norigid_bold_fframe) = synthmorph_norigid_apply(subjects_dir, bold_preprocess_path, synthmorph_home, synthmorph_norigid_apply_input, template_space, template_resolution, gpu_lock)
 
     bold_confounds_inputs = mc_nii.join(mcdat, by: [0,1]).join(anat_wm_nii, by: [0,1]).join(anat_brainmask_nii, by: [0,1]).join(anat_brainmask_bin_nii, by: [0,1]).join(anat_ventricles_nii, by: [0,1])
     (bold_confounds_txt, bold_confounds_view_txt) = bold_confounds(bold_preprocess_path, bold_confounds_inputs)
