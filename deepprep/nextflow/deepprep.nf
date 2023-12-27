@@ -1903,8 +1903,7 @@ process qc_plot_bold_to_space {
     memory '1.5 GB'
 
     input:
-    tuple(val(subject_id), val(bold_id), path(bold_atlas_to_mni152))
-    tuple(val(subject_id), val(bold_id), path(bold_to_T1w))
+    tuple(val(subject_id), val(bold_id), path(bold_atlas_to_mni152), path(bold_to_T1w))
     val(fs_native_space)
     val(subjects_dir)
     val(bold_preprocess_path)
@@ -2332,7 +2331,9 @@ workflow bold_wf {
     bold_mc_tsnr_svg = qc_plot_mctsnr(qc_plot_mctsnr_input, bold_preprocess_path, qc_utils_path, qc_result_path)
     qc_plot_carpet_inputs = mc_nii.join(mcdat, by: [0,1]).join(anat_aseg_nii, by: [0,1]).join(anat_brainmask_nii, by: [0,1]).join(anat_brainmask_bin_nii, by: [0,1]).join(anat_wm_nii, by: [0,1]).join(anat_csf_nii, by: [0,1])
     (bold_carpet_svg) = qc_plot_carpet(bold_preprocess_path, qc_utils_path, qc_result_path, qc_plot_carpet_inputs)
-    bold_to_mni152_svg = qc_plot_bold_to_space(synthmorph_norigid_bold_fframe, bbregister_native_2mm_fframe, bold_fs_native_space, subjects_dir, bold_preprocess_path, qc_utils_path, qc_result_path, freesurfer_home)
+
+    qc_plot_bold_to_space_inputs = synthmorph_norigid_bold_fframe.join(bbregister_native_2mm_fframe, by: [0,1])
+    bold_to_mni152_svg = qc_plot_bold_to_space(qc_plot_bold_to_space_inputs, bold_fs_native_space, subjects_dir, bold_preprocess_path, qc_utils_path, qc_result_path, freesurfer_home)
     qc_bold_create_report_input = bold_to_mni152_svg.groupTuple(by: 0)
     qc_report = qc_bold_create_report(qc_bold_create_report_input, reports_utils_path, bids_dir, subjects_dir, qc_result_path, bold_task_type, deepprep_version)
 
