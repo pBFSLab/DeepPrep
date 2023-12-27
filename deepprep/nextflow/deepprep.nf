@@ -1199,6 +1199,40 @@ process bold_get_bold_file_in_bids {
 }
 
 
+process bold_merge_subject_id {
+    tag "${subject_id}"
+
+    cpus 1
+
+    input:
+    tuple(val(subjects_id), val(t1_mgz))
+
+    output:
+    val(subjects_id)
+    script:
+    """
+    echo
+    """
+}
+
+
+process bold_get_t1w_file_in_bids {
+    cpus 1
+
+    input:  // https://www.nextflow.io/docs/latest/process.html#inputs
+    val(bids_dir)
+
+    output:
+    path "sub-*"
+
+    script:
+    script_py = "anat_get_t1w_file_in_bids.py"
+    """
+    ${script_py} --bids-dir ${bids_dir}
+    """
+}
+
+
 process bold_T1_to_2mm {
     tag "${subject_id}"
 
@@ -2244,12 +2278,17 @@ workflow bold_wf {
     (subject_id_unique, boldfile_id_unique) = subject_id_boldfile_id.groupTuple(sort: true).multiMap { tuple ->
                                                                                                         a: tuple[0]
                                                                                                         b: tuple[1][0] }
+    subject_t1wfile_from_bold_txt = bold_get_t1w_file_in_bids(bids_dir)
+    subject_t1w_id = subject_t1wfile_from_bold_txt.flatten().multiMap { it ->
+                                                             a: it.name}
+    subject_id_unique = subject_t1w_id.join(subject_id_unique)
+
     if (params.bold_only.toString().toUpperCase() == 'TRUE') {
         t1_mgz = subject_id_unique.join(t1_mgz)
+        subject_id_unique = bold_merge_subject_id(t1_mgz)
         norm_mgz = subject_id_unique.join(norm_mgz)
         aparc_aseg_mgz = subject_id_unique.join(aparc_aseg_mgz)
     }
-
     bold_T1_to_2mm_input = t1_mgz.join(norm_mgz)
     (t1_native2mm, norm_native2mm) = bold_T1_to_2mm(subjects_dir, bold_preprocess_path, bold_T1_to_2mm_input)
     // add aparc+aseg to synthmorph process to make synthmorph and bbregister processes running at the same time
