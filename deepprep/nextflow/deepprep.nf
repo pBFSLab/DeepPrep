@@ -1420,6 +1420,51 @@ process bold_bbregister_to_native {
 
 
 
+process bold_vol2surf {
+    tag "${subject_id}"
+
+    cpus 1
+    memory '20 GB'
+    label "maxForks2"
+
+    input:
+    val(subjects_dir)
+    val(bold_preprocess_path)
+    val(freesurfer_home)
+    tuple(val(subject_id), val(hemi), val(white_surf), val(pial_surf), val(w_g_pct_mgh), val(bold_id), val(bbregister_native_2mm))
+
+    output:
+    tuple(val(subject_id), val(bold_id), val(hemi), val(hemi_fsnative_surf_output)) // emit: hemi_fsnative_surf_output
+    tuple(val(subject_id), val(bold_id), val(hemi), val(hemi_fsaverage_surf_output)) // emit: hemi_fsaverage_surf_output
+    script:
+    script_py = "bold_vol2surf.py"
+    trgsubject = "fsaverage6"
+    if (hemi.toString() == 'lh') {
+        hemi_fsnative_surf_output = "${bold_preprocess_path}/${subject_id}/func/${bold_id}_hemi-L_space-fsnative_bold.func.nii.gz"
+        hemi_fsaverage_surf_output = "${bold_preprocess_path}/${subject_id}/func/${bold_id}_hemi-L_space-${trgsubject}_bold.func.nii.gz"
+    }
+    else {
+        hemi_fsnative_surf_output = "${bold_preprocess_path}/${subject_id}/func/${bold_id}_hemi-R_space-fsnative_bold.func.nii.gz"
+        hemi_fsaverage_surf_output = "${bold_preprocess_path}/${subject_id}/func/${bold_id}_hemi-R_space-${trgsubject}_bold.func.nii.gz"
+    }
+
+    """
+    ${script_py} \
+    --subjects_dir ${subjects_dir} \
+    --bold_preprocess_dir ${bold_preprocess_path} \
+    --freesurfer_home ${freesurfer_home} \
+    --hemi_white ${white_surf} \
+    --hemi_pial ${pial_surf} \
+    --hemi_w_g_pct_mgh ${w_g_pct_mgh} \
+    --bbregister_native_2mm ${bbregister_native_2mm} \
+    --subject_id ${subject_id} \
+    --trgsubject  ${trgsubject} \
+    --hemi_fsnative_surf_output ${hemi_fsnative_surf_output} \
+    --hemi_fsaverage_surf_output ${hemi_fsaverage_surf_output}
+    """
+
+}
+
 
 process synthmorph_affine {
     // 17550
@@ -2055,7 +2100,6 @@ workflow anat_wf {
 
     anat_pial_surface_input = orig_surf.join(white_surf, by: [0, 1]).join(autodet_gwstats, by: [0, 1]).join(cortex_hipamyg_label, by: [0, 1]).join(cortex_label, by: [0, 1]).join(aparc_annot, by: [0, 1]).join(hemis_aseg_presurf_mgz, by: [0, 1]).join(hemis_wm_mgz, by: [0, 1]).join(hemis_brain_finalsurfs_mgz, by: [0, 1])
     (pial_surf, pial_t1_surf, curv_pial_surf, area_pial_surf, thickness_surf) = anat_pial_surface(subjects_dir, anat_pial_surface_input)
-
     anat_pctsurfcon_input = cortex_label.join(white_surf, by: [0, 1]).join(thickness_surf, by: [0, 1]).join(hemis_rawavg_mgz, by: [0, 1]).join(hemis_orig_mgz, by: [0, 1])
     (w_g_pct_mgh, w_g_pct_stats) = anat_pctsurfcon(subjects_dir, anat_pctsurfcon_input)
 
@@ -2127,6 +2171,8 @@ workflow anat_wf {
     t1_mgz
     norm_mgz
     aparc_aseg_mgz
+    white_surf
+    pial_surf
     w_g_pct_mgh  // using for control the synth morph run schedule
 }
 
@@ -2137,6 +2183,8 @@ workflow bold_wf {
     t1_mgz
     norm_mgz
     aparc_aseg_mgz
+    white_surf
+    pial_surf
     w_g_pct_mgh
     gpu_lock
 
@@ -2154,6 +2202,7 @@ workflow bold_wf {
     bold_task_type = params.bold_task_type
     bold_skip_frame = params.bold_skip_frame
     bold_reorient = params.bold_reorient
+    surface = params.surface
     bold_susceptibility_distortion_correction = params.bold_susceptibility_distortion_correction
 
     bold_atlas_type = params.bold_atlas_type  // not used
@@ -2198,13 +2247,10 @@ workflow bold_wf {
         t1_mgz = subject_id_unique.join(t1_mgz)
         norm_mgz = subject_id_unique.join(norm_mgz)
         aparc_aseg_mgz = subject_id_unique.join(aparc_aseg_mgz)
-        w_g_pct_mgh = subject_id_unique.join(w_g_pct_mgh)
     }
-
 
     bold_T1_to_2mm_input = t1_mgz.join(norm_mgz)
     (t1_native2mm, norm_native2mm) = bold_T1_to_2mm(subjects_dir, bold_preprocess_path, bold_T1_to_2mm_input)
-
     // add aparc+aseg to synthmorph process to make synthmorph and bbregister processes running at the same time
     t1_native2mm_aparc_aseg = t1_native2mm.join(aparc_aseg_mgz).join(w_g_pct_mgh)
     (affine_nii, affine_trans) = synthmorph_affine(subjects_dir, bold_preprocess_path, synthmorph_home, t1_native2mm_aparc_aseg, synthmorph_model_path, synthmorph_template_path, gpu_lock)
@@ -2227,6 +2273,10 @@ workflow bold_wf {
     bold_bbregister_to_native_input = boldref.join(mc_nii, by: [0, 1]).join(t1_native2mm_group, by: [0, 1]).join(bbregister_dat, by: [0, 1])
 
     (bbregister_native_2mm, bbregister_native_2mm_fframe) = bold_bbregister_to_native(subjects_dir, bold_preprocess_path, bold_bbregister_to_native_input, freesurfer_home)
+    if (surface.toString().toUpperCase() == 'TRUE') {
+        vol2surf_input = white_surf.join(pial_surf, by: [0, 1]).join(w_g_pct_mgh, by: [0, 1]).combine(bbregister_native_2mm, by: [0])
+        (hemi_fsnative_surf_output, hemi_fsaverage_surf_output) = bold_vol2surf(subjects_dir, bold_preprocess_path, freesurfer_home, vol2surf_input)
+    }
 
     bold_aparaseg2mc_inputs = aparc_aseg_mgz.join(mc_nii, by: [0,1]).join(bbregister_dat, by: [0,1])
     (anat_wm_nii, anat_csf_nii, anat_aseg_nii, anat_ventricles_nii, anat_brainmask_nii, anat_brainmask_bin_nii) = bold_mkbrainmask(subjects_dir, bold_preprocess_path, bold_aparaseg2mc_inputs)
@@ -2263,16 +2313,20 @@ workflow {
         subjects_dir = params.subjects_dir
         t1_mgz = Channel.fromPath("${subjects_dir}/sub-*/mri/T1.mgz")
         norm_mgz = Channel.fromPath("${subjects_dir}/sub-*/mri/norm.mgz")
-        (t1_mgz, norm_mgz, aparc_aseg_mgz, w_g_pct_mgh) = t1_mgz.multiMap { it ->
+        white_surf = Channel.fromPath("${subjects_dir}/sub-*/surf/*.white")
+        (t1_mgz, norm_mgz, aparc_aseg_mgz) = t1_mgz.multiMap { it ->
                                                      c: [it.getParent().getParent().getName(), it]
                                                      b: [it.getParent().getParent().getName(), file("${it.getParent()}/norm.mgz")]
                                                      a: [it.getParent().getParent().getName(), file("${it.getParent()}/aparc+aseg.mgz")]
-                                                     d: [it.getParent().getParent().getName(), "hemi", file("${it.getParent()}/aseg.mgz")]
                                                      }
-        bold_wf(t1_mgz, norm_mgz, aparc_aseg_mgz, w_g_pct_mgh, gpu_lock)
+        (white_surf, pial_surf, w_g_pct_mgh) = white_surf.multiMap {it ->
+                c:[it.getParent().getParent().getName(), it.getBaseName(), it]
+                b:[it.getParent().getParent().getName(), it.getBaseName(), file("${it.getParent()}/${it.getBaseName()}.pial")]
+                a:[it.getParent().getParent().getName(), it.getBaseName(), file("${it.getParent()}/${it.getBaseName()}.w-g.pct.mgh")]}
+        bold_wf(t1_mgz, norm_mgz, aparc_aseg_mgz, white_surf, pial_surf, w_g_pct_mgh, gpu_lock)
     } else {
         println "INFO: anat && Bold preprocess"
-        (t1_mgz, norm_mgz, aparc_aseg_mgz, w_g_pct_mgh) = anat_wf(gpu_lock)
-        bold_wf(t1_mgz, norm_mgz, aparc_aseg_mgz, w_g_pct_mgh, gpu_lock)
+        (t1_mgz, norm_mgz, aparc_aseg_mgz, white_surf, pial_surf, w_g_pct_mgh) = anat_wf(gpu_lock)
+        bold_wf(t1_mgz, norm_mgz, aparc_aseg_mgz, white_surf, pial_surf, w_g_pct_mgh, gpu_lock)
     }
 }
