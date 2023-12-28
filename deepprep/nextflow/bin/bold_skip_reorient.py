@@ -78,6 +78,7 @@ def cmd(subj_func_dir: Path, bold: str, reorient: str, nskip_frame: int):
         orig_ornt = nib.orientations.io_orientation(img.header.get_sform())
         orig_reorient = nib.orientations.ornt2axcodes(orig_ornt)
     orig_reorient = ''.join(orig_reorient)
+    assert reorient_skip_bold.exists()
     return orig_reorient
 
 
