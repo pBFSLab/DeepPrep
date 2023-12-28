@@ -25,7 +25,7 @@ def get_t1w_and_bold(bids_dir, subject_id, bold_task_type):
         t1w_files.append(t1w_file)
 
     if bold_task_type is not None:
-        for bold_file in layout.get(return_type='filename', task=bold_task_type, suffix='bold', extension='.nii.gz'):
+        for bold_file in layout.get(return_type='filename', subject=subject_id.split('-')[1], task=bold_task_type, suffix='bold', extension='.nii.gz'):
             bold_files.append(bold_file)
     return t1w_files, bold_files
 

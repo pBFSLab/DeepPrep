@@ -22,9 +22,8 @@ if __name__ == '__main__':
 
     for i, t1w_file in enumerate(data[1:]):
         output_file = output_dir / f'{i+1:03d}.mgz'
-        if not output_file.exists():
-            os.system(f"mri_convert {t1w_file} {output_file}")
-            print(f"mri_convert {t1w_file} {output_file}")
+        os.system(f"mri_convert {t1w_file} {output_file}")
+        print(f"mri_convert {t1w_file} {output_file}")
 
 
     scripts_dir = Path(args.subjects_dir) / subject_id / "scripts"
