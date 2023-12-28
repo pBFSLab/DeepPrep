@@ -3,19 +3,20 @@ import sh
 from pathlib import Path
 import argparse
 import os
+import templateflow.api as tflow
 
 
-def run_norigid_registration(subject_id, script, subj_func_dir, T1_file, norm_2mm, template, affine_trans, mp):
-    T1_save_name = f'{subject_id}_space-MNI152_res-2mm_desc-skull_T1w'
+def run_norigid_registration(subject_id, script, subj_func_dir, T1_file, norm_2mm, template, affine_trans, mp, template_space, template_resolution):
+    T1_save_name = f'{subject_id}_space-{template_space}_res-{template_resolution}_desc-skull_T1w'
     moved = Path(subj_func_dir) / f'{T1_save_name}.nii.gz'
 
-    norm_save_name = f'{subject_id}_space-MNI152_res-2mm_desc-noskull_T1w'
+    norm_save_name = f'{subject_id}_space-{template_space}_res-{template_resolution}_desc-noskull_T1w'
     apply_output = Path(subj_func_dir) / f'{norm_save_name}.nii.gz'
     cmd = f'python3 {script} -g -i {affine_trans} -o {moved} {T1_file} {template} -mp {mp} -a {norm_2mm} -ao {apply_output}'
     os.system(cmd)
 
     transvoxel = moved.parent / moved.name.replace('.nii.gz', '_transvoxel.npz')
-    xfm = moved.parent / f'{subject_id}_from-T1w_to_MNI152_desc-nonlinear_xfm.npz'
+    xfm = moved.parent / f'{subject_id}_from-T1w_to_{template_space}_desc-nonlinear_xfm.npz'
     cmd = f'mv {transvoxel} {xfm}'
     os.system(cmd)
 
@@ -32,7 +33,8 @@ if __name__ == '__main__':
     parser.add_argument("--norm_native2mm", required=True)
     parser.add_argument("--affine_trans", required=True)
     parser.add_argument("--synth_model_path", required=True)
-    parser.add_argument("--synth_template_path", required=True)
+    parser.add_argument("--template_space", required=True)
+    parser.add_argument("--template_resolution", required=True)
     args = parser.parse_args()
 
     preprocess_dir = Path(args.bold_preprocess_dir) / args.subject_id
@@ -41,6 +43,6 @@ if __name__ == '__main__':
 
     T1_2mm = args.t1_native2mm  # subj_func_dir / f'{args.subject_id}_space-T1w_res-2mm_desc-skull_T1w.nii.gz'
     norm_2mm = args.norm_native2mm  # subj_func_dir / f'{args.subject_id}_space-T1w_res-2mm_desc-noskull_T1w.nii.gz'
-    template = Path(args.synth_template_path) / 'MNI152_T1_2mm.nii.gz'
-    affine_trans = subj_func_dir / f'{args.subject_id}_from-T1w_to-MNI152_desc-affine_xfm.txt'
-    run_norigid_registration(args.subject_id, args.synth_script, subj_func_dir, T1_2mm, norm_2mm, template, affine_trans, args.synth_model_path)
+    template = tflow.get(args.template_space, desc=None, resolution=args.template_resolution, suffix='T1w', extension='nii.gz')
+    affine_trans = subj_func_dir / f'{args.subject_id}_from-T1w_to-{args.template_space}_desc-affine_xfm.txt'
+    run_norigid_registration(args.subject_id, args.synth_script, subj_func_dir, T1_2mm, norm_2mm, template, affine_trans, args.synth_model_path, args.template_space, args.template_resolution)
