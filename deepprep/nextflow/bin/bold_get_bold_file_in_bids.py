@@ -11,20 +11,25 @@ if __name__ == '__main__':
 
     parser.add_argument("--bids_dir", required=True, help="directory of BIDS type: /mnt/ngshare2/BIDS/MSC")
     parser.add_argument("--subjects_dir", required=True, help="directory of Recon results")
+    parser.add_argument('--subject_ids', type=str, nargs='+', default=[], help='specified subject_id')
     parser.add_argument("--task_type", required=True, type=str, help="rest or etc..")
     parser.add_argument("--bold_only", required=True, type=str, help="TRUE or FALSE")
     args = parser.parse_args()
 
+    if len(args.subject_ids) != 0:
+        bold_subject_ids = [subject_id.split('-')[1] for subject_id in args.subject_ids]
+        anat_subject_ids = bold_subject_ids
+    else:
+        bold_subject_ids = args.subject_ids
+        anat_subject_ids = bold_subject_ids
     layout = bids.BIDSLayout(args.bids_dir, derivatives=False)
     bold_subject_dict = {}
     anat_subject_dict = {}
-    bold_subject_ids = []
-    anat_subject_ids = []
     bold_filess = []
     if args.task_type is not None:
-        bids_bolds = layout.get(return_type='filename', task=args.task_type, suffix='bold', extension='.nii.gz')
+        bids_bolds = layout.get(return_type='filename', subject=bold_subject_ids, task=args.task_type, suffix='bold', extension='.nii.gz')
     else:
-        bids_bolds = layout.get(return_type='filename', suffix='bold', extension='.nii.gz')
+        bids_bolds = layout.get(return_type='filename', subject=bold_subject_ids, suffix='bold', extension='.nii.gz')
     for bold_file in bids_bolds:
         sub_info = layout.parse_file_entities(bold_file)
         bold_subject_id = f"sub-{sub_info['subject']}"
@@ -32,7 +37,7 @@ if __name__ == '__main__':
         bold_subject_ids = list(bold_subject_dict.keys())
         bold_filess = list(bold_subject_dict.values())
     if args.bold_only == 'FALSE':
-        for t1w_file in layout.get(return_type='filename', suffix="T1w", extension='.nii.gz'):
+        for t1w_file in layout.get(return_type='filename', subject=anat_subject_ids, suffix="T1w", extension='.nii.gz'):
             sub_info = layout.parse_file_entities(t1w_file)
             anat_subject_id = f"sub-{sub_info['subject']}"
             anat_subject_dict.setdefault(anat_subject_id, []).append(t1w_file)
