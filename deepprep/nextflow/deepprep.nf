@@ -2285,7 +2285,6 @@ workflow bold_wf {
                                                                                      a: it.name.split('_')[0]
                                                                                      c: it.name
                                                                                      b: it }
-    subject_boldfile_txt.view()
     subject_id_boldfile_id = subject_id.merge(boldfile_id)
     (subject_id_unique, boldfile_id_unique) = subject_id_boldfile_id.groupTuple(sort: true).multiMap { tuple ->
                                                                                                         a: tuple[0]
@@ -2311,7 +2310,6 @@ workflow bold_wf {
 
     bold_info = bold_skip_reorient(bold_preprocess_path, qc_result_path, subject_boldfile_txt, bold_reorient, bold_skip_frame, bold_susceptibility_distortion_correction)
     bold_info = boldfile_id_split.join(bold_info, by: [0, 1])
-    bold_info.view()
     (mc_nii, mcdat, boldref) = bold_stc_mc(bold_preprocess_path, bold_info)
 
     bbregister_dat_input = aparc_aseg_mgz.join(mc_nii, by: [0, 1])
