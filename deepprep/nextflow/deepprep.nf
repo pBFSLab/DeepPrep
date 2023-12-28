@@ -1183,7 +1183,9 @@ process bold_get_bold_file_in_bids {
 
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
     val(bids_dir)
+    val(subjects_dir)
     val(bold_task_type)
+    val(bold_only)
 
     output:
     path "sub-*" // emit: subject_boldfile_txt
@@ -1194,7 +1196,9 @@ process bold_get_bold_file_in_bids {
     """
     ${script_py} \
     --bids_dir ${bids_dir} \
-    --task_type ${bold_task_type}
+    --subjects_dir ${subjects_dir} \
+    --task_type ${bold_task_type} \
+    --bold_only ${bold_only}
     """
 }
 
@@ -1606,7 +1610,7 @@ process synthmorph_norigid_apply {
     script_py = "${synthmorph_home}/bold_synthmorph_apply.py"
     synth_script = "${synthmorph_home}/mri_bold_apply_synthmorph.py"
     """
-    ${gpu_script_py} single ${task.executor} ${script_py} \
+    ${gpu_script_py} double ${task.executor} ${script_py} \
     --bold_preprocess_dir ${bold_preprocess_path} \
     --subject_id ${subject_id} \
     --bold_id ${bold_id} \
@@ -2252,6 +2256,7 @@ workflow bold_wf {
     qc_utils_path = params.qc_utils_path
     reports_utils_path = params.reports_utils_path
 
+    bold_only = params.bold_only.toString().toUpperCase()
     deepprep_version = params.deepprep_version
 
     _directory = new File(bold_preprocess_path)
@@ -2268,23 +2273,18 @@ workflow bold_wf {
         println _directory
     }
 
-    subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, bold_task_type)
+    subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, subjects_dir, bold_task_type, bold_only)
     (subject_id, boldfile_id, subject_boldfile_txt) = subject_boldfile_txt.flatten().multiMap { it ->
                                                                                      a: it.name.split('_')[0]
                                                                                      c: it.name
                                                                                      b: it }
+    subject_boldfile_txt.view()
     subject_id_boldfile_id = subject_id.merge(boldfile_id)
     (subject_id_unique, boldfile_id_unique) = subject_id_boldfile_id.groupTuple(sort: true).multiMap { tuple ->
                                                                                                         a: tuple[0]
                                                                                                         b: tuple[1][0] }
-    subject_t1wfile_from_bold_txt = bold_get_t1w_file_in_bids(bids_dir)
-    subject_t1w_id = subject_t1wfile_from_bold_txt.flatten().multiMap { it ->
-                                                             a: it.name}
-    subject_id_unique = subject_t1w_id.join(subject_id_unique)
-
-    if (params.bold_only.toString().toUpperCase() == 'TRUE') {
+    if (bold_only == 'TRUE') {
         t1_mgz = subject_id_unique.join(t1_mgz)
-        subject_id_unique = bold_merge_subject_id(t1_mgz)
         norm_mgz = subject_id_unique.join(norm_mgz)
         aparc_aseg_mgz = subject_id_unique.join(aparc_aseg_mgz)
     }
@@ -2304,6 +2304,7 @@ workflow bold_wf {
 
     bold_info = bold_skip_reorient(bold_preprocess_path, qc_result_path, subject_boldfile_txt, bold_reorient, bold_skip_frame, bold_susceptibility_distortion_correction)
     bold_info = boldfile_id_split.join(bold_info, by: [0, 1])
+    bold_info.view()
     (mc_nii, mcdat, boldref) = bold_stc_mc(bold_preprocess_path, bold_info)
 
     bbregister_dat_input = aparc_aseg_mgz.join(mc_nii, by: [0, 1])
