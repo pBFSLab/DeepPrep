@@ -1522,13 +1522,12 @@ process synthmorph_affine {
     val(synthmorph_home)
     tuple(val(subject_id), path(t1_native2mm), val(schedule_control), val(schedule), path(schedule_control)) // schedule_control for running this process in right time
     val(synth_model_path)
-     val(template_space)
-    val(template_resolution)
+    val(template_space)
 
     val(gpu_lock)
 
     output:
-    tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/func/${subject_id}_space-${template_space}_res-${template_resolution}_desc-affine_T1w.nii.gz")) //emit: affine_nii
+    tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/func/${subject_id}_space-${template_space}_res-01_desc-affine_T1w.nii.gz")) //emit: affine_nii
     tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/func/${subject_id}_from-T1w_to-${template_space}_desc-affine_xfm.txt")) //emit: affine_trans
 
     script:
@@ -1542,7 +1541,6 @@ process synthmorph_affine {
     --synth_script ${synth_script} \
     --t1_native2mm ${t1_native2mm} \
     --template_space ${template_space} \
-    --template_resolution ${template_resolution} \
     --synth_model_path ${synth_model_path}
     """
 }
@@ -1563,13 +1561,12 @@ process synthmorph_norigid {
     tuple(val(subject_id), path(t1_native2mm), path(norm_native2mm), path(affine_trans))
     val(synth_model_path)
     val(template_space)
-    val(template_resolution)
 
     val(gpu_lock)
 
     output:
-    tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/func/${subject_id}_space-${template_space}_res-${template_resolution}_desc-skull_T1w.nii.gz")) //emit: t1_norigid_nii
-    tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/func/${subject_id}_space-${template_space}_res-${template_resolution}_desc-noskull_T1w.nii.gz")) //emit: norm_norigid_nii
+    tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/func/${subject_id}_space-${template_space}_res-01_desc-skull_T1w.nii.gz")) //emit: t1_norigid_nii
+    tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/func/${subject_id}_space-${template_space}_res-01_desc-noskull_T1w.nii.gz")) //emit: norm_norigid_nii
     tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/func/${subject_id}_from-T1w_to_${template_space}_desc-nonlinear_xfm.npz")) //emit: transvoxel
 
     script:
@@ -1585,7 +1582,6 @@ process synthmorph_norigid {
     --norm_native2mm ${norm_native2mm} \
     --affine_trans ${affine_trans} \
     --template_space ${template_space} \
-    --template_resolution ${template_resolution} \
     --synth_model_path ${synth_model_path}
     """
 }
@@ -2304,9 +2300,9 @@ workflow bold_wf {
     (t1_native2mm, norm_native2mm) = bold_T1_to_2mm(subjects_dir, bold_preprocess_path, bold_T1_to_2mm_input)
     // add aparc+aseg to synthmorph process to make synthmorph and bbregister processes running at the same time
     t1_native2mm_aparc_aseg = t1_native2mm.join(aparc_aseg_mgz).join(w_g_pct_mgh)
-    (affine_nii, affine_trans) = synthmorph_affine(subjects_dir, bold_preprocess_path, synthmorph_home, t1_native2mm_aparc_aseg, synthmorph_model_path, template_space, template_resolution, gpu_lock)
+    (affine_nii, affine_trans) = synthmorph_affine(subjects_dir, bold_preprocess_path, synthmorph_home, t1_native2mm_aparc_aseg, synthmorph_model_path, template_space, gpu_lock)
     synthmorph_norigid_input = t1_native2mm.join(norm_native2mm, by: [0]).join(affine_trans, by: [0])
-    (t1_norigid_nii, norm_norigid_nii, transvoxel) = synthmorph_norigid(subjects_dir, bold_preprocess_path, synthmorph_home, synthmorph_norigid_input, synthmorph_model_path, template_space, template_resolution, gpu_lock)
+    (t1_norigid_nii, norm_norigid_nii, transvoxel) = synthmorph_norigid(subjects_dir, bold_preprocess_path, synthmorph_home, synthmorph_norigid_input, synthmorph_model_path, template_space, gpu_lock)
 
     subject_boldref_file = bold_get_bold_ref_in_bids(bold_preprocess_path, bids_dir, subject_id_unique, boldfile_id_unique)  // subject_id, subject_boldref_file
     transvoxel_group = subject_id_boldfile_id.groupTuple(sort: true).join(transvoxel).transpose()
