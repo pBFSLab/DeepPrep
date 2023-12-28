@@ -25,15 +25,24 @@ process anat_get_t1w_file_in_bids {
 
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
     val(bids_dir)
+    val(subjects)
 
     output:
     path "sub-*"
 
     script:
     script_py = "anat_get_t1w_file_in_bids.py"
-    """
-    ${script_py} --bids-dir ${bids_dir}
-    """
+    if (subjects.toString() == '') {
+        """
+        ${script_py} --bids-dir ${bids_dir}
+        """
+    }
+    else {
+        """
+        ${script_py} --bids-dir ${bids_dir} --subject-ids ${subjects}
+        """
+    }
+
 }
 
 process anat_create_subject_orig_dir {
@@ -1184,6 +1193,7 @@ process bold_get_bold_file_in_bids {
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
     val(bids_dir)
     val(subjects_dir)
+    val(subjects)
     val(bold_task_type)
     val(bold_only)
 
@@ -1192,14 +1202,25 @@ process bold_get_bold_file_in_bids {
 
     script:
     script_py = "bold_get_bold_file_in_bids.py"
-
-    """
-    ${script_py} \
-    --bids_dir ${bids_dir} \
-    --subjects_dir ${subjects_dir} \
-    --task_type ${bold_task_type} \
-    --bold_only ${bold_only}
-    """
+    if (subjects.toString() == '') {
+        """
+        ${script_py} \
+        --bids_dir ${bids_dir} \
+        --subjects_dir ${subjects_dir} \
+        --task_type ${bold_task_type} \
+        --bold_only ${bold_only}
+        """
+    }
+    else {
+        """
+        ${script_py} \
+        --bids_dir ${bids_dir} \
+        --subjects_dir ${subjects_dir} \
+        --subject_ids ${subjects} \
+        --task_type ${bold_task_type} \
+        --bold_only ${bold_only}
+        """
+    }
 }
 
 
@@ -1216,23 +1237,6 @@ process bold_merge_subject_id {
     script:
     """
     echo
-    """
-}
-
-
-process bold_get_t1w_file_in_bids {
-    cpus 1
-
-    input:  // https://www.nextflow.io/docs/latest/process.html#inputs
-    val(bids_dir)
-
-    output:
-    path "sub-*"
-
-    script:
-    script_py = "anat_get_t1w_file_in_bids.py"
-    """
-    ${script_py} --bids-dir ${bids_dir}
     """
 }
 
@@ -2016,6 +2020,7 @@ workflow anat_wf {
     bids_dir = params.bids_dir
     subjects_dir = params.subjects_dir
     qc_result_path = params.qc_result_path
+    subjects = params.subjects
     bold_task_type = params.bold_task_type
 
     fsthreads = params.anat_fsthreads
@@ -2049,7 +2054,7 @@ workflow anat_wf {
         println "create dir: ..."
         println _directory
     }
-    subject_t1wfile_txt = anat_get_t1w_file_in_bids(bids_dir)
+    subject_t1wfile_txt = anat_get_t1w_file_in_bids(bids_dir, subjects)
     subjects_fsaverage_dir = anat_cp_fsaverage(subjects_dir, freesurfer_fsaverage_dir)
     subject_id = anat_create_subject_orig_dir(subjects_dir, subject_t1wfile_txt, deepprep_version)
 
@@ -2243,6 +2248,7 @@ workflow bold_wf {
     bold_skip_frame = params.bold_skip_frame
     bold_reorient = params.bold_reorient
     surface = params.surface
+    subjects = params.subjects
     bold_susceptibility_distortion_correction = params.bold_susceptibility_distortion_correction
 
     bold_atlas_type = params.bold_atlas_type  // not used
@@ -2276,7 +2282,7 @@ workflow bold_wf {
         println _directory
     }
 
-    subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, subjects_dir, bold_task_type, bold_only)
+    subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, subjects_dir, subjects, bold_task_type, bold_only)
     (subject_id, boldfile_id, subject_boldfile_txt) = subject_boldfile_txt.flatten().multiMap { it ->
                                                                                      a: it.name.split('_')[0]
                                                                                      c: it.name
