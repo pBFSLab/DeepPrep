@@ -84,42 +84,35 @@ def vxm_batch_transform(vol, loc_shift,
     return K.permute_dimensions(vol_trf_reshape, [ndim + 1] + list(range(ndim + 1)))
 
 
-def batch_transform(im, trans, normalize=False):
-    if isinstance(im, nib.filebasedimages.FileBasedImage):
-        im = im.get_fdata(dtype=np.float32)
+def batch_transform(image, trans, normalize=False):
+    if isinstance(image, nib.filebasedimages.FileBasedImage):
+        image = image.get_fdata(dtype=np.float32)
         # Add singleton feature dimension if needed.
 
-    # im = im[:,:,:,np.newaxis]
-    im = tf.transpose(im, perm=(3, 0, 1, 2))
-    if tf.rank(im) == 4:
-        im = im[..., tf.newaxis]
-
+    split = 10
+    n = image.shape[-1]
+    iterations = n // split if n >= split else 1
+    print('len_num_splits: ', iterations)
+    sliced_im = np.array_split(image, iterations, axis=-1)
     trans = tf.expand_dims(trans, axis=0)
     trans = tf.expand_dims(trans, axis=-2)
-    # trans = tf.tile(trans, [im.shape[0], 1, 1, 1, 1, 1])
-
-    last_dim_size = im.shape[0]
-    num_splits = last_dim_size // 10
-    sliced_im = np.array_split(im, num_splits, axis=0)
-    # sliced_trans = np.array_split(trans, num_splits, axis=0)
-    print('len_num_splits: ', num_splits)
+    out_arr = np.zeros(image.shape[-1] + trans.shape[1:5])
     frames = 0
-    out_arr =np.zeros(im.shape[0] + trans.shape[1:5])
-    for i in range(num_splits):
-        start_time = time.time()
-        sliced_im_i = sliced_im[i]
+    for i in range(iterations):
+        sliced_im_i = tf.transpose(sliced_im[i], perm=(3, 0, 1, 2))
+        if tf.rank(sliced_im_i) == 4:
+            sliced_im_i = sliced_im_i[..., tf.newaxis]
+
         sliced_trans_i = tf.tile(trans, [sliced_im_i.shape[0], 1, 1, 1, 1, 1])
         out_i = vxm_batch_transform(
             sliced_im_i, sliced_trans_i, batch_size=sliced_im_i.shape[0], fill_value=0)
         if i == 0:
-            # out = out_i
             out_arr[:out_i.shape[0]] = out_i
             frames += out_i.shape[0]
         else:
-            # out = np.concatenate([out, out_i], axis=0)
             out_arr[frames:frames+out_i.shape[0]] = out_i
             frames += out_i.shape[0]
-    print('done loop!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+    print('done loop!!!!!!!!!!!!')
     if normalize:
         out_arr -= tf.reduce_min(out_arr)
         out_arr /= tf.reduce_max(out_arr)
