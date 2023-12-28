@@ -2,6 +2,7 @@
 import os
 from pathlib import Path
 import argparse
+import templateflow.api as tflow
 
 
 def run_norigid_registration_apply(script, bold, bold_output, fframe_bold_output, T1_file, template, mc, transvoxel):
@@ -22,7 +23,8 @@ if __name__ == '__main__':
     parser.add_argument("--mc", required=True)
     parser.add_argument("--bold", required=True)
     parser.add_argument("--trans_vox", required=True)
-    parser.add_argument("--synth_template_path", required=True)
+    parser.add_argument("--template_space", required=True)
+    parser.add_argument("--template_resolution", required=True)
     parser.add_argument("--synth_script", required=True)
     args = parser.parse_args()
 
@@ -35,9 +37,10 @@ if __name__ == '__main__':
     bold = args.bold
     transvoxel = args.trans_vox
 
-    template = Path(args.synth_template_path) / 'MNI152_T1_2mm.nii.gz'
-
-    bold_output = subj_func_dir / f'{args.bold_id}_space-MNI152_res-2mm_bold.nii.gz'
-    fframe_bold_output = subj_func_dir / f'{args.bold_id}_space-MNI152_res-2mm_boldref.nii.gz'
-
+    template_resolution = args.template_resolution
+    template = tflow.get(args.template_space, desc=None, resolution=template_resolution, suffix='T1w', extension='nii.gz')
+    bold_output = subj_func_dir / f'{args.bold_id}_space-{args.template_space}_res-{args.template_resolution}_bold.nii.gz'
+    fframe_bold_output = subj_func_dir / f'{args.bold_id}_space-{args.template_space}_res-{args.template_resolution}_boldref.nii.gz'
     run_norigid_registration_apply(args.synth_script, bold, bold_output, fframe_bold_output, T1_2mm, template, mc_file, transvoxel)
+    assert os.path.exists(bold_output), f'{bold_output}'
+    assert os.path.exists(fframe_bold_output), f'{fframe_bold_output}'
