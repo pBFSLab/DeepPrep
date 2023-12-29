@@ -17,7 +17,7 @@ sections:
     caption: The parcellations were created based on the registration result generated from SUGAR, which aligns participants' surfaces with fsavreage template surfaces.
     subtitle: Cortical surface structural parcellations
   - bids: { datatype: figures, desc: T1toMNI152, suffix: combine}
-    caption: The picture shows nonlinear alignment results, which registers participants' T1w with (MNI152) template T1w.
+    caption: Results of nonlinear alignment of the T1w reference one or more template space(s). Hover on the panels with the mouse pointer to transition between both spaces.\n Spatial normalization of the T1w image to the MNI152NLin2009cAsym template.
     static: false
     subtitle: Spatial normalization of the T1w
 - name: Functional processing
