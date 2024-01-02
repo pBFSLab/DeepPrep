@@ -117,12 +117,12 @@ if __name__ == '__main__':
 
     cur_path = os.getcwd()
 
-    bold_mc = os.path.basename(args.mc)
+    bold_mc = args.mc
     mc_brainmask = args.mc_brainmask
 
     mc_tsnr_path = Path(cur_path) / str(subject_workdir) / 'mc_tsnr.nii.gz'
 
-    TSNR_test(Path(cur_path) / bold_mc, mc_tsnr_path)
+    TSNR_test(bold_mc, mc_tsnr_path)
     rewrite_tsnr(mc_tsnr_path, mc_brainmask)
 
     output_tsnr_savepath = subject_workdir / f'{bold_id}_mc_tsnr.png'
