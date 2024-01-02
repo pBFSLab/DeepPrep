@@ -46,6 +46,10 @@ def stc(subj_func_dir, subj_tmp_dir, metadata, bold_file, bold_id):
     bold_stc_wf.base_dir = subj_tmp_dir
     bold_stc_wf.run()
 
+    stc_file = subj_tmp_dir / 'bold_stc_wf' / 'copy_xform' / f'{bold_id}_space-reorient_bold_tshift_xform.nii.gz'
+    out_stc_file = subj_func_dir / f'{bold_id}_space-reorient_bold_tshift_xform.nii.gz'
+    shutil.copy(stc_file, out_stc_file)
+
 def cmd(subj_func_dir, subj_tmp_dir, bids_dir, bold_file, raw_ref_image, orig_bold_file, bold_id):
     # run mc
     hmc(subj_func_dir, subj_tmp_dir, bold_file, raw_ref_image, bold_id)
@@ -59,9 +63,6 @@ def cmd(subj_func_dir, subj_tmp_dir, bids_dir, bold_file, raw_ref_image, orig_bo
     run_stc = bool(metadata.get("SliceTiming"))
     if run_stc:
         stc(subj_func_dir, subj_tmp_dir, metadata, bold_file, bold_id)
-        stc_file = subj_tmp_dir / 'bold_stc_wf' / 'copy_xform' / f'{bold_id}_space-reorient_bold_tshift_xform.nii.gz'
-        out_stc_file = subj_func_dir / f'{bold_id}_space-reorient_bold_tshift_xform.nii.gz'
-        shutil.copy(stc_file, out_stc_file)
     else:
         print('No stc!!!!!!!!')
         # TODO copy? output: bold_file _reorient_bold.nii.gz
