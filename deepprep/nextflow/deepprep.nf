@@ -1699,7 +1699,7 @@ process qc_plot_mctsnr {
     memory '3 GB'
 
     input:
-    tuple(val(subject_id), val(bold_id), path(mc), path(anat_brainmask))
+    tuple(val(subject_id), val(bold_id), val(mc), val(anat_brainmask))
     val(bold_preprocess_path)
     val(qc_utils_path)
     val(qc_result_path)
