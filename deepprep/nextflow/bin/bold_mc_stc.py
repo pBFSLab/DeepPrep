@@ -67,7 +67,6 @@ def cmd(subj_func_dir, subj_tmp_dir, bids_dir, bold_file, raw_ref_image, orig_bo
 
     # # run stc if metadata is provided
     layout = bids.BIDSLayout(str(bids_dir), derivatives=True)
-    # bold_file = layout.get_files(f'{bold_id}_bold.nii.gz')
     all_metadata = [layout.get_metadata(fname) for fname in listify(orig_bold_file)]
     metadata = all_metadata[0]
     run_stc = bool(metadata.get("SliceTiming"))
@@ -93,6 +92,7 @@ if __name__ == '__main__':
     parser.add_argument("--bold_id", required=True)
     parser.add_argument("--reorient", required=True)  # _space-reorient_bold.nii.gz
     parser.add_argument("--orig_bold_file", required=True)  # _bold.nii.gz
+    parser.add_argument("--raw_ref_image", required=True)  # _bold.nii.gz
     args = parser.parse_args()
 
     preprocess_dir = Path(args.bold_preprocess_dir) / args.subject_id
@@ -100,9 +100,8 @@ if __name__ == '__main__':
     subj_func_dir.mkdir(parents=True, exist_ok=True)
     subj_tmp_dir = Path(preprocess_dir) / 'tmp'
     subj_tmp_dir.mkdir(parents=True, exist_ok=True)
-    raw_ref_image = Path(subj_func_dir) / f'{args.subject_id}_boldref.nii.gz'
 
     skip_reorient_file = subj_func_dir / os.path.basename(args.reorient)
 
-    cmd(subj_func_dir, subj_tmp_dir, args.bids_dir, args.reorient, raw_ref_image, args.orig_bold_file, args.bold_id)
+    cmd(subj_func_dir, subj_tmp_dir, args.bids_dir, args.reorient, args.raw_ref_image, args.orig_bold_file, args.bold_id)
 
