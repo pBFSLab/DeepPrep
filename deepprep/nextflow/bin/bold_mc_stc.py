@@ -45,7 +45,7 @@ def stc(subj_tmp_dir, metadata, bold_file, stc_bold):
     bold_stc_wf.run()
 
     stc_file = sorted(Path(subj_tmp_dir, 'bold_stc_wf', 'copy_xform').glob('*_tshift_xform.nii.gz'))[0]
-    shutil.copy(stc_file, stc_bold)
+    shutil.move(stc_file, stc_bold)
 
 def cmd(subj_tmp_dir, bids_dir, bold_file, raw_ref_image, orig_bold_file, mc_xform, stc_bold):
     # run mc
