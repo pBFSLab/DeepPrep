@@ -69,14 +69,14 @@ else:
     git submodule update --init --recursive
 
 ### local 
-export DEEPPREP_HOME=$HOME/anning/workspace/DeepPrep/deepprep
+export DEEPPREP_HOME=$HOME/workspace/DeepPrep/deepprep
 export FREESURFER_LICENSE=${FREESURFER_HOME}/license.txt  # (required)
-export DEEPPREP_WORKDIR=$HOME/anning/DEEPPREP_WORKDIR  # (required)
+export DEEPPREP_WORKDIR=$HOME/DEEPPREP_WORKDIR  # (required)
 export DEEPPREP_RUN_CONFIG=${DEEPPREP_HOME}/nextflow/nextflow.docker.local.config  # (required)
 
 ### deepprep version and dataset
 export DEEPPREP_VERSION=v0.0.10ubuntu22.04  # (required)
-export BIDS_DATASET_DIR=/lustre/grp/lhslab/sunzy/anning/DEEPPREP_WORKDIR/UKB1  # (required)
+export BIDS_DATASET_DIR=$HOME/DEEPPREP_WORKDIR/UKB1  # (required)
 export BIDS_DATASET_NAME=UKB1  # (required)
 export DEEPPREP_RESULT_DIR=${DEEPPREP_WORKDIR}/${BIDS_DATASET_NAME}_${DEEPPREP_VERSION}S
 
@@ -90,7 +90,7 @@ docker run -it --rm --gpus all --entrypoint /bin/bash \
 -v ${DEEPPREP_RESULT_DIR}:/DEEPPREP_RESULT_DIR \
 -v ${DEEPPREP_RESULT_DIR}/nextflow_workDir:/nextflow/workDir \
 -v ${FREESURFER_LICENSE}:/usr/local/freesurfer/license.txt \
--v /home/anning/workspace/DeepPrep/deepprep:/deepprep \
+-v /home/zhenyu/workspace/DeepPrep/deepprep:/deepprep \
 -v ${DEEPPREP_RUN_CONFIG}:/nextflow.docker.local.config \
 deepprep:${DEEPPREP_VERSION}
 
