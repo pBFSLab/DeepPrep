@@ -2013,6 +2013,7 @@ process qc_bold_create_report {
 process anat_ca_register {
     tag "${subject_id}"
 
+    cpus 1
     memory '1.5 GB'
 
     input:
@@ -2036,6 +2037,7 @@ process anat_ca_register {
 process anat_segstats {
     tag "${subject_id}"
 
+    cpus 1
     memory '300 MB'
 
     input:
