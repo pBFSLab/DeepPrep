@@ -24,18 +24,7 @@ from fmriprep.workflows.bold.base import _create_mem_gb
 from niworkflows.utils.connections import listify
 
 
-def set_envrion():
-    # FreeSurfer recon-all env
-    os.environ['FREESURFER_HOME'] = "/usr/local/freesurfer720"
-    os.environ['FREESURFER'] = "/usr/local/freesurfer720"
-    os.environ['SUBJECTS_DIR'] = "/home/youjia/Downloads"
-    os.environ['PATH'] = ('/usr/local/freesurfer720/bin:'
-                          + '/home/youjia/abin:'
-                          + '/usr/local/c3d/bin:'
-                          + os.environ['PATH'])
-
-
-def hmc(subj_func_dir, subj_tmp_dir, bold_file, raw_ref_image, bold_id):
+def hmc(subj_tmp_dir, bold_file, raw_ref_image, mc_xform):
     omp_nthreads = config.nipype.omp_nthreads
     bold_tlen, mem_gb = _create_mem_gb(bold_file)
 
@@ -47,22 +36,20 @@ def hmc(subj_func_dir, subj_tmp_dir, bold_file, raw_ref_image, bold_id):
     bold_hmc_wf.run()
 
     xform = subj_tmp_dir / 'bold_hmc_wf' / 'fsl2itk' / 'mat2itk.txt'
-    out_xform = subj_func_dir / f'{bold_id}_from-scanner_to-boldref_mode-image_xfm.txt'
-    shutil.copy(xform, out_xform)
+    shutil.copy(xform, mc_xform)
 
-def stc(subj_func_dir, subj_tmp_dir, metadata, bold_file, bold_id):
+def stc(subj_tmp_dir, metadata, bold_file, stc_bold):
     bold_stc_wf = init_bold_stc_wf(name="bold_stc_wf", metadata=metadata)
     bold_stc_wf.inputs.inputnode.bold_file = bold_file
     bold_stc_wf.base_dir = subj_tmp_dir
     bold_stc_wf.run()
 
-    stc_file = subj_tmp_dir / 'bold_stc_wf' / 'copy_xform' / f'{bold_id}_space-reorient_bold_tshift_xform.nii.gz'
-    out_stc_file = subj_func_dir / f'{bold_id}_space-reorient_bold_tshift_xform.nii.gz'
-    shutil.copy(stc_file, out_stc_file)
+    stc_file = sorted(Path(subj_tmp_dir, 'bold_stc_wf', 'copy_xform').glob('*_tshift_xform.nii.gz'))[0]
+    shutil.copy(stc_file, stc_bold)
 
-def cmd(subj_func_dir, subj_tmp_dir, bids_dir, bold_file, raw_ref_image, orig_bold_file, bold_id):
+def cmd(subj_tmp_dir, bids_dir, bold_file, raw_ref_image, orig_bold_file, mc_xform, stc_bold):
     # run mc
-    hmc(subj_func_dir, subj_tmp_dir, bold_file, raw_ref_image, bold_id)
+    hmc(subj_tmp_dir, bold_file, raw_ref_image, mc_xform)
     print('hmc DONE!!!!!!!!')
 
     # # run stc if metadata is provided
@@ -71,7 +58,7 @@ def cmd(subj_func_dir, subj_tmp_dir, bids_dir, bold_file, raw_ref_image, orig_bo
     metadata = all_metadata[0]
     run_stc = bool(metadata.get("SliceTiming"))
     if run_stc:
-        stc(subj_func_dir, subj_tmp_dir, metadata, bold_file, bold_id)
+        stc(subj_tmp_dir, metadata, bold_file, stc_bold)
     else:
         print('No stc!!!!!!!!')
         # TODO copy? output: bold_file _reorient_bold.nii.gz
@@ -80,8 +67,6 @@ def cmd(subj_func_dir, subj_tmp_dir, bids_dir, bold_file, raw_ref_image, orig_bo
 
 
 if __name__ == '__main__':
-    set_envrion()
-
     parser = argparse.ArgumentParser(
         description="DeepPrep: Bold PreProcessing workflows -- MC & STC"
     )
@@ -92,7 +77,9 @@ if __name__ == '__main__':
     parser.add_argument("--bold_id", required=True)
     parser.add_argument("--reorient", required=True)  # _space-reorient_bold.nii.gz
     parser.add_argument("--orig_bold_file", required=True)  # _bold.nii.gz
-    parser.add_argument("--raw_ref_image", required=True)  # _bold.nii.gz
+    parser.add_argument("--raw_ref_image", required=True)
+    parser.add_argument("--mc_xform", required=True)  # _from-scanner_to-boldref_mode-image_xfm.txt
+    parser.add_argument("--stc_bold", required=True)  # _tshift_xform.nii.gz
     args = parser.parse_args()
 
     preprocess_dir = Path(args.bold_preprocess_dir) / args.subject_id
@@ -101,7 +88,5 @@ if __name__ == '__main__':
     subj_tmp_dir = Path(preprocess_dir) / 'tmp'
     subj_tmp_dir.mkdir(parents=True, exist_ok=True)
 
-    skip_reorient_file = subj_func_dir / os.path.basename(args.reorient)
-
-    cmd(subj_func_dir, subj_tmp_dir, args.bids_dir, args.reorient, args.raw_ref_image, args.orig_bold_file, args.bold_id)
+    cmd(subj_tmp_dir, args.bids_dir, args.reorient, args.raw_ref_image, args.orig_bold_file, args.mc_xform, args.stc_bold)
 
