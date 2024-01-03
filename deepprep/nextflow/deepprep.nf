@@ -2013,7 +2013,7 @@ process qc_bold_create_report {
 process anat_ca_register {
     tag "${subject_id}"
 
-    cpus 1
+    memory '1.5 GB'
 
     input:
     val(subjects_dir)
@@ -2021,7 +2021,7 @@ process anat_ca_register {
     val(freesurfer_home)
 
     output:
-    tuple(val(subject_id), val("${subjects_dir}/${subject_id}/transforms/talairach.m3z"))
+    tuple(val(subject_id), val(talairach_m3z))
 
     script:
     fsaverage_m3z = "${freesurfer_home}/average/RB_all_2016-05-10.vc700.gca"
@@ -2036,7 +2036,7 @@ process anat_ca_register {
 process anat_segstats {
     tag "${subject_id}"
 
-    cpus 1
+    memory '300 MB'
 
     input:
     val(subjects_dir)
@@ -2044,7 +2044,7 @@ process anat_segstats {
     val(fastsurfer_home)
 
     output:
-    tuple(val(subject_id), val("${subjects_dir}/${subject_id}/stats/aseg.stats"))
+    tuple(val(subject_id), val(aseg_stats))
 
     script:
     aseg_stats = "${subjects_dir}/${subject_id}/stats/aseg.stats"
