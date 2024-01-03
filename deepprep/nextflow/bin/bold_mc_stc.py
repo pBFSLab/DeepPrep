@@ -1,4 +1,17 @@
-#! /usr/bin/env python3
+# Copyright 2023 The DeepPrep Developers
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from pathlib import Path
 import bids
 import argparse
@@ -22,12 +35,9 @@ def set_envrion():
                           + os.environ['PATH'])
 
 
-
 def hmc(subj_func_dir, subj_tmp_dir, bold_file, raw_ref_image, bold_id):
-    mem_gb = {"filesize": 1, "resampled": 1, "largemem": 1}
     omp_nthreads = config.nipype.omp_nthreads
-    if os.path.isfile(bold_file):
-        bold_tlen, mem_gb = _create_mem_gb(bold_file)
+    bold_tlen, mem_gb = _create_mem_gb(bold_file)
 
     # HMC on the BOLD
     bold_hmc_wf = init_bold_hmc_wf(name="bold_hmc_wf", mem_gb=mem_gb["filesize"], omp_nthreads=omp_nthreads)
