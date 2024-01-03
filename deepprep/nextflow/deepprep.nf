@@ -2010,6 +2010,55 @@ process qc_bold_create_report {
 
 }
 
+process anat_ca_register {
+    tag "${subject_id}"
+
+    cpus 1
+    memory '1.5 GB'
+
+    input:
+    val(subjects_dir)
+    tuple(val(subject_id), val(brainmask_mgz), val(talairach_lta), val(norm_mgz))
+    val(freesurfer_home)
+
+    output:
+    tuple(val(subject_id), val(talairach_m3z))
+
+    script:
+    fsaverage_m3z = "${freesurfer_home}/average/RB_all_2016-05-10.vc700.gca"
+    talairach_m3z = "${subjects_dir}/${subject_id}/mri/transforms/talairach.m3z"
+    threads = 1
+
+    """
+    mri_ca_register -align-after -nobigventricles -mask ${brainmask_mgz} -T ${talairach_lta} ${norm_mgz} ${fsaverage_m3z} ${talairach_m3z}
+    """
+}
+
+process anat_segstats {
+    tag "${subject_id}"
+
+    cpus 1
+    memory '300 MB'
+
+    input:
+    val(subjects_dir)
+    tuple(val(subject_id), val(aseg_mgz), val(norm_mgz), val(brainmask_mgz), val(ribbon_mgz))
+    val(fastsurfer_home)
+
+    output:
+    tuple(val(subject_id), val(aseg_stats))
+
+    script:
+    aseg_stats = "${subjects_dir}/${subject_id}/stats/aseg.stats"
+    asegstatsLUT_color = "${fastsurfer_home}/ASegStatsLUT.txt"
+    threads = 1
+
+    script:
+    """
+    SUBJECTS_DIR=${subjects_dir}  mri_segstats --seed 1234 --seg ${aseg_mgz} --sum ${aseg_stats} --pv ${norm_mgz} --empty --brainmask ${brainmask_mgz} --brain-vol-from-seg --excludeid 0 --excl-ctxgmwm --supratent --subcortgray --in ${norm_mgz} --in-intensity-name norm --in-intensity-units MR --etiv --surf-wm-vol --surf-ctx-vol --totalgray --euler --ctab ${asegstatsLUT_color} --subject ${subject_id}
+    """
+
+}
 
 workflow anat_wf {
 
@@ -2210,6 +2259,11 @@ workflow anat_wf {
         anat_balabels_input_rh = sphere_reg_surf.join(white_surf, by: [0, 1]).join(subject_id_rh, by: [0, 1])
         balabel_lh = anat_balabels_lh(subjects_dir, anat_balabels_input_lh, balabels_lh, subjects_fsaverage_dir)  // if for paper, comment out
         balabel_rh = anat_balabels_rh(subjects_dir, anat_balabels_input_rh, balabels_rh, subjects_fsaverage_dir)  // if for paper, comment out
+
+        anat_ca_register_input = brainmask_mgz.join(talairach_lta).join(norm_mgz)
+        talairach_m3z = anat_ca_register(subjects_dir, anat_ca_register_input, freesurfer_home)
+        anat_segstats_input = aseg_mgz.join(norm_mgz).join(brainmask_mgz).join(ribbon_mgz)
+        aseg_stats = anat_segstats(subjects_dir, anat_segstats_input, freesurfer_home)
     }
 
     emit:
