@@ -476,6 +476,8 @@ if __name__ == '__main__':
         hmc_xfm_count = len(f.readlines())
 
     hmc_xfm_file = Path(bold_preprocess_dir) / subject_id / 'tmp' / 'sdc_wf' / bold_id / 'hmc_xfm.txt'
+    if not hmc_xfm_file.parent.exists():
+        hmc_xfm_file.parent.mkdir(parents=True, exist_ok=True)
     create_hmc_xfm_file(hmc_xfm_file, hmc_xfm_count)
 
     bold_file_name = Path(bold_input_file).name.replace('_space-mc', '')
