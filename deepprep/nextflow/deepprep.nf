@@ -1669,15 +1669,15 @@ process bold_mkbrainmask {
     val(bold_preprocess_path)
     tuple(val(subject_id), val(bold_id), path(aparc_aseg), path(mc), path(bbregister_dat))
     output:
-    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_desc-wm_mask.nii.gz")) // emit: anat_wm
-    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_desc-csf_mask.nii.gz")) // emit: anat_csf
-    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_desc-aparcaseg_dseg.nii.gz")) // emit: anat_aseg
-    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_desc-ventricles_mask.nii.gz")) // emit: anat_ventricles
-    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_desc-brain_mask.nii.gz")) // emit: anat_brainmask
-    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_desc-brain_maskbin.nii.gz")) // emit: anat_brainmask_bin
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${name}_desc-wm_mask.nii.gz")) // emit: anat_wm
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${name}_desc-csf_mask.nii.gz")) // emit: anat_csf
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${name}_desc-aparcaseg_dseg.nii.gz")) // emit: anat_aseg
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${name}_desc-ventricles_mask.nii.gz")) // emit: anat_ventricles
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${name}_desc-brain_mask.nii.gz")) // emit: anat_brainmask
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${name}_desc-brain_maskbin.nii.gz")) // emit: anat_brainmask_bin
     script:
     script_py = "bold_mkbrainmask.py"
-
+    name = mc.name.split('_bold.nii.gz')[0]  // for mc or sdc
     """
     ${script_py} \
     --bold_preprocess_dir ${bold_preprocess_path} \
@@ -2398,7 +2398,6 @@ workflow bold_wf {
     (mc_nii, mcdat, boldref) = bold_stc_mc(bold_preprocess_path, reorient_nii)
     if (bold_with_sdc.toString().toUpperCase() == 'TRUE') {
         bold_sdc_input = mc_nii.join(mcdat, by: [0, 1]).join(boldref, by: [0, 1])
-        bold_sdc_input.view()
         mc_nii = bold_sdc(bids_dir, bold_preprocess_path, bold_sdc_input)
     }
     bbregister_dat_input = aparc_aseg_mgz.join(mc_nii, by: [0, 1])
