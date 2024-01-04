@@ -87,7 +87,7 @@ def set_environ(freesurfer_home):
     # FreeSurfer
     os.environ['FREESURFER_HOME'] = freesurfer_home
     os.environ['SUBJECTS_DIR'] = f'{freesurfer_home}/subjects'
-    os.environ['PATH'] = f'{freesurfer_home}/bin:' + os.environ['PATH']
+    os.environ['PATH'] = f'{freesurfer_home}/bin:' + '/usr/local/workbench/bin_linux64:' + os.environ['PATH']
 
 
 if __name__ == '__main__':
@@ -166,8 +166,8 @@ if __name__ == '__main__':
         affine_mat_atlas = Path(qc_tool_package) / 'affine.mat'
         affine_mat = subject_bold2T1_workdir / 'affine.mat'
         shutil.copyfile(affine_mat_atlas, affine_mat)
-        T1_mgz = Path(subjects_dir) / subject_id / 'mri' / 'norm.mgz'
-        T1_nii = subject_bold2T1_workdir / 'norm.nii.gz'
+        T1_mgz = Path(bold_preprocess_dir) / subject_id / 'func' / f'{subject_id}_space-T1w_res-2mm_desc-noskull_T1w.nii.gz'
+        T1_nii = subject_bold2T1_workdir / 'noskull_T1w.nii.gz'
         mgz2nii(T1_mgz, T1_nii)
         lh_white = Path(subjects_dir) / subject_id / 'surf' / 'lh.white'
         rh_white = Path(subjects_dir) / subject_id / 'surf' / 'rh.white'
