@@ -1,4 +1,22 @@
 #! /usr/bin/env python3
+#
+# STATEMENT OF CHANGES: This file is derived from sources licensed under the Apache-2.0 terms,
+# and this file has been changed.
+#
+# Copyright 2023 The NiPreps Developers <nipreps@gmail.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import shutil
 from typing import Union, Tuple, List
 import argparse
@@ -212,6 +230,9 @@ def main(bids_path, subject_id, bold_id, bold_file_name, bold_input_file, boldre
         use_syn=use_syn_sdc,
         force_syn=force_syn,
     )
+
+    assert fmap_estimators, (f"No fmap estimators found for {bold_file};"
+                             f"Please check the 'fmap' folder in the BIDS dataset")
 
     if fmap_estimators:
         print(
@@ -427,17 +448,18 @@ def main(bids_path, subject_id, bold_id, bold_file_name, bold_input_file, boldre
         print(sdc_resampled_file)
         shutil.move(sdc_resampled_file, sdc_file)
 
+        assert Path(sdc_file).exists(), f'sdc output file not exists: {sdc_file}'
+
     return
 
 
-tranform_base = """#Transform {}
-Transform: MatrixOffsetTransformBase_double_3_3
-Parameters: 1 0 0 0 1 0 0 0 1 0 0 0
-FixedParameters: 0 0 0
-"""
-
-
 def create_hmc_xfm_file(xfm_file, count):
+    tranform_base = """#Transform {}
+    Transform: MatrixOffsetTransformBase_double_3_3
+    Parameters: 1 0 0 0 1 0 0 0 1 0 0 0
+    FixedParameters: 0 0 0
+    """
+
     with open(xfm_file, 'w') as f:
         f.write('#Insight Transform File V1.0\n')
         for num in range(count):
@@ -478,7 +500,7 @@ if __name__ == '__main__':
     hmc_xfm_file = Path(bold_preprocess_dir) / subject_id / 'tmp' / 'sdc_wf' / bold_id / 'hmc_xfm.txt'
     if not hmc_xfm_file.parent.exists():
         hmc_xfm_file.parent.mkdir(parents=True, exist_ok=True)
-    create_hmc_xfm_file(hmc_xfm_file, hmc_xfm_count)
+    create_hmc_xfm_file(hmc_xfm_file, hmc_xfm_count)  # TODO if use the FSL stc mc，must delete this fuction
 
     bold_file_name = Path(bold_input_file).name.replace('_space-mc', '')
     main(bids_path, subject_id.split('-')[1], bold_id, bold_file_name, bold_input_file, boldref_file, hmc_xfm_file, sdc_tmp_dir, sdc_file)
