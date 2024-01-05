@@ -75,6 +75,43 @@ RUN git clone https://github.com/adalca/neurite && cd neurite && pip3 install . 
 ### echo to .bashrc
 RUN echo "source /usr/local/freesurfer/SetUpFreeSurfer.sh" >> ~/.bashrc
 
+### smriprep sdcflows
+RUN pip3 install smriprep sdcflows && pip3 cache purge
+
+### ANTs  2.3.1
+#RUN apt-get update && apt-get --no-install-recommends -y install build-essential && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+#RUN cd ~ && \
+#    git clone https://github.com/cookpa/antsInstallExample.git && \
+#    cd antsInstallExample && \
+#    bash installANTs.sh && \
+#    cp -r install /usr/local/ANTs && \
+#    echo "export ANTSPATH=/usr/local/ANTs" >> ~/.bashrc && \
+#    echo 'export PATH=${PATH}:${ANTSPATH}/bin' >> ~/.bashrc && \
+#    cd ~ && rm -r antsInstallExample
+RUN wget --content-disposition -P /opt/ http://30.30.30.141:8080/f/6976e9861119405fa12d/?dl=1 && tar -C /usr/local -xzvf /opt/ANTs_linux-ubuntu22-amd64_2.3.1.tar.gz && rm /opt/ANTs_linux-ubuntu22-amd64_2.3.1.tar.gz && \
+    echo "export ANTSPATH=/usr/local/ANTs" >> ~/.bashrc && \
+    echo 'export PATH=${ANTSPATH}/bin:${PATH}' >> ~/.bashrc
+
+### FSL 6.0.5.1
+RUN apt-get update && apt-get --no-install-recommends -y install libopenblas-dev && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN wget --content-disposition -P /opt/ http://30.30.30.141:8080/f/d1f25359b0bf4e0886ad/?dl=1 && tar -C /opt -xzvf /opt/FSL_6.0.5.1.tar.gz && rm /opt/FSL_6.0.5.1.tar.gz && \
+    mkdir /usr/local/fsl && mv /opt/fsl/bin /usr/local/fsl && rm -r /opt/fsl && \
+    echo 'export FSLDIR=/usr/local/fsl' >> ~/.bashrc && \
+    echo 'export FSLOUTPUTTYPE=NIFTI' >> ~/.bashrc && \
+    echo 'export PATH=${FSLDIR}/bin:${PATH}' >> ~/.bashrc
+
+### AFNI 23.3.14
+RUN apt-get update && apt-get --no-install-recommends -y install curl && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN cd /usr/local && \
+    wget --content-disposition -P /opt/ http://30.30.30.141:8080/f/0c88034741084793bd56/?dl=1 && \
+    wget --content-disposition -P /opt/ http://30.30.30.141:8080/f/413153c2166440fc9394/?dl=1 && \
+    bash /opt/OS_notes.linux_ubuntu_22_64_a_admin.txt 2>&1 | tee o.ubuntu_22_a.txt && \
+    tcsh /opt/OS_notes.linux_ubuntu_22_64_b_user.tcsh 2>&1 | tee o.ubuntu_22_b.txt && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
+    echo 'export PATH=/usr/local/abin:${PATH}' >> ~/.bashrc && \
+    apt remove python3-matplotlib && \
+    cd ~ && mv /root/abin /usr/local && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
 COPY deepprep /deepprep
 RUN chmod 755 /deepprep/deepprep.sh
 

@@ -1367,6 +1367,35 @@ process bold_stc_mc {
     """
 }
 
+
+process bold_sdc {
+    tag "${subject_id}"
+
+    cpus 1
+
+    input:
+    val(bids_dir)
+    val(bold_preprocess_path)
+    tuple(val(subject_id), val(bold_id), val(mc_nii), val(mcdat), val(mc_boldref))
+    output:
+    tuple(val(subject_id), val(bold_id), val("${sdc_file}")) // emit: sdc
+    script:
+    script_py = "bold_sdc.py"
+    sdc_file = "${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-sdc_bold.nii.gz"
+    """
+    ${script_py} \
+    --bids_dir ${bids_dir} \
+    --bold_preprocess_dir ${bold_preprocess_path} \
+    --subject_id ${subject_id} \
+    --bold_id ${bold_id} \
+    --bold_file ${mc_nii} \
+    --boldref_file ${mc_boldref} \
+    --hmc_xfm_file ${mcdat} \
+    --sdc_file ${sdc_file}
+    """
+}
+
+
 process bold_add_subject_id_to_bold_file {
     tag "${subject_id}"
     cpus 1
@@ -1640,15 +1669,15 @@ process bold_mkbrainmask {
     val(bold_preprocess_path)
     tuple(val(subject_id), val(bold_id), path(aparc_aseg), path(mc), path(bbregister_dat))
     output:
-    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_desc-wm_mask.nii.gz")) // emit: anat_wm
-    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_desc-csf_mask.nii.gz")) // emit: anat_csf
-    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_desc-aparcaseg_dseg.nii.gz")) // emit: anat_aseg
-    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_desc-ventricles_mask.nii.gz")) // emit: anat_ventricles
-    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_desc-brain_mask.nii.gz")) // emit: anat_brainmask
-    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_desc-brain_maskbin.nii.gz")) // emit: anat_brainmask_bin
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${name}_desc-wm_mask.nii.gz")) // emit: anat_wm
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${name}_desc-csf_mask.nii.gz")) // emit: anat_csf
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${name}_desc-aparcaseg_dseg.nii.gz")) // emit: anat_aseg
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${name}_desc-ventricles_mask.nii.gz")) // emit: anat_ventricles
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${name}_desc-brain_mask.nii.gz")) // emit: anat_brainmask
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${name}_desc-brain_maskbin.nii.gz")) // emit: anat_brainmask_bin
     script:
     script_py = "bold_mkbrainmask.py"
-
+    name = mc.name.split('_bold.nii.gz')[0]  // for mc or sdc
     """
     ${script_py} \
     --bold_preprocess_dir ${bold_preprocess_path} \
@@ -2303,7 +2332,7 @@ workflow bold_wf {
     bold_reorient = params.bold_reorient
     surface = params.surface
     subjects = params.subjects
-    bold_susceptibility_distortion_correction = params.bold_susceptibility_distortion_correction
+    bold_with_sdc = params.bold_sdc
 
     bold_atlas_type = params.bold_atlas_type  // not used
     bold_fs_native_space = params.bold_fs_native_space
@@ -2364,10 +2393,13 @@ workflow bold_wf {
     boldfile_id_group = subject_id_boldfile_id.groupTuple(sort: true).join(subject_boldref_file).map { tuple -> tuple[1] }
     boldfile_id_split = split_subject_boldref_file(boldfile_id_group.flatten())
 
-    bold_info = bold_skip_reorient(bold_preprocess_path, qc_result_path, subject_boldfile_txt, bold_reorient, bold_skip_frame, bold_susceptibility_distortion_correction)
-    bold_info = boldfile_id_split.join(bold_info, by: [0, 1])
-    (mc_nii, mcdat, boldref) = bold_stc_mc(bold_preprocess_path, bold_info)
-
+    reorient_nii = bold_skip_reorient(bold_preprocess_path, qc_result_path, subject_boldfile_txt, bold_reorient, bold_skip_frame, bold_with_sdc)
+    reorient_nii = boldfile_id_split.join(reorient_nii, by: [0, 1])
+    (mc_nii, mcdat, boldref) = bold_stc_mc(bold_preprocess_path, reorient_nii)
+    if (bold_with_sdc.toString().toUpperCase() == 'TRUE') {
+        bold_sdc_input = mc_nii.join(mcdat, by: [0, 1]).join(boldref, by: [0, 1])
+        mc_nii = bold_sdc(bids_dir, bold_preprocess_path, bold_sdc_input)
+    }
     bbregister_dat_input = aparc_aseg_mgz.join(mc_nii, by: [0, 1])
     bbregister_dat = bold_bbregister(subjects_dir, bold_preprocess_path, bbregister_dat_input)
     t1_native2mm_group = subject_id_boldfile_id.groupTuple(sort: true).join(t1_native2mm).transpose()  // TODO from here can't resume
