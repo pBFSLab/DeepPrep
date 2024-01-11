@@ -2418,16 +2418,6 @@ workflow bold_wf {
 
     bold_inputs_recon_files = t1_mgz.join(mask_mgz).join(aparc_aseg_mgz)
     (t1_nii, mask_nii, wm_dseg_nii, fsnative2T1w_xfm) = bold_inputs(bold_preprocess_path, boldfile_id_unique, bold_inputs_recon_files)
-//     println("START!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-// //     println(bold_preprocess_path) // /DEEPPREP_RESULT_DIR/BOLD
-// //     t1_mgz.view() // [sub-CIMT001, /DEEPPREP_RESULT_DIR/Recon/sub-CIMT001/mri/T1.mgz]
-// //     mask_mgz.view() // [sub-CIMT001, /DEEPPREP_RESULT_DIR/Recon/sub-CIMT001/mri/mask.mgz]
-//     boldfile_id_unique.view() // sub-CIMT001_ses-38659_task-rest_run-01
-//     bold_inputs_recon_files.view() // [sub-CIMT001,
-//     // /DEEPPREP_RESULT_DIR/Recon/sub-CIMT001/mri/T1.mgz,
-//     // /DEEPPREP_RESULT_DIR/Recon/sub-CIMT001/mri/mask.mgz,
-//     // /DEEPPREP_RESULT_DIR/Recon/sub-CIMT001/mri/aparc+aseg.mgz]
-    println('DONE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 
 //     bold_T1_to_2mm_input = t1_mgz.join(norm_mgz)
 //     (t1_native2mm, norm_native2mm) = bold_T1_to_2mm(subjects_dir, bold_preprocess_path, bold_T1_to_2mm_input)
