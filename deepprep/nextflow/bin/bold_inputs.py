@@ -42,6 +42,8 @@ if __name__ == '__main__':
         description="DeepPrep: Prepare input data for BOLD process"
     )
 
+    parser.add_argument("--bold_preprocess_path", required=True)
+    parser.add_argument("--subject_id", required=True)
     parser.add_argument("--t1_mgz", required=True)
     parser.add_argument("--mask_mgz", required=True)
     parser.add_argument("--aparc_aseg_mgz", required=True)
@@ -50,5 +52,8 @@ if __name__ == '__main__':
     parser.add_argument("--wm_dseg_nii", required=True)
     parser.add_argument("--fsnative2T1w_xfm", required=True)
     args = parser.parse_args()
+
+    out_dir = Path(args.bold_preprocess_path) / args.subject_id / 'func'
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     cmd(args.t1_mgz, args.mask_mgz, args.aparc_aseg_mgz, args.t1_nii, args.mask_nii, args.wm_dseg_nii, args.fsnative2T1w_xfm)
