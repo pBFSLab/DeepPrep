@@ -1,5 +1,7 @@
+#! /usr/bin/env python3
 import os
 from pathlib import Path
+import argparse
 
 print(__file__)
 
@@ -13,44 +15,55 @@ from niworkflows.utils.connections import listify
 
 if __name__ == '__main__':
 
-    subject_id = 'sub-CIMT001'.split('-')[1]
-    bold_id = 'sub-CIMT001_ses-38659_task-rest_run-01'
+    parser = argparse.ArgumentParser(
+        description="DeepPrep: Prepare input data for BOLD process"
+    )
 
-    config.execution.bids_dir = '/mnt/ngshare/temp/ds004498'
-    config.execution.log_dir = '/mnt/ngshare/temp/ds004498deepprep/log'
-    config.execution.fmriprep_dir = '/mnt/ngshare/temp/ds004498deepprep'
-    config.execution.fs_license_file = '/mnt/ngshare/temp/ds004498/license.txt'
-    config.execution.fs_subjects_dir = '/mnt/ngshare/temp/ds004498/Recon720'
-    config.execution.output_dir = '/mnt/ngshare/temp/ds004498deepprep'
-    config.execution.output_spaces = 'sbref run individual T1w fsnative'
+    parser.add_argument("--subject_id_unique", required=True)
+    parser.add_argument("--boldfile_id_unique", required=True)
+    parser.add_argument("--bids_dir", required=True)
+    parser.add_argument("--bold_preprocess_path", required=True)
+    parser.add_argument("--bold_task_type", required=True)
+    args = parser.parse_args()
+
+    subject_id = args.subject_id_unique.split('-')[1]
+    bold_id = args.boldfile_id_unique
+
+    config.execution.bids_dir = args.bids_dir
+    # config.execution.log_dir = '/mnt/ngshare/DeepPrep_Docker/DeepPrep_workdir/ds004498deepprep/log'
+    # config.execution.fmriprep_dir = '/mnt/ngshare/DeepPrep_Docker/DeepPrep_workdir/ds004498deepprep'
+    # config.execution.fs_license_file = '/mnt/ngshare/DeepPrep_Docker/DeepPrep_workdir/ds004498/license.txt'
+    # config.execution.fs_subjects_dir = '/mnt/ngshare/DeepPrep_Docker/DeepPrep_workdir/ds004498'
+    config.execution.output_dir = args.bold_preprocess_path
+    # config.execution.output_spaces = 'sbref run individual T1w fsnative'
     config.execution.participant_label = [ subject_id,]
-    config.execution.task_id = 'rest'
-    config.execution.templateflow_home = '/home/fmriprep/.cache/templateflow'
-    config.execution.work_dir = '/mnt/ngshare/temp/ds004498deepprep/work'
+    config.execution.task_id = args.bold_task_type
+    # config.execution.templateflow_home = '/home/fmriprep/.cache/templateflow'
+    # config.execution.work_dir = '/mnt/ngshare/DeepPrep_Docker/DeepPrep_workdir/ds004498deepprep/work'
 
-    config.workflow.anat_only = False
-    config.workflow.bold2t1w_dof = 6
-    config.workflow.bold2t1w_init = 'register'
-    config.workflow.cifti_output = False
-    config.workflow.dummy_scans = 0
-    config.workflow.fmap_bspline = False
-    config.workflow.fmap_bspline = False
-    config.workflow.hires = True
+    # config.workflow.anat_only = False
+    # config.workflow.bold2t1w_dof = 6
+    # config.workflow.bold2t1w_init = 'register'
+    # config.workflow.cifti_output = False
+    # config.workflow.dummy_scans = 0
+    # config.workflow.fmap_bspline = False
+    # config.workflow.fmap_bspline = False
+    # config.workflow.hires = True
     config.workflow.ignore =[]
-    config.workflow.level = "full"
-    config.workflow.longitudinal = False
-    config.workflow.run_msmsulc = False
-    config.workflow.medial_surface_nan = False
-    config.workflow.project_goodvoxels = False
-    config.workflow.regressors_all_comps = False
-    config.workflow.regressors_dvars_th = 1.5
-    config.workflow.regressors_fd_th = 0.5
-    config.workflow.run_reconall = True
-    config.workflow.spaces = "sbref run individual"
-    config.workflow.use_aroma = False
-    config.workflow.use_bbr = True
-    config.workflow.use_syn_sdc = False
-    config.workflow.me_t2s_fit_method = "curvefit"
+    # config.workflow.level = "full"
+    # config.workflow.longitudinal = False
+    # config.workflow.run_msmsulc = False
+    # config.workflow.medial_surface_nan = False
+    # config.workflow.project_goodvoxels = False
+    # config.workflow.regressors_all_comps = False
+    # config.workflow.regressors_dvars_th = 1.5
+    # config.workflow.regressors_fd_th = 0.5
+    # config.workflow.run_reconall = True
+    # config.workflow.spaces = "sbref run individual"
+    # config.workflow.use_aroma = False
+    # config.workflow.use_bbr = True
+    # config.workflow.use_syn_sdc = False
+    # config.workflow.me_t2s_fit_method = "curvefit"
 
     work_dir = Path(config.execution.work_dir)
     work_dir.mkdir(parents=True, exist_ok=True)
@@ -80,3 +93,10 @@ if __name__ == '__main__':
         single_subject_fieldmap_wf.run()
 
         fieldmap_id = estimator_map.get(bold_runs[0][0])
+        print(fieldmap_id)
+    else:
+        fieldmap_id = None
+
+    with open(f'{fieldmap_id}', 'w') as f:
+        f.write("")
+
