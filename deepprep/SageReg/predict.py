@@ -61,6 +61,8 @@ if __name__ == '__main__':
     ico_level = 'fsaverage6'
 
     config["device"] = args.device
+    if config['device'] != 'cpu':
+        config['device'] = 'cuda'
     config['validation'] = True
     config['rd_sample'] = False
     config['is_da'] = True
@@ -116,4 +118,4 @@ if __name__ == '__main__':
         # remove negative area triangles
         sphere_moved_native_neg_file = os.path.join(args.sd, args.sid, 'surf', f'{hemi}.sphere.reg')
         sphere_moved_native_file = os.path.join(args.sd, args.sid, 'surf', f'{hemi}.sphere.reg')
-        single_remove_negative_area(sphere_moved_native_neg_file, sphere_moved_native_file, device=args.device)
+        single_remove_negative_area(sphere_moved_native_neg_file, sphere_moved_native_file, device=config['device'])

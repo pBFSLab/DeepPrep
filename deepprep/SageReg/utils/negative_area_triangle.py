@@ -120,7 +120,7 @@ def single_remove_negative_area(sphere, sphere_removed, device='cuda'):
     # print(f'negative area count : {count_orig}')
     times = count_final = 0
     if count_orig > 0:
-        xyz_sphere_removed, count_final, times = remove_negative_area(faces_sphere, xyz_sphere)
+        xyz_sphere_removed, count_final, times = remove_negative_area(faces_sphere, xyz_sphere, device)
         # print(f'negative area: {count_orig}   {count_final}  {times}')
         if sphere_removed == sphere:
             os.system(f'mv {sphere} {sphere}.bak')
