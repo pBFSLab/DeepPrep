@@ -1217,7 +1217,33 @@ process bold_inputs {
     --wm_dseg_nii ${wm_dseg_nii} \
     --fsnative2T1w_xfm ${fsnative2T1w_xfm} \
     """
+}
 
+process bold_fieldmap {
+    cpus 1
+
+    input:
+    val(subject_id_unique)
+    val(boldfile_id_unique)
+    val(bids_dir)
+    val(bold_preprocess_path)
+    val(bold_task_type)
+
+    output:
+//     path ("fieldmap-*".split('-')[1])
+    val(fieldmap_id)
+
+    script:
+    script_py = "bold_fieldmap.py"
+
+    """
+    ${script_py} \
+    --subject_id_unique ${subject_id_unique} \
+    --boldfile_id_unique ${boldfile_id_unique} \
+    --bids_dir ${bids_dir} \
+    --bold_preprocess_path ${bold_preprocess_path} \
+    --bold_task_type ${bold_task_type} \
+    """
 }
 
 process bold_get_bold_file_in_bids {
@@ -2417,7 +2443,9 @@ workflow bold_wf {
     }
 
     bold_inputs_recon_files = t1_mgz.join(mask_mgz).join(aparc_aseg_mgz)
-    (t1_nii, mask_nii, wm_dseg_nii, fsnative2T1w_xfm) = bold_inputs(bold_preprocess_path, boldfile_id_unique, bold_inputs_recon_files)
+//     (t1_nii, mask_nii, wm_dseg_nii, fsnative2T1w_xfm) = bold_inputs(bold_preprocess_path, boldfile_id_unique, bold_inputs_recon_files)
+    fieldmap_id = bold_fieldmap(subject_id_unique, boldfile_id_unique, bids_dir, bold_preprocess_path, bold_task_type)
+    fieldmap_id.view()
 
 //     bold_T1_to_2mm_input = t1_mgz.join(norm_mgz)
 //     (t1_native2mm, norm_native2mm) = bold_T1_to_2mm(subjects_dir, bold_preprocess_path, bold_T1_to_2mm_input)
@@ -2433,6 +2461,7 @@ workflow bold_wf {
 //     boldfile_id_group = subject_id_boldfile_id.groupTuple(sort: true).join(subject_boldref_file).map { tuple -> tuple[1] }
 //     boldfile_id_split = split_subject_boldref_file(boldfile_id_group.flatten())
 //
+
 //     reorient_nii = bold_skip_reorient(bold_preprocess_path, qc_result_path, subject_boldfile_txt, bold_reorient, bold_skip_frame, bold_with_sdc)
 //     reorient_nii = boldfile_id_split.join(reorient_nii, by: [0, 1])
 //     (mc_nii, mcdat, boldref) = bold_stc_mc(bold_preprocess_path, reorient_nii)
