@@ -109,3 +109,9 @@ deepprep:${DEEPPREP_VERSION}
 service start redis-server
 cd /root/workspace/DeepPrep/deepprep/nextflow 
 nextflow run -c nextflow.docker.config deepprep.nf
+
+apt-get update && \
+apt-get install -y aptitude && \
+aptitude install -y vim openssh-client openssh-server && \
+sed -i "33c\PermitRootLogin yes" /etc/ssh/sshd_config && \
+service ssh restart && passwd
