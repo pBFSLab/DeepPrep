@@ -16,7 +16,7 @@ work_dir="/nextflow/workDir"
 # 判断目录是否存在
 if [ ! -d "$work_dir" ]; then
   # 目录不存在，进行创建
-  mkdir "$work_dir"
+  mkdir -p "$work_dir"
   echo "create workDir successfully"
 else
   echo "workDir already exist"
