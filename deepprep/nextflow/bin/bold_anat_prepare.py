@@ -19,7 +19,8 @@ def get_wm_dseg_file(aparc_aseg_mgz, wm_dseg_nii):
     ants.image_write(data_wm, wm_dseg_nii)
 
 def get_fsnative2T1w_xfm(fsnative2T1w_xfm):
-    lines = ['#Transform {}',
+    lines = ['#Insight Transform File V1.0',
+             '#Transform 0',
              'Transform: MatrixOffsetTransformBase_double_3_3',
              'Parameters: 1 0 0 0 1 0 0 0 1 0 0 0',
              'FixedParameters: 0 0 0']
@@ -53,7 +54,7 @@ if __name__ == '__main__':
     parser.add_argument("--fsnative2T1w_xfm", required=True)
     args = parser.parse_args()
 
-    out_dir = Path(args.bold_preprocess_path) / args.subject_id / 'func'
+    out_dir = Path(args.bold_preprocess_path) / args.subject_id / 'anat'
     out_dir.mkdir(parents=True, exist_ok=True)
 
     cmd(args.t1_mgz, args.mask_mgz, args.aparc_aseg_mgz, args.t1_nii, args.mask_nii, args.wm_dseg_nii, args.fsnative2T1w_xfm)
