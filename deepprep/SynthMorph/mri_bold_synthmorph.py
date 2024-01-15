@@ -788,8 +788,7 @@ import tensorrt as trt
 gpus = tf.config.experimental.list_physical_devices(device_type='GPU')
 for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
-gpu = os.environ['CUDA_VISIBLE_DEVICES']
-
+gpu = os.environ.get('CUDA_VISIBLE_DEVICES', '0')
 
 if arg.threads:
     tf.config.threading.set_inter_op_parallelism_threads(arg.threads)
