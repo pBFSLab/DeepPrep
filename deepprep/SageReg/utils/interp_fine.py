@@ -234,7 +234,7 @@ def find_real_triangle_up(topk_near_vertex_index, xyz_target, xyz_orig, faces, d
     return new_top3_near_vertex_index
 
 
-def resample_sphere_surface_barycentric(orig_xyz, target_xyz, orig_value, face=None, device='cuda'):
+def resample_sphere_surface_barycentric(orig_xyz, target_xyz, orig_value, device='cuda', face=None):
     """
     Interpolate moving points using fixed points and its feature
 
@@ -363,8 +363,8 @@ def interp_sulc_curv_barycentric(sulc_orig_file, curv_orig_file, sphere_orig_fil
     xyz_orig_t = torch.from_numpy(xyz_orig).to(device)
     xyz_target_t = torch.from_numpy(xyz_target).to(device)
 
-    sulc_interp = resample_sphere_surface_barycentric(xyz_orig_t, xyz_target_t, sulc_orig_t.unsqueeze(1))
-    curv_interp = resample_sphere_surface_barycentric(xyz_orig_t, xyz_target_t, curv_orig_t.unsqueeze(1))
+    sulc_interp = resample_sphere_surface_barycentric(xyz_orig_t, xyz_target_t, sulc_orig_t.unsqueeze(1), device)
+    curv_interp = resample_sphere_surface_barycentric(xyz_orig_t, xyz_target_t, curv_orig_t.unsqueeze(1), device)
 
     nib.freesurfer.write_morph_data(sulc_interp_file, sulc_interp.squeeze().cpu().numpy())
     nib.freesurfer.write_morph_data(curv_interp_file, curv_interp.squeeze().cpu().numpy())
