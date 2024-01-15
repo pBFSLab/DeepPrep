@@ -13,7 +13,7 @@ from utils.interp_fine import resample_sphere_surface_barycentric, upsample_std_
 from utils.auxi_data import get_points_num_by_ico_level
 
 
-def interp_dir_single(dir_recon: str, dir_rigid: str, dir_fixed: str, ico_level: str, hemis=None, is_rigid=False):
+def interp_dir_single(dir_recon: str, dir_rigid: str, dir_fixed: str, ico_level: str, device, hemis=None, is_rigid=False):
     """
     预处理：将native空间插值到fsaverage空间
     """
@@ -51,7 +51,7 @@ def interp_dir_single(dir_recon: str, dir_rigid: str, dir_fixed: str, ico_level:
         # if not os.path.exists(sulc_moving_interp_file):
         interp_sulc_curv_barycentric(sulc_moving_file, curv_moving_file, sphere_moving_file, sphere_fixed_file,
                                      sulc_moving_interp_file, curv_moving_interp_file,
-                                     sphere_moving_interp_file)
+                                     sphere_moving_interp_file, device)
         print(f'interp: >>> {sulc_moving_interp_file}')
         print(f'interp: >>> {curv_moving_interp_file}')
         print(f'interp: >>> {sphere_moving_interp_file}')
@@ -230,7 +230,7 @@ def infer(moving_datas, fixed_datas, models, faces, ico_levels, features, device
             xyz_moved_upsample = xyz_moved_upsample.detach()
 
             # moved数据重采样
-            moving_data_resample = resample_sphere_surface_barycentric(xyz_moved_upsample, xyz_fixed, data_moving)
+            moving_data_resample = resample_sphere_surface_barycentric(xyz_moved_upsample, xyz_fixed, data_moving, device=device)
 
             data_x = torch.cat((moving_data_resample, data_fixed), 1).to(device)
 
@@ -238,17 +238,17 @@ def infer(moving_datas, fixed_datas, models, faces, ico_levels, features, device
 
             if euler_angle.shape[1] == 3:
                 euler_angle_interp_moved_upsample = resample_sphere_surface_barycentric(xyz_fixed, xyz_moved_upsample,
-                                                                                        euler_angle)
+                                                                                        euler_angle, device=device)
                 # euler_angle_interp_moved_upsample = bilinearResampleSphereSurf(xyz_moved_upsample, euler_angle, device)
                 xyz_moved = apply_rotate_matrix(euler_angle_interp_moved_upsample, xyz_moved_upsample, norm=True,
                                                 face=faces_sphere)
             else:  # 如果使用的是切平面的位移，不能对变形场进行插值，只能对结果坐标进行插值
-                xyz_moved = resample_sphere_surface_barycentric(xyz_fixed, xyz_moved_upsample, xyz_moved_lap)
+                xyz_moved = resample_sphere_surface_barycentric(xyz_fixed, xyz_moved_upsample, xyz_moved_lap, device=device)
                 xyz_moved = xyz_moved / (torch.norm(xyz_moved, dim=1, keepdim=True).repeat(1, 3))
 
             if seg_moving.sum() > 0:
                 seg_moving = F.one_hot(seg_moving).float().to(device)
-                seg_moving_resample = resample_sphere_surface_barycentric(xyz_moved_upsample, xyz_fixed, seg_moving)
+                seg_moving_resample = resample_sphere_surface_barycentric(xyz_moved_upsample, xyz_fixed, seg_moving, device=device)
             else:
                 seg_moving_resample = None
 
@@ -339,12 +339,12 @@ def train_val(config):
     if config['validation'] is True:
         # 1. interp file
         interp_dir_single(config["dir_predict_recon"], config["dir_predict_rigid"], config["dir_fixed"],
-                          'fsaverage6', hemis=config['hemisphere'], is_rigid=config['is_rigid'])
+                          'fsaverage6', hemis=config['hemisphere'], is_rigid=config['is_rigid'], device=device)
 
         models = []
         for model_file in config['model_files'][:config["ico_index"] + 1]:
             print(f'<<< model : {model_file}')
-            model = torch.load(model_file)['model']
+            model = torch.load(model_file, map_location=device)['model']
             model.to(device)
             model.eval()
             models.append(model)
