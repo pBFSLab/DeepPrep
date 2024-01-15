@@ -11,7 +11,7 @@ def run_rigid_registration(subject_id, script, subj_anat_dir, T1_file, template,
     moved = Path(subj_anat_dir) / f'{subject_id}_space-{template_space}_res-02_desc-affine_T1w.nii.gz'
     trans = Path(subj_anat_dir) / f'{subject_id}_from-T1w_to-{template_space}_desc-affine_xfm.txt'
 
-    cmd = f'python3 {script} -g -m affine -t {trans} -o {moved} {T1_file} {template} -mp {mp}'
+    cmd = f'python3 {script} -m affine -t {trans} -o {moved} {T1_file} {template} -mp {mp}'
     os.system(cmd)
 
     assert os.path.exists(moved), f"{moved}"
