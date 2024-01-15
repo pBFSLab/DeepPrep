@@ -1185,7 +1185,7 @@ process anat_balabels_rh {
     """
 }
 
-process bold_inputs {
+process bold_anat_prepare {
     cpus 1
 
     input:
@@ -1200,15 +1200,17 @@ process bold_inputs {
     tuple(val(subject_id), val(bold_id), val(fsnative2T1w_xfm))
 
     script:
-    script_py = "bold_inputs.py"
+    script_py = "bold_anat_prepare.py"
 
-    t1_nii = "${bold_preprocess_path}/${subject_id}/func/${bold_id}_desc-preproc_T1w.nii.gz"
-    mask_nii = "${bold_preprocess_path}/${subject_id}/func/${bold_id}_desc-brain_mask.nii.gz"
-    wm_dseg_nii = "${bold_preprocess_path}/${subject_id}/func/${bold_id}_dseg.nii.gz"
-    fsnative2T1w_xfm = "${bold_preprocess_path}/${subject_id}/func/${bold_id}_from-fsnative_to-T1w_mode-image_xfm.txt"
+    t1_nii = "${bold_preprocess_path}/${subject_id}/anat/${bold_id}_desc-preproc_T1w.nii.gz"
+    mask_nii = "${bold_preprocess_path}/${subject_id}/anat/${bold_id}_desc-brain_mask.nii.gz"
+    wm_dseg_nii = "${bold_preprocess_path}/${subject_id}/anat/${bold_id}_dseg.nii.gz"
+    fsnative2T1w_xfm = "${bold_preprocess_path}/${subject_id}/anat/${bold_id}_from-fsnative_to-T1w_mode-image_xfm.txt"
 
     """
     ${script_py} \
+    --bold_preprocess_path ${bold_preprocess_path} \
+    --subject_id ${subject_id} \
     --t1_mgz ${t1_mgz} \
     --mask_mgz ${mask_mgz} \
     --aparc_aseg_mgz ${aparc_aseg_mgz} \
@@ -1223,28 +1225,75 @@ process bold_fieldmap {
     cpus 1
 
     input:
-    val(subject_id_unique)
-    val(boldfile_id_unique)
     val(bids_dir)
-    val(bold_preprocess_path)
-    val(bold_task_type)
+    tuple(val(subject_id), val(bold_id), val(t1_nii))
+    val(bold_preprocess_dir)
+    val(task_id)
+    val(spaces)
+    val(fieldmap)
+    val(templateflow_home)
 
     output:
-//     path ("fieldmap-*".split('-')[1])
-    val(fieldmap_id)
+    val("TRUE")
 
     script:
-    script_py = "bold_fieldmap.py"
-
-    """
-    ${script_py} \
-    --subject_id_unique ${subject_id_unique} \
-    --boldfile_id_unique ${boldfile_id_unique} \
-    --bids_dir ${bids_dir} \
-    --bold_preprocess_path ${bold_preprocess_path} \
-    --bold_task_type ${bold_task_type} \
-    """
+    script_py = "bold_preprocess.py"
+    if (fieldmap.toUpperCase() == 'TRUE') {
+        """
+        ${script_py} \
+        --bids_dir ${bids_dir} \
+        --bold_preprocess_dir ${bold_preprocess_dir} \
+        --subject_id ${subject_id} \
+        --task_id ${task_id} \
+        --spaces ${spaces} \
+        --fieldmap ${fieldmap} \
+        --templateflow_home ${templateflow_home} \
+        """
+    }
 }
+
+
+process bold_preprocess {
+    cpus 1
+
+    input:
+    val(bids_dir)
+    val(subjects_dir)
+    val(bold_preprocess_dir)
+    val(task_id)
+    each path(subject_boldfile_txt)
+    val(spaces)
+    tuple(val(subject_id), val(bold_id), val(t1_nii), val(mask_nii), val(wm_dseg_nii), val(fsnative2T1w_xfm))
+    val(fs_license_file)
+    val(fieldmap)
+    val(templateflow_home)
+    val(bold_fieldmap_done)
+
+    output:
+    tuple(val(subject_id), val(bold_id))
+
+    script:
+    script_py = "bold_preprocess.py"
+    if (bold_fieldmap_done.toUpperCase() == 'TRUE') {
+        """
+        ${script_py} \
+        --bids_dir ${bids_dir} \
+        --subjects_dir ${subjects_dir} \
+        --bold_preprocess_dir ${bold_preprocess_dir} \
+        --subject_id ${subject_id} \
+        --task_id ${task_id} \
+        --bold_series ${subject_boldfile_txt} \
+        --spaces ${spaces} \
+        --t1w_preproc ${t1_nii} \
+        --t1w_mask ${mask_nii} \
+        --t1w_dseg ${wm_dseg_nii} \
+        --fsnative2t1w_xfm ${fsnative2T1w_xfm} \
+        --fs_license_file ${fs_license_file} \
+        --templateflow_home ${templateflow_home} \
+        """
+    }
+}
+
 
 process bold_get_bold_file_in_bids {
 
@@ -2392,19 +2441,23 @@ workflow bold_wf {
     bold_skip_frame = params.bold_skip_frame
     bold_reorient = params.bold_reorient
     surface = params.surface
+    fieldmap = params.fieldmap
     subjects = params.subjects
     bold_with_sdc = params.bold_sdc
 
     bold_atlas_type = params.bold_atlas_type  // not used
     bold_fs_native_space = params.bold_fs_native_space
+    spaces = params.bold_spaces
 
     // set software path
     freesurfer_home = params.freesurfer_home
+    fs_license_file = params.fs_license_file
 
     synthmorph_home = params.synthmorph_home
     synthmorph_model_path = params.synthmorph_model_path
     template_space = params.bold_template_space  // templateflow
     template_resolution = params.bold_template_resolution  // templateflow
+    templateflow_home = params.templateflow_home  // templateflow
 
     qc_utils_path = params.qc_utils_path
     reports_utils_path = params.reports_utils_path
@@ -2442,10 +2495,12 @@ workflow bold_wf {
         aparc_aseg_mgz = subject_id_unique.join(aparc_aseg_mgz)
     }
 
-    bold_inputs_recon_files = t1_mgz.join(mask_mgz).join(aparc_aseg_mgz)
-//     (t1_nii, mask_nii, wm_dseg_nii, fsnative2T1w_xfm) = bold_inputs(bold_preprocess_path, boldfile_id_unique, bold_inputs_recon_files)
-    fieldmap_id = bold_fieldmap(subject_id_unique, boldfile_id_unique, bids_dir, bold_preprocess_path, bold_task_type)
-    fieldmap_id.view()
+
+    bold_anat_prepare_recon_files = t1_mgz.join(mask_mgz).join(aparc_aseg_mgz)
+    (t1_nii, mask_nii, wm_dseg_nii, fsnative2T1w_xfm) = bold_anat_prepare(bold_preprocess_path, boldfile_id_unique, bold_anat_prepare_recon_files)
+    bold_fieldmap_done = bold_fieldmap(bids_dir, t1_nii, bold_preprocess_path, bold_task_type, spaces, fieldmap, templateflow_home)
+    bold_anat_prepare_files = t1_nii.join(mask_nii, by:[0,1]).join(wm_dseg_nii, by:[0,1]).join(fsnative2T1w_xfm, by:[0,1])
+    (subject_id, bold_id) = bold_preprocess(bids_dir, subjects_dir, bold_preprocess_path, bold_task_type, subject_boldfile_txt, spaces, bold_anat_prepare_files, fs_license_file, fieldmap, templateflow_home, bold_fieldmap_done)
 
 //     bold_T1_to_2mm_input = t1_mgz.join(norm_mgz)
 //     (t1_native2mm, norm_native2mm) = bold_T1_to_2mm(subjects_dir, bold_preprocess_path, bold_T1_to_2mm_input)
