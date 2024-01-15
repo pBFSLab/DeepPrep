@@ -12,7 +12,7 @@ def run_norigid_registration(subject_id, script, subj_func_dir, T1_file, norm_2m
 
     norm_save_name = f'{subject_id}_space-{template_space}_res-02_desc-noskull_T1w'
     apply_output = Path(subj_func_dir) / f'{norm_save_name}.nii.gz'
-    cmd = f'python3 {script} -g -i {affine_trans} -o {moved} {T1_file} {template} -mp {mp} -a {norm_2mm} -ao {apply_output}'
+    cmd = f'python3 {script} -i {affine_trans} -o {moved} {T1_file} {template} -mp {mp} -a {norm_2mm} -ao {apply_output}'
     os.system(cmd)
 
     transvoxel = moved.parent / moved.name.replace('.nii.gz', '_transvoxel.npz')
