@@ -169,14 +169,6 @@ p.add_argument('-tv', '--trans_vox', type=str, metavar='TRANS VOXEL')
 
 arg = p.parse_args()
 
-# assert arg.moved or arg.trans, 'no output specified with --moved or --trans'
-# Setup.
-gpus = tf.config.experimental.list_physical_devices(device_type='GPU')
-for gpu in gpus:
-    tf.config.experimental.set_memory_growth(gpu, True)
-gpu = os.environ.get('CUDA_VISIBLE_DEVICES', '0')
-os.environ['CUDA_VISIBLE_DEVICES'] = gpu if arg.gpu else ''
-
 if arg.threads:
     tf.config.threading.set_inter_op_parallelism_threads(arg.threads)
     tf.config.threading.set_intra_op_parallelism_threads(arg.threads)
