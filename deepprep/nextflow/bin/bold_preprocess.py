@@ -1,3 +1,4 @@
+#! /usr/bin/env python3
 import argparse
 import os
 from pathlib import Path
@@ -55,9 +56,9 @@ if __name__ == '__main__':
     parser.add_argument("--subjects_dir", required=False)
     parser.add_argument("--bold_preprocess_dir", required=True)
     parser.add_argument("--subject_id", required=True)
-    parser.add_argument("--bold_id", required=True)
+    parser.add_argument("--bold_id", required=False)
     parser.add_argument("--task_id", required=True)
-    parser.add_argument("--bold_series", type=str, nargs='+', default=[], required=True)  # BOLD Series，not one bold file
+    parser.add_argument("--bold_series", type=str, nargs='+', default=[], required=False)  # BOLD Series，not one bold file
     parser.add_argument("--spaces", type=str, nargs='+', default=['individual', 'T1w', 'fsnative'], required=False)  # BOLD Series，not one bold file
     parser.add_argument("--t1w_preproc", required=False)
     parser.add_argument("--t1w_mask", required=False)
@@ -72,9 +73,7 @@ if __name__ == '__main__':
     --bids_dir /mnt/ngshare/temp/ds004498
     --bold_preprocess_dir /mnt/ngshare/temp/ds004498deepprep
     --subject_id sub-CIMT001
-    --bold_id sub-CIMT001_ses-38659_task-rest_run-01
     --task_id rest
-    --bold_series /mnt/ngshare/temp/ds004498/sub-CIMT001/ses-38659/func/sub-CIMT001_ses-38659_task-rest_run-01_bold.nii.gz
     --spaces individual T1w fsnative
     --fieldmap True
     else:
@@ -94,7 +93,7 @@ if __name__ == '__main__':
     """
     subject_id = args.subject_id
     subject_id_split = subject_id.split('-')[1]
-    bold_id = args.bold_id
+    # bold_id = args.bold_id
 
     t1w_preproc = args.t1w_preproc
     t1w_mask = args.t1w_mask
@@ -112,18 +111,41 @@ if __name__ == '__main__':
     config.to_filename(config_file)
     config.load(config_file)
 
-    bold_runs = [args.bold_series]
+    from niworkflows.utils.bids import collect_data
+    from niworkflows.utils.connections import listify
+
+    subject_data = collect_data(
+        config.execution.layout,
+        subject_id_split,
+        task=config.execution.task_id,
+        echo=config.execution.echo_idx,
+        bids_filters=config.execution.bids_filters,
+    )[0]
+    bold_runs = [
+        sorted(
+            listify(run),
+            key=lambda file: config.execution.layout.get_metadata(file).get('EchoTime', 0),
+        )
+        for run in subject_data['bold']
+    ]
 
     single_subject_fieldmap_wf, estimator_map = init_single_subject_fieldmap_wf(subject_id_split, bold_runs)
     if args.fieldmap.upper() == 'TRUE':  # run fieldmap
         if single_subject_fieldmap_wf:
-            single_subject_fieldmap_wf.base_dir = os.path.join(config.execution.work_dir, f'{subject_id}_wf', f'{bold_id}_wf')
+            base_dir = Path(config.execution.work_dir) / f'{subject_id}_wf' / f'{args.task_id}_wf'
+            base_dir.mkdir(parents=True, exist_ok=True)
+            single_subject_fieldmap_wf.base_dir = base_dir
             single_subject_fieldmap_wf.run()
     else:  # run preproc
-        fieldmap_id = estimator_map.get(bold_runs[0][0])
+        with open(args.bold_series[0], 'r') as f:
+            data = f.readlines()
+        data = [i.strip() for i in data]
+        bold_file = data[1]
+
+        fieldmap_id = estimator_map.get(bold_file)
 
         bold_wf = init_bold_wf(
-            bold_series=bold_runs[0],
+            bold_series=[bold_file],
             precomputed={},
             fieldmap_id=fieldmap_id,
         )
@@ -135,11 +157,10 @@ if __name__ == '__main__':
         bold_wf.inputs.inputnode.subjects_dir = config.execution.fs_subjects_dir
         bold_wf.inputs.inputnode.subject_id = subject_id
         bold_wf.inputs.inputnode.fsnative2t1w_xfm = fsnative2t1w_xfm
-        bold_wf.name = 'bold_wf'
 
         if fieldmap_id:
             from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-            workflow = Workflow(name=f'{bold_id}_wf')
+            workflow = Workflow(name=f'{args.task_id}_wf')
 
             workflow.connect([
                 (single_subject_fieldmap_wf, bold_wf, [
@@ -151,9 +172,15 @@ if __name__ == '__main__':
                     ("outputnode.method", "inputnode.sdc_method"),
                 ]),
             ])  # fmt:skip
-            workflow.base_dir = os.path.join(config.execution.work_dir, f'{subject_id}_wf')
+            bold_wf.name = f'{args.bold_series[0]}_wf'
+            base_dir = Path(config.execution.work_dir) / f'{subject_id}_wf' / f'{args.bold_series[0]}_wf'
+            base_dir.mkdir(parents=True, exist_ok=True)
+            workflow.base_dir = base_dir
             workflow.run()
         else:
-            bold_wf.base_dir = os.path.join(config.execution.work_dir, f'{subject_id}_wf', f'{bold_id}_wf')
+            bold_wf.name = f'bold_wf'
+            base_dir = Path(config.execution.work_dir) / f'{subject_id}_wf' / f'{args.bold_series[0]}_wf'
+            base_dir.mkdir(parents=True, exist_ok=True)
+            bold_wf.base_dir = base_dir
             bold_wf.run()
         print()
