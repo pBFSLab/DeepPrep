@@ -1,6 +1,6 @@
 # Docker
 export DEEPPREP_IMAGE_OUTPUT_PATH=/mnt/ngshare/SeaFile/Seafile/DeepPrep_Docker_Singularity
-export DEEPPREP_VERSION='v0.0.10ubuntu22.04'
+export DEEPPREP_VERSION='v0.0.15ubuntu22.04'
 
 ## build Docker image
 docker buildx build --progress=plain -t deepprep:${DEEPPREP_VERSION} -f Docker/ubuntu22.04.Dockerfile .
