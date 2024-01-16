@@ -115,35 +115,6 @@ def copy_config_and_get_command(qc_result_dir: Path, nextflow_log: Path):
     return command
 
 
-def create_dataset_description(qc_report_path, bold_task_type):
-    descriptions_info_qc = {
-        "Name": "DeepPrep - MRI PREProcessing workflow",
-        "BIDSVersion": "1.4.0",
-        "DatasetType": "derivative",
-        "GeneratedBy": [
-            {
-                "Name": "DeepPrep",
-                "Version": args.deepprep_version,
-                "CodeURL": "***"
-            }
-        ],
-        "HowToAcknowledge": "Please cite our paper ***, and include the generated citation boilerplate within the Methods section of the text."
-    }
-    dataset_description_file_qc = qc_report_path / 'dataset_description.json'
-    if not dataset_description_file_qc.exists():
-        with open(dataset_description_file_qc, 'w') as jf_config:
-            json.dump(descriptions_info_qc, jf_config, indent=4)
-        print(f'create bold results dataset_description.json: {dataset_description_file_qc}')
-    if bold_task_type is not None:
-        bold_result_path = qc_report_path.parent / 'BOLD'
-        dataset_description_file_bold = bold_result_path / 'dataset_description.json'
-        descriptions_info_bold = descriptions_info_qc
-        descriptions_info_bold["Name"] = "DeepPrep - fMRI PREProcessing workflow"
-        with open(dataset_description_file_bold, 'w') as jf_config:
-            json.dump(descriptions_info_bold, jf_config, indent=4)
-        print(f'create bold results dataset_description.json: {dataset_description_file_bold}')
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="DeepPrep: create qc report"
@@ -159,7 +130,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # cur_path = os.getcwd()  # 必须添加这一行，否则生成的html会有图片重复
-    # qc_report_path = Path(cur_path) / os.path.basename(args.qc_result_path)
+    # dataset_path = Path(cur_path) / os.path.basename(args.qc_result_path)
     qc_report_path = Path(args.qc_result_path)
     subj_qc_report_path = qc_report_path / args.subject_id
     subj_qc_report_path.mkdir(parents=True, exist_ok=True)
@@ -177,5 +148,3 @@ if __name__ == '__main__':
     AboutSummary_run(args.subject_id, command, args.deepprep_version)
 
     create_report(subj_qc_report_path, qc_report_path, args.subject_id, reports_utils_path)
-
-    create_dataset_description(qc_report_path, args.bold_task_type)
