@@ -31,7 +31,7 @@ def get_fsnative2T1w_xfm(fsnative2T1w_xfm):
 
 def cmd(t1_mgz, mask_mgz, aparc_aseg_mgz, t1_nii, mask_nii, wm_dseg_nii, fsnative2T1w_xfm):
     os.system(f"mri_convert {t1_mgz} {t1_nii}")
-    os.system(f"mri_convert {mask_mgz} {mask_nii}")
+    os.system(f"mri_binarize --i {mask_mgz} --o {mask_nii} --min 1")
 
     get_wm_dseg_file(aparc_aseg_mgz, wm_dseg_nii)
     get_fsnative2T1w_xfm(fsnative2T1w_xfm)

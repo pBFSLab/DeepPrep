@@ -9,17 +9,22 @@ from gpu_manage import GPUManager
 
 
 if __name__ == '__main__':
-    gpu_manager = GPUManager()
-    gpu = gpu_manager.auto_choice()
+    if sys.argv[1] == 'auto':
+        gpu_manager = GPUManager()
+        gpu = gpu_manager.auto_choice()
+    elif sys.argv[1] == 'cpu':
+        gpu = ''
+    else:
+        gpu = sys.argv[1]
     os.environ['CUDA_VISIBLE_DEVICES'] = gpu
     print(f'INFO: GPU: {gpu}')
     print(f'INFO: sys.argv : {sys.argv}')
-    assert os.path.exists(sys.argv[3]), f"{sys.argv[3]}"
-    if sys.argv[2].lower() == 'local':
+    assert os.path.exists(sys.argv[4]), f"{sys.argv[4]}"
+    if sys.argv[3].lower() == 'local':
         conn = StrictRedis()
-        if sys.argv[1] == 'double':
+        if sys.argv[2] == 'double':
             with redis_lock.Lock(conn, 'nextflow-local-gpu-1'), redis_lock.Lock(conn, 'nextflow-local-gpu-2'):
-                cmd = f"python3 " + " ".join(sys.argv[3:])
+                cmd = f"python3 " + " ".join(sys.argv[4:])
                 print(f'INFO: GPU: {cmd}')
                 status, results = subprocess.getstatusoutput(cmd)
                 print(results)
@@ -34,13 +39,13 @@ if __name__ == '__main__':
                 lock_name = ['nextflow-local-gpu-1', 'nextflow-local-gpu-2'][lock_i]
             print(f"lock_name: {lock_name}")
             with redis_lock.Lock(conn, lock_name):
-                cmd = f"python3 " + " ".join(sys.argv[3:])
+                cmd = f"python3 " + " ".join(sys.argv[4:])
                 print(f'INFO: GPU: {cmd}')
                 status, results = subprocess.getstatusoutput(cmd)
                 print(results)
                 assert status == 0
     else:
-        cmd = f"python3 " + " ".join(sys.argv[3:])
+        cmd = f"python3 " + " ".join(sys.argv[4:])
         print(f'INFO: GPU: {cmd}')
         status, results = subprocess.getstatusoutput(cmd)
         print(results)
