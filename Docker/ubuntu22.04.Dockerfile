@@ -109,7 +109,7 @@ RUN cd /usr/local && \
     tcsh /opt/OS_notes.linux_ubuntu_22_64_b_user.tcsh 2>&1 | tee o.ubuntu_22_b.txt && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     echo 'export PATH=/usr/local/abin:${PATH}' >> ~/.bashrc && \
-    apt remove python3-matplotlib && \
+    apt remove python3-matplotlib -y && apt autoremove -y && \
     cd ~ && mv /root/abin /usr/local && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 ### ONNX TensorRT
@@ -118,6 +118,8 @@ RUN cp /usr/local/lib/python3.10/dist-packages/tensorrt_libs/libnvinfer.so.8 /us
     cp /usr/local/lib/python3.10/dist-packages/tensorrt_libs/libnvinfer_plugin.so.8 /usr/local/lib/python3.10/dist-packages/tensorrt_libs/libnvinfer_plugin.so.7
 RUN echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/python3.10/dist-packages/tensorrt_libs' >> ~/.bashrc
 
+### fmriprep
+RUN pip3 install git+https://github.com/NingAnMe/fmriprep.git@deepprep && pip3 cache purge
 
 COPY deepprep /deepprep
 RUN chmod 755 /deepprep/deepprep.sh

@@ -3,9 +3,32 @@ import argparse
 import os
 from pathlib import Path
 
+import json
+
 from fmriprep.workflows.fieldmap import init_single_subject_fieldmap_wf
 from fmriprep.workflows.bold.base import init_bold_wf
 from fmriprep import config
+
+
+def create_dataset_description(dataset_path):
+    descriptions_info_qc = {
+        "Name": "DeepPrep - MRI PREProcessing workflow",
+        "BIDSVersion": "1.4.0",
+        "DatasetType": "derivative",
+        "GeneratedBy": [
+            {
+                "Name": "DeepPrep",
+                "Version": "",
+                "CodeURL": ""
+            }
+        ],
+        "HowToAcknowledge": "Please cite our paper , and include the generated citation boilerplate within the Methods section of the text."
+    }
+    dataset_description_file = dataset_path / 'dataset_description.json'
+    if not dataset_description_file.exists():
+        with open(dataset_description_file, 'w') as jf_config:
+            json.dump(descriptions_info_qc, jf_config, indent=4)
+        print(f'create bold results dataset_description.json: {dataset_description_file}')
 
 
 def update_config(bids_dir, bold_preprocess_dir, fs_license_file, fs_subjects_dir,
@@ -113,6 +136,10 @@ if __name__ == '__main__':
     config_file = work_dir / 'config.toml'
     config.to_filename(config_file)
     config.load(config_file)
+
+    output_dir = Path(config.execution.output_dir)
+    work_dir.mkdir(parents=True, exist_ok=True)
+    create_dataset_description(output_dir)
 
     from niworkflows.utils.bids import collect_data
     from niworkflows.utils.connections import listify
@@ -222,3 +249,4 @@ if __name__ == '__main__':
             ),
             name="outputnode",
         )
+        workflow.run()
