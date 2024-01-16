@@ -8,9 +8,9 @@ import shutil
 import textwrap
 import argparse
 import tensorflow.keras.backend as K
+from cuda import cuda
 import time
 
-import tensorflow as tf
 
 # Settings.
 default = {
@@ -557,6 +557,42 @@ def vm_dense(
     return tf.keras.Model(input_model.inputs, outputs=x)
 
 
+def trt_inference(engine, context, data1, data2):
+    nInput = np.sum([engine.binding_is_input(i) for i in range(engine.num_bindings)])
+    nOutput = engine.num_bindings - nInput
+    print('nInput:', nInput)
+    print('nOutput:', nOutput)
+
+    for i in range(nInput):
+        print("Bind[%2d]:i[%2d]->" % (i, i), engine.get_binding_dtype(i), engine.get_binding_shape(i),
+              context.get_binding_shape(i), engine.get_binding_name(i))
+    for i in range(nInput, nInput + nOutput):
+        print("Bind[%2d]:o[%2d]->" % (i, i - nInput), engine.get_binding_dtype(i), engine.get_binding_shape(i),
+              context.get_binding_shape(i), engine.get_binding_name(i))
+
+    bufferH = []
+    bufferH.append(np.ascontiguousarray(data1.reshape(-1)))
+    bufferH.append(np.ascontiguousarray(data2.reshape(-1)))
+
+    for i in range(nInput, nInput + nOutput):
+        bufferH.append(np.empty(context.get_binding_shape(i), dtype=trt.nptype(engine.get_binding_dtype(i))))
+
+    bufferD = []
+    for i in range(nInput + nOutput):
+        bufferD.append(cuda.cuMemAlloc(bufferH[i].nbytes)[1])
+
+    for i in range(nInput):
+        cuda.cuMemcpyHtoD(bufferD[i], bufferH[i].ctypes.data, bufferH[i].nbytes)
+
+    context.execute_v2(bufferD)
+
+    for i in range(nInput, nInput + nOutput):
+        cuda.cuMemcpyDtoH(bufferH[i].ctypes.data, bufferD[i], bufferH[i].nbytes)
+
+    for b in bufferD:
+        cuda.cuMemFree(b)
+
+    return tf.convert_to_tensor(bufferH[2])
 # Documentation.
 prog = os.path.basename(sys.argv[0])
 doc = f'''{prog}
@@ -716,7 +752,7 @@ p.add_argument('-t', '--trans', type=str)
 p.add_argument('-H', '--header-only', action='store_true')
 p.add_argument('-i', '--init', type=str, metavar='TRANS')
 p.add_argument('-j', '--threads', type=int)
-p.add_argument('-g', '--gpu', action='store_true')
+# p.add_argument('-g', '--gpu', action='store_true')
 p.add_argument('-s', '--smooth', choices=choices['smooth'], default=default['smooth'])
 p.add_argument('-e', '--extent', type=int, choices=choices['extent'], default=default['extent'])
 p.add_argument('-m', '--model', choices=choices['model'], default=default['model'])
@@ -745,13 +781,14 @@ import tensorflow as tf
 import neurite as ne
 import voxelmorph as vxm
 from pathlib import Path
+import onnxruntime as rt
+import tensorrt as trt
 
 # Setup.
 gpus = tf.config.experimental.list_physical_devices(device_type='GPU')
 for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
 gpu = os.environ.get('CUDA_VISIBLE_DEVICES', '0')
-os.environ['CUDA_VISIBLE_DEVICES'] = gpu if arg.gpu else ''
 
 if arg.threads:
     tf.config.threading.set_inter_op_parallelism_threads(arg.threads)
@@ -808,13 +845,30 @@ if arg.inspect:
 
 # Model.
 if is_linear:
-    model = vm_affine(in_shape, rigid=arg.model == 'rigid')
+    providers = ['CUDAExecutionProvider', 'CPUExecutionProvider']
+    model = rt.InferenceSession(os.path.join(arg.model_path, 'model_affine.onnx'), providers=providers)
+    model_input_1 = model.get_inputs()[0].name
+    model_input_2 = model.get_inputs()[1].name
+    model_output = model.get_outputs()[0].name
+    trans = model.run(None, {model_input_1: inputs[0].numpy(), model_input_2: inputs[1].numpy()})
 else:
-    model = vm_dense(in_shape)
+    if gpu != "":
+        TRT_LOGGER = trt.Logger()
+        with open(os.path.join(arg.model_path, 'model_norigid_FP16.engine'), "rb") as f, trt.Runtime(TRT_LOGGER) as runtime:
+            engine = runtime.deserialize_cuda_engine(f.read())
+        context = engine.create_execution_context()
+        context.set_binding_shape(0, (1, in_shape[0], in_shape[1], in_shape[2], 1))
+        context.set_binding_shape(1, (1, in_shape[0], in_shape[1], in_shape[2], 1))
+        trans = trt_inference(engine, context, inputs[0].numpy(), inputs[1].numpy())
+    else:
+        providers = ['CUDAExecutionProvider', 'CPUExecutionProvider']
+        model = rt.InferenceSession(os.path.join(arg.model_path, 'model_norigid.onnx'), providers=providers)
+        model_input_1 = model.get_inputs()[0].name
+        model_input_2 = model.get_inputs()[1].name
+        model_output = model.get_outputs()[0].name
+        trans = model.run(None, {model_input_1: inputs[0].numpy(), model_input_2: inputs[1].numpy()})
 
 if not arg.weights:
-    # fs = os.environ.get('FREESURFER_HOME')
-    # assert fs, 'set environment variable FREESURFER_HOME or specify weights'
 
     f = weights[arg.model]
     if arg.model == 'deform':
@@ -824,8 +878,6 @@ if not arg.weights:
     model_path = arg.model_path
     arg.weights = os.path.join(model_path, f)
 
-model.load_weights(arg.weights)
-trans = model(inputs)
 
 # Add the last row to create a full matrix. Convert from zero-centered to
 # zero-based indices. Then compute the transform from native fixed to native
@@ -863,7 +915,7 @@ else:
     trans_vox = tf.reshape(trans_vox, shape=(*fix.shape, -1))
     # Save trans voxel
     tv_save_path = Path(arg.moved).parent / Path(arg.moved).name.replace('.nii.gz', '_transvoxel.npz')
-    if arg.gpu:
+    if gpu != "":
         np.savez(tv_save_path, trans_vox.cpu().numpy())
     else:
         np.savez(tv_save_path, trans_vox.numpy())
@@ -902,5 +954,3 @@ if arg.moved:
             apply_out = transform(apply_mov, trans=trans_vox, shape=fix.shape)
             save(arg.apply_out, dat=apply_out, affine=fix.affine, dtype=apply_mov.dataobj.dtype)
 
-# print('Thank you for using SynthMorph. Please cite:')
-# print(rewrap(ref))
