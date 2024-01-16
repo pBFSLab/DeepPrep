@@ -109,7 +109,7 @@ RUN cd /usr/local && \
     tcsh /opt/OS_notes.linux_ubuntu_22_64_b_user.tcsh 2>&1 | tee o.ubuntu_22_b.txt && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     echo 'export PATH=/usr/local/abin:${PATH}' >> ~/.bashrc && \
-    apt remove python3-matplotlib && \
+    apt remove python3-matplotlib -y && apt autoremove -y && \
     cd ~ && mv /root/abin /usr/local && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 ### ONNX TensorRT
