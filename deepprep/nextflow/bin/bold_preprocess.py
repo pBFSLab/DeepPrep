@@ -1,3 +1,4 @@
+#! /usr/bin/env python3
 import argparse
 import os
 from pathlib import Path
@@ -55,9 +56,8 @@ if __name__ == '__main__':
     parser.add_argument("--subjects_dir", required=False)
     parser.add_argument("--bold_preprocess_dir", required=True)
     parser.add_argument("--subject_id", required=True)
-    parser.add_argument("--bold_id", required=True)
     parser.add_argument("--task_id", required=True)
-    parser.add_argument("--bold_series", type=str, nargs='+', default=[], required=True)  # BOLD Series，not one bold file
+    parser.add_argument("--bold_series", type=str, nargs='+', default=[], required=False)  # BOLD Series，not one bold file
     parser.add_argument("--spaces", type=str, nargs='+', default=['individual', 'T1w', 'fsnative'], required=False)  # BOLD Series，not one bold file
     parser.add_argument("--t1w_preproc", required=False)
     parser.add_argument("--t1w_mask", required=False)
@@ -72,9 +72,7 @@ if __name__ == '__main__':
     --bids_dir /mnt/ngshare/temp/ds004498
     --bold_preprocess_dir /mnt/ngshare/temp/ds004498deepprep
     --subject_id sub-CIMT001
-    --bold_id sub-CIMT001_ses-38659_task-rest_run-01
     --task_id rest
-    --bold_series /mnt/ngshare/temp/ds004498/sub-CIMT001/ses-38659/func/sub-CIMT001_ses-38659_task-rest_run-01_bold.nii.gz
     --spaces individual T1w fsnative
     --fieldmap True
     else:
@@ -82,7 +80,6 @@ if __name__ == '__main__':
     --subjects_dir /mnt/ngshare/temp/ds004498/Recon720
     --bold_preprocess_dir /mnt/ngshare/temp/ds004498deepprep
     --subject_id sub-CIMT001
-    --bold_id sub-CIMT001_ses-38659_task-rest_run-01
     --task_id rest
     --bold_series /mnt/ngshare/temp/ds004498/sub-CIMT001/ses-38659/func/sub-CIMT001_ses-38659_task-rest_run-01_bold.nii.gz
     --spaces individual T1w fsnative
@@ -94,13 +91,18 @@ if __name__ == '__main__':
     """
     subject_id = args.subject_id
     subject_id_split = subject_id.split('-')[1]
-    bold_id = args.bold_id
+    # bold_id = args.bold_id
 
     t1w_preproc = args.t1w_preproc
     t1w_mask = args.t1w_mask
     t1w_dseg = args.t1w_dseg
     t1w_tpms = []
     fsnative2t1w_xfm = args.fsnative2t1w_xfm
+
+    print("t1w_preproc :", t1w_preproc)
+    print("t1w_mask :", t1w_mask)
+    print("t1w_dseg :", t1w_dseg)
+    print("fsnative2t1w_xfm :", fsnative2t1w_xfm)
 
     spaces = ' '.join(args.spaces)
     update_config(args.bids_dir, args.bold_preprocess_dir, args.fs_license_file,
@@ -112,15 +114,40 @@ if __name__ == '__main__':
     config.to_filename(config_file)
     config.load(config_file)
 
-    bold_runs = [args.bold_series]
+    from niworkflows.utils.bids import collect_data
+    from niworkflows.utils.connections import listify
+
+    subject_data = collect_data(
+        config.execution.layout,
+        subject_id_split,
+        task=config.execution.task_id,
+        echo=config.execution.echo_idx,
+        bids_filters=config.execution.bids_filters,
+    )[0]
+    bold_runs = [
+        sorted(
+            listify(run),
+            key=lambda file: config.execution.layout.get_metadata(file).get('EchoTime', 0),
+        )
+        for run in subject_data['bold']
+    ]
+
     single_subject_fieldmap_wf, estimator_map = init_single_subject_fieldmap_wf(subject_id_split, bold_runs)
 
     if args.fieldmap.upper() == 'TRUE':  # run fieldmap
         if single_subject_fieldmap_wf:
-            single_subject_fieldmap_wf.base_dir = os.path.join(config.execution.work_dir, f'{subject_id}_wf', f'{bold_id}_wf')
+            base_dir = Path(config.execution.work_dir) / f'{subject_id}_wf' / f'{args.task_id}_wf'
+            base_dir.mkdir(parents=True, exist_ok=True)
+            single_subject_fieldmap_wf.base_dir = base_dir
             single_subject_fieldmap_wf.run()
     else:  # run preproc
-        fieldmap_id = estimator_map.get(bold_runs[0][0])
+        with open(args.bold_series[0], 'r') as f:
+            data = f.readlines()
+        data = [i.strip() for i in data]
+        bold_file = data[1]
+        bold_name = os.path.basename(bold_file).split('.')[0]
+
+        fieldmap_id = estimator_map.get(bold_file)
 
         from nipype.pipeline import engine as pe
         from nipype.interfaces import utility as niu
@@ -131,30 +158,30 @@ if __name__ == '__main__':
                     "subject_id",
                     "t1w_preproc",
                     "t1w_mask",
+                    "t1w_dseg",
                     "t1w_tpms",
-                    "fmap_mask",
                     "fsnative2t1w_xfm",
                 ]
             ),
             name="inputnode",
         )
-        inputnode.t1w_preproc = t1w_preproc
-        inputnode.t1w_mask = t1w_mask
-        inputnode.t1w_dseg = t1w_dseg
-        inputnode.t1w_tpms = t1w_tpms
-        inputnode.subjects_dir = config.execution.fs_subjects_dir
-        inputnode.subject_id = subject_id
-        inputnode.fsnative2t1w_xfm = fsnative2t1w_xfm
+        inputnode.inputs.t1w_preproc = t1w_preproc
+        inputnode.inputs.t1w_mask = t1w_mask
+        inputnode.inputs.t1w_dseg = t1w_dseg
+        inputnode.inputs.t1w_tpms = t1w_tpms
+        inputnode.inputs.subjects_dir = config.execution.fs_subjects_dir
+        inputnode.inputs.subject_id = subject_id
+        inputnode.inputs.fsnative2t1w_xfm = fsnative2t1w_xfm
 
         bold_wf = init_bold_wf(
-            bold_series=bold_runs[0],
+            bold_series=[bold_file],
             precomputed={},
             fieldmap_id=fieldmap_id,
         )
         bold_wf.name = 'bold_wf'
 
         from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-        workflow = Workflow(name=f'{bold_id}_wf')
+        workflow = Workflow(name=f'{bold_name}_wf')
         workflow.base_dir = os.path.join(config.execution.work_dir, f'{subject_id}_wf')
 
         workflow.connect([
@@ -181,4 +208,17 @@ if __name__ == '__main__':
                 ]),
             ])  # fmt:skip
 
-        workflow.run()
+        outputnode = pe.Node(
+            niu.IdentityInterface(
+                fields=[
+                    "subjects_dir",
+                    "subject_id",
+                    "t1w_preproc",
+                    "t1w_mask",
+                    "t1w_dseg",
+                    "t1w_tpms",
+                    "fsnative2t1w_xfm",
+                ]
+            ),
+            name="outputnode",
+        )
