@@ -222,3 +222,4 @@ if __name__ == '__main__':
             ),
             name="outputnode",
         )
+        workflow.run()
