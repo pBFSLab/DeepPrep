@@ -76,7 +76,7 @@ RUN git clone https://github.com/adalca/neurite && cd neurite && pip3 install . 
 RUN echo "source /usr/local/freesurfer/SetUpFreeSurfer.sh" >> ~/.bashrc
 
 ### smriprep sdcflows
-RUN pip3 install smriprep sdcflows && pip3 cache purge
+RUN pip3 install smriprep==0.13.2 sdcflows==2.7.0 && pip3 cache purge
 
 ### ANTs  2.3.1
 #RUN apt-get update && apt-get --no-install-recommends -y install build-essential && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -111,6 +111,13 @@ RUN cd /usr/local && \
     echo 'export PATH=/usr/local/abin:${PATH}' >> ~/.bashrc && \
     apt remove python3-matplotlib && \
     cd ~ && mv /root/abin /usr/local && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+### ONNX TensorRT
+RUN pip3 install tensorrt==8.6.1 onnxruntime==1.16.3 && pip3 cache purge
+RUN cp /usr/local/lib/python3.10/dist-packages/tensorrt_libs/libnvinfer.so.8 /usr/local/lib/python3.10/dist-packages/tensorrt_libs/libnvinfer.so.7 && \
+    cp /usr/local/lib/python3.10/dist-packages/tensorrt_libs/libnvinfer_plugin.so.8 /usr/local/lib/python3.10/dist-packages/tensorrt_libs/libnvinfer_plugin.so.7
+RUN echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/python3.10/dist-packages/tensorrt_libs' >> ~/.bashrc
+
 
 COPY deepprep /deepprep
 RUN chmod 755 /deepprep/deepprep.sh
