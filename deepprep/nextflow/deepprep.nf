@@ -1190,13 +1190,16 @@ process bold_anat_prepare {
 
     input:
     val(bold_preprocess_path)
-    tuple(val(subject_id), val(t1_mgz), val(mask_mgz), val(aparc_aseg_mgz))
+    tuple(val(subject_id), val(t1_mgz), val(mask_mgz), val(aseg_mgz))
 
     output:
     tuple(val(subject_id), val(t1_nii))
     tuple(val(subject_id), val(mask_nii))
     tuple(val(subject_id), val(wm_dseg_nii))
     tuple(val(subject_id), val(fsnative2T1w_xfm))
+    tuple(val(subject_id), val(wm_probseg_nii))
+    tuple(val(subject_id), val(gm_probseg_nii))
+    tuple(val(subject_id), val(csf_probseg_nii))
 
     script:
     script_py = "bold_anat_prepare.py"
@@ -1205,6 +1208,9 @@ process bold_anat_prepare {
     mask_nii = "${bold_preprocess_path}/${subject_id}/anat/${subject_id}_desc-brain_mask.nii.gz"
     wm_dseg_nii = "${bold_preprocess_path}/${subject_id}/anat/${subject_id}_dseg.nii.gz"
     fsnative2T1w_xfm = "${bold_preprocess_path}/${subject_id}/anat/${subject_id}_from-fsnative_to-T1w_mode-image_xfm.txt"
+    wm_probseg_nii = "${bold_preprocess_path}/${subject_id}/anat/${subject_id}_label-WM_probseg.nii.gz"
+    gm_probseg_nii = "${bold_preprocess_path}/${subject_id}/anat/${subject_id}_label-GM_probseg.nii.gz"
+    csf_probseg_nii = "${bold_preprocess_path}/${subject_id}/anat/${subject_id}_label-CSF_probseg.nii.gz"
 
     """
     ${script_py} \
@@ -1212,11 +1218,14 @@ process bold_anat_prepare {
     --subject_id ${subject_id} \
     --t1_mgz ${t1_mgz} \
     --mask_mgz ${mask_mgz} \
-    --aparc_aseg_mgz ${aparc_aseg_mgz} \
+    --aseg_mgz ${aseg_mgz} \
     --t1_nii ${t1_nii} \
     --mask_nii ${mask_nii} \
     --wm_dseg_nii ${wm_dseg_nii} \
     --fsnative2T1w_xfm ${fsnative2T1w_xfm} \
+    --wm_probseg_nii ${wm_probseg_nii} \
+    --gm_probseg_nii ${gm_probseg_nii} \
+    --csf_probseg_nii ${csf_probseg_nii} \
     """
 }
 
@@ -2415,7 +2424,7 @@ workflow anat_wf {
     t1_mgz
     brainmask_mgz
     norm_mgz
-    aparc_aseg_mgz
+    aseg_mgz
     white_surf
     pial_surf
     w_g_pct_mgh  // using for control the synth morph run schedule
@@ -2428,7 +2437,7 @@ workflow bold_wf {
     t1_mgz
     mask_mgz
     norm_mgz
-    aparc_aseg_mgz
+    aseg_mgz
     white_surf
     pial_surf
     w_g_pct_mgh
@@ -2495,13 +2504,13 @@ workflow bold_wf {
         t1_mgz = subject_id_unique.join(t1_mgz)
         norm_mgz = subject_id_unique.join(norm_mgz)
         mask_mgz = subject_id_unique.join(mask_mgz)
-        aparc_aseg_mgz = subject_id_unique.join(aparc_aseg_mgz)
+        aseg_mgz = subject_id_unique.join(aseg_mgz)
     }
 
     // BOLD preprocess
-    bold_anat_prepare_input = t1_mgz.join(mask_mgz).join(aparc_aseg_mgz)
-    (t1_nii, mask_nii, wm_dseg_nii, fsnative2T1w_xfm) = bold_anat_prepare(bold_preprocess_path, bold_anat_prepare_input)
-    bold_fieldmap_done = bold_fieldmap(bids_dir, t1_nii, bold_preprocess_path, bold_task_type, bold_spaces, bold_sdc, templateflow_home)
+    bold_anat_prepare_input = t1_mgz.join(mask_mgz).join(aseg_mgz)
+    (t1_nii, mask_nii, wm_dseg_nii, fsnative2T1w_xfm, wm_probseg_nii, gm_probseg_nii, csf_probseg_nii) = bold_anat_prepare(bold_preprocess_path, bold_anat_prepare_input)
+    bold_fieldmap_done = bold_fieldmap(bids_dir, t1_nii, bold_preprocess_path, bold_task_type, spaces, fieldmap, templateflow_home)
     bold_pre_process_input = t1_nii.join(mask_nii, by:[0]).join(wm_dseg_nii, by:[0]).join(fsnative2T1w_xfm, by:[0])
     (subject_id, bold_id) = bold_pre_process(bids_dir, subjects_dir, bold_preprocess_path, bold_task_type, subject_boldfile_txt, bold_spaces, bold_pre_process_input, fs_license_file, bold_sdc, templateflow_home, bold_fieldmap_done)
 
@@ -2597,7 +2606,7 @@ workflow {
 
     if (params.anat_only.toString().toUpperCase() == 'TRUE') {
         println "INFO: anat preprocess ONLY"
-        (t1_mgz, norm_mgz, aparc_aseg_mgz, w_g_pct_mgh) = anat_wf(gpu_lock)
+        (t1_mgz, mask_mgz, norm_mgz, aseg_mgz, white_surf, pial_surf, w_g_pct_mgh) = anat_wf(gpu_lock)
     } else if (params.bold_only.toString().toUpperCase() == 'TRUE') {
         println "INFO: Bold preprocess ONLY"
         subjects_dir = params.subjects_dir
@@ -2605,20 +2614,20 @@ workflow {
         mask_mgz = Channel.fromPath("${subjects_dir}/sub-*/mri/mask.mgz")
         norm_mgz = Channel.fromPath("${subjects_dir}/sub-*/mri/norm.mgz")
         white_surf = Channel.fromPath("${subjects_dir}/sub-*/surf/*.white")
-        (t1_mgz, mask_mgz, norm_mgz, aparc_aseg_mgz) = t1_mgz.multiMap { it ->
+        (t1_mgz, mask_mgz, norm_mgz, aseg_mgz) = t1_mgz.multiMap { it ->
                                                      c: [it.getParent().getParent().getName(), it]
                                                      d: [it.getParent().getParent().getName(), file("${it.getParent()}/brainmask.mgz")]
                                                      b: [it.getParent().getParent().getName(), file("${it.getParent()}/norm.mgz")]
-                                                     a: [it.getParent().getParent().getName(), file("${it.getParent()}/aparc+aseg.mgz")]
+                                                     a: [it.getParent().getParent().getName(), file("${it.getParent()}/aseg.mgz")]
                                                      }
         (white_surf, pial_surf, w_g_pct_mgh) = white_surf.multiMap {it ->
                 c:[it.getParent().getParent().getName(), it.getBaseName(), it]
                 b:[it.getParent().getParent().getName(), it.getBaseName(), file("${it.getParent()}/${it.getBaseName()}.pial")]
                 a:[it.getParent().getParent().getName(), it.getBaseName(), file("${it.getParent()}/${it.getBaseName()}.w-g.pct.mgh")]}
-        bold_wf(t1_mgz, mask_mgz, norm_mgz, aparc_aseg_mgz, white_surf, pial_surf, w_g_pct_mgh, gpu_lock)
+        bold_wf(t1_mgz, mask_mgz, norm_mgz, aseg_mgz, white_surf, pial_surf, w_g_pct_mgh, gpu_lock)
     } else {
         println "INFO: anat && Bold preprocess"
-        (t1_mgz, norm_mgz, aparc_aseg_mgz, white_surf, pial_surf, w_g_pct_mgh) = anat_wf(gpu_lock)
-        bold_wf(t1_mgz, mask_mgz, norm_mgz, aparc_aseg_mgz, white_surf, pial_surf, w_g_pct_mgh, gpu_lock)
+        (t1_mgz, norm_mgz, aseg_mgz, white_surf, pial_surf, w_g_pct_mgh) = anat_wf(gpu_lock)
+        bold_wf(t1_mgz, mask_mgz, norm_mgz, aseg_mgz, white_surf, pial_surf, w_g_pct_mgh, gpu_lock)
     }
 }
