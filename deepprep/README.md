@@ -105,6 +105,16 @@ deepprep:${DEEPPREP_VERSION}
 -with-timeline /DEEPPREP_RESULT_DIR/QC/timeline.html \
 --bold_task_type rest --bold_only True
 
+/tmp/pycharm_project_640/deepprep/deepprep.sh run /tmp/pycharm_project_640/deepprep/nextflow/deepprep.nf \
+-resume \
+-c /nextflow.docker.local.config --bids_dir /mnt/ngshare/temp/ds004498 \
+--subjects_dir /mnt/ngshare/temp/ds004498_DeepPrep/Recon \
+--bold_preprocess_path /mnt/ngshare/temp/ds004498_DeepPrep/BOLD \
+--qc_result_path /mnt/ngshare/temp/ds004498_DeepPrep/QC \
+-with-report /mnt/ngshare/temp/ds004498_DeepPrep/QC/report.html \
+-with-timeline /mnt/ngshare/temp/ds004498_DeepPrep/QC/timeline.html \
+--bold_task_type rest --bold_only True
+
 ## local Dev
 service start redis-server
 cd /root/workspace/DeepPrep/deepprep/nextflow 
