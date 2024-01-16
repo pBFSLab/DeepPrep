@@ -1249,6 +1249,11 @@ process bold_fieldmap {
         --templateflow_home ${templateflow_home} \
         """
     }
+    else {
+        """
+        echo 'bold_sdc = False, skip filedmap'
+        """
+    }
 }
 
 
@@ -2432,6 +2437,7 @@ workflow bold_wf {
     main:
     // GPU
     device = params.device
+    subjects = params.subjects
 
     // set dir path
     bids_dir = params.bids_dir
@@ -2442,15 +2448,9 @@ workflow bold_wf {
     // set bold processing config
     bold_task_type = params.bold_task_type
     bold_skip_frame = params.bold_skip_frame
-    bold_reorient = params.bold_reorient
-    surface = params.surface
-    fieldmap = params.fieldmap
-    subjects = params.subjects
-    bold_with_sdc = params.bold_sdc
 
-    bold_atlas_type = params.bold_atlas_type  // not used
-    bold_fs_native_space = params.bold_fs_native_space
-    spaces = params.bold_spaces
+    bold_sdc = params.bold_sdc
+    bold_spaces = params.bold_spaces
 
     // set software path
     freesurfer_home = params.freesurfer_home
@@ -2501,9 +2501,9 @@ workflow bold_wf {
     // BOLD preprocess
     bold_anat_prepare_input = t1_mgz.join(mask_mgz).join(aparc_aseg_mgz)
     (t1_nii, mask_nii, wm_dseg_nii, fsnative2T1w_xfm) = bold_anat_prepare(bold_preprocess_path, bold_anat_prepare_input)
-    bold_fieldmap_done = bold_fieldmap(bids_dir, t1_nii, bold_preprocess_path, bold_task_type, spaces, fieldmap, templateflow_home)
+    bold_fieldmap_done = bold_fieldmap(bids_dir, t1_nii, bold_preprocess_path, bold_task_type, bold_spaces, bold_sdc, templateflow_home)
     bold_pre_process_input = t1_nii.join(mask_nii, by:[0]).join(wm_dseg_nii, by:[0]).join(fsnative2T1w_xfm, by:[0])
-    (subject_id, bold_id) = bold_pre_process(bids_dir, subjects_dir, bold_preprocess_path, bold_task_type, subject_boldfile_txt, spaces, bold_pre_process_input, fs_license_file, fieldmap, templateflow_home, bold_fieldmap_done)
+    (subject_id, bold_id) = bold_pre_process(bids_dir, subjects_dir, bold_preprocess_path, bold_task_type, subject_boldfile_txt, bold_spaces, bold_pre_process_input, fs_license_file, bold_sdc, templateflow_home, bold_fieldmap_done)
 
 //     if (output_std_volume_spaces == 'TRUE') {
 //         bold_T1_to_2mm_input = t1_mgz.join(norm_mgz)
