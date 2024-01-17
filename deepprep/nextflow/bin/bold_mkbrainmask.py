@@ -1,12 +1,66 @@
 #! /usr/bin/env python3
-import sys
-import sh
 from pathlib import Path
 import argparse
 import os
 
 
-def cmd(subj_func_dir: Path, mc: Path, bbregister_dat: Path, subjects_dir: Path, subject_id: str):
+# import bids
+# from niworkflows.interfaces.bids import DerivativesDataSink
+# layout = bids.BIDSLayout(root=bids_dir, validate=False)
+# info = layout.parse_file_entities(bold_space_orig_file)
+# dsink = DerivativesDataSink(base_directory=output_dir, check_hdr=False)
+# dsink.inputs.in_file = str(aseg_downsample_mgz)
+# dsink.inputs.source_file = str(bold_space_t1w_file)
+# dsink.inputs.desc = 'dseg'
+# dsink.out_path_base = os.path.join(output_dir, 'tmp', 'anat2bold_t1w')
+# res = dsink.run()
+# res.outputs.out_file
+
+
+def anat2bold_t1w(aseg_mgz: str, brainmask_mgz: str, bold_space_t1w_file: str,
+                  aseg: Path, wm: Path, vent: Path, csf: Path, mask: Path, binmask: Path
+                  ):
+
+    cmd = f'mri_convert -rl {bold_space_t1w_file} {aseg_mgz} {aseg}'
+    os.system(cmd)
+    assert os.path.exists(aseg)
+
+    cmd = f'mri_convert -rl {bold_space_t1w_file} {brainmask_mgz} {mask}'
+    os.system(cmd)
+    assert os.path.exists(mask)
+
+    shargs = [
+        '--i', aseg,
+        '--wm',
+        '--erode', '1',
+        '--o', wm]
+    os.system('mri_binarize ' + ' '.join(shargs))
+    assert os.path.exists(wm)
+
+    shargs = [
+        '--i', aseg,
+        '--min', '24',
+        '--max', '24',
+        '--o', csf]
+    os.system('mri_binarize ' + ' '.join(shargs))
+    assert os.path.exists(csf)
+
+    shargs = [
+        '--i', aseg,
+        '--ventricles',
+        '--o', vent]
+    os.system('mri_binarize ' + ' '.join(shargs))
+    assert os.path.exists(vent)
+
+    shargs = [
+        '--i', mask,
+        '--o', binmask,
+        '--min', '0.0001']
+    os.system('mri_binarize ' + ' '.join(shargs))
+    assert os.path.exists(binmask)
+
+
+def anat2bold_by_bbregister(subj_func_dir: Path, mc: Path, bbregister_dat: Path, subjects_dir: Path, subject_id: str):
     mov = mc
     reg = bbregister_dat
 
@@ -26,27 +80,27 @@ def cmd(subj_func_dir: Path, mc: Path, bbregister_dat: Path, subjects_dir: Path,
         '--temp', mov,
         '--reg', reg,
         '--o', func]
-    sh.mri_label2vol(*shargs, _out=sys.stdout)
+    os.system('mri_label2vol ' + ' '.join(shargs))
 
     shargs = [
         '--i', func,
         '--wm',
-        '--erode', 1,
+        '--erode', '1',
         '--o', wm]
-    sh.mri_binarize(*shargs, _out=sys.stdout)
+    os.system('mri_binarize ' + ' '.join(shargs))
 
     shargs = [
         '--i', func,
-        '--min', 24,
-        '--max', 24,
+        '--min', '24',
+        '--max', '24',
         '--o', csf]
-    sh.mri_binarize(*shargs, _out=sys.stdout)
+    os.system('mri_binarize ' + ' '.join(shargs))
 
     shargs = [
         '--i', func,
         '--ventricles',
         '--o', vent]
-    sh.mri_binarize(*shargs, _out=sys.stdout)
+    os.system('mri_binarize ' + ' '.join(shargs))
 
     shargs = [
         '--reg', reg,
@@ -54,13 +108,13 @@ def cmd(subj_func_dir: Path, mc: Path, bbregister_dat: Path, subjects_dir: Path,
         '--mov', mov,
         '--inv',
         '--o', mask]
-    sh.mri_vol2vol(*shargs, _out=sys.stdout)
+    os.system('mri_vol2vol ' + ' '.join(shargs))
 
     shargs = [
         '--i', mask,
         '--o', binmask,
-        '--min', 0.0001]
-    sh.mri_binarize(*shargs, _out=sys.stdout)
+        '--min', '0.0001']
+    os.system('mri_binarize ' + ' '.join(shargs))
 
 
 if __name__ == '__main__':
@@ -85,4 +139,4 @@ if __name__ == '__main__':
 
     mc_file = subj_func_dir / os.path.basename(args.mc)
     bbregister_dat = subj_func_dir / os.path.basename(args.bbregister_dat)
-    cmd(subj_func_dir, mc_file, bbregister_dat, args.subjects_dir, args.subject_id)
+    anat2bold_by_bbregister(subj_func_dir, mc_file, bbregister_dat, args.subjects_dir, args.subject_id)
