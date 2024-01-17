@@ -1856,7 +1856,7 @@ process qc_plot_tsnr {
 
     input:
     val(bids_dir)
-    tuple(val(subject_id),val(bold_id))
+    tuple(val(subject_id), path(bold_id))
     val(bold_preprocess_path)
     val(qc_result_path)
     val(qc_utils_path)
