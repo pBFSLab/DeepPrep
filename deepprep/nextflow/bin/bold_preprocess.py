@@ -209,7 +209,6 @@ if __name__ == '__main__':
 
         from niworkflows.engine.workflows import LiterateWorkflow as Workflow
         workflow = Workflow(name=f'{bold_name}_wf')
-        workflow.base_dir = os.path.join(config.execution.work_dir, f'{subject_id}_wf')
 
         workflow.connect([
             (inputnode, bold_wf, [
@@ -249,4 +248,7 @@ if __name__ == '__main__':
             ),
             name="outputnode",
         )
+        base_dir = Path(config.execution.work_dir) / f'{subject_id}_wf' / f'{args.task_id}_wf'
+        workflow.base_dir = base_dir
+        single_subject_fieldmap_wf.base_dir = base_dir
         workflow.run()
