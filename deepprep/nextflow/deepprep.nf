@@ -1237,8 +1237,8 @@ process bold_fieldmap {
     tuple(val(subject_id), val(t1_nii))
     val(bold_preprocess_dir)
     val(task_id)
-    val(spaces)
-    val(fieldmap)
+    val(bold_spaces)
+    val(bold_sdc)
     val(templateflow_home)
 
     output:
@@ -1246,15 +1246,15 @@ process bold_fieldmap {
 
     script:
     script_py = "bold_preprocess.py"
-    if (fieldmap.toUpperCase() == 'TRUE') {
+    if (bold_sdc.toUpperCase() == 'TRUE') {
         """
         ${script_py} \
         --bids_dir ${bids_dir} \
         --bold_preprocess_dir ${bold_preprocess_dir} \
         --subject_id ${subject_id} \
         --task_id ${task_id} \
-        --spaces ${spaces} \
-        --fieldmap ${fieldmap} \
+        --bold_spaces ${bold_spaces} \
+        --bold_sdc ${bold_sdc} \
         --templateflow_home ${templateflow_home} \
         """
     }
@@ -1275,12 +1275,12 @@ process bold_pre_process {
     val(bold_preprocess_dir)
     val(task_id)
     each path(subject_boldfile_txt)
-    val(spaces)
+    val(bold_spaces)
     tuple(val(subject_id), val(t1_nii), val(mask_nii), val(wm_dseg_nii), val(fsnative2T1w_xfm))
     val(fs_license_file)
-    val(fieldmap)
+    val(bold_sdc)
     val(templateflow_home)
-    val(bold_fieldmap_done)
+    val(bold_sdc_done)
 
     output:
     tuple(val(subject_id), val(subject_boldfile_txt))
@@ -1295,7 +1295,7 @@ process bold_pre_process {
     --subject_id ${subject_id} \
     --task_id ${task_id} \
     --bold_series ${subject_boldfile_txt} \
-    --spaces ${spaces} \
+    --bold_spaces ${bold_spaces} \
     --t1w_preproc ${t1_nii} \
     --t1w_mask ${mask_nii} \
     --t1w_dseg ${wm_dseg_nii} \
@@ -2510,9 +2510,9 @@ workflow bold_wf {
     // BOLD preprocess
     bold_anat_prepare_input = t1_mgz.join(mask_mgz).join(aseg_mgz)
     (t1_nii, mask_nii, wm_dseg_nii, fsnative2T1w_xfm, wm_probseg_nii, gm_probseg_nii, csf_probseg_nii) = bold_anat_prepare(bold_preprocess_path, bold_anat_prepare_input)
-    bold_fieldmap_done = bold_fieldmap(bids_dir, t1_nii, bold_preprocess_path, bold_task_type, spaces, fieldmap, templateflow_home)
-    bold_pre_process_input = t1_nii.join(mask_nii, by:[0]).join(wm_dseg_nii, by:[0]).join(fsnative2T1w_xfm, by:[0])
-    (subject_id, bold_id) = bold_pre_process(bids_dir, subjects_dir, bold_preprocess_path, bold_task_type, subject_boldfile_txt, bold_spaces, bold_pre_process_input, fs_license_file, bold_sdc, templateflow_home, bold_fieldmap_done)
+//     bold_sdc_done = bold_fieldmap(bids_dir, t1_nii, bold_preprocess_path, bold_task_type, bold_spaces, bold_sdc, templateflow_home)
+//     bold_pre_process_input = t1_nii.join(mask_nii, by:[0]).join(wm_dseg_nii, by:[0]).join(fsnative2T1w_xfm, by:[0])
+//     (subject_id, bold_id) = bold_pre_process(bids_dir, subjects_dir, bold_preprocess_path, bold_task_type, subject_boldfile_txt, bold_spaces, bold_pre_process_input, fs_license_file, bold_sdc, templateflow_home, bold_sdc_done)
 
 //     if (output_std_volume_spaces == 'TRUE') {
 //         bold_T1_to_2mm_input = t1_mgz.join(norm_mgz)
