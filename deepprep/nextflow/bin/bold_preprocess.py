@@ -90,6 +90,7 @@ if __name__ == '__main__':
     parser.add_argument("--fs_license_file", required=False)
     parser.add_argument("--bold_sdc", required=False, default='False')
     parser.add_argument("--templateflow_home", required=False, default='/home/root/.cache/templateflow')
+    parser.add_argument("--qc_result_path", required=True)
     args = parser.parse_args()
     """
     if filedmap:
@@ -142,7 +143,7 @@ if __name__ == '__main__':
     create_dataset_description(output_dir)
 
     fig_dir = f'{args.bold_preprocess_dir}/{subject_id}/figures'
-    qc_dir = f'{Path(args.bold_preprocess_dir).parent}/QC/{subject_id}/figures'
+    qc_dir = args.qc_result_path
 
     from niworkflows.utils.bids import collect_data
     from niworkflows.utils.connections import listify
@@ -171,7 +172,9 @@ if __name__ == '__main__':
             single_subject_fieldmap_wf.base_dir = base_dir
             single_subject_fieldmap_wf.run()
 
-            shutil.move(fig_dir, qc_dir)
+            source_files = Path(fig_dir).glob('*')
+            for source_file in source_files:
+                shutil.move(source_file, f'{Path(qc_dir)}/{source_file.name}')
 
     else:  # run preproc
         with open(args.bold_series[0], 'r') as f:
@@ -256,3 +259,7 @@ if __name__ == '__main__':
             name="outputnode",
         )
         workflow.run()
+
+        source_files = Path(fig_dir).glob('*')
+        for source_file in source_files:
+            shutil.move(source_file, f'{Path(qc_dir)}/{source_file.name}')
