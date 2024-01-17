@@ -1240,6 +1240,7 @@ process bold_fieldmap {
     val(bold_spaces)
     val(bold_sdc)
     val(templateflow_home)
+    val(qc_result_path)
 
     output:
     val("TRUE")
@@ -1256,6 +1257,7 @@ process bold_fieldmap {
         --bold_spaces ${bold_spaces} \
         --bold_sdc ${bold_sdc} \
         --templateflow_home ${templateflow_home} \
+        --qc_result_path ${qc_result_path} \
         """
     }
     else {
@@ -1281,6 +1283,7 @@ process bold_pre_process {
     val(bold_sdc)
     val(templateflow_home)
     val(bold_sdc_done)
+    val(qc_result_path)
 
     output:
     tuple(val(subject_id), val(subject_boldfile_txt))
@@ -1302,6 +1305,7 @@ process bold_pre_process {
     --fsnative2t1w_xfm ${fsnative2T1w_xfm} \
     --fs_license_file ${fs_license_file} \
     --templateflow_home ${templateflow_home} \
+    --qc_result_path ${qc_result_path} \
     """
 }
 
@@ -2510,9 +2514,9 @@ workflow bold_wf {
     // BOLD preprocess
     bold_anat_prepare_input = t1_mgz.join(mask_mgz).join(aseg_mgz)
     (t1_nii, mask_nii, wm_dseg_nii, fsnative2T1w_xfm, wm_probseg_nii, gm_probseg_nii, csf_probseg_nii) = bold_anat_prepare(bold_preprocess_path, bold_anat_prepare_input)
-//     bold_sdc_done = bold_fieldmap(bids_dir, t1_nii, bold_preprocess_path, bold_task_type, bold_spaces, bold_sdc, templateflow_home)
-//     bold_pre_process_input = t1_nii.join(mask_nii, by:[0]).join(wm_dseg_nii, by:[0]).join(fsnative2T1w_xfm, by:[0])
-//     (subject_id, bold_id) = bold_pre_process(bids_dir, subjects_dir, bold_preprocess_path, bold_task_type, subject_boldfile_txt, bold_spaces, bold_pre_process_input, fs_license_file, bold_sdc, templateflow_home, bold_sdc_done)
+    bold_sdc_done = bold_fieldmap(bids_dir, t1_nii, bold_preprocess_path, bold_task_type, bold_spaces, bold_sdc, templateflow_home, qc_result_path)
+    bold_pre_process_input = t1_nii.join(mask_nii, by:[0]).join(wm_dseg_nii, by:[0]).join(fsnative2T1w_xfm, by:[0])
+    (subject_id, bold_id) = bold_pre_process(bids_dir, subjects_dir, bold_preprocess_path, bold_task_type, subject_boldfile_txt, bold_spaces, bold_pre_process_input, fs_license_file, bold_sdc, templateflow_home, bold_sdc_done, qc_result_path)
 
 //     if (output_std_volume_spaces == 'TRUE') {
 //         bold_T1_to_2mm_input = t1_mgz.join(norm_mgz)
