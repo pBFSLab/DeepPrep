@@ -246,7 +246,14 @@ def get_space_t1w_bold(bids_orig, bids_preproc, bold_orig_file):
     bold_t1w_info['suffix'] = 'bold'
     bold_t1w_file = layout_preproc.get(**bold_t1w_info)[0]
 
-    return bold_t1w_file.path, boldref_t1w_file.path
+    # sub-CIMT001_ses-38659_task-rest_run-01_bold_mcf.nii.gz.par
+    bold_par_info = info.copy()
+    bold_par_info.pop('datatype')
+    bold_par_info['suffix'] = 'mcf'
+    bold_par_info['extension'] = '.nii.gz.par'
+    bold_par = layout_preproc.get(**bold_par_info)[0]
+
+    return bold_t1w_file.path, boldref_t1w_file.path, bold_par.path
 
 
 if __name__ == '__main__':
@@ -257,10 +264,8 @@ if __name__ == '__main__':
 
     parser.add_argument("--bids_dir", required=True)
     parser.add_argument("--bold_preprocess_dir", required=True)
-    parser.add_argument("--subject_id", required=True)
     parser.add_argument("--bold_id", required=True)
     parser.add_argument("--bold_file", required=True)
-    parser.add_argument("--mcpar_file", required=False)
     parser.add_argument("--aseg_mgz", required=True)
     parser.add_argument("--brainmask_mgz", required=True)
     args = parser.parse_args()
@@ -268,10 +273,8 @@ if __name__ == '__main__':
     input:
     --bids_dir /mnt/ngshare/temp/ds004498
     --bold_preprocess_dir /mnt/ngshare/temp/ds004498_DeepPrep/BOLD
-    --subject_id sub-CIMT001
     --bold_id sub-CIMT001_ses-38659_task-rest_run-01
     --bold_file /mnt/ngshare/temp/ds004498/sub-CIMT001/ses-38659/func/sub-CIMT001_ses-38659_task-rest_run-01_bold.nii.gz
-    --mcpar_file /mnt/ngshare/temp/ds004498_DeepPrep/BOLD/tmp/sub-CIMT001_wf/sub-CIMT001_ses-38659_task-rest_run-01_bold_wf/bold_wf/bold_fit_wf/bold_hmc_wf/mcflirt/sub-CIMT001_ses-38659_task-rest_run-01_bold_mcf.nii.gz.par
     --aseg_mgz /mnt/ngshare/temp/ds004498/Recon720/sub-CIMT001/mri/aseg.mgz
     --brainmask_mgz /mnt/ngshare/temp/ds004498/Recon720/sub-CIMT001/mri/brainmask.mgz
     output:
@@ -293,13 +296,18 @@ if __name__ == '__main__':
     mask = anat2bold_t1w_dir / 'desc-brain_mask.nii.gz'
     binmask = anat2bold_t1w_dir / 'desc-brain_maskbin.nii.gz'
 
-    bold_space_t1w_file, boldref_space_t1w_file = get_space_t1w_bold(bids_orig=args.bids_dir, bids_preproc=args.bold_preprocess_dir, bold_orig_file=args.bold_file)
+    with open(args.bold_file, 'r') as f:
+        data = f.readlines()
+    data = [i.strip() for i in data]
+    bold_orig_file = data[1]
+
+    bold_space_t1w_file, boldref_space_t1w_file, bold_mcpar_file = get_space_t1w_bold(bids_orig=args.bids_dir, bids_preproc=args.bold_preprocess_dir, bold_orig_file=bold_orig_file)
 
     anat2bold_t1w(args.aseg_mgz, args.brainmask_mgz, boldref_space_t1w_file,
                   str(aseg), str(wm), str(vent), str(csf), str(mask), str(binmask))
 
     confounds_file = Path(boldref_space_t1w_file).parent / f'{args.bold_id}_desc-confounds_timeseries.txt'
     compile_regressors(Path(args.bold_preprocess_dir), args.bold_id, bold_space_t1w_file, confounds_dir_path,
-                       Path(args.mcpar_file), wm, mask, binmask, vent,
+                       Path(bold_mcpar_file), wm, mask, binmask, vent,
                        confounds_file)
     assert confounds_file.exists()
