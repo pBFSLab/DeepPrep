@@ -20,7 +20,7 @@ docker run -it --rm --gpus all --entrypoint /bin/bash \
 -v ${DEEPPREP_RUN_CONFIG}:/nextflow.docker.local.config \
 deepprep:${DEEPPREP_VERSION}
 
-/deepprep/Docker/deepprep.sh run /deepprep/nextflow/deepprep.nf \
+/deepprep/deepprep.sh run /deepprep/nextflow/deepprep.nf \
 -resume \
 -c /nextflow.docker.local.config --bids_dir /BIDS_DATASET \
 --subjects_dir /DEEPPREP_RESULT_DIR/Recon \

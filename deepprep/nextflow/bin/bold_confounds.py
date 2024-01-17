@@ -10,6 +10,8 @@ import nibabel as nib
 from sklearn.decomposition import PCA
 import shutil
 
+from bold_mkbrainmask import anat2bold_t1w
+
 
 def qnt_nifti(bpss_path, maskpath, outpath):
     '''
@@ -77,20 +79,14 @@ def regressors_PCA(bpss_path, maskpath, outpath):
             f.write('\n')
 
 
-def build_movement_regressors(subject, movement_path: Path, fcmri_path: Path, mcdat_file: Path):
-    # *.mcdata -> *.par
-    par_file = movement_path / f'{subject}_rest_reorient_skip_faln_mc.par'
-    mcdat = pd.read_fwf(mcdat_file, header=None).to_numpy()
-    par = mcdat[:, 1:7]
-    par_txt = list()
-    for row in par:
-        par_txt.append(f'{row[0]:.4f}  {row[1]:.4f}  {row[2]:.4f}  {row[3]:.4f}  {row[4]:.4f}  {row[5]:.4f}')
-    with open(par_file, 'w') as f:
-        f.write('\n'.join(par_txt))
-
+def build_movement_regressors(movement_path: Path, mcpar_file: Path, output_file: Path):
+    """
+    MCFLIRT motion parameters, normalized to SPM format (X, Y, Z, Rx, Ry, Rz)
+    """
     # *.par -> *.dat
-    dat_file = movement_path / f'{subject}_rest_reorient_skip_faln_mc.dat'
-    dat = mcdat[:, [4, 5, 6, 1, 2, 3]]
+    mcdat = pd.read_csv(mcpar_file, header=None, sep='  ', engine='python').to_numpy()
+    dat_file = movement_path / mcpar_file.name.replace('par', 'dat')
+    dat = mcdat
     dat_txt = list()
     for idx, row in enumerate(dat):
         dat_line = f'{idx + 1}{row[0]:10.6f}{row[1]:10.6f}{row[2]:10.6f}{row[3]:10.6f}{row[4]:10.6f}{row[5]:10.6f}{1:10.6f}'
@@ -99,8 +95,8 @@ def build_movement_regressors(subject, movement_path: Path, fcmri_path: Path, mc
         f.write('\n'.join(dat_txt))
 
     # *.par -> *.ddat
-    ddat_file = movement_path / f'{subject}_rest_reorient_skip_faln_mc.ddat'
-    ddat = mcdat[:, [4, 5, 6, 1, 2, 3]]
+    ddat_file = movement_path / mcpar_file.name.replace('par', 'ddat')
+    ddat = mcdat
     ddat = ddat[1:, :] - ddat[:-1, ]
     ddat = np.vstack((np.zeros((1, 6)), ddat))
     ddat_txt = list()
@@ -114,8 +110,8 @@ def build_movement_regressors(subject, movement_path: Path, fcmri_path: Path, mc
         f.write('\n'.join(ddat_txt))
 
     # *.par -> *.rdat
-    rdat_file = movement_path / f'{subject}_rest_reorient_skip_faln_mc.rdat'
-    rdat = mcdat[:, [4, 5, 6, 1, 2, 3]]
+    rdat_file = movement_path / mcpar_file.name.replace('par', 'rdat')
+    rdat = mcdat
     # rdat_average = np.zeros(rdat.shape[1])
     # for idx, row in enumerate(rdat):
     #     rdat_average = (row + rdat_average * idx) / (idx + 1)
@@ -129,7 +125,7 @@ def build_movement_regressors(subject, movement_path: Path, fcmri_path: Path, mc
         f.write('\n'.join(rdat_txt))
 
     # *.rdat, *.ddat -> *.rddat
-    rddat_file = movement_path / f'{subject}_rest_reorient_skip_faln_mc.rddat'
+    rddat_file = movement_path / mcpar_file.name.replace('par', 'rddat')
     rddat = np.hstack((rdat, ddat))
     rddat_txt = list()
     for idx, row in enumerate(rddat):
@@ -139,7 +135,6 @@ def build_movement_regressors(subject, movement_path: Path, fcmri_path: Path, mc
     with open(rddat_file, 'w') as f:
         f.write('\n'.join(rddat_txt))
 
-    regressor_dat_file = fcmri_path / f'{subject}_mov_regressor.dat'
     rddat = np.around(rddat, 6)
     n = rddat.shape[0]
     ncol = rddat.shape[1]
@@ -169,44 +164,42 @@ def build_movement_regressors(subject, movement_path: Path, fcmri_path: Path, mc
         regressor_dat_line = f'{row[0]:10.6f}{row[1]:10.6f}{row[2]:10.6f}{row[3]:10.6f}{row[4]:10.6f}{row[5]:10.6f}' + \
                              f'{row[6]:10.6f}{row[7]:10.6f}{row[8]:10.6f}{row[9]:10.6f}{row[10]:10.6f}{row[11]:10.6f}'
         regressor_dat_txt.append(regressor_dat_line)
-    with open(regressor_dat_file, 'w') as f:
+    with open(output_file, 'w') as f:
         f.write('\n'.join(regressor_dat_txt))
 
 
-def compile_regressors(func_path: Path, subject, bold_id: str, bpss_path: Path, confounds_dir_path,
-                       mcdat_file, aseg_wm, aseg_brainmask, aseg_brainmask_bin, aseg_ventricles
-                       ):
+def compile_regressors(func_path: Path, bold_id: str, bpss_path: Path, confounds_dir_path,
+                       mcdat_file, aseg_wm, aseg_brainmask, aseg_brainmask_bin, aseg_ventricles,
+                       output_file):
     # Compile the regressors.
 
     # wipe mov regressors, if there
-    mov_regressor_common_path = confounds_dir_path / ('%s_mov_regressor.dat' % subject)
-    build_movement_regressors(subject, confounds_dir_path, confounds_dir_path, mcdat_file)
-    mov_regressor_path = confounds_dir_path / ('%s_mov_regressor.dat' % subject)
-    os.rename(mov_regressor_common_path, mov_regressor_path)
+    mov_out_path = confounds_dir_path / 'mov_regressor.dat'
+    build_movement_regressors(confounds_dir_path, mcdat_file, mov_out_path)
 
-    out_path = confounds_dir_path / ('%s_WB_regressor_dt.dat' % subject)
-    qnt_nifti(bpss_path, str(aseg_brainmask_bin), out_path)
+    wb_out_path = confounds_dir_path / 'WB_regressor_dt.dat'
+    qnt_nifti(bpss_path, str(aseg_brainmask_bin), wb_out_path)
 
-    vent_out_path = confounds_dir_path / ('%s_ventricles_regressor_dt.dat' % subject)
+    vent_out_path = confounds_dir_path / 'ventricles_regressor_dt.dat'
     qnt_nifti(bpss_path, str(aseg_ventricles), vent_out_path)
 
-    wm_out_path = confounds_dir_path / ('%s_wm_regressor_dt.dat' % subject)
+    wm_out_path = confounds_dir_path / 'WM_regressor_dt.dat'
     qnt_nifti(bpss_path, str(aseg_wm), wm_out_path)
 
-    pasted_out_path = confounds_dir_path / ('%s_vent_wm_dt.dat' % subject)
+    pasted_out_path = confounds_dir_path / 'Vent_wm_dt.dat'
     with pasted_out_path.open('w') as f:
         sh.paste(vent_out_path, wm_out_path, _out=f)
 
     # Generate PCA regressors of bpss nifti.
-    pca_out_path = confounds_dir_path / ('%s_pca_regressor_dt.dat' % subject)
+    pca_out_path = confounds_dir_path / 'pca_regressor_dt.dat'
     regressors_PCA(bpss_path, str(aseg_brainmask), pca_out_path)
 
     fnames = [
-        confounds_dir_path / ('%s_mov_regressor.dat' % subject),
-        confounds_dir_path / ('%s_WB_regressor_dt.dat' % subject),
-        confounds_dir_path / ('%s_vent_wm_dt.dat' % subject),
-        confounds_dir_path / ('%s_pca_regressor_dt.dat' % subject)]
-    all_regressors_path = confounds_dir_path.parent / f'{bold_id}_confounds.txt'
+        mov_out_path,
+        wb_out_path,
+        vent_out_path,
+        pca_out_path]
+    all_regressors_path = confounds_dir_path.parent / f'confounds.txt'
     regressors = []
     for fname in fnames:
         with fname.open('r') as f:
@@ -220,7 +213,7 @@ def compile_regressors(func_path: Path, subject, bold_id: str, bpss_path: Path, 
         writer.writerows(regressors)
 
     # Prepare regressors datas for download
-    download_all_regressors_path = Path(str(all_regressors_path).replace('.txt', '_view.txt'))
+    output_file = Path(output_file)
     num_row = len(regressors[:, 0])
     frame_no = np.arange(num_row).reshape((num_row, 1))
     download_regressors = np.concatenate((frame_no, regressors), axis=1)
@@ -228,49 +221,85 @@ def compile_regressors(func_path: Path, subject, bold_id: str, bpss_path: Path, 
                     'dL_d', 'dP_d', 'dS_d', 'pitch_d', 'yaw_d', 'roll_d',
                     'WB', 'WB_d', 'vent', 'vent_d', 'wm', 'wm_d',
                     'comp1', 'comp2', 'comp3', 'comp4', 'comp5', 'comp6', 'comp7', 'comp8', 'comp9', 'comp10']
-    with download_all_regressors_path.open('w') as f:
+    with output_file.open('w') as f:
         csv.writer(f, delimiter=' ').writerows([label_header])
         writer = csv.writer(f, delimiter=' ')
         writer.writerows(download_regressors)
-    shutil.copyfile(download_all_regressors_path, func_path / f'{bold_id}_desc-confounds_timeseries.txt')
+
+    return output_file
 
 
-    return all_regressors_path
+def get_space_t1w_bold(bids_orig, bids_preproc, bold_orig_file):
+    from bids import BIDSLayout
+    layout_orig = BIDSLayout(bids_orig, validate=False)
+    layout_preproc = BIDSLayout(bids_preproc, validate=False)
+    info = layout_orig.parse_file_entities(bold_orig_file)
+
+    boldref_t1w_info = info.copy()
+    boldref_t1w_info['space'] = 'T1w'
+    boldref_t1w_info['suffix'] = 'boldref'
+    boldref_t1w_file = layout_preproc.get(**boldref_t1w_info)[0]
+
+    bold_t1w_info = info.copy()
+    bold_t1w_info['space'] = 'T1w'
+    bold_t1w_info['desc'] = 'preproc'
+    bold_t1w_info['suffix'] = 'bold'
+    bold_t1w_file = layout_preproc.get(**bold_t1w_info)[0]
+
+    return bold_t1w_file.path, boldref_t1w_file.path
 
 
 if __name__ == '__main__':
+
     parser = argparse.ArgumentParser(
         description="DeepPrep: Bold PreProcessing workflows -- BoldSkipReorient"
     )
 
+    parser.add_argument("--bids_dir", required=True)
     parser.add_argument("--bold_preprocess_dir", required=True)
     parser.add_argument("--subject_id", required=True)
     parser.add_argument("--bold_id", required=True)
     parser.add_argument("--bold_file", required=True)
-    parser.add_argument("--mcdat", required=True)
-    parser.add_argument("--aseg_wm", required=True)
-    parser.add_argument("--aseg_brainmask", required=True)
-    parser.add_argument("--aseg_brainmask_bin", required=True)
-    parser.add_argument("--aseg_ventricles", required=True)
+    parser.add_argument("--mcpar_file", required=False)
+    parser.add_argument("--aseg_mgz", required=True)
+    parser.add_argument("--brainmask_mgz", required=True)
     args = parser.parse_args()
+    """
+    input:
+    --bids_dir /mnt/ngshare/temp/ds004498
+    --bold_preprocess_dir /mnt/ngshare/temp/ds004498_DeepPrep/BOLD
+    --subject_id sub-CIMT001
+    --bold_id sub-CIMT001_ses-38659_task-rest_run-01
+    --bold_file /mnt/ngshare/temp/ds004498/sub-CIMT001/ses-38659/func/sub-CIMT001_ses-38659_task-rest_run-01_bold.nii.gz
+    --mcpar_file /mnt/ngshare/temp/ds004498_DeepPrep/BOLD/tmp/sub-CIMT001_wf/sub-CIMT001_ses-38659_task-rest_run-01_bold_wf/bold_wf/bold_fit_wf/bold_hmc_wf/mcflirt/sub-CIMT001_ses-38659_task-rest_run-01_bold_mcf.nii.gz.par
+    --aseg_mgz /mnt/ngshare/temp/ds004498/Recon720/sub-CIMT001/mri/aseg.mgz
+    --brainmask_mgz /mnt/ngshare/temp/ds004498/Recon720/sub-CIMT001/mri/brainmask.mgz
+    output:
+    confounds_file
+    """
 
-    func_path = Path(args.bold_preprocess_dir) / args.subject_id / 'func'
-    tmp_path = Path(args.bold_preprocess_dir) / args.subject_id / 'tmp'
+    tmp_path = Path(args.bold_preprocess_dir) / 'tmp'
+
     confounds_dir_path = tmp_path / 'confounds' / args.bold_id
-    try:
-        confounds_dir_path.mkdir(parents=True, exist_ok=True)
-    except:
-        pass
+    anat2bold_t1w_dir = tmp_path / 'anat2bold_t1w' / args.bold_id
+    confounds_dir_path.mkdir(parents=True, exist_ok=True)
+    anat2bold_t1w_dir.mkdir(parents=True, exist_ok=True)
 
-    bold_file = Path(args.bold_file)
-    assert bold_file.exists()
+    aseg = anat2bold_t1w_dir / 'dseg.nii.gz'
+    wm = anat2bold_t1w_dir / 'label-WM_probseg.nii.gz'
+    vent = anat2bold_t1w_dir / 'label-ventricles_probseg.nii.gz'
+    csf = anat2bold_t1w_dir / 'label-CSF_probseg.nii.gz'
+    # project brainmask.mgz to mc
+    mask = anat2bold_t1w_dir / 'desc-brain_mask.nii.gz'
+    binmask = anat2bold_t1w_dir / 'desc-brain_maskbin.nii.gz'
 
-    mcdat_file = args.mcdat
-    aseg_wm = args.aseg_wm
-    aseg_brainmask = args.aseg_brainmask
-    aseg_brainmask_bin = args.aseg_brainmask_bin
-    aseg_ventricles = args.aseg_ventricles
+    bold_space_t1w_file, boldref_space_t1w_file = get_space_t1w_bold(bids_orig=args.bids_dir, bids_preproc=args.bold_preprocess_dir, bold_orig_file=args.bold_file)
 
-    compile_regressors(func_path, args.subject_id, args.bold_id, bold_file, confounds_dir_path,
-                       mcdat_file, aseg_wm, aseg_brainmask, aseg_brainmask_bin, aseg_ventricles
-                       )
+    anat2bold_t1w(args.aseg_mgz, args.brainmask_mgz, boldref_space_t1w_file,
+                  str(aseg), str(wm), str(vent), str(csf), str(mask), str(binmask))
+
+    confounds_file = Path(boldref_space_t1w_file).parent / f'{args.bold_id}_desc-confounds_timeseries.txt'
+    compile_regressors(Path(args.bold_preprocess_dir), args.bold_id, bold_space_t1w_file, confounds_dir_path,
+                       Path(args.mcpar_file), wm, mask, binmask, vent,
+                       confounds_file)
+    assert confounds_file.exists()
