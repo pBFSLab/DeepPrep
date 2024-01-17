@@ -250,7 +250,7 @@ def get_space_t1w_bold(bids_orig, bids_preproc, bold_orig_file):
     bold_par_info = info.copy()
     bold_par_info.pop('datatype')
     bold_par_info['suffix'] = 'mcf'
-    bold_par_info['extension'] = '.nii.par'
+    bold_par_info['extension'] = '.nii.gz.par'
     bold_par = layout_preproc.get(**bold_par_info)[0]
 
     return bold_t1w_file.path, boldref_t1w_file.path, bold_par.path
@@ -296,7 +296,12 @@ if __name__ == '__main__':
     mask = anat2bold_t1w_dir / 'desc-brain_mask.nii.gz'
     binmask = anat2bold_t1w_dir / 'desc-brain_maskbin.nii.gz'
 
-    bold_space_t1w_file, boldref_space_t1w_file, bold_mcpar_file = get_space_t1w_bold(bids_orig=args.bids_dir, bids_preproc=args.bold_preprocess_dir, bold_orig_file=args.bold_file)
+    with open(args.bold_file, 'r') as f:
+        data = f.readlines()
+    data = [i.strip() for i in data]
+    bold_orig_file = data[1]
+
+    bold_space_t1w_file, boldref_space_t1w_file, bold_mcpar_file = get_space_t1w_bold(bids_orig=args.bids_dir, bids_preproc=args.bold_preprocess_dir, bold_orig_file=bold_orig_file)
 
     anat2bold_t1w(args.aseg_mgz, args.brainmask_mgz, boldref_space_t1w_file,
                   str(aseg), str(wm), str(vent), str(csf), str(mask), str(binmask))
