@@ -277,6 +277,7 @@ if __name__ == '__main__':
         fmap_preproc_wf_dir = base_dir / f'{bold_name}_wf' / single_subject_fieldmap_wf.name
         if fmap_preproc_wf_dir.exists():
             fmap_preproc_wf_dir.unlink()
+        fmap_preproc_wf_dir.parent.mkdir(parents=True, exist_ok=True)
         fmap_preproc_wf_dir.symlink_to(base_dir / single_subject_fieldmap_wf.name)
         # end
         workflow.base_dir = base_dir
