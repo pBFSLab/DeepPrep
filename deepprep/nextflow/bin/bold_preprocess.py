@@ -171,7 +171,9 @@ if __name__ == '__main__':
             single_subject_fieldmap_wf.base_dir = base_dir
             single_subject_fieldmap_wf.run()
 
-            shutil.move(fig_dir, qc_dir)
+            source_files = Path(fig_dir).glob('*')
+            for source_file in source_files:
+                shutil.move(source_file, f'{Path(qc_dir)}/{source_file.name}')
 
     else:  # run preproc
         with open(args.bold_series[0], 'r') as f:
@@ -256,3 +258,7 @@ if __name__ == '__main__':
             name="outputnode",
         )
         workflow.run()
+
+        source_files = Path(fig_dir).glob('*')
+        for source_file in source_files:
+            shutil.move(source_file, f'{Path(qc_dir)}/{source_file.name}')
