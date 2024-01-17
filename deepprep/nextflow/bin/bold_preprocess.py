@@ -71,6 +71,20 @@ def update_config(bids_dir, bold_preprocess_dir, fs_license_file, fs_subjects_di
     config.workflow.me_t2s_fit_method = "curvefit"
 
 
+def get_bold_func_path(bids_orig, bids_preproc, bold_orig_file):
+    from bids import BIDSLayout
+    layout_orig = BIDSLayout(bids_orig, validate=False)
+    layout_preproc = BIDSLayout(bids_preproc, validate=False)
+    info = layout_orig.parse_file_entities(bold_orig_file)
+
+    boldref_t1w_info = info.copy()
+    boldref_t1w_info['space'] = 'T1w'
+    boldref_t1w_info['suffix'] = 'boldref'
+    boldref_t1w_file = layout_preproc.get(**boldref_t1w_info)[0]
+
+    return Path(boldref_t1w_file).parent
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="DeepPrep: Bold PreProcessing workflows"
@@ -257,10 +271,34 @@ if __name__ == '__main__':
             ),
             name="outputnode",
         )
+
         base_dir = Path(config.execution.work_dir) / f'{subject_id}_wf' / f'{args.task_id}_wf'
+        # reuse fieldmap result
+        fmap_preproc_wf_dir = base_dir / f'{bold_name}_wf' / single_subject_fieldmap_wf.name
+        if fmap_preproc_wf_dir.exists():
+            fmap_preproc_wf_dir.unlink()
+        fmap_preproc_wf_dir.symlink_to(base_dir / single_subject_fieldmap_wf.name)
+        # end
         workflow.base_dir = base_dir
-        single_subject_fieldmap_wf.base_dir = base_dir
-        workflow.run()
+        result = workflow.run()
+
+        # get mcflirt result file
+        mcflirt_node_name = ''
+        for node_name in workflow.list_node_names():
+            if 'mcflirt' in node_name:
+                mcflirt_node_name = node_name
+                break
+        mcflirt_node_path = base_dir / workflow.name / mcflirt_node_name.replace('.', '/')
+        list(mcflirt_node_path.glob('*'))
+        func_path = get_bold_func_path(args.bids_dir, args.bold_preprocess_dir, bold_file)
+        for mcflirt_file in mcflirt_node_path.glob('*'):
+            if 'mcf.nii' in mcflirt_file.name and mcflirt_file.is_file():
+                shutil.copyfile(mcflirt_file, func_path / mcflirt_file.name)
+        # output
+        # _bold_mcf.nii_rel.rms
+        # _bold_mcf.nii_abs.rms
+        # _bold_mcf.nii.par
+        # end
 
         source_files = Path(fig_dir).glob('*')
         for source_file in source_files:
