@@ -23,6 +23,15 @@ from fmriprep.workflows.bold import init_bold_stc_wf, init_bold_hmc_wf
 from fmriprep.workflows.bold.base import _create_mem_gb
 from niworkflows.utils.connections import listify
 
+def set_envrion():
+    # FreeSurfer recon-all env
+    os.environ['FREESURFER_HOME'] = "/usr/local/freesurfer720"
+    os.environ['FREESURFER'] = "/usr/local/freesurfer720"
+    os.environ['SUBJECTS_DIR'] = "/home/youjia/Downloads"
+    os.environ['PATH'] = ('/usr/local/freesurfer720/bin:'
+                          + '/home/youjia/abin:'
+                          + '/usr/local/c3d/bin:'
+                          + os.environ['PATH'])
 
 def hmc(subj_tmp_dir, bold_file, raw_ref_image, mc_xform):
     omp_nthreads = config.nipype.omp_nthreads
@@ -67,6 +76,8 @@ def cmd(subj_tmp_dir, bids_dir, bold_file, raw_ref_image, orig_bold_file, mc_xfo
 
 
 if __name__ == '__main__':
+    set_envrion()
+
     parser = argparse.ArgumentParser(
         description="DeepPrep: Bold PreProcessing workflows -- MC & STC"
     )
