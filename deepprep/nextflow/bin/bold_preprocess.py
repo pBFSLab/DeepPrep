@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 import argparse
 import os
+import shutil
 from pathlib import Path
 
 import json
@@ -81,14 +82,15 @@ if __name__ == '__main__':
     parser.add_argument("--subject_id", required=True)
     parser.add_argument("--task_id", required=True)
     parser.add_argument("--bold_series", type=str, nargs='+', default=[], required=False)  # BOLD Series，not one bold file
-    parser.add_argument("--spaces", type=str, nargs='+', default=['individual', 'T1w', 'fsnative'], required=False)  # BOLD Series，not one bold file
+    parser.add_argument("--bold_spaces", type=str, nargs='+', default=['individual', 'T1w', 'fsnative'], required=False)  # BOLD Series，not one bold file
     parser.add_argument("--t1w_preproc", required=False)
     parser.add_argument("--t1w_mask", required=False)
     parser.add_argument("--t1w_dseg", required=False)
     parser.add_argument("--fsnative2t1w_xfm", required=False)
     parser.add_argument("--fs_license_file", required=False)
-    parser.add_argument("--fieldmap", required=False, default='False')
+    parser.add_argument("--bold_sdc", required=False, default='False')
     parser.add_argument("--templateflow_home", required=False, default='/home/root/.cache/templateflow')
+    parser.add_argument("--qc_result_path", required=True)
     args = parser.parse_args()
     """
     if filedmap:
@@ -114,7 +116,6 @@ if __name__ == '__main__':
     """
     subject_id = args.subject_id
     subject_id_split = subject_id.split('-')[1]
-    # bold_id = args.bold_id
 
     t1w_preproc = args.t1w_preproc
     t1w_mask = args.t1w_mask
@@ -127,7 +128,7 @@ if __name__ == '__main__':
     print("t1w_dseg :", t1w_dseg)
     print("fsnative2t1w_xfm :", fsnative2t1w_xfm)
 
-    spaces = ' '.join(args.spaces)
+    spaces = ' '.join(args.bold_spaces)
     update_config(args.bids_dir, args.bold_preprocess_dir, args.fs_license_file,
                   args.subjects_dir, args.subject_id, args.task_id, spaces,
                   args.templateflow_home)
@@ -140,6 +141,9 @@ if __name__ == '__main__':
     output_dir = Path(config.execution.output_dir)
     work_dir.mkdir(parents=True, exist_ok=True)
     create_dataset_description(output_dir)
+
+    fig_dir = f'{args.bold_preprocess_dir}/{subject_id}/figures'
+    qc_dir = args.qc_result_path
 
     from niworkflows.utils.bids import collect_data
     from niworkflows.utils.connections import listify
@@ -161,12 +165,17 @@ if __name__ == '__main__':
 
     single_subject_fieldmap_wf, estimator_map = init_single_subject_fieldmap_wf(subject_id_split, bold_runs)
 
-    if args.fieldmap.upper() == 'TRUE':  # run fieldmap
+    if args.bold_sdc.upper() == 'TRUE':  # run fieldmap
         if single_subject_fieldmap_wf:
             base_dir = Path(config.execution.work_dir) / f'{subject_id}_wf' / f'{args.task_id}_wf'
             base_dir.mkdir(parents=True, exist_ok=True)
             single_subject_fieldmap_wf.base_dir = base_dir
             single_subject_fieldmap_wf.run()
+
+            source_files = Path(fig_dir).glob('*')
+            for source_file in source_files:
+                shutil.move(source_file, f'{Path(qc_dir)}/{source_file.name}')
+
     else:  # run preproc
         with open(args.bold_series[0], 'r') as f:
             data = f.readlines()
@@ -250,3 +259,7 @@ if __name__ == '__main__':
             name="outputnode",
         )
         workflow.run()
+
+        source_files = Path(fig_dir).glob('*')
+        for source_file in source_files:
+            shutil.move(source_file, f'{Path(qc_dir)}/{source_file.name}')
