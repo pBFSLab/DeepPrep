@@ -143,7 +143,7 @@ if __name__ == '__main__':
     create_dataset_description(output_dir)
 
     fig_dir = f'{args.bold_preprocess_dir}/{subject_id}/figures'
-    qc_dir = args.qc_result_path
+    qc_dir = Path(args.qc_result_path) / subject_id / 'figures'
 
     from niworkflows.utils.bids import collect_data
     from niworkflows.utils.connections import listify
