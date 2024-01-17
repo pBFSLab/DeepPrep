@@ -1824,26 +1824,25 @@ process bold_confounds {
     memory '7 GB'
 
     input:
+    val(bids_dir)
     val(bold_preprocess_path)
-    tuple(val(subject_id), val(bold_id), path(mc), path(mcdat), path(anat_wm_nii), path(anat_brainmask_nii), path(anat_brainmask_bin_nii), path(anat_ventricles_nii))
+    tuple(val(subject_id), path(subject_boldfile_txt), path(aseg_mgz), path(mask_mgz))
 
     output:
     tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_desc-confounds_timeseries.txt")) // emit: bold_confounds_view
 
     script:
-    script_py = "bold_cal_confounds.py"
+    script_py = "bold_confounds.py"
+    bold_id = subject_boldfile_txt.name
 
     """
     ${script_py} \
+    --bids_dir ${bids_dir} \
     --bold_preprocess_dir ${bold_preprocess_path} \
-    --subject_id ${subject_id} \
     --bold_id ${bold_id} \
-    --bold_file ${mc} \
-    --mcdat ${mcdat} \
-    --aseg_wm ${anat_wm_nii} \
-    --aseg_brainmask ${anat_brainmask_nii} \
-    --aseg_brainmask_bin ${anat_brainmask_bin_nii} \
-    --aseg_ventricles ${anat_ventricles_nii}
+    --bold_file ${subject_boldfile_txt} \
+    --aseg_mgz ${aseg_mgz} \
+    --brainmask_mgz ${mask_mgz} \
     """
 }
 
@@ -2465,6 +2464,8 @@ workflow bold_wf {
     bold_sdc = params.bold_sdc
     bold_spaces = params.bold_spaces
 
+    do_bold_confounds = params.bold_confounds.toString().toUpperCase()
+
     // set software path
     freesurfer_home = params.freesurfer_home
     fs_license_file = params.fs_license_file
@@ -2514,9 +2515,9 @@ workflow bold_wf {
     // BOLD preprocess
     bold_anat_prepare_input = t1_mgz.join(mask_mgz).join(aseg_mgz)
     (t1_nii, mask_nii, wm_dseg_nii, fsnative2T1w_xfm, wm_probseg_nii, gm_probseg_nii, csf_probseg_nii) = bold_anat_prepare(bold_preprocess_path, bold_anat_prepare_input)
-    bold_fieldmap_done = bold_fieldmap(bids_dir, t1_nii, bold_preprocess_path, bold_task_type, bold_spaces, bold_sdc, templateflow_home, qc_result_path)
+    bold_fieldmap_output = bold_fieldmap(bids_dir, t1_nii, bold_preprocess_path, bold_task_type, bold_spaces, bold_sdc, templateflow_home, qc_result_path)
     bold_pre_process_input = t1_nii.join(mask_nii, by:[0]).join(wm_dseg_nii, by:[0]).join(fsnative2T1w_xfm, by:[0])
-    subject_boldfile_txt = bold_pre_process(bids_dir, subjects_dir, bold_preprocess_path, bold_task_type, subject_boldfile_txt, bold_spaces, bold_pre_process_input, fs_license_file, bold_sdc, templateflow_home, bold_fieldmap_done, qc_result_path)
+    subject_boldfile_txt_bold_pre_process = bold_pre_process(bids_dir, subjects_dir, bold_preprocess_path, bold_task_type, subject_boldfile_txt, bold_spaces, bold_pre_process_input, fs_license_file, bold_sdc, templateflow_home, bold_fieldmap_output, qc_result_path)
 
 //     if (output_std_volume_spaces == 'TRUE') {
 //         bold_T1_to_2mm_input = t1_mgz.join(norm_mgz)
@@ -2534,13 +2535,10 @@ workflow bold_wf {
 //         (synthmorph_norigid_bold, synthmorph_norigid_bold_fframe) = synthmorph_norigid_apply(subjects_dir, bold_preprocess_path, synthmorph_home, synthmorph_norigid_apply_input, template_space, template_resolution, device, gpu_lock)
 //     }
 //
-//     if (cal_confounds == 'TRUE') {
-//         bold_aparaseg2mc_inputs = aparc_aseg_mgz.join(mc_nii, by: [0,1]).join(bbregister_dat, by: [0,1])
-//         (anat_wm_nii, anat_csf_nii, anat_aseg_nii, anat_ventricles_nii, anat_brainmask_nii, anat_brainmask_bin_nii) = bold_mkbrainmask(subjects_dir, bold_preprocess_path, bold_aparaseg2mc_inputs)
-//
-//         bold_confounds_inputs = mc_nii.join(mcdat, by: [0,1]).join(anat_wm_nii, by: [0,1]).join(anat_brainmask_nii, by: [0,1]).join(anat_brainmask_bin_nii, by: [0,1]).join(anat_ventricles_nii, by: [0,1])
-//         (bold_confounds_txt, bold_confounds_view_txt) = bold_confounds(bold_preprocess_path, bold_confounds_inputs)
-//     }
+    if (do_bold_confounds == 'TRUE') {
+        bold_confounds_inputs = subject_boldfile_txt_bold_pre_process.join(aseg_mgz, by: [0]).join(mask_mgz, by: [0])
+        subject_boldfile_txt_bold_confounds = bold_confounds(bids_dir, bold_preprocess_path, bold_confounds_inputs)
+    }
 
 //
 //     subject_boldref_file = bold_get_bold_ref_in_bids(bold_preprocess_path, bids_dir, subject_id_unique, boldfile_id_unique)  // subject_id, subject_boldref_file
@@ -2593,7 +2591,7 @@ workflow bold_wf {
 
 //     qc_plot_mctsnr_input = mc_nii.join(anat_brainmask_nii, by: [0,1])
 
-    bold_tsnr_svg = qc_plot_tsnr(bids_dir, subject_boldfile_txt, bold_preprocess_path, qc_result_path, qc_utils_path)
+    bold_tsnr_svg = qc_plot_tsnr(bids_dir, subject_boldfile_txt_bold_pre_process, bold_preprocess_path, qc_result_path, qc_utils_path)
 //     qc_plot_carpet_inputs = mc_nii.join(mcdat, by: [0,1]).join(anat_aseg_nii, by: [0,1]).join(anat_brainmask_nii, by: [0,1]).join(anat_brainmask_bin_nii, by: [0,1]).join(anat_wm_nii, by: [0,1]).join(anat_csf_nii, by: [0,1])
 //     (bold_carpet_svg) = qc_plot_carpet(bold_preprocess_path, qc_utils_path, qc_result_path, qc_plot_carpet_inputs)
 
