@@ -156,7 +156,7 @@ if __name__ == '__main__':
     work_dir.mkdir(parents=True, exist_ok=True)
     create_dataset_description(output_dir)
 
-    fig_dir = f'{args.bold_preprocess_dir}/{subject_id}/figures'
+    fig_dir = Path(args.bold_preprocess_dir) / subject_id / 'figures'
     qc_dir = Path(args.qc_result_path) / subject_id / 'figures'
 
     from niworkflows.utils.bids import collect_data
@@ -185,10 +185,6 @@ if __name__ == '__main__':
             base_dir.mkdir(parents=True, exist_ok=True)
             single_subject_fieldmap_wf.base_dir = base_dir
             single_subject_fieldmap_wf.run()
-
-            source_files = Path(fig_dir).glob('*')
-            for source_file in source_files:
-                shutil.move(source_file, f'{Path(qc_dir)}/{source_file.name}')
 
     else:  # run preproc
         with open(args.bold_series[0], 'r') as f:
@@ -301,6 +297,7 @@ if __name__ == '__main__':
         # _bold_mcf.nii.par
         # end
 
-        source_files = Path(fig_dir).glob('*')
+        source_files = fig_dir.glob('*')
+        qc_dir.mkdir(parents=True, exist_ok=True)
         for source_file in source_files:
-            shutil.move(source_file, f'{Path(qc_dir)}/{source_file.name}')
+            shutil.move(source_file, qc_dir / source_file.name)
