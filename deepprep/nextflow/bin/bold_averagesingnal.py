@@ -77,7 +77,7 @@ def calculate_mc(mcdat):
     return rel_transform.reshape(-1, 1)
 
 
-def AverageSingnal(bold_averagesingnal_dir, save_svg_dir, bold_id,
+def AverageSingnal(tmp_work_dir, save_svg_dir, bold_id,
                    bold_space_t1w, abs_dat_file, rel_dat_file, aseg, brainmask, brainmask_bin, wm, csf):
 
     bold = reshape_bold(bold_space_t1w)
@@ -91,7 +91,7 @@ def AverageSingnal(bold_averagesingnal_dir, save_svg_dir, bold_id,
     columns = list(roi_inf.keys())
     bold_mask = brainmask
     compute_dvars = ComputeDVARSNode()
-    std_dvars_path = compute_dvars(bold_space_t1w, bold_mask, bold_averagesingnal_dir)
+    std_dvars_path = compute_dvars(bold_space_t1w, bold_mask, tmp_work_dir)
     std_dvars = pd.read_csv(std_dvars_path, header=None).values
     std_dvars = np.insert(std_dvars, 0, np.array([np.nan]), axis=0)
     results.append(std_dvars)
@@ -105,11 +105,11 @@ def AverageSingnal(bold_averagesingnal_dir, save_svg_dir, bold_id,
     columns.append('rel_transform')
     data = np.concatenate(results, axis=1).astype(np.float32)
     data_df = pd.DataFrame(data=data, columns=columns)
-    csv_file = bold_averagesingnal_dir / Path(bold_space_t1w).name.replace('bold.nii.gz', 'desc-averagesingnal_timeseries.tsv')
+    csv_file = tmp_work_dir / Path(bold_space_t1w).name.replace('bold.nii.gz', 'desc-averagesingnal_timeseries.tsv')
     data_df.to_csv(csv_file, sep="\t")
 
     summary = FMRISummaryNode()
-    summary_path = summary(bold_space_t1w, aseg, csv_file, bold_averagesingnal_dir)
+    summary_path = summary(bold_space_t1w, aseg, csv_file, tmp_work_dir)
     carpet_path = save_svg_dir / f'{bold_id}_desc-carpet_bold.svg'
     cmd = f'cp {summary_path} {carpet_path}'
     os.system(cmd)
