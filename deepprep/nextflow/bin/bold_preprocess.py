@@ -275,6 +275,12 @@ if __name__ == '__main__':
             fmap_preproc_wf_dir.unlink()
         fmap_preproc_wf_dir.parent.mkdir(parents=True, exist_ok=True)
         fmap_preproc_wf_dir.symlink_to(base_dir / single_subject_fieldmap_wf.name)
+        workflow.list_node_names()
+        remove_nodes = []
+        for node_name in workflow.list_node_names():
+            if ('fmap_reports_wf' in node_name) or ('fmap_derivatives_wf' in node_name):
+                remove_nodes.append(workflow.get_node(node_name))
+        workflow.remove_nodes(remove_nodes)
         # end
         workflow.base_dir = base_dir
         result = workflow.run()
