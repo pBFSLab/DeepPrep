@@ -228,6 +228,7 @@ if __name__ == '__main__':
 
         from niworkflows.engine.workflows import LiterateWorkflow as Workflow
         workflow = Workflow(name=f'{bold_name}_wf')
+        base_dir = Path(config.execution.work_dir) / f'{subject_id}_wf' / f'{args.task_id}_wf'
 
         workflow.connect([
             (inputnode, bold_wf, [
@@ -242,6 +243,22 @@ if __name__ == '__main__':
         ])  # fmt:skip
 
         if fieldmap_id:
+            # reuse fieldmap result
+            fmap_preproc_wf_dir = base_dir / workflow.name / single_subject_fieldmap_wf.name
+            if fmap_preproc_wf_dir.exists():
+                fmap_preproc_wf_dir.unlink()
+            fmap_preproc_wf_dir.parent.mkdir(parents=True, exist_ok=True)
+            fmap_preproc_wf_dir.symlink_to(base_dir / single_subject_fieldmap_wf.name)
+
+            all_nodes = single_subject_fieldmap_wf.list_node_names()
+            all_graph_nodes = single_subject_fieldmap_wf._graph.nodes
+            remove_nodes = []
+            for node in single_subject_fieldmap_wf._graph.nodes:
+                if ('fmap_reports_wf' in node.fullname) or ('fmap_derivatives_wf' in node.fullname):
+                    remove_nodes.append(node)
+            single_subject_fieldmap_wf.remove_nodes(remove_nodes)
+            # end
+
             workflow.connect([
                 (single_subject_fieldmap_wf, bold_wf, [
                     ("outputnode.fmap", "inputnode.fmap"),
@@ -268,20 +285,6 @@ if __name__ == '__main__':
             name="outputnode",
         )
 
-        base_dir = Path(config.execution.work_dir) / f'{subject_id}_wf' / f'{args.task_id}_wf'
-        # reuse fieldmap result
-        fmap_preproc_wf_dir = base_dir / f'{bold_name}_wf' / single_subject_fieldmap_wf.name
-        if fmap_preproc_wf_dir.exists():
-            fmap_preproc_wf_dir.unlink()
-        fmap_preproc_wf_dir.parent.mkdir(parents=True, exist_ok=True)
-        fmap_preproc_wf_dir.symlink_to(base_dir / single_subject_fieldmap_wf.name)
-        workflow.list_node_names()
-        remove_nodes = []
-        for node_name in workflow.list_node_names():
-            if ('fmap_reports_wf' in node_name) or ('fmap_derivatives_wf' in node_name):
-                remove_nodes.append(workflow.get_node(node_name))
-        workflow.remove_nodes(remove_nodes)
-        # end
         workflow.base_dir = base_dir
         result = workflow.run()
 
