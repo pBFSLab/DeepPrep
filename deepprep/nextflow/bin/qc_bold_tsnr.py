@@ -110,7 +110,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="plot subject mc tsnr fig")
     parser.add_argument('--bids_dir', required=True)
     parser.add_argument('--subject_id', required=True)
-    parser.add_argument('--bold_id', required=True)
+    parser.add_argument('--bold_file_txt', required=True)
     parser.add_argument('--bold_preprocess_path', required=True)
     parser.add_argument('--qc_result_path', required=True)
     parser.add_argument('--scene_file', required=True)
@@ -118,7 +118,7 @@ if __name__ == '__main__':
     parser.add_argument('--svg_outpath', required=True)
     args = parser.parse_args()
 
-    with open(args.bold_id, 'r') as f:
+    with open(args.bold_file_txt, 'r') as f:
         data = f.readlines()
     data = [i.strip() for i in data]
     bold_file = data[1]
