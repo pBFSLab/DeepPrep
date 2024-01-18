@@ -2219,11 +2219,13 @@ workflow anat_wf {
 
     take:
     gpu_lock
+    subjects_dir
+    workdir_path
+    bold_preprocess_path
+    qc_result_path
 
     main:
     bids_dir = params.bids_dir
-    subjects_dir = params.subjects_dir
-    output_dir = params.output_dir
     subjects = params.subjects
     bold_task_type = params.bold_task_type
 
@@ -2246,13 +2248,6 @@ workflow anat_wf {
     reports_utils_path = params.reports_utils_path
 
     device = params.device
-
-    qc_result_path = "${output_dir}/QC"
-    workdir_path = "${output_dir}/WorkDir"
-
-    if (subjects_dir == "") {
-        subjects_dir = "${output_dir}/Recon"
-    }
 
     // BIDS and SUBJECTS_DIR
     _directory = new File(subjects_dir)
@@ -2461,6 +2456,10 @@ workflow bold_wf {
     pial_surf
     w_g_pct_mgh
     gpu_lock
+    subjects_dir
+    workdir_path
+    bold_preprocess_path
+    qc_result_path
 
     main:
     // GPU
@@ -2469,8 +2468,6 @@ workflow bold_wf {
 
     // set dir path
     bids_dir = params.bids_dir
-    subjects_dir = params.subjects_dir
-    output_dir = params.output_dir
 
     // set bold processing config
     bold_task_type = params.bold_task_type
@@ -2496,10 +2493,6 @@ workflow bold_wf {
 
     bold_only = params.bold_only.toString().toUpperCase()
     deepprep_version = params.deepprep_version
-
-    workdir_path = "${output_dir}/WorkDir"
-    bold_preprocess_path = "${output_dir}/BOLD"
-    qc_result_path = "${output_dir}/QC"
 
     _directory = new File(workdir_path)
         if (!_directory.exists()) {
@@ -2636,15 +2629,20 @@ workflow bold_wf {
 workflow {
 
     gpu_lock = gpu_schedule_lock()
+    output_dir = params.output_dir
+    subjects_dir = params.subjects_dir
+    if (subjects_dir == "") {
+        subjects_dir = "${output_dir}/Recon"
+    }
+    workdir_path = "${output_dir}/WorkDir"
+    bold_preprocess_path = "${output_dir}/BOLD"
+    qc_result_path = "${output_dir}/QC"
 
     if (params.anat_only.toString().toUpperCase() == 'TRUE') {
         println "INFO: anat preprocess ONLY"
-        (t1_mgz, mask_mgz, norm_mgz, aseg_mgz, white_surf, pial_surf, w_g_pct_mgh) = anat_wf(gpu_lock)
+        (t1_mgz, mask_mgz, norm_mgz, aseg_mgz, white_surf, pial_surf, w_g_pct_mgh) = anat_wf(gpu_lock, subjects_dir, workdir_path, bold_preprocess_path, qc_result_path)
     } else if (params.bold_only.toString().toUpperCase() == 'TRUE') {
         println "INFO: Bold preprocess ONLY"
-        output_dir = params.output_dir
-        subjects_dir = params.subjects_dir
-        if (subjects_dir == "") {subjects_dir = "${output_dir}/Recon"}
         t1_mgz = Channel.fromPath("${subjects_dir}/sub-*/mri/T1.mgz")
         mask_mgz = Channel.fromPath("${subjects_dir}/sub-*/mri/mask.mgz")
         norm_mgz = Channel.fromPath("${subjects_dir}/sub-*/mri/norm.mgz")
@@ -2659,10 +2657,10 @@ workflow {
                 c:[it.getParent().getParent().getName(), it.getBaseName(), it]
                 b:[it.getParent().getParent().getName(), it.getBaseName(), file("${it.getParent()}/${it.getBaseName()}.pial")]
                 a:[it.getParent().getParent().getName(), it.getBaseName(), file("${it.getParent()}/${it.getBaseName()}.w-g.pct.mgh")]}
-        bold_wf(t1_mgz, mask_mgz, norm_mgz, aseg_mgz, white_surf, pial_surf, w_g_pct_mgh, gpu_lock)
+        bold_wf(t1_mgz, mask_mgz, norm_mgz, aseg_mgz, white_surf, pial_surf, w_g_pct_mgh, gpu_lock, subjects_dir, workdir_path, bold_preprocess_path, qc_result_path)
     } else {
         println "INFO: anat && Bold preprocess"
-        (t1_mgz, mask_mgz, norm_mgz, aseg_mgz, white_surf, pial_surf, w_g_pct_mgh) = anat_wf(gpu_lock)
-        bold_wf(t1_mgz, mask_mgz, norm_mgz, aseg_mgz, white_surf, pial_surf, w_g_pct_mgh, gpu_lock)
+        (t1_mgz, mask_mgz, norm_mgz, aseg_mgz, white_surf, pial_surf, w_g_pct_mgh) = anat_wf(gpu_lock, subjects_dir, workdir_path, bold_preprocess_path, qc_result_path)
+        bold_wf(t1_mgz, mask_mgz, norm_mgz, aseg_mgz, white_surf, pial_surf, w_g_pct_mgh, gpu_lock, subjects_dir, workdir_path, bold_preprocess_path, qc_result_path)
     }
 }
