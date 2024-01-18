@@ -164,10 +164,16 @@ p.add_argument('-g', '--gpu', action='store_true')
 p.add_argument('-b', '--bold', type=str, metavar='BOLD')
 p.add_argument('-bo', '--bold_out', type=str, metavar='BOLD_OUT')
 p.add_argument('-fbo', '--fframe_bold_out', type=str, metavar='BOLD_OUT')
-p.add_argument('-mc', '--mc', type=str, metavar='TR_INFO')
+# p.add_argument('-mc', '--mc', type=str, metavar='TR_INFO')
 p.add_argument('-tv', '--trans_vox', type=str, metavar='TRANS VOXEL')
 
 arg = p.parse_args()
+
+# Setup.
+gpus = tf.config.experimental.list_physical_devices(device_type='GPU')
+for gpu in gpus:
+    tf.config.experimental.set_memory_growth(gpu, True)
+gpu = os.environ.get('CUDA_VISIBLE_DEVICES', '0')
 
 if arg.threads:
     tf.config.threading.set_inter_op_parallelism_threads(arg.threads)
@@ -182,5 +188,7 @@ assert len(mov.shape) == len(fix.shape) == 3, 'input images not single volumes'
 bold = nib.load(arg.bold)
 trans_vox = tf.convert_to_tensor(np.load(f'{arg.trans_vox}')['arr_0'])
 out_bold = batch_transform(bold, trans=trans_vox)
-mc = nib.load(arg.mc)
-bold_save(arg.bold_out, arg.fframe_bold_out, data=out_bold, affine=fix.affine, header=mc.header, dtype=mov.dataobj.dtype)
+bold_save(arg.bold_out, arg.fframe_bold_out, data=out_bold, affine=fix.affine, header=fix.header, dtype=mov.dataobj.dtype)
+assert arg.bold_out
+assert arg.fframe_bold_out
+os.remove(arg.bold)
