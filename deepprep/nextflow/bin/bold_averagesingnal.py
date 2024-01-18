@@ -9,6 +9,7 @@ from nipype import Node
 import pandas as pd
 import argparse
 import shutil
+from bold_mkbrainmask import anat2bold_t1w
 
 
 def reshape_bold(bold_file):
@@ -66,6 +67,7 @@ class FMRISummaryNode:
         result = FMRISummary_node.run()
         return os.path.abspath(result.outputs.out_file)
 
+
 def calculate_mc(mcdat):
     data = np.loadtxt(mcdat)
     columns = ['n', 'roll', 'pitch', 'yaw', 'dS', 'dL', 'dP', '.', '..', 'abs_transform']
@@ -75,8 +77,8 @@ def calculate_mc(mcdat):
     return rel_transform.reshape(-1, 1)
 
 
-def AverageSingnal(bold_preprocess_dir, save_svg_dir, subject_id, bold_id,
-                   mc, mcdat, aseg, brainmask, brainmask_bin, wm, csf):
+def AverageSingnal(bold_preprocess_dir, save_svg_dir, bold_id,
+                   mc, abs_dat_file, rel_dat_file, aseg, brainmask, brainmask_bin, wm, csf):
     # ses = re.search(r'ses-(\w+\d+)', bold_id).group(0)
     base_dir = Path(bold_preprocess_dir) / 'tmp' / bold_id
     base_dir.mkdir(exist_ok=True, parents=True)
@@ -96,19 +98,16 @@ def AverageSingnal(bold_preprocess_dir, save_svg_dir, subject_id, bold_id,
     std_dvars = np.insert(std_dvars, 0, np.array([np.nan]), axis=0)
     results.append(std_dvars)
     columns.append('std_dvars')
-    mcdat = mcdat
-    framewisedisplacement = FramewiseDisplacementNode()
-    fd_path = framewisedisplacement(mcdat, base_dir)
-    fd = pd.read_csv(fd_path, sep='\t', encoding='utf-8').values
-    fd = np.insert(fd, 0, np.array([np.nan]), axis=0)
+    fd = np.loadtxt(abs_dat_file).reshape(-1, 1)
     results.append(fd)
     columns.append('framewise_displacement')
-    rel_transform = calculate_mc(mcdat)
+    rel_transform = np.loadtxt(rel_dat_file)
+    rel_transform = np.insert(rel_transform, 0, 0).reshape(-1, 1)
     results.append(rel_transform)
     columns.append('rel_transform')
     data = np.concatenate(results, axis=1).astype(np.float32)
     data_df = pd.DataFrame(data=data, columns=columns)
-    csv_file = Path(bold_preprocess_dir) / 'func' / mc.name.replace('bold.nii.gz', 'desc-averagesingnal_timeseries.tsv')
+    csv_file = Path(mc).parent / Path(mc).name.replace('bold.nii.gz', 'desc-averagesingnal_timeseries.tsv')
     data_df.to_csv(csv_file, sep="\t")
 
     summary = FMRISummaryNode()
@@ -119,40 +118,78 @@ def AverageSingnal(bold_preprocess_dir, save_svg_dir, subject_id, bold_id,
     shutil.rmtree(base_dir)
 
 
+def get_space_t1w_bold(bids_orig, bids_preproc, bold_orig_file):
+    from bids import BIDSLayout
+    layout_orig = BIDSLayout(bids_orig, validate=False)
+    layout_preproc = BIDSLayout(bids_preproc, validate=False)
+    info = layout_orig.parse_file_entities(bold_orig_file)
+
+    boldref_t1w_info = info.copy()
+    boldref_t1w_info['space'] = 'T1w'
+    boldref_t1w_info['suffix'] = 'boldref'
+    boldref_t1w_file = layout_preproc.get(**boldref_t1w_info)[0]
+
+    bold_t1w_info = info.copy()
+    bold_t1w_info['space'] = 'T1w'
+    bold_t1w_info['desc'] = 'preproc'
+    bold_t1w_info['suffix'] = 'bold'
+    bold_t1w_file = layout_preproc.get(**bold_t1w_info)[0]
+
+    fd_t1w_info = info.copy()
+    fd_t1w_info['suffix'] = 'mcf'
+    fd_t1w_info['extension'] = 'nii.gz_abs.rms'
+    fd_t1w_file = layout_preproc.get(**fd_t1w_info)[0]
+
+    rel_t1w_info = info.copy()
+    rel_t1w_info['suffix'] = 'mcf'
+    rel_t1w_info['extension'] = 'nii.gz_rel.rms'
+    rel_t1w_file = layout_preproc.get(**rel_t1w_info)[0]
+
+    return bold_t1w_file.path, boldref_t1w_file.path, fd_t1w_file.path, rel_t1w_file.path
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="DeepPrep: Bold PreProcessing workflows -- AvreageSingnal"
     )
 
+    parser.add_argument("--bids_dir", required=True)
     parser.add_argument("--bold_preprocess_dir", required=True)
     parser.add_argument("--qc_result_path", required=True)
     parser.add_argument("--subject_id", required=True)
     parser.add_argument("--bold_id", required=True)
-    parser.add_argument("--mc", required=True)
-    parser.add_argument("--mcdat", required=True)
-    parser.add_argument("--anat_aseg", required=True)
-    parser.add_argument("--anat_brainmask", required=True)
-    parser.add_argument("--anat_brainmaskbin", required=True)
-    parser.add_argument("--anat_wm", required=True)
-    parser.add_argument("--anat_csf", required=True)
+    parser.add_argument("--bold_file", required=True)
+    parser.add_argument("--aseg_mgz", required=True)
+    parser.add_argument("--brainmask_mgz", required=True)
     args = parser.parse_args()
 
     cur_path = os.getcwd()
 
-    preprocess_dir = Path(cur_path) / str(args.bold_preprocess_dir) / args.subject_id
-    subj_func_dir = Path(preprocess_dir) / 'func'
-    subj_func_dir.mkdir(parents=True, exist_ok=True)
-    # bold_preprocess_path = Path(cur_path) / Path(args.bold_preprocess_dir).name
-    # mc_file = subj_func_dir / f'{args.bold_id}_space-mc_bold.nii.gz'
-    mc_file = subj_func_dir / os.path.basename(args.mc)
-    mcdat_file = subj_func_dir / os.path.basename(args.mcdat)
-    aseg_file = subj_func_dir / os.path.basename(args.anat_aseg)
-    brainmask_file = subj_func_dir / os.path.basename(args.anat_brainmask)
-    brainmaskbin_file = subj_func_dir / os.path.basename(args.anat_brainmaskbin)
-    wm_file = subj_func_dir / os.path.basename(args.anat_wm)
-    csf_file = subj_func_dir / os.path.basename(args.anat_csf)
+    with open(args.bold_file, 'r') as f:
+        data = f.readlines()
+    data = [i.strip() for i in data]
+    bold_orig_file = data[1]
+
+    mc_file, boldref_space_t1w_file, abs_dat_file, rel_dat_file = get_space_t1w_bold(args.bids_dir,
+                                                                                     args.bold_preprocess_dir,
+                                                                                     bold_orig_file)
+
+    tmp_path = Path(args.bold_preprocess_dir) / 'tmp'
+    bold_averagesingnal_dir = tmp_path / 'bold_averagesingnal' / args.bold_id
+    bold_averagesingnal_dir.mkdir(parents=True, exist_ok=True)
+
+    aseg = bold_averagesingnal_dir / 'dseg.nii.gz'
+    wm = bold_averagesingnal_dir / 'label-WM_probseg.nii.gz'
+    vent = bold_averagesingnal_dir / 'label-ventricles_probseg.nii.gz'
+    csf = bold_averagesingnal_dir / 'label-CSF_probseg.nii.gz'
+    # project brainmask.mgz to mc
+    mask = bold_averagesingnal_dir / 'desc-brain_mask.nii.gz'
+    binmask = bold_averagesingnal_dir / 'desc-brain_maskbin.nii.gz'
+
+    anat2bold_t1w(args.aseg_mgz, args.brainmask_mgz, boldref_space_t1w_file,
+                  str(aseg), str(wm), str(vent), str(csf), str(mask), str(binmask))
+
     svg_path = Path(cur_path) / str(args.qc_result_path) / args.subject_id / 'figures'
     svg_path.mkdir(parents=True, exist_ok=True)
-    AverageSingnal(preprocess_dir, svg_path, args.subject_id, args.bold_id,
-                   mc_file, mcdat_file, aseg_file, brainmask_file, brainmaskbin_file, wm_file, csf_file)
-
+    AverageSingnal(args.bold_preprocess_dir, svg_path, args.bold_id,
+                   mc_file, abs_dat_file, rel_dat_file, aseg, mask, binmask, wm, csf)
