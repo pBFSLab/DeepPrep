@@ -189,6 +189,6 @@ bold = nib.load(arg.bold)
 trans_vox = tf.convert_to_tensor(np.load(f'{arg.trans_vox}')['arr_0'])
 out_bold = batch_transform(bold, trans=trans_vox)
 bold_save(arg.bold_out, arg.fframe_bold_out, data=out_bold, affine=fix.affine, header=fix.header, dtype=mov.dataobj.dtype)
-assert arg.bold_out
-assert arg.fframe_bold_out
+assert os.path.exists(arg.bold_out), f'{arg.bold_out}'
+assert os.path.exists(arg.fframe_bold_out), f'{arg.fframe_bold_out}'
 os.remove(arg.bold)

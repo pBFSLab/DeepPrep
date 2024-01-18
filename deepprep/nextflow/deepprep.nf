@@ -1756,7 +1756,7 @@ process synthmorph_norigid_apply {
     val(subjects_dir)
     val(bold_preprocess_path)
     val(synthmorph_home)
-    val(freesurfer_home)
+    val(work_dir)
     tuple(val(subject_id), val(bold_id), path(t1_native2mm), path(subject_boldfile_txt_bold), path(transvoxel))
     val(template_space)
     val(template_resolution)
@@ -1768,6 +1768,7 @@ process synthmorph_norigid_apply {
     tuple(val(subject_id), val(bold_id), val(template_space)) //emit: {bild_id}_space-{template_space}_res-{template_resolution}_desc-preproc_bold.nii.gz & {bild_id}_space-{template_space}_res-{template_resolution}_boldref.nii.gz
 
     script:
+    process_num = 8
     gpu_script_py = "gpu_schedule_run.py"
     script_py = "${synthmorph_home}/bold_synthmorph_apply.py"
     synth_script = "${synthmorph_home}/mri_bold_apply_synthmorph.py"
@@ -1775,6 +1776,7 @@ process synthmorph_norigid_apply {
     ${gpu_script_py} ${device} double ${task.executor} ${script_py} \
     --bids_dir ${bids_dir} \
     --bold_preprocess_dir ${bold_preprocess_path} \
+    --work_dir ${work_dir}/synthmorph_norigid_apply \
     --subject_id ${subject_id} \
     --bold_id ${bold_id} \
     --T1_file ${t1_native2mm} \
@@ -1782,8 +1784,8 @@ process synthmorph_norigid_apply {
     --trans_vox ${transvoxel} \
     --template_space ${template_space} \
     --template_resolution ${template_resolution} \
+    --process_num ${process_num} \
     --synth_script ${synth_script} \
-    --freesurfer_home ${freesurfer_home}
     """
 }
 
@@ -2474,7 +2476,6 @@ workflow bold_wf {
 
     synthmorph_home = params.synthmorph_home
     synthmorph_model_path = params.synthmorph_model_path
-    output_std_volume_spaces = params.output_std_volume_spaces.toString().toUpperCase()
     template_space = params.bold_template_space  // templateflow
     template_resolution = params.bold_template_resolution  // templateflow
     templateflow_home = params.templateflow_home  // templateflow
@@ -2522,6 +2523,7 @@ workflow bold_wf {
     bold_pre_process_input = t1_nii.join(mask_nii, by:[0]).join(wm_dseg_nii, by:[0]).join(fsnative2T1w_xfm, by:[0])
     subject_boldfile_txt_bold_pre_process = bold_pre_process(bids_dir, subjects_dir, bold_preprocess_path, bold_task_type, subject_boldfile_txt, bold_spaces, bold_pre_process_input, fs_license_file, bold_sdc, templateflow_home, bold_fieldmap_output, qc_result_path)
 
+    output_std_volume_spaces = 'TRUE'
     if (output_std_volume_spaces == 'TRUE') {
         bold_T1_to_2mm_input = t1_mgz.join(norm_mgz)
         (t1_native2mm, norm_native2mm) = bold_T1_to_2mm(subjects_dir, bold_preprocess_path, bold_T1_to_2mm_input)
@@ -2535,7 +2537,7 @@ workflow bold_wf {
         transvoxel_group = subject_id_boldfile_id.groupTuple(sort: true).join(transvoxel).transpose()
         t1_native2mm_group = subject_id_boldfile_id.groupTuple(sort: true).join(t1_native2mm).transpose()
         synthmorph_norigid_apply_input = t1_native2mm_group.join(subject_boldfile_txt_bold_pre_process, by: [0,1]).join(transvoxel_group, by: [0,1])
-        synth_apply_template = synthmorph_norigid_apply(bids_dir, subjects_dir, bold_preprocess_path, synthmorph_home, freesurfer_home, synthmorph_norigid_apply_input, template_space, template_resolution, device, gpu_lock)
+        synth_apply_template = synthmorph_norigid_apply(bids_dir, subjects_dir, bold_preprocess_path, synthmorph_home, work_dir, synthmorph_norigid_apply_input, template_space, template_resolution, device, gpu_lock)
     }
     if (do_bold_confounds == 'TRUE') {
         bold_confounds_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(aseg_mgz).join(mask_mgz, by: [0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
