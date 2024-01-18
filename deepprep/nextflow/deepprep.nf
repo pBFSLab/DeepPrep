@@ -1270,6 +1270,7 @@ process bold_fieldmap {
 
 process bold_pre_process {
     cpus 1
+    label "maxForks_1"
 
     input:
     val(bids_dir)
@@ -1286,10 +1287,11 @@ process bold_pre_process {
     val(qc_result_path)
 
     output:
-    tuple(val(subject_id), path(subject_boldfile_txt))
+    tuple(val(subject_id), val(bold_id), path(subject_boldfile_txt))
 
     script:
     script_py = "bold_preprocess.py"
+    bold_id = subject_boldfile_txt.name
     """
     ${script_py} \
     --bids_dir ${bids_dir} \
@@ -1826,7 +1828,7 @@ process bold_confounds {
     input:
     val(bids_dir)
     val(bold_preprocess_path)
-    tuple(val(subject_id), path(subject_boldfile_txt), path(aseg_mgz), path(mask_mgz))
+    tuple(val(subject_id), val(bold_id), path(subject_boldfile_txt), path(aseg_mgz), path(mask_mgz))
 
     output:
     tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_desc-confounds_timeseries.txt")) // emit: bold_confounds_view
@@ -2536,8 +2538,17 @@ workflow bold_wf {
 //     }
 //
     if (do_bold_confounds == 'TRUE') {
-        bold_confounds_inputs = subject_boldfile_txt_bold_pre_process.join(aseg_mgz, by: [0]).join(mask_mgz, by: [0])
+//         subject_boldfile_txt_bold_pre_process.view()
+//         aseg_mgz.view()
+//         mask_mgz.view()
+        bold_confounds_inputs = subject_boldfile_txt_bold_pre_process.groupTuple(sort: true).join(aseg_mgz, by: [0]).join(mask_mgz, by: [0]).transpose()
+//         bold_confounds_inputs.view()
         subject_boldfile_txt_bold_confounds = bold_confounds(bids_dir, bold_preprocess_path, bold_confounds_inputs)
+    }
+
+    do_tnsr = 'False'
+    if (do_tnsr == 'TRUE') {
+        bold_tsnr_svg = qc_plot_tsnr(bids_dir, subject_boldfile_txt_bold_pre_process, bold_preprocess_path, qc_result_path, qc_utils_path)
     }
 
 //
@@ -2591,7 +2602,7 @@ workflow bold_wf {
 
 //     qc_plot_mctsnr_input = mc_nii.join(anat_brainmask_nii, by: [0,1])
 
-    bold_tsnr_svg = qc_plot_tsnr(bids_dir, subject_boldfile_txt_bold_pre_process, bold_preprocess_path, qc_result_path, qc_utils_path)
+//     bold_tsnr_svg = qc_plot_tsnr(bids_dir, subject_boldfile_txt_bold_pre_process, bold_preprocess_path, qc_result_path, qc_utils_path)
 //     qc_plot_carpet_inputs = mc_nii.join(mcdat, by: [0,1]).join(anat_aseg_nii, by: [0,1]).join(anat_brainmask_nii, by: [0,1]).join(anat_brainmask_bin_nii, by: [0,1]).join(anat_wm_nii, by: [0,1]).join(anat_csf_nii, by: [0,1])
 //     (bold_carpet_svg) = qc_plot_carpet(bold_preprocess_path, qc_utils_path, qc_result_path, qc_plot_carpet_inputs)
 
