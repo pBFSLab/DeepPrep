@@ -78,11 +78,11 @@ def calculate_mc(mcdat):
 
 
 def AverageSingnal(bold_preprocess_dir, save_svg_dir, bold_id,
-                   mc, abs_dat_file, rel_dat_file, aseg, brainmask, brainmask_bin, wm, csf):
+                   bold_space_t1w, abs_dat_file, rel_dat_file, aseg, brainmask, brainmask_bin, wm, csf):
     # ses = re.search(r'ses-(\w+\d+)', bold_id).group(0)
     base_dir = Path(bold_preprocess_dir) / 'tmp' / bold_id
     base_dir.mkdir(exist_ok=True, parents=True)
-    bold = reshape_bold(mc)
+    bold = reshape_bold(bold_space_t1w)
     roi_inf = {'global_signal': brainmask_bin, 'white_matter': wm, 'csf': csf}
     results = []
     for key in roi_inf.keys():
@@ -93,7 +93,7 @@ def AverageSingnal(bold_preprocess_dir, save_svg_dir, bold_id,
     columns = list(roi_inf.keys())
     bold_mask = brainmask
     compute_dvars = ComputeDVARSNode()
-    std_dvars_path = compute_dvars(mc, bold_mask, base_dir)
+    std_dvars_path = compute_dvars(bold_space_t1w, bold_mask, base_dir)
     std_dvars = pd.read_csv(std_dvars_path, header=None).values
     std_dvars = np.insert(std_dvars, 0, np.array([np.nan]), axis=0)
     results.append(std_dvars)
@@ -107,11 +107,11 @@ def AverageSingnal(bold_preprocess_dir, save_svg_dir, bold_id,
     columns.append('rel_transform')
     data = np.concatenate(results, axis=1).astype(np.float32)
     data_df = pd.DataFrame(data=data, columns=columns)
-    csv_file = Path(mc).parent / Path(mc).name.replace('bold.nii.gz', 'desc-averagesingnal_timeseries.tsv')
+    csv_file = Path(bold_space_t1w).parent / Path(bold_space_t1w).name.replace('bold.nii.gz', 'desc-averagesingnal_timeseries.tsv')
     data_df.to_csv(csv_file, sep="\t")
 
     summary = FMRISummaryNode()
-    summary_path = summary(mc_file, aseg, csv_file, base_dir)
+    summary_path = summary(bold_space_t1w, aseg, csv_file, base_dir)
     carpet_path = save_svg_dir / f'{bold_id}_desc-carpet_bold.svg'
     cmd = f'cp {summary_path} {carpet_path}'
     os.system(cmd)
@@ -170,7 +170,7 @@ if __name__ == '__main__':
     data = [i.strip() for i in data]
     bold_orig_file = data[1]
 
-    mc_file, boldref_space_t1w_file, abs_dat_file, rel_dat_file = get_space_t1w_bold(args.bids_dir,
+    bold_space_t1w_file, boldref_space_t1w_file, abs_dat_file, rel_dat_file = get_space_t1w_bold(args.bids_dir,
                                                                                      args.bold_preprocess_dir,
                                                                                      bold_orig_file)
 
@@ -192,4 +192,4 @@ if __name__ == '__main__':
     svg_path = Path(cur_path) / str(args.qc_result_path) / args.subject_id / 'figures'
     svg_path.mkdir(parents=True, exist_ok=True)
     AverageSingnal(args.bold_preprocess_dir, svg_path, args.bold_id,
-                   mc_file, abs_dat_file, rel_dat_file, aseg, mask, binmask, wm, csf)
+                   bold_space_t1w_file, abs_dat_file, rel_dat_file, aseg, mask, binmask, wm, csf)
