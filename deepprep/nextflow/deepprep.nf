@@ -1891,27 +1891,28 @@ process qc_plot_carpet {
     memory '400 MB'
 
     input:
+    val(bids_dir)
+    tuple(val(subject_id), path(subject_boldfile_txt), path(aseg_mgz), path(mask_mgz))
     val(bold_preprocess_path)
-    val(qc_utils_path)
     val(qc_result_path)
-    tuple(val(subject_id), val(bold_id), path(mc_nii), path(mcdat), path(anat_aseg_nii), path(anat_brainmask_nii), path(anat_brainmask_bin_nii), path(anat_wm_nii), path(anat_csf_nii))
+    val(work_dir)
     output:
     tuple(val(subject_id), val(bold_id), val("${qc_result_path}/${subject_id}/figures/${bold_id}_desc-carpet_bold.svg")) // emit: bold_carpet_svg
     script:
     script_py = "bold_averagesingnal.py"
+    bold_id = subject_boldfile_txt.name
+
     """
     ${script_py} \
-    --subject_id ${subject_id} \
+    --bids_dir ${bids_dir} \
     --bold_preprocess_dir ${bold_preprocess_path} \
     --qc_result_path ${qc_result_path} \
-    --mc ${mc_nii} \
-    --mcdat ${mcdat} \
-    --anat_aseg ${anat_aseg_nii} \
-    --anat_brainmask ${anat_brainmask_nii} \
-    --anat_brainmaskbin ${anat_brainmask_bin_nii} \
-    --anat_wm ${anat_wm_nii} \
-    --anat_csf ${anat_csf_nii} \
+    --tmp_workdir ${work_dir} \
+    --subject_id ${subject_id} \
     --bold_id ${bold_id} \
+    --bold_file ${subject_boldfile_txt} \
+    --aseg_mgz ${aseg_mgz} \
+    --brainmask_mgz ${mask_mgz} \
     """
 }
 
@@ -2456,6 +2457,7 @@ workflow bold_wf {
     subjects_dir = params.subjects_dir
     bold_preprocess_path = params.bold_preprocess_path
     qc_result_path = params.qc_result_path
+    work_dir = params.work_dir
 
     // set bold processing config
     bold_task_type = params.bold_task_type
@@ -2592,8 +2594,8 @@ workflow bold_wf {
 //     qc_plot_mctsnr_input = mc_nii.join(anat_brainmask_nii, by: [0,1])
 
     bold_tsnr_svg = qc_plot_tsnr(bids_dir, subject_boldfile_txt_bold_pre_process, bold_preprocess_path, qc_result_path, qc_utils_path)
-//     qc_plot_carpet_inputs = mc_nii.join(mcdat, by: [0,1]).join(anat_aseg_nii, by: [0,1]).join(anat_brainmask_nii, by: [0,1]).join(anat_brainmask_bin_nii, by: [0,1]).join(anat_wm_nii, by: [0,1]).join(anat_csf_nii, by: [0,1])
-//     (bold_carpet_svg) = qc_plot_carpet(bold_preprocess_path, qc_utils_path, qc_result_path, qc_plot_carpet_inputs)
+    qc_plot_carpet_inputs = subject_boldfile_txt_bold_pre_process.join(aseg_mgz, by: [0]).join(mask_mgz, by: [0])
+    bold_carpet_svg = qc_plot_carpet(bids_dir, qc_plot_carpet_inputs, bold_preprocess_path, qc_result_path, work_dir)
 
 //     qc_plot_bold_to_space_inputs = synthmorph_norigid_bold_fframe.join(bbregister_native_2mm_fframe, by: [0,1])
 //     bold_to_mni152_svg = qc_plot_bold_to_space(qc_plot_bold_to_space_inputs, bold_fs_native_space, subjects_dir, bold_preprocess_path, qc_utils_path, qc_result_path, freesurfer_home)
