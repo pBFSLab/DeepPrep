@@ -2223,7 +2223,7 @@ workflow anat_wf {
     main:
     bids_dir = params.bids_dir
     subjects_dir = params.subjects_dir
-    qc_result_path = params.qc_result_path
+    output_dir = params.output_dir
     subjects = params.subjects
     bold_task_type = params.bold_task_type
 
@@ -2247,6 +2247,13 @@ workflow anat_wf {
 
     device = params.device
 
+    qc_result_path = "${output_dir}/QC"
+    workdir_path = "${output_dir}/WorkDir"
+
+    if (subjects_dir != '') {
+        subjects_dir = "${output_dir}/Recon"
+    }
+
     // BIDS and SUBJECTS_DIR
     _directory = new File(subjects_dir)
     if (!_directory.exists()) {
@@ -2254,12 +2261,21 @@ workflow anat_wf {
         println "create dir: ..."
         println _directory
     }
+
+    _directory = new File(workdir_path)
+        if (!_directory.exists()) {
+            _directory.mkdirs()
+            println "create dir: ..."
+            println _directory
+        }
+
     _directory = new File(qc_result_path)
     if (!_directory.exists()) {
         _directory.mkdirs()
         println "create dir: ..."
         println _directory
     }
+
     subject_t1wfile_txt = anat_get_t1w_file_in_bids(bids_dir, subjects)
     subjects_fsaverage_dir = anat_cp_fsaverage(subjects_dir, freesurfer_fsaverage_dir)
     subject_id = anat_create_subject_orig_dir(subjects_dir, subject_t1wfile_txt, deepprep_version)
@@ -2454,8 +2470,7 @@ workflow bold_wf {
     // set dir path
     bids_dir = params.bids_dir
     subjects_dir = params.subjects_dir
-    bold_preprocess_path = params.bold_preprocess_path
-    qc_result_path = params.qc_result_path
+    output_dir = params.output_dir
 
     // set bold processing config
     bold_task_type = params.bold_task_type
@@ -2482,6 +2497,17 @@ workflow bold_wf {
     bold_only = params.bold_only.toString().toUpperCase()
     deepprep_version = params.deepprep_version
 
+    workdir_path = "${output_dir}/WorkDir"
+    bold_preprocess_path = "${output_dir}/BOLD"
+    qc_result_path = "${output_dir}/QC"
+
+    _directory = new File(workdir_path)
+        if (!_directory.exists()) {
+            _directory.mkdirs()
+            println "create dir: ..."
+            println _directory
+        }
+
     _directory = new File(bold_preprocess_path)
         if (!_directory.exists()) {
             _directory.mkdirs()
@@ -2494,6 +2520,10 @@ workflow bold_wf {
         _directory.mkdirs()
         println "create dir: ..."
         println _directory
+    }
+
+    if (subjects_dir != '') {
+        subjects_dir = "${output_dir}/Recon"
     }
 
     subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, subjects_dir, subjects, bold_task_type, bold_only)
@@ -2612,7 +2642,9 @@ workflow {
         (t1_mgz, mask_mgz, norm_mgz, aseg_mgz, white_surf, pial_surf, w_g_pct_mgh) = anat_wf(gpu_lock)
     } else if (params.bold_only.toString().toUpperCase() == 'TRUE') {
         println "INFO: Bold preprocess ONLY"
+        output_dir = params.output_dir
         subjects_dir = params.subjects_dir
+        if (subjects_dir != '') {subjects_dir = "${output_dir}/Recon"}
         t1_mgz = Channel.fromPath("${subjects_dir}/sub-*/mri/T1.mgz")
         mask_mgz = Channel.fromPath("${subjects_dir}/sub-*/mri/mask.mgz")
         norm_mgz = Channel.fromPath("${subjects_dir}/sub-*/mri/norm.mgz")
