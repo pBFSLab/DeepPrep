@@ -20,31 +20,28 @@ sections:
     caption: Results of nonlinear alignment of the T1w reference one or more template space(s). Hover on the panels with the mouse pointer to transition between both spaces.\n Spatial normalization of the T1w image to the MNI152NLin2009cAsym template.
     static: false
     subtitle: Spatial normalization of the T1w
-- name: Fieldmaps
-  reportlets:
-  - bids: { datatype: figures, desc: phasediff, suffix: fieldmap}
-    caption: Fieldmaps processing
-    static: false
-    subtitle: Fieldmaps processing
 - name: Functional processing
+  ordering: session,task,acquisition,ceagent,reconstruction,direction,run,echo
   reportlets:
-  - bids: { datatype: figures, desc: summary, extension:[.html], suffix: bold}
-  - bids: { datatype: figures, desc: coreg, suffix: bold}
+  - bids: { datatype: figures, desc: functionalsummary, extension:[.html], suffix: report}
+  - bids: { datatype: figures, desc: reg2native, suffix: bold}
     caption: bbregister was used to generate transormations from EPI-space to T1w-space.
     static: false
     subtitle: Alignment of function and anatomical MRI data
-  - bids: {datatype: figures, desc: sdc, suffix: bold}
-    caption: Compare MRI data before and after Susceptibility Distortion Correction.
-    static: false
-    subtitle: Susceptibility Distortion Correction
-  - bids: { datatype: figures, desc: reg2MNI152, suffix: bold } # reg2MNI152可能需要替换
+  - bids: {datatype: figures, desc: reg2MNI152, suffix: bold}
     caption: SynthMorph used anatomical MRI data to generate transformations from T1w-space to standard-template-space, and then applied the transformations to functional data in T1w-space.
     static: false
     subtitle: Resample function MRI data to standard template space
-  - bids: { datatype: figures, desc: tsnr, suffix: bold }
+  - bids: {datatype: figures, desc: reg, suffix: bold}
+    caption: This pic shows Bold Registration!
+    subtitle: Bold Registration pic
+  - bids: { datatype: figures, desc: tsnr, suffix: bold}
     caption: TSNR from nipype was used to compute the temporal SNR maps.
     subtitle: time-course SNR(tSNR)
-  - bids: { datatype: figures, desc: carpet, suffix: bold }
+  - bids: { datatype: figures, desc: tsnr2surf, suffix: bold}
+    caption: This pic shows tsnr2surf!
+    subtitle:  tSNR of BOLD in surface space
+  - bids: { datatype: figures, desc: carpet, suffix: bold}
     caption: The picture was ploted by the FMRISunmmary from the nipype and these values were calculated by the following methods.\n Global signals (GS) were calculated within the whole-brain, and the white-matter (GSWM) and the cerebro-spinal fluid (GSCSF) were calculated with their corresponding masks. The standardized DVARS was calculated by ComputeDVARS from the nipype. The framewise-displacement measures (FD) were calculated by FramewiseDisplacement from the nipype. The relative head motion (RHM) was calculated in this pipeline. \n A carpet plot shows the time series for all voxels within the brain mask. Cortical gray matter (Ctx GM), subcortical gray matter (dGM), white matter and CSF (WM+CSF), and the rest of brain (The rest) were devided into four groups.
     subtitle: BOLD Summary
 - name: About
