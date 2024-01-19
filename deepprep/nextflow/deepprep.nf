@@ -1,25 +1,3 @@
-process anat_cp_fsaverage {
-    cpus 1
-
-    input:
-    val(subjects_dir)
-    val(freesurfer_fsaverage_dir)
-
-    output:
-    val("${subjects_dir}/fsaverage")
-
-    shell:
-    """
-    #! /usr/bin/env python3
-    import os
-    if os.path.exists('${subjects_dir}/fsaverage'):
-        os.system('rm -r ${subjects_dir}/fsaverage')
-    os.system('cp -nr ${freesurfer_fsaverage_dir} ${subjects_dir}')
-    assert len(os.listdir('${subjects_dir}/fsaverage')) == len(os.listdir('${freesurfer_fsaverage_dir}'))
-    """
-}
-
-
 process anat_get_t1w_file_in_bids {
     cpus 1
 
@@ -93,14 +71,23 @@ process gpu_schedule_lock {
     memory '100 MB'
     cache false
 
+    input:
+    val(freesurfer_home)
+    val(subjects_dir)
+    val(bold_spaces)
     output:
     val(output)
 
     script:
     script_py = "gpu_schedule_lock.py"
+    deepprep_init_py = "deepprep_init.py"
     output = "create-lock"
     """
     ${script_py} ${task.executor}
+    ${deepprep_init_py} \
+    --freesurfer_home ${freesurfer_home} \
+    --subjects_dir ${subjects_dir} \
+    --bold_spaces ${bold_spaces}
     """
 }
 
@@ -1153,7 +1140,6 @@ process anat_balabels_lh {
     val(subjects_dir)
     tuple(val(subject_id), val(hemi), path(sphere_reg_surf), path(white_surf))
     each path(label)
-    val(subjects_fsaverage_dir)
 
     output:
     tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/label/${label}")) // emit: balabel
@@ -1174,7 +1160,6 @@ process anat_balabels_rh {
     val(subjects_dir)
     tuple(val(subject_id), val(hemi), path(sphere_reg_surf), path(white_surf))
     each path(label)
-    val(subjects_fsaverage_dir)
 
     output:
     tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/label/${label}")) // emit: balabel
@@ -2264,7 +2249,6 @@ workflow anat_wf {
         println _directory
     }
     subject_t1wfile_txt = anat_get_t1w_file_in_bids(bids_dir, subjects)
-    subjects_fsaverage_dir = anat_cp_fsaverage(subjects_dir, freesurfer_fsaverage_dir)
     subject_id = anat_create_subject_orig_dir(subjects_dir, subject_t1wfile_txt, deepprep_version)
 
     // freesurfer
@@ -2417,8 +2401,8 @@ workflow anat_wf {
         balabels_rh = Channel.fromPath("${freesurfer_fsaverage_dir}/label/*rh*exvivo*.label")
         anat_balabels_input_lh = sphere_reg_surf.join(white_surf, by: [0, 1]).join(subject_id_lh, by: [0, 1])
         anat_balabels_input_rh = sphere_reg_surf.join(white_surf, by: [0, 1]).join(subject_id_rh, by: [0, 1])
-        balabel_lh = anat_balabels_lh(subjects_dir, anat_balabels_input_lh, balabels_lh, subjects_fsaverage_dir)  // if for paper, comment out
-        balabel_rh = anat_balabels_rh(subjects_dir, anat_balabels_input_rh, balabels_rh, subjects_fsaverage_dir)  // if for paper, comment out
+        balabel_lh = anat_balabels_lh(subjects_dir, anat_balabels_input_lh, balabels_lh)  // if for paper, comment out
+        balabel_rh = anat_balabels_rh(subjects_dir, anat_balabels_input_rh, balabels_rh)  // if for paper, comment out
 
         anat_ca_register_input = brainmask_mgz.join(talairach_lta).join(norm_mgz)
         talairach_m3z = anat_ca_register(subjects_dir, anat_ca_register_input, freesurfer_home)
@@ -2523,34 +2507,34 @@ workflow bold_wf {
     bold_pre_process_input = t1_nii.join(mask_nii, by:[0]).join(wm_dseg_nii, by:[0]).join(fsnative2T1w_xfm, by:[0])
     subject_boldfile_txt_bold_pre_process = bold_pre_process(bids_dir, subjects_dir, bold_preprocess_path, bold_task_type, subject_boldfile_txt, bold_spaces, bold_pre_process_input, fs_license_file, bold_sdc, templateflow_home, bold_fieldmap_output, qc_result_path)
 
-    output_std_volume_spaces = 'TRUE'
-    if (output_std_volume_spaces == 'TRUE') {
-        bold_T1_to_2mm_input = t1_mgz.join(norm_mgz)
-        (t1_native2mm, norm_native2mm) = bold_T1_to_2mm(subjects_dir, bold_preprocess_path, bold_T1_to_2mm_input)
-
-        // add aparc+aseg to synthmorph process to make synthmorph and bbregister processes running at the same time
-        t1_native2mm_aparc_aseg = t1_native2mm.join(aseg_mgz).join(w_g_pct_mgh)
-        (affine_nii, affine_trans) = synthmorph_affine(subjects_dir, bold_preprocess_path, synthmorph_home, t1_native2mm_aparc_aseg, synthmorph_model_path, template_space, device, gpu_lock)
-
-        synthmorph_norigid_input = t1_native2mm.join(norm_native2mm, by: [0]).join(affine_trans, by: [0])
-        (t1_norigid_nii, norm_norigid_nii, transvoxel) = synthmorph_norigid(subjects_dir, bold_preprocess_path, synthmorph_home, synthmorph_norigid_input, synthmorph_model_path, template_space, device, gpu_lock)
-        transvoxel_group = subject_id_boldfile_id.groupTuple(sort: true).join(transvoxel).transpose()
-        t1_native2mm_group = subject_id_boldfile_id.groupTuple(sort: true).join(t1_native2mm).transpose()
-        synthmorph_norigid_apply_input = t1_native2mm_group.join(subject_boldfile_txt_bold_pre_process, by: [0,1]).join(transvoxel_group, by: [0,1])
-        synth_apply_template = synthmorph_norigid_apply(bids_dir, subjects_dir, bold_preprocess_path, synthmorph_home, work_dir, synthmorph_norigid_apply_input, template_space, template_resolution, device, gpu_lock)
-    }
-    if (do_bold_confounds == 'TRUE') {
-        bold_confounds_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(aseg_mgz).join(mask_mgz, by: [0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
-        subject_boldfile_txt_bold_confounds = bold_confounds(bids_dir, bold_preprocess_path, bold_confounds_inputs)
-
-    }
-
-    do_tnsr = 'TRUE'
-    if (do_tnsr == 'TRUE') {
-        bold_tsnr_svg = qc_plot_tsnr(bids_dir, subject_boldfile_txt_bold_pre_process, bold_preprocess_path, qc_result_path, qc_utils_path)
-        qc_plot_carpet_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(aseg_mgz).join(mask_mgz, by: [0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
-        bold_carpet_svg = qc_plot_carpet(bids_dir, qc_plot_carpet_inputs, bold_preprocess_path, qc_result_path, work_dir)
-    }
+//     output_std_volume_spaces = 'TRUE'
+//     if (output_std_volume_spaces == 'TRUE') {
+//         bold_T1_to_2mm_input = t1_mgz.join(norm_mgz)
+//         (t1_native2mm, norm_native2mm) = bold_T1_to_2mm(subjects_dir, bold_preprocess_path, bold_T1_to_2mm_input)
+//
+//         // add aparc+aseg to synthmorph process to make synthmorph and bbregister processes running at the same time
+//         t1_native2mm_aparc_aseg = t1_native2mm.join(aseg_mgz).join(w_g_pct_mgh)
+//         (affine_nii, affine_trans) = synthmorph_affine(subjects_dir, bold_preprocess_path, synthmorph_home, t1_native2mm_aparc_aseg, synthmorph_model_path, template_space, device, gpu_lock)
+//
+//         synthmorph_norigid_input = t1_native2mm.join(norm_native2mm, by: [0]).join(affine_trans, by: [0])
+//         (t1_norigid_nii, norm_norigid_nii, transvoxel) = synthmorph_norigid(subjects_dir, bold_preprocess_path, synthmorph_home, synthmorph_norigid_input, synthmorph_model_path, template_space, device, gpu_lock)
+//         transvoxel_group = subject_id_boldfile_id.groupTuple(sort: true).join(transvoxel).transpose()
+//         t1_native2mm_group = subject_id_boldfile_id.groupTuple(sort: true).join(t1_native2mm).transpose()
+//         synthmorph_norigid_apply_input = t1_native2mm_group.join(subject_boldfile_txt_bold_pre_process, by: [0,1]).join(transvoxel_group, by: [0,1])
+//         synth_apply_template = synthmorph_norigid_apply(bids_dir, subjects_dir, bold_preprocess_path, synthmorph_home, work_dir, synthmorph_norigid_apply_input, template_space, template_resolution, device, gpu_lock)
+//     }
+//     if (do_bold_confounds == 'TRUE') {
+//         bold_confounds_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(aseg_mgz).join(mask_mgz, by: [0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
+//         subject_boldfile_txt_bold_confounds = bold_confounds(bids_dir, bold_preprocess_path, bold_confounds_inputs)
+//
+//     }
+//
+//     do_tnsr = 'TRUE'
+//     if (do_tnsr == 'TRUE') {
+//         bold_tsnr_svg = qc_plot_tsnr(bids_dir, subject_boldfile_txt_bold_pre_process, bold_preprocess_path, qc_result_path, qc_utils_path)
+//         qc_plot_carpet_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(aseg_mgz).join(mask_mgz, by: [0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
+//         bold_carpet_svg = qc_plot_carpet(bids_dir, qc_plot_carpet_inputs, bold_preprocess_path, qc_result_path, work_dir)
+//     }
 
 //
 //     subject_boldref_file = bold_get_bold_ref_in_bids(bold_preprocess_path, bids_dir, subject_id_unique, boldfile_id_unique)  // subject_id, subject_boldref_file
@@ -2618,8 +2602,11 @@ workflow bold_wf {
 
 
 workflow {
+    bold_spaces = params.bold_spaces
+    freesurfer_home = params.freesurfer_home
+    subjects_dir = params.subjects_dir
 
-    gpu_lock = gpu_schedule_lock()
+    gpu_lock = gpu_schedule_lock(freesurfer_home, subjects_dir, bold_spaces)
 
     if (params.anat_only.toString().toUpperCase() == 'TRUE') {
         println "INFO: anat preprocess ONLY"
