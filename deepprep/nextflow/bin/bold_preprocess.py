@@ -32,10 +32,10 @@ def create_dataset_description(dataset_path):
         print(f'create bold results dataset_description.json: {dataset_description_file}')
 
 
-def update_config(bids_dir, bold_preprocess_dir, fs_license_file, fs_subjects_dir,
+def update_config(bids_dir, bold_preprocess_dir, work_dir, fs_license_file, fs_subjects_dir,
                   subject_id, task_id, spaces, templateflow_home):
     config.execution.bids_dir = bids_dir
-    config.execution.log_dir = f'{bold_preprocess_dir}/tmp/log'
+    config.execution.log_dir = f'{work_dir}/log'
     config.execution.fs_license_file = fs_license_file
     config.execution.fs_subjects_dir = fs_subjects_dir
     config.execution.output_dir = bold_preprocess_dir
@@ -43,7 +43,7 @@ def update_config(bids_dir, bold_preprocess_dir, fs_license_file, fs_subjects_di
     config.execution.participant_label = [ subject_id,]
     config.execution.task_id = task_id
     config.execution.templateflow_home = templateflow_home
-    config.execution.work_dir = f'{bold_preprocess_dir}/tmp'
+    config.execution.work_dir = work_dir
     config.execution.fmriprep_dir = config.execution.output_dir
 
     config.workflow.anat_only = False
@@ -93,6 +93,7 @@ if __name__ == '__main__':
     parser.add_argument("--bids_dir", required=True)
     parser.add_argument("--subjects_dir", required=False)
     parser.add_argument("--bold_preprocess_dir", required=True)
+    parser.add_argument("--work_dir", required=True)
     parser.add_argument("--subject_id", required=True)
     parser.add_argument("--task_id", required=True)
     parser.add_argument("--bold_series", type=str, nargs='+', default=[], required=False)  # BOLD Series，not one bold file
@@ -143,7 +144,7 @@ if __name__ == '__main__':
     print("fsnative2t1w_xfm :", fsnative2t1w_xfm)
 
     spaces = ' '.join(args.bold_spaces)
-    update_config(args.bids_dir, args.bold_preprocess_dir, args.fs_license_file,
+    update_config(args.bids_dir, args.bold_preprocess_dir, args.work_dir, args.fs_license_file,
                   args.subjects_dir, args.subject_id, args.task_id, spaces,
                   args.templateflow_home)
     work_dir = Path(config.execution.work_dir)
