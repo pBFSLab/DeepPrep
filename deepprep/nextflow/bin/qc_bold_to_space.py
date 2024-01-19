@@ -120,91 +120,48 @@ if __name__ == '__main__':
     subject_bold2mni152_workdir = Path(subject_resultdir) / f'{bold_id}_bold2min152'
     subject_bold2mni152_workdir.mkdir(parents=True, exist_ok=True)
 
-    lh_MNI152_white_gii = Path(qc_tool_package) / 'lh.MNI152.white.surf.gii'
-    rh_MNI152_white_gii = Path(qc_tool_package) / 'rh.MNI152.white.surf.gii'
-    lh_MNI152_pial_gii = Path(qc_tool_package) / 'lh.MNI152.pial.surf.gii'
-    rh_MNI152_pial_gii = Path(qc_tool_package) / 'rh.MNI152.pial.surf.gii'
-    mni152_norm = Path(qc_tool_package) / 'MNI152_norm.nii.gz'
-    mni152_scene = Path(qc_tool_package) / 'plot_MNI152.scene'
-    bold2mni152_scene = Path(qc_tool_package) / 'plot_bold2MNI152.scene'
+    if 'MNI152NLin6Asym' in space_template:
+        lh_MNI152_white_gii = Path(qc_tool_package) / 'lh.MNI152.white.surf.gii'
+        rh_MNI152_white_gii = Path(qc_tool_package) / 'rh.MNI152.white.surf.gii'
+        lh_MNI152_pial_gii = Path(qc_tool_package) / 'lh.MNI152.pial.surf.gii'
+        rh_MNI152_pial_gii = Path(qc_tool_package) / 'rh.MNI152.pial.surf.gii'
+        mni152_norm = Path(qc_tool_package) / 'MNI152_norm.nii.gz'
+        mni152_scene = Path(qc_tool_package) / 'plot_MNI152.scene'
+        bold2mni152_scene = Path(qc_tool_package) / 'plot_bold2MNI152.scene'
 
-    lh_MNI152_white_gii_tmp = subject_bold2mni152_workdir / 'lh.MNI152_tmp.white.surf.gii'
-    rh_MNI152_white_gii_tmp = subject_bold2mni152_workdir / 'rh.MNI152_tmp.white.surf.gii'
-    lh_MNI152_pial_gii_tmp = subject_bold2mni152_workdir / 'lh.MNI152_tmp.pial.surf.gii'
-    rh_MNI152_pial_gii_tmp = subject_bold2mni152_workdir / 'rh.MNI152_tmp.pial.surf.gii'
-    MNI152_norm_tmp = subject_bold2mni152_workdir / 'MNI152_norm.nii.gz'
-    mni152_scene_tmp = subject_bold2mni152_workdir / 'plot_MNI152_tmp.scene'
-    bold2mni152_scene_tmp = subject_bold2mni152_workdir / 'plot_bold2MNI152_tmp.scene'
+        lh_MNI152_white_gii_tmp = subject_bold2mni152_workdir / 'lh.MNI152_tmp.white.surf.gii'
+        rh_MNI152_white_gii_tmp = subject_bold2mni152_workdir / 'rh.MNI152_tmp.white.surf.gii'
+        lh_MNI152_pial_gii_tmp = subject_bold2mni152_workdir / 'lh.MNI152_tmp.pial.surf.gii'
+        rh_MNI152_pial_gii_tmp = subject_bold2mni152_workdir / 'rh.MNI152_tmp.pial.surf.gii'
+        MNI152_norm_tmp = subject_bold2mni152_workdir / 'MNI152_norm.nii.gz'
+        mni152_scene_tmp = subject_bold2mni152_workdir / 'plot_MNI152_tmp.scene'
+        bold2mni152_scene_tmp = subject_bold2mni152_workdir / 'plot_bold2MNI152_tmp.scene'
 
-    shutil.copyfile(lh_MNI152_white_gii, lh_MNI152_white_gii_tmp)
-    shutil.copyfile(rh_MNI152_white_gii, rh_MNI152_white_gii_tmp)
-    shutil.copyfile(lh_MNI152_pial_gii, lh_MNI152_pial_gii_tmp)
-    shutil.copyfile(rh_MNI152_pial_gii, rh_MNI152_pial_gii_tmp)
-    shutil.copyfile(mni152_norm, MNI152_norm_tmp)
-    shutil.copyfile(mni152_scene, mni152_scene_tmp)
-    shutil.copyfile(bold2mni152_scene, bold2mni152_scene_tmp)
+        shutil.copyfile(lh_MNI152_white_gii, lh_MNI152_white_gii_tmp)
+        shutil.copyfile(rh_MNI152_white_gii, rh_MNI152_white_gii_tmp)
+        shutil.copyfile(lh_MNI152_pial_gii, lh_MNI152_pial_gii_tmp)
+        shutil.copyfile(rh_MNI152_pial_gii, rh_MNI152_pial_gii_tmp)
+        shutil.copyfile(mni152_norm, MNI152_norm_tmp)
+        shutil.copyfile(mni152_scene, mni152_scene_tmp)
+        shutil.copyfile(bold2mni152_scene, bold2mni152_scene_tmp)
 
-    bold2mni152_src = args.space_mni152_bold_path
-    bold2mni152_trg = subject_bold2mni152_workdir / f'bold2MNI152_tmp_bold.nii.gz'
-    shutil.copyfile(bold2mni152_src, bold2mni152_trg)
+        with open(args.bold_file, 'r') as f:
+            data = f.readlines()
+        data = [i.strip() for i in data]
+        bold_orig_file = data[1]
 
-    bold2MNI152_savepath = subject_bold2mni152_workdir / f'{bold_id}_bold_to_MNI152_moved.png'
-    MNI152_savepath = subject_bold2mni152_workdir / f'{bold_id}_MNI152_atlas_fixed.png'
+        bold_space_template_file = get_space_t1w_bold(args.bids_dir, args.bold_preprocess_path, bold_orig_file,
+                                                      space_template)
 
-    scene_plot(bold2mni152_scene_tmp, bold2MNI152_savepath, 2400, 1000)
-    scene_plot(mni152_scene_tmp, MNI152_savepath, 2400, 1000)
-    combine_svg_savepath = subject_resultdir / f'{bold_id}_desc-reg2MNI152_bold.svg'
-    print(f'>>> {combine_svg_savepath}')
-    write_combine_svg(combine_svg_savepath, bold2MNI152_savepath, MNI152_savepath, 2400,
-                      1000)
-    shutil.rmtree(subject_bold2mni152_workdir)
+        bold2mni152_trg = subject_bold2mni152_workdir / f'bold2MNI152_tmp_bold.nii.gz'
+        shutil.copyfile(bold_space_template_file, bold2mni152_trg)
 
-    if fs_native_space == 'True':
-        subject_bold2T1_workdir = Path(subject_resultdir) / f'{bold_id}_bold2T1'
-        subject_bold2T1_workdir.mkdir(parents=True, exist_ok=True)
+        bold2MNI152_savepath = subject_bold2mni152_workdir / f'{bold_id}_bold_to_MNI152_moved.png'
+        MNI152_savepath = subject_bold2mni152_workdir / f'{bold_id}_MNI152_atlas_fixed.png'
 
-        affine_mat_atlas = Path(qc_tool_package) / 'affine.mat'
-        affine_mat = subject_bold2T1_workdir / 'affine.mat'
-        shutil.copyfile(affine_mat_atlas, affine_mat)
-        T1_mgz = Path(bold_preprocess_dir) / subject_id / 'func' / f'{subject_id}_space-T1w_res-2mm_desc-noskull_T1w.nii.gz'
-        T1_nii = subject_bold2T1_workdir / 'noskull_T1w.nii.gz'
-        mgz2nii(T1_mgz, T1_nii)
-        lh_white = Path(subjects_dir) / subject_id / 'surf' / 'lh.white'
-        rh_white = Path(subjects_dir) / subject_id / 'surf' / 'rh.white'
-        lh_pial = Path(subjects_dir) / subject_id / 'surf' / 'lh.pial'
-        rh_pial = Path(subjects_dir) / subject_id / 'surf' / 'rh.pial'
-
-        lh_white_gii = subject_bold2T1_workdir / 'lh.white.surf.gii'
-        rh_white_gii = subject_bold2T1_workdir / 'rh.white.surf.gii'
-        surf_nii2gii(lh_white, lh_white_gii)
-        surf_nii2gii(rh_white, rh_white_gii)
-        lh_pial_gii = subject_bold2T1_workdir / 'lh.pial.surf.gii'
-        rh_pial_gii = subject_bold2T1_workdir / 'rh.pial.surf.gii'
-        surf_nii2gii(lh_pial, lh_pial_gii)
-        surf_nii2gii(rh_pial, rh_pial_gii)
-        rewrite_affine(lh_white, affine_mat)
-        surface_apply_affine(lh_white_gii, affine_mat)
-        surface_apply_affine(rh_white_gii, affine_mat)
-        surface_apply_affine(lh_pial_gii, affine_mat)
-        surface_apply_affine(rh_pial_gii, affine_mat)
-
-        bold2T1_scene = Path(qc_tool_package) / 'plot_boldT1.scene'
-        T1_scene = Path(qc_tool_package) / 'plot_T1.scene'
-        bold2T1_scene_tmp = subject_bold2T1_workdir / 'plot_boldT1_tmp.scene'
-        T1_scene_tmp = subject_bold2T1_workdir / 'plot_T1_tmp.scene'
-        shutil.copyfile(bold2T1_scene, bold2T1_scene_tmp)
-        shutil.copyfile(T1_scene, T1_scene_tmp)
-
-        bold2mni152_src = args.space_t1w_bold_path
-        bold2mni152_trg = subject_bold2T1_workdir / f'bold2T1_tmp_bold.nii.gz'
-        shutil.copyfile(bold2mni152_src, bold2mni152_trg)
-
-        bold2T1_savepath = subject_bold2T1_workdir / f'{bold_id}_bold_to_T1_moved.png'
-        T1_savepath = subject_bold2T1_workdir / f'{bold_id}_T1_atlas_fixed.png'
-
-        scene_plot(bold2T1_scene_tmp, bold2T1_savepath, 2400, 1000)
-        scene_plot(T1_scene_tmp, T1_savepath, 2400, 1000)
-        combine_svg_savepath = subject_resultdir / f'{bold_id}_desc-reg2native_bold.svg'
+        scene_plot(bold2mni152_scene_tmp, bold2MNI152_savepath, 2400, 1000)
+        scene_plot(mni152_scene_tmp, MNI152_savepath, 2400, 1000)
+        combine_svg_savepath = subject_resultdir / f'{bold_id}_desc-reg2MNI152_bold.svg'
         print(f'>>> {combine_svg_savepath}')
         write_combine_svg(combine_svg_savepath, bold2T1_savepath, T1_savepath, 2400,
                           1000)
