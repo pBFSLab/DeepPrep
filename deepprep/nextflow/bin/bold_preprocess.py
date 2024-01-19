@@ -149,7 +149,8 @@ if __name__ == '__main__':
                   args.templateflow_home)
     work_dir = Path(config.execution.work_dir)
     work_dir.mkdir(parents=True, exist_ok=True)
-    config_file = work_dir / 'config.toml'
+    config_file = work_dir / config.execution.run_uuid / 'config.toml'
+    config_file.parent.mkdir(parents=True, exist_ok=True)
     config.to_filename(config_file)
     config.load(config_file)
 
