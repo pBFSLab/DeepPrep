@@ -6,7 +6,6 @@ import os
 from pathlib import Path
 import base64
 from wand.image import Image
-import nibabel as nib
 
 svg_img_head = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 {view_height} {view_width}" preserveAspectRatio="xMidYMid meet">'
 
@@ -56,68 +55,43 @@ def encode_png(png_img):
     pngdata = 'data:image/png;base64,{}'.format(encoded)
     return pngdata
 
-def mgz2nii(mgz_file, nii_file):
-    cmd = f'mri_convert {mgz_file} {nii_file}'
-    os.system(cmd)
 
+def get_space_t1w_bold(bids_orig, bids_preproc, bold_orig_file, space_template):
+    from bids import BIDSLayout
+    layout_orig = BIDSLayout(bids_orig, validate=False)
+    layout_preproc = BIDSLayout(bids_preproc, validate=False)
+    info = layout_orig.parse_file_entities(bold_orig_file)
 
-def surf_nii2gii(nii_surf, gii_surf):
-    cmd = f'mris_convert {nii_surf} {gii_surf}'
-    os.system(cmd)
+    space_template_t1w_info = info.copy()
+    space_template_t1w_info['suffix'] = 'boldref'
+    space_template_t1w_info['space'] = space_template
+    space_template_t1w_info['extension'] = 'nii.gz'
+    space_template_file = layout_preproc.get(**space_template_t1w_info)[0]
 
-
-def surface_apply_affine(giisurf_file, affine_mat):
-    cmd = f'wb_command -surface-apply-affine {giisurf_file} {affine_mat} {giisurf_file}'
-    os.system(cmd)
-
-def rewrite_affine(surf_file, src_affine_mat):
-    _, _, header_info = nib.freesurfer.read_geometry(surf_file, read_metadata=True)
-    c_ras = header_info['cras']
-
-    affine_list = [[1, 0, 0, c_ras[0]], [0, 1, 0, c_ras[1]], [0, 0, 1, c_ras[2]], [0, 0, 0, 1]]
-
-    with open(src_affine_mat, 'w') as f:
-        for line in affine_list:
-            f.write(str(line)[1:-1].replace(',', '    ') + '\n')
-
-    f.close()
-
-
-def set_environ(freesurfer_home):
-    # FreeSurfer
-    os.environ['FREESURFER_HOME'] = freesurfer_home
-    os.environ['SUBJECTS_DIR'] = f'{freesurfer_home}/subjects'
-    os.environ['PATH'] = f'{freesurfer_home}/bin:' + os.environ['PATH']
+    return space_template_file.path
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="plot subject bold space fig")
     parser.add_argument('--subject_id', help='输入的subjects id', required=True)
     parser.add_argument('--bold_id', help='输入的bold id', required=True)
-    parser.add_argument('--fs_native_space', help='是否投到个体T1空间', required=True)
-    parser.add_argument('--subjects_dir', help='subjects_dir', required=True)
-    parser.add_argument('--bold_preprocess_path', help='bold preprocess', required=True)
+    parser.add_argument('--bids_dir', required=True)
+    parser.add_argument("--bold_file", required=True)
+    parser.add_argument('--bold_preprocess_path', required=True)
+    parser.add_argument('--space_template', help='space_mni152_bold_path', required=True)
     parser.add_argument('--qc_result_path', help='QC result path', required=True)
-    parser.add_argument('--space_mni152_bold_path', help='space_mni152_bold_path', required=True)
-    parser.add_argument('--space_t1w_bold_path', help='space_t1w_bold_path', required=True)
     parser.add_argument('--qc_tool_package', help='qc画图的辅助文件包', required=True)
-    parser.add_argument('--svg_outpath', help='输出的svg图片保存路径', required=True)
-    parser.add_argument('--freesurfer_home', help='freesurfer home', required=True)
+    parser.add_argument('--work_dir', required=True)
     args = parser.parse_args()
 
     subject_id = args.subject_id
     bold_id = args.bold_id
-    fs_native_space = args.fs_native_space
-    subjects_dir = args.subjects_dir
-    bold_preprocess_dir = args.bold_preprocess_path
     qc_tool_package = args.qc_tool_package
-    svg_outpath = args.svg_outpath
-    freesurfer_home = args.freesurfer_home
-    set_environ(freesurfer_home)
+    space_template = args.space_template
 
     subject_resultdir = Path(args.qc_result_path) / subject_id / 'figures'
     subject_resultdir.mkdir(parents=True, exist_ok=True)
-    subject_bold2mni152_workdir = Path(subject_resultdir) / f'{bold_id}_bold2min152'
+    subject_bold2mni152_workdir = Path(args.work_dir) / f'{bold_id}_bold2{space_template}' / subject_id
     subject_bold2mni152_workdir.mkdir(parents=True, exist_ok=True)
 
     if 'MNI152NLin6Asym' in space_template:
@@ -163,6 +137,6 @@ if __name__ == '__main__':
         scene_plot(mni152_scene_tmp, MNI152_savepath, 2400, 1000)
         combine_svg_savepath = subject_resultdir / f'{bold_id}_desc-reg2MNI152_bold.svg'
         print(f'>>> {combine_svg_savepath}')
-        write_combine_svg(combine_svg_savepath, bold2T1_savepath, T1_savepath, 2400,
+        write_combine_svg(combine_svg_savepath, bold2MNI152_savepath, MNI152_savepath, 2400,
                           1000)
-        shutil.rmtree(subject_bold2T1_workdir)
+        shutil.rmtree(subject_bold2mni152_workdir)
