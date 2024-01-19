@@ -2210,11 +2210,13 @@ workflow anat_wf {
 
     take:
     gpu_lock
+    subjects_dir
+    workdir_path
+    bold_preprocess_path
+    qc_result_path
 
     main:
     bids_dir = params.bids_dir
-    subjects_dir = params.subjects_dir
-    qc_result_path = params.qc_result_path
     subjects = params.subjects
     bold_task_type = params.bold_task_type
 
@@ -2245,12 +2247,21 @@ workflow anat_wf {
         println "create dir: ..."
         println _directory
     }
+
+    _directory = new File(workdir_path)
+        if (!_directory.exists()) {
+            _directory.mkdirs()
+            println "create dir: ..."
+            println _directory
+        }
+
     _directory = new File(qc_result_path)
     if (!_directory.exists()) {
         _directory.mkdirs()
         println "create dir: ..."
         println _directory
     }
+
     subject_t1wfile_txt = anat_get_t1w_file_in_bids(bids_dir, subjects)
     subject_id = anat_create_subject_orig_dir(subjects_dir, subject_t1wfile_txt, deepprep_version)
 
@@ -2437,6 +2448,10 @@ workflow bold_wf {
     aparc_aseg_mgz
     w_g_pct_mgh
     gpu_lock
+    subjects_dir
+    workdir_path
+    bold_preprocess_path
+    qc_result_path
 
     main:
     // GPU
@@ -2445,10 +2460,6 @@ workflow bold_wf {
 
     // set dir path
     bids_dir = params.bids_dir
-    subjects_dir = params.subjects_dir
-    bold_preprocess_path = params.bold_preprocess_path
-    qc_result_path = params.qc_result_path
-    work_dir = params.work_dir
 
     // set bold processing config
     bold_task_type = params.bold_task_type
@@ -2475,6 +2486,13 @@ workflow bold_wf {
     bold_only = params.bold_only.toString().toUpperCase()
     deepprep_version = params.deepprep_version
 
+    _directory = new File(workdir_path)
+        if (!_directory.exists()) {
+            _directory.mkdirs()
+            println "create dir: ..."
+            println _directory
+        }
+
     _directory = new File(bold_preprocess_path)
         if (!_directory.exists()) {
             _directory.mkdirs()
@@ -2487,6 +2505,10 @@ workflow bold_wf {
         _directory.mkdirs()
         println "create dir: ..."
         println _directory
+    }
+
+    if (subjects_dir == "") {
+        subjects_dir = "${output_dir}/Recon"
     }
 
     subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, subjects_dir, subjects, bold_task_type, bold_only)
@@ -2550,18 +2572,25 @@ workflow bold_wf {
 
 
 workflow {
-    bold_spaces = params.bold_spaces
+
     freesurfer_home = params.freesurfer_home
+    output_dir = params.output_dir
     subjects_dir = params.subjects_dir
+    bold_spaces = params.bold_spaces
+    
+    if (subjects_dir == "") {
+        subjects_dir = "${output_dir}/Recon"
+    }
+    workdir_path = "${output_dir}/WorkDir"
+    bold_preprocess_path = "${output_dir}/BOLD"
+    qc_result_path = "${output_dir}/QC"
 
     gpu_lock = gpu_schedule_lock(freesurfer_home, subjects_dir, bold_spaces)
-
     if (params.anat_only.toString().toUpperCase() == 'TRUE') {
         println "INFO: anat preprocess ONLY"
-        (t1_mgz, mask_mgz, norm_mgz, aseg_mgz, white_surf, pial_surf, aparc_aseg_mgz, w_g_pct_mgh) = anat_wf(gpu_lock)
+        (t1_mgz, mask_mgz, norm_mgz, aseg_mgz, white_surf, pial_surf, w_g_pct_mgh) = anat_wf(gpu_lock, subjects_dir, workdir_path, bold_preprocess_path, qc_result_path)
     } else if (params.bold_only.toString().toUpperCase() == 'TRUE') {
         println "INFO: Bold preprocess ONLY"
-        subjects_dir = params.subjects_dir
         t1_mgz = Channel.fromPath("${subjects_dir}/sub-*/mri/T1.mgz")
         white_surf = Channel.fromPath("${subjects_dir}/sub-*/surf/*.white")
         (t1_mgz, mask_mgz, norm_mgz, aseg_mgz, aparc_aseg_mgz) = t1_mgz.multiMap { it ->
@@ -2575,10 +2604,10 @@ workflow {
                 c:[it.getParent().getParent().getName(), it.getBaseName(), it]
                 b:[it.getParent().getParent().getName(), it.getBaseName(), file("${it.getParent()}/${it.getBaseName()}.pial")]
                 a:[it.getParent().getParent().getName(), it.getBaseName(), file("${it.getParent()}/${it.getBaseName()}.w-g.pct.mgh")]}
-        bold_wf(t1_mgz, mask_mgz, norm_mgz, aseg_mgz, white_surf, pial_surf, aparc_aseg_mgz, w_g_pct_mgh, gpu_lock)
+        bold_wf(t1_mgz, mask_mgz, norm_mgz, aseg_mgz, white_surf, pial_surf, aparc_aseg_mgz, w_g_pct_mgh, gpu_lock, subjects_dir, workdir_path, bold_preprocess_path, qc_result_path)
     } else {
         println "INFO: anat && Bold preprocess"
-        (t1_mgz, mask_mgz, norm_mgz, aseg_mgz, white_surf, pial_surf, aparc_aseg_mgz, w_g_pct_mgh) = anat_wf(gpu_lock)
-        bold_wf(t1_mgz, mask_mgz, norm_mgz, aseg_mgz, white_surf, pial_surf, aparc_aseg_mgz, w_g_pct_mgh, gpu_lock)
+        (t1_mgz, mask_mgz, norm_mgz, aseg_mgz, white_surf, pial_surf, aparc_aseg_mgz, w_g_pct_mgh) = anat_wf(gpu_lock, subjects_dir, workdir_path, bold_preprocess_path, qc_result_path)
+        bold_wf(t1_mgz, mask_mgz, norm_mgz, aseg_mgz, white_surf, pial_surf, aparc_aseg_mgz, w_g_pct_mgh, gpu_lock, subjects_dir, workdir_path, bold_preprocess_path, qc_result_path)
     }
 }
