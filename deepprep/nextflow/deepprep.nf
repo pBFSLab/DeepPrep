@@ -1230,7 +1230,7 @@ process bold_fieldmap {
     val(qc_result_path)
 
     output:
-    val("TRUE")
+    tuple(val(subject_id), val("TRUE"))
 
     script:
     script_py = "bold_preprocess.py"
@@ -1265,13 +1265,11 @@ process bold_pre_process {
     val(bold_preprocess_dir)
     val(work_dir)
     val(task_id)
-    each path(subject_boldfile_txt)
     val(bold_spaces)
-    tuple(val(subject_id), val(t1_nii), val(mask_nii), val(wm_dseg_nii), val(fsnative2T1w_xfm), val(lh_pial_surf), val(lh_pial_surf))
+    tuple(val(subject_id), val(bold_id), val(bold_fieldmap_done), val(t1_nii), val(mask_nii), val(wm_dseg_nii), val(fsnative2T1w_xfm), val(lh_pial_surf), val(lh_pial_surf), path(subject_boldfile_txt))
     val(fs_license_file)
     val(bold_sdc)
     val(templateflow_home)
-    val(bold_sdc_done)
     val(qc_result_path)
 
     output:
@@ -1279,7 +1277,6 @@ process bold_pre_process {
 
     script:
     script_py = "bold_preprocess.py"
-    bold_id = subject_boldfile_txt.name
     """
     ${script_py} \
     --bids_dir ${bids_dir} \
@@ -2532,7 +2529,7 @@ workflow bold_wf {
     (subject_id, boldfile_id, subject_boldfile_txt) = subject_boldfile_txt.flatten().multiMap { it ->
                                                                                      a: it.name.split('_')[0]
                                                                                      c: it.name
-                                                                                     b: it }
+                                                                                     b: [it.name.split('_')[0], it] }
     subject_id_boldfile_id = subject_id.merge(boldfile_id)
     (subject_id_unique, boldfile_id_unique) = subject_id_boldfile_id.groupTuple(sort: true).multiMap { tuple ->
                                                                                                         a: tuple[0]
@@ -2554,8 +2551,8 @@ workflow bold_wf {
     bold_fieldmap_output = bold_fieldmap(bids_dir, t1_nii, bold_preprocess_path, work_dir, bold_task_type, bold_spaces, bold_sdc, templateflow_home, qc_result_path)
     pial_surf = lh_pial_surf.join(rh_pial_surf, by:[0])
     white_surf = lh_white_surf.join(rh_white_surf, by:[0])
-    bold_pre_process_input = t1_nii.join(mask_nii, by:[0]).join(wm_dseg_nii, by:[0]).join(fsnative2T1w_xfm, by:[0]).join(pial_surf, by:[0]) // actually needs thickness not pial
-    subject_boldfile_txt_bold_pre_process = bold_pre_process(bids_dir, subjects_dir, bold_preprocess_path, work_dir, bold_task_type, subject_boldfile_txt, bold_spaces, bold_pre_process_input, fs_license_file, bold_sdc, templateflow_home, bold_fieldmap_output, qc_result_path)
+    bold_pre_process_input = subject_id_boldfile_id.groupTuple(sort: true).join(bold_fieldmap_output, by:[0]).join(t1_nii).join(mask_nii, by: [0]).join(wm_dseg_nii, by:[0]).join(fsnative2T1w_xfm, by:[0]).join(pial_surf, by:[0]).transpose().join(subject_boldfile_txt, by:[0])
+    subject_boldfile_txt_bold_pre_process = bold_pre_process(bids_dir, subjects_dir, bold_preprocess_path, work_dir, bold_task_type, bold_spaces, bold_pre_process_input, fs_license_file, bold_sdc, templateflow_home, qc_result_path)
 
     output_std_volume_spaces = 'TRUE'
     if (output_std_volume_spaces == 'TRUE') {
