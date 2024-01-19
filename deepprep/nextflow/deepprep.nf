@@ -2108,6 +2108,8 @@ process qc_anat_create_report {
     tuple(val(subject_id), val("${qc_result_path}/${subject_id}/${subject_id}.html")) // emit: qc_report
     script:
     script_py = "qc_create_report.py"
+    space_template = "None"
+    bold_task_type = "None"
 
     """
     ${script_py} \
@@ -2115,6 +2117,8 @@ process qc_anat_create_report {
     --subject_id ${subject_id} \
     --bids_dir ${bids_dir} \
     --subjects_dir ${subjects_dir} \
+    --space_template ${space_template} \
+    --bold_task_type ${bold_task_type} \
     --qc_result_path ${qc_result_path} \
     --deepprep_version ${deepprep_version} \
     --nextflow_log ${launchDir}/.nextflow.log
