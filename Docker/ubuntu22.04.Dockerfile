@@ -117,12 +117,12 @@ RUN pip3 install tensorrt==8.6.1 onnxruntime==1.16.3 && pip3 cache purge
 RUN cp /usr/local/lib/python3.10/dist-packages/tensorrt_libs/libnvinfer.so.8 /usr/local/lib/python3.10/dist-packages/tensorrt_libs/libnvinfer.so.7 && \
     cp /usr/local/lib/python3.10/dist-packages/tensorrt_libs/libnvinfer_plugin.so.8 /usr/local/lib/python3.10/dist-packages/tensorrt_libs/libnvinfer_plugin.so.7
 RUN echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/python3.10/dist-packages/tensorrt_libs' >> ~/.bashrc
-
+RUN pip3 install cuda-python==12.3.0
 ### fmriprep
 RUN pip3 install git+https://github.com/NingAnMe/fmriprep.git@deepprep && pip3 cache purge
 
-COPY deepprep /deepprep
-RUN chmod 755 /deepprep/deepprep.sh
+COPY deepprep /opt/DeepPrep/deepprep
+RUN chmod 755 /opt/DeepPrep/deepprep/deepprep.sh
 
 ### CMD
-ENTRYPOINT ["/deepprep/deepprep.sh", "run", "/deepprep/nextflow/deepprep.nf"]
+ENTRYPOINT ["/opt/DeepPrep/deepprep/deepprep.sh", "run", "/opt/DeepPrep/deepprep/nextflow/deepprep.nf"]
