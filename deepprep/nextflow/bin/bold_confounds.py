@@ -266,6 +266,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--bids_dir", required=True)
     parser.add_argument("--bold_preprocess_dir", required=True)
+    parser.add_argument("--work_dir", required=True)
     parser.add_argument("--bold_id", required=True)
     parser.add_argument("--bold_file", required=True)
     parser.add_argument("--aseg_mgz", required=True)
@@ -283,7 +284,7 @@ if __name__ == '__main__':
     confounds_file
     """
 
-    tmp_path = Path(args.bold_preprocess_dir) / 'tmp'
+    tmp_path = Path(args.work_dir)
 
     confounds_dir_path = tmp_path / 'confounds' / args.bold_id
     anat2bold_t1w_dir = tmp_path / 'anat2bold_t1w' / args.bold_id
