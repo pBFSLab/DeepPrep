@@ -2211,7 +2211,7 @@ workflow anat_wf {
     take:
     gpu_lock
     subjects_dir
-    workdir_path
+    work_dir
     bold_preprocess_path
     qc_result_path
 
@@ -2248,7 +2248,7 @@ workflow anat_wf {
         println _directory
     }
 
-    _directory = new File(workdir_path)
+    _directory = new File(work_dir)
         if (!_directory.exists()) {
             _directory.mkdirs()
             println "create dir: ..."
@@ -2449,7 +2449,7 @@ workflow bold_wf {
     w_g_pct_mgh
     gpu_lock
     subjects_dir
-    workdir_path
+    work_dir
     bold_preprocess_path
     qc_result_path
 
@@ -2486,7 +2486,7 @@ workflow bold_wf {
     bold_only = params.bold_only.toString().toUpperCase()
     deepprep_version = params.deepprep_version
 
-    _directory = new File(workdir_path)
+    _directory = new File(work_dir)
         if (!_directory.exists()) {
             _directory.mkdirs()
             println "create dir: ..."
@@ -2581,14 +2581,14 @@ workflow {
     if (subjects_dir == "") {
         subjects_dir = "${output_dir}/Recon"
     }
-    workdir_path = "${output_dir}/WorkDir"
+    work_dir = "${output_dir}/WorkDir"
     bold_preprocess_path = "${output_dir}/BOLD"
     qc_result_path = "${output_dir}/QC"
 
     gpu_lock = gpu_schedule_lock(freesurfer_home, subjects_dir, bold_spaces)
     if (params.anat_only.toString().toUpperCase() == 'TRUE') {
         println "INFO: anat preprocess ONLY"
-        (t1_mgz, mask_mgz, norm_mgz, aseg_mgz, white_surf, pial_surf, w_g_pct_mgh) = anat_wf(gpu_lock, subjects_dir, workdir_path, bold_preprocess_path, qc_result_path)
+        (t1_mgz, mask_mgz, norm_mgz, aseg_mgz, white_surf, pial_surf, w_g_pct_mgh) = anat_wf(gpu_lock, subjects_dir, work_dir, bold_preprocess_path, qc_result_path)
     } else if (params.bold_only.toString().toUpperCase() == 'TRUE') {
         println "INFO: Bold preprocess ONLY"
         t1_mgz = Channel.fromPath("${subjects_dir}/sub-*/mri/T1.mgz")
@@ -2604,10 +2604,10 @@ workflow {
                 c:[it.getParent().getParent().getName(), it.getBaseName(), it]
                 b:[it.getParent().getParent().getName(), it.getBaseName(), file("${it.getParent()}/${it.getBaseName()}.pial")]
                 a:[it.getParent().getParent().getName(), it.getBaseName(), file("${it.getParent()}/${it.getBaseName()}.w-g.pct.mgh")]}
-        bold_wf(t1_mgz, mask_mgz, norm_mgz, aseg_mgz, white_surf, pial_surf, aparc_aseg_mgz, w_g_pct_mgh, gpu_lock, subjects_dir, workdir_path, bold_preprocess_path, qc_result_path)
+        bold_wf(t1_mgz, mask_mgz, norm_mgz, aseg_mgz, white_surf, pial_surf, aparc_aseg_mgz, w_g_pct_mgh, gpu_lock, subjects_dir, work_dir, bold_preprocess_path, qc_result_path)
     } else {
         println "INFO: anat && Bold preprocess"
-        (t1_mgz, mask_mgz, norm_mgz, aseg_mgz, white_surf, pial_surf, aparc_aseg_mgz, w_g_pct_mgh) = anat_wf(gpu_lock, subjects_dir, workdir_path, bold_preprocess_path, qc_result_path)
-        bold_wf(t1_mgz, mask_mgz, norm_mgz, aseg_mgz, white_surf, pial_surf, aparc_aseg_mgz, w_g_pct_mgh, gpu_lock, subjects_dir, workdir_path, bold_preprocess_path, qc_result_path)
+        (t1_mgz, mask_mgz, norm_mgz, aseg_mgz, white_surf, pial_surf, aparc_aseg_mgz, w_g_pct_mgh) = anat_wf(gpu_lock, subjects_dir, work_dir, bold_preprocess_path, qc_result_path)
+        bold_wf(t1_mgz, mask_mgz, norm_mgz, aseg_mgz, white_surf, pial_surf, aparc_aseg_mgz, w_g_pct_mgh, gpu_lock, subjects_dir, work_dir, bold_preprocess_path, qc_result_path)
     }
 }
