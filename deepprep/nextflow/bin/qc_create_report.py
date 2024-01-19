@@ -124,6 +124,7 @@ if __name__ == '__main__':
     parser.add_argument("--subjects_dir", help="SUBJECTS_DIR path", required=True)
     parser.add_argument("--qc_result_path", help="save qc report path", required=True)
     parser.add_argument("--subject_id", required=True)
+    parser.add_argument('--space_template', help='space_mni152_bold_path', required=True)
     parser.add_argument("--bold_task_type", help="save qc report path", default=None)
     parser.add_argument("--deepprep_version", help="DeepPrep version", required=True)
     parser.add_argument("--nextflow_log", help="nextflow run log", required=True)
@@ -138,8 +139,8 @@ if __name__ == '__main__':
 
     t1w_files, bold_files = get_t1w_and_bold(args.bids_dir, args.subject_id, args.bold_task_type)
 
-    std_spaces = ["MNI152_T1_2mm"]
-    nstd_spaces = ["reorient", "mc", "T1w_2mm"]
+    std_spaces = [str(args.space_template)]
+    nstd_spaces = ["T1w", "fs_native"]
     command = copy_config_and_get_command(qc_report_path, Path(args.nextflow_log))
 
     SubjectSummary_run(args.subject_id, t1w_files, bold_files, args.subjects_dir, qc_report_path, std_spaces, nstd_spaces)

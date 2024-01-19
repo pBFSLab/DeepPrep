@@ -247,6 +247,8 @@ def get_space_t1w_bold(bids_orig, bids_preproc, bold_orig_file):
     bold_t1w_file = layout_preproc.get(**bold_t1w_info)[0]
 
     # sub-CIMT001_ses-38659_task-rest_run-01_bold_mcf.nii.gz.par
+    # bold_par_info = layout_preproc.parse_file_entities(f'{bids_preproc}/sub-CIMT001_ses-38659_task-rest_run-01_bold_mcf.nii.gz.par')
+    # print(bold_par_info)
     bold_par_info = info.copy()
     bold_par_info.pop('datatype')
     bold_par_info['suffix'] = 'mcf'
@@ -264,6 +266,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--bids_dir", required=True)
     parser.add_argument("--bold_preprocess_dir", required=True)
+    parser.add_argument("--work_dir", required=True)
     parser.add_argument("--bold_id", required=True)
     parser.add_argument("--bold_file", required=True)
     parser.add_argument("--aseg_mgz", required=True)
@@ -281,7 +284,7 @@ if __name__ == '__main__':
     confounds_file
     """
 
-    tmp_path = Path(args.bold_preprocess_dir) / 'tmp'
+    tmp_path = Path(args.work_dir)
 
     confounds_dir_path = tmp_path / 'confounds' / args.bold_id
     anat2bold_t1w_dir = tmp_path / 'anat2bold_t1w' / args.bold_id

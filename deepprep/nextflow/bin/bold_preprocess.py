@@ -32,10 +32,10 @@ def create_dataset_description(dataset_path):
         print(f'create bold results dataset_description.json: {dataset_description_file}')
 
 
-def update_config(bids_dir, bold_preprocess_dir, fs_license_file, fs_subjects_dir,
+def update_config(bids_dir, bold_preprocess_dir, work_dir, fs_license_file, fs_subjects_dir,
                   subject_id, task_id, spaces, templateflow_home):
     config.execution.bids_dir = bids_dir
-    config.execution.log_dir = f'{bold_preprocess_dir}/tmp/log'
+    config.execution.log_dir = f'{work_dir}/log'
     config.execution.fs_license_file = fs_license_file
     config.execution.fs_subjects_dir = fs_subjects_dir
     config.execution.output_dir = bold_preprocess_dir
@@ -43,7 +43,7 @@ def update_config(bids_dir, bold_preprocess_dir, fs_license_file, fs_subjects_di
     config.execution.participant_label = [ subject_id,]
     config.execution.task_id = task_id
     config.execution.templateflow_home = templateflow_home
-    config.execution.work_dir = f'{bold_preprocess_dir}/tmp'
+    config.execution.work_dir = work_dir
     config.execution.fmriprep_dir = config.execution.output_dir
 
     config.workflow.anat_only = False
@@ -93,6 +93,7 @@ if __name__ == '__main__':
     parser.add_argument("--bids_dir", required=True)
     parser.add_argument("--subjects_dir", required=False)
     parser.add_argument("--bold_preprocess_dir", required=True)
+    parser.add_argument("--work_dir", required=True)
     parser.add_argument("--subject_id", required=True)
     parser.add_argument("--task_id", required=True)
     parser.add_argument("--bold_series", type=str, nargs='+', default=[], required=False)  # BOLD Series，not one bold file
@@ -143,7 +144,7 @@ if __name__ == '__main__':
     print("fsnative2t1w_xfm :", fsnative2t1w_xfm)
 
     spaces = ' '.join(args.bold_spaces)
-    update_config(args.bids_dir, args.bold_preprocess_dir, args.fs_license_file,
+    update_config(args.bids_dir, args.bold_preprocess_dir, args.work_dir, args.fs_license_file,
                   args.subjects_dir, args.subject_id, args.task_id, spaces,
                   args.templateflow_home)
     work_dir = Path(config.execution.work_dir)
@@ -228,6 +229,7 @@ if __name__ == '__main__':
 
         from niworkflows.engine.workflows import LiterateWorkflow as Workflow
         workflow = Workflow(name=f'{bold_name}_wf')
+        base_dir = Path(config.execution.work_dir) / f'{subject_id}_wf' / f'{args.task_id}_wf'
 
         workflow.connect([
             (inputnode, bold_wf, [
@@ -242,6 +244,22 @@ if __name__ == '__main__':
         ])  # fmt:skip
 
         if fieldmap_id:
+            # reuse fieldmap result
+            fmap_preproc_wf_dir = base_dir / workflow.name / single_subject_fieldmap_wf.name
+            if fmap_preproc_wf_dir.exists():
+                fmap_preproc_wf_dir.unlink()
+            fmap_preproc_wf_dir.parent.mkdir(parents=True, exist_ok=True)
+            fmap_preproc_wf_dir.symlink_to(base_dir / single_subject_fieldmap_wf.name)
+
+            all_nodes = single_subject_fieldmap_wf.list_node_names()
+            all_graph_nodes = single_subject_fieldmap_wf._graph.nodes
+            remove_nodes = []
+            for node in single_subject_fieldmap_wf._graph.nodes:
+                if ('fmap_reports_wf' in node.fullname) or ('fmap_derivatives_wf' in node.fullname):
+                    remove_nodes.append(node)
+            single_subject_fieldmap_wf.remove_nodes(remove_nodes)
+            # end
+
             workflow.connect([
                 (single_subject_fieldmap_wf, bold_wf, [
                     ("outputnode.fmap", "inputnode.fmap"),
@@ -268,20 +286,6 @@ if __name__ == '__main__':
             name="outputnode",
         )
 
-        base_dir = Path(config.execution.work_dir) / f'{subject_id}_wf' / f'{args.task_id}_wf'
-        # reuse fieldmap result
-        fmap_preproc_wf_dir = base_dir / f'{bold_name}_wf' / single_subject_fieldmap_wf.name
-        if fmap_preproc_wf_dir.exists():
-            fmap_preproc_wf_dir.unlink()
-        fmap_preproc_wf_dir.parent.mkdir(parents=True, exist_ok=True)
-        fmap_preproc_wf_dir.symlink_to(base_dir / single_subject_fieldmap_wf.name)
-        workflow.list_node_names()
-        remove_nodes = []
-        for node_name in workflow.list_node_names():
-            if ('fmap_reports_wf' in node_name) or ('fmap_derivatives_wf' in node_name):
-                remove_nodes.append(workflow.get_node(node_name))
-        workflow.remove_nodes(remove_nodes)
-        # end
         workflow.base_dir = base_dir
         result = workflow.run()
 
