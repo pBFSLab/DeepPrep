@@ -2080,9 +2080,9 @@ process qc_plot_bold_to_space {
     tuple(val(subject_id), val(bold_id), path(subject_boldfile_txt), val(synth_apply_template))
     val(bids_dir)
     val(bold_preprocess_path)
+    val(work_dir)
     val(qc_utils_path)
     val(qc_result_path)
-    val(work_dir)
 
     output:
     tuple(val(subject_id), val(bold_id), val("${qc_plot_norm_to_mni152_fig_path}"))
@@ -2549,11 +2549,18 @@ workflow bold_wf {
         subject_boldfile_txt_bold_confounds = bold_confounds(bids_dir, bold_preprocess_path, work_dir, bold_confounds_inputs)
     }
 
-    do_tnsr = 'TRUE'
-    if (do_tnsr == 'TRUE') {
+    do_bold_qc = 'TRUE'
+    if (do_bold_qc == 'TRUE') {
         bold_tsnr_svg = qc_plot_tsnr(bids_dir, subject_boldfile_txt_bold_pre_process, bold_preprocess_path, qc_result_path, qc_utils_path)
+
         qc_plot_carpet_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(aparc_aseg_mgz).join(mask_mgz, by: [0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
         bold_carpet_svg = qc_plot_carpet(bids_dir, qc_plot_carpet_inputs, bold_preprocess_path, qc_result_path, work_dir)
+
+        qc_plot_bold_to_space_inputs = subject_boldfile_txt_bold_pre_process.join(synth_apply_template, by: [0,1])
+        bold_to_mni152_svg = qc_plot_bold_to_space(qc_plot_bold_to_space_inputs, bids_dir, bold_preprocess_path, work_dir, qc_utils_path, qc_result_path)
+
+        qc_bold_create_report_input = bold_to_mni152_svg.join(synth_apply_template, by: [0,1])
+        qc_report = qc_bold_create_report(qc_bold_create_report_input, reports_utils_path, bids_dir, subjects_dir, qc_result_path, bold_task_type, deepprep_version)
     }
 
 //
@@ -2613,10 +2620,10 @@ workflow bold_wf {
 //     bold_carpet_svg = qc_plot_carpet(bids_dir, qc_plot_carpet_inputs, bold_preprocess_path, qc_result_path, work_dir)
 
 
-    qc_plot_bold_to_space_inputs = subject_boldfile_txt_bold_pre_process.join(synth_apply_template, by: [0,1])
-    bold_to_mni152_svg = qc_plot_bold_to_space(qc_plot_bold_to_space_inputs, bids_dir, bold_preprocess_path, qc_utils_path, qc_result_path, work_dir)
-    qc_bold_create_report_input = bold_to_mni152_svg.join(synth_apply_template, by: [0,1])
-    qc_report = qc_bold_create_report(qc_bold_create_report_input, reports_utils_path, bids_dir, subjects_dir, qc_result_path, bold_task_type, deepprep_version)
+//     qc_plot_bold_to_space_inputs = subject_boldfile_txt_bold_pre_process.join(synth_apply_template, by: [0,1])
+//     bold_to_mni152_svg = qc_plot_bold_to_space(qc_plot_bold_to_space_inputs, bids_dir, bold_preprocess_path, qc_utils_path, qc_result_path, work_dir)
+//     qc_bold_create_report_input = bold_to_mni152_svg.join(synth_apply_template, by: [0,1])
+//     qc_report = qc_bold_create_report(qc_bold_create_report_input, reports_utils_path, bids_dir, subjects_dir, qc_result_path, bold_task_type, deepprep_version)
 
 }
 
