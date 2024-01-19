@@ -124,7 +124,7 @@ if __name__ == '__main__':
         data = [i.strip() for i in data]
         bold_orig_file = data[1]
 
-        bold_space_template_file = get_space_t1w_bold(args.bids_dir, args.bold_preprocess_dir, bold_orig_file,
+        bold_space_template_file = get_space_t1w_bold(args.bids_dir, args.bold_preprocess_path, bold_orig_file,
                                                       space_template)
 
         bold2mni152_trg = subject_bold2mni152_workdir / f'bold2MNI152_tmp_bold.nii.gz'

@@ -2071,7 +2071,7 @@ process qc_plot_bold_to_space {
     memory '1.5 GB'
 
     input:
-    tuple(val(subject_id), val(bold_id), path(subject_boldfile_txt), path(synth_apply_template))
+    tuple(val(subject_id), val(bold_id), path(subject_boldfile_txt), val(synth_apply_template))
     val(bids_dir)
     val(bold_preprocess_path)
     val(qc_utils_path)
@@ -2096,7 +2096,7 @@ process qc_plot_bold_to_space {
     --space_template  ${synth_apply_template} \
     --qc_result_path  ${qc_result_path} \
     --qc_tool_package  ${qc_tool_package} \
-    --work_dir ${work_dir}
+    --work_dir ${work_dir}/plot_bold_to_space
     """
 }
 
@@ -2606,7 +2606,7 @@ workflow bold_wf {
 
 
     qc_plot_bold_to_space_inputs = subject_boldfile_txt_bold_pre_process.join(synth_apply_template, by: [0,1])
-    bold_to_mni152_svg = qc_plot_bold_to_space(qc_plot_bold_to_space_inputs, bids_dir, bold_preprocess_path, qc_utils_path, qc_result_pat, work_dir)
+    bold_to_mni152_svg = qc_plot_bold_to_space(qc_plot_bold_to_space_inputs, bids_dir, bold_preprocess_path, qc_utils_path, qc_result_path, work_dir)
 //     qc_bold_create_report_input = bold_to_mni152_svg.groupTuple(by: 0)
     qc_report = qc_bold_create_report(bold_to_mni152_svg, reports_utils_path, bids_dir, subjects_dir, qc_result_path, bold_task_type, deepprep_version)
 
