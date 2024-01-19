@@ -30,6 +30,14 @@ def get_t1w_and_bold(bids_dir, subject_id, bold_task_type):
             bold_files.append(bold_file)
     return t1w_files, bold_files
 
+def get_t1w(bids_dir, subject_id):
+    layout = bids.BIDSLayout(bids_dir, derivatives=False)
+    t1w_files = []
+
+    for t1w_file in layout.get(return_type='filename', subject=subject_id.split('-')[1], suffix="T1w", extension='.nii.gz'):
+        t1w_files.append(t1w_file)
+
+    return t1w_files
 
 def SubjectSummary_run(subject_id, t1w_files, bold_files, subjects_dir, qc_report_path, std_spaces, nstd_spaces):
 
@@ -137,13 +145,15 @@ if __name__ == '__main__':
     subj_qc_report_path.mkdir(parents=True, exist_ok=True)
     reports_utils_path = Path(args.reports_utils_path)
 
-    t1w_files, bold_files = get_t1w_and_bold(args.bids_dir, args.subject_id, args.bold_task_type)
-
-    std_spaces = [str(args.space_template)]
-    nstd_spaces = ["T1w", "fs_native"]
+    if args.bold_task_type != "None":
+        t1w_files, bold_files = get_t1w_and_bold(args.bids_dir, args.subject_id, args.bold_task_type)
+        std_spaces = [str(args.space_template)]
+        nstd_spaces = ["T1w", "fs_native"]
+        SubjectSummary_run(args.subject_id, t1w_files, bold_files, args.subjects_dir, qc_report_path, std_spaces, nstd_spaces)
+    else:
+        t1w_files = get_t1w(args.bids_dir, args.subject_id)
     command = copy_config_and_get_command(qc_report_path, Path(args.nextflow_log))
 
-    SubjectSummary_run(args.subject_id, t1w_files, bold_files, args.subjects_dir, qc_report_path, std_spaces, nstd_spaces)
     if len(t1w_files) > 0:
         TemplateDimensions_run(args.subject_id, t1w_files, qc_report_path)
     AboutSummary_run(args.subject_id, command, args.deepprep_version)
