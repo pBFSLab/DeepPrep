@@ -2076,7 +2076,7 @@ process qc_plot_bold_to_space {
     val(bold_preprocess_path)
     val(qc_utils_path)
     val(qc_result_path)
-    val(work_dir)
+    val(freesurfer_home)
 
     output:
     tuple(val(subject_id), val(bold_id), val("${qc_plot_norm_to_mni152_fig_path}"))
@@ -2090,11 +2090,12 @@ process qc_plot_bold_to_space {
     ${script_py} \
     --subject_id ${subject_id} \
     --bold_id ${bold_id} \
-    --bids_dir ${bids_dir} \
-    --bold_file ${subject_boldfile_txt} \
-    --bold_preprocess_path ${bold_preprocess_path} \
-    --space_template  ${synth_apply_template} \
+    --fs_native_space ${fs_native_space} \
+    --subjects_dir ${subjects_dir} \
+    --bold_preprocess_path  ${bold_preprocess_path} \
     --qc_result_path  ${qc_result_path} \
+    --space_mni152_bold_path  ${bold_atlas_to_mni152} \
+    --space_t1w_bold_path  ${bold_to_T1w} \
     --qc_tool_package  ${qc_tool_package} \
     --work_dir ${work_dir}/plot_bold_to_space
     """
@@ -2608,7 +2609,7 @@ workflow bold_wf {
     qc_plot_bold_to_space_inputs = subject_boldfile_txt_bold_pre_process.join(synth_apply_template, by: [0,1])
     bold_to_mni152_svg = qc_plot_bold_to_space(qc_plot_bold_to_space_inputs, bids_dir, bold_preprocess_path, qc_utils_path, qc_result_path, work_dir)
 //     qc_bold_create_report_input = bold_to_mni152_svg.groupTuple(by: 0)
-    qc_report = qc_bold_create_report(bold_to_mni152_svg, reports_utils_path, bids_dir, subjects_dir, qc_result_path, bold_task_type, deepprep_version)
+//     qc_report = qc_bold_create_report(qc_bold_create_report_input, reports_utils_path, bids_dir, subjects_dir, qc_result_path, bold_task_type, deepprep_version)
 
 }
 
