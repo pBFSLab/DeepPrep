@@ -158,9 +158,6 @@ if __name__ == '__main__':
     work_dir.mkdir(parents=True, exist_ok=True)
     create_dataset_description(output_dir)
 
-    fig_dir = Path(args.bold_preprocess_dir) / subject_id / 'figures'
-    qc_dir = Path(args.qc_result_path) / subject_id / 'figures'
-
     from niworkflows.utils.bids import collect_data
     from niworkflows.utils.connections import listify
 
@@ -193,7 +190,7 @@ if __name__ == '__main__':
             data = f.readlines()
         data = [i.strip() for i in data]
         bold_file = data[1]
-        bold_name = os.path.basename(bold_file).split('.')[0]
+        bold_id = os.path.basename(bold_file).split('_bold')[0]
 
         fieldmap_id = estimator_map.get(bold_file)
 
@@ -229,7 +226,7 @@ if __name__ == '__main__':
         bold_wf.name = 'bold_wf'
 
         from niworkflows.engine.workflows import LiterateWorkflow as Workflow
-        workflow = Workflow(name=f'{bold_name}_wf')
+        workflow = Workflow(name=f'{bold_id}_wf')
         base_dir = Path(config.execution.work_dir) / f'{subject_id}_wf' / f'{args.task_id}_wf'
 
         workflow.connect([
@@ -297,10 +294,10 @@ if __name__ == '__main__':
                 mcflirt_node_name = node_name
                 break
         mcflirt_node_path = base_dir / workflow.name / mcflirt_node_name.replace('.', '/')
-        list(mcflirt_node_path.glob('*'))
+        list(mcflirt_node_path.glob(f'{bold_id}*mcf*'))
         func_path = get_bold_func_path(args.bids_dir, args.bold_preprocess_dir, bold_file)
-        for mcflirt_file in mcflirt_node_path.glob('*'):
-            if 'mcf.nii' in mcflirt_file.name and mcflirt_file.is_file():
+        for mcflirt_file in mcflirt_node_path.glob(f'{bold_id}*mcf*'):
+            if mcflirt_file.is_file():
                 shutil.copyfile(mcflirt_file, func_path / mcflirt_file.name)
         # output
         # _bold_mcf.nii_rel.rms
@@ -308,7 +305,12 @@ if __name__ == '__main__':
         # _bold_mcf.nii.par
         # end
 
-        source_files = fig_dir.glob('*')
+        # copy figures to qc_dir
+        fig_dir = Path(args.bold_preprocess_dir) / subject_id / 'figures'
+        qc_dir = Path(args.qc_result_path) / subject_id / 'figures'
+        source_files = fig_dir.glob(f'{bold_id}*')
         qc_dir.mkdir(parents=True, exist_ok=True)
         for source_file in source_files:
-            shutil.move(source_file, qc_dir / source_file.name)
+            dest_file = qc_dir / source_file.name
+            if not dest_file.exists():
+                shutil.copyfile(source_file, dest_file)
