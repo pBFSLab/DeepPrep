@@ -48,7 +48,7 @@ def update_config(bids_dir, bold_preprocess_dir, work_dir, fs_license_file, fs_s
 
     config.workflow.anat_only = False
     config.workflow.bold2t1w_dof = 6
-    config.workflow.bold2t1w_init = 'register'
+    config.workflow.bold2t1w_init = 'header'
     config.workflow.cifti_output = False
     config.workflow.dummy_scans = 0
     config.workflow.fmap_bspline = False
