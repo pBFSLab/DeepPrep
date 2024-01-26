@@ -39,11 +39,16 @@ For the preprocessed functional MRI data, the naming adheres to the **BIDS** spe
    BOLD/
      sub-<subject_label>/
      sub-<subject_label>/
-       func/
-         sub-<subject_label>_[specifiers]_space-mc_bold.nii.gz
+       anat/
+         sub-<subject_label>_space-MNI152NLin6Asym_res-02_desc-noskull_T1w.nii.gz
+         sub-<subject_label>_space-T1w_res-2mm_desc-noskull_T1w.nii.gz
+          ...
+       figures/
+         sub-<subject_label>_[specifiers]_desc-summary_bold.html
          ...
-         sub-<subject_label>_[specifiers]_space-MNI152NLin6Asym_res-02_bold.nii.gz
-       tmp/
+       func/
+         sub-<subject_label>_from-T1w_to-MNI152NLin6Asym_desc-affine_xfm.txt
+         sub-<subject_label>_[specifiers]_space-MNI152NLin6Asym_res-02_desc-preproc_bold.nii.gz
      ...
      dataset_description.json
 
@@ -60,30 +65,24 @@ Functional derivatives are stored in the ``func/`` subfolder: ::
 
  sub-<subject_label>/
   func/
-   sub-<subject_label>_[specifiers]_space-mc_bold.nii.gz
-   sub-<subject_label>_[specifiers]_space-MNI152NLin6Asym_res-02_bold.nii.gz
-   sub-<subject_label>_[specifiers]_space-T1w_res-2mm_desc-rigid_bold.nii.gz
+   sub-<subject_label>_[specifiers]_space-MNI152NLin6Asym_res-02_desc-preproc_bold.nii.gz
 
 Corresponding to their reference frames: ::
 
  sub-<subject_label>/
   func/
-   sub-<subject_label>_[specifiers]_space-mc_boldref.nii.gz
-   sub-<subject_label>_[specifiers]_space-MNI152NLin6Asym_res-02_boldref.nii.gz
-   sub-<subject_label>_[specifiers]_space-T1w_res-2mm_desc-rigid_boldref.nii.gz
+   sub-<subject_label>_[specifiers]_space-MNI152NLin6Asym_res-02_desc-preproc_boldref.nii.gz
 
 Additionally, the following transforms are saved: ::
 
  sub-<subject_label>/
   func/
-   sub-<subject_label>_from-T1w_to-MNI152NLin6Asym_desc-affine_xfm.txt
-   sub-<subject_label>_[specifiers]_from-mc_to-T1w_desc-rigid_xfm.dat
-   sub-<subject_label>_[specifiers]_from-stc_to-mc_xfm.mcdat
+   sub-<subject_label>_[specifiers]_from-orig_to-boldref_mode-image_desc-hmc_xfm.txt
 
 Regularly gridded outputs (images). Volumetric output spaces labels(``<space_label>``) include T1w and MNI152NLin6Asym (default),with skull and without skull: ::
 
  sub-<subject_label>/
-  func/
+  anat/
    sub-<subject_label>_<space_label>-noskull_T1w.nii.gz
    sub-<subject_label>_<space_label>-skull_T1w.nii.gz
 
