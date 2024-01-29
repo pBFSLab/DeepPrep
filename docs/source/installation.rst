@@ -18,7 +18,6 @@ DeepPrep provides a docker image as the recommended way to get started.
         + Ubuntu:  >= 20.04
         + NVIDIA Driver: >= 11.8
 
-
 1. Install Docker if you don't have one (`Docker Installation Page`_).
 
 .. _Docker Installation Page: https://www.docker.com/get-started/
