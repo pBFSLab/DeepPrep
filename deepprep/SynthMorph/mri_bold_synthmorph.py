@@ -406,10 +406,6 @@ def batch_transform(im, trans, normalize=False):
             # out = np.concatenate([out, out_i], axis=0)
             out_arr[frames:frames+out_i.shape[0]] = out_i
             frames += out_i.shape[0]
-        # print('slice_time: ', time.time() - start_time)
-        # print('ep/och: ', i)
-        # print('-num: ', num_splits-i)
-    # print('done loop!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
     if normalize:
         out_arr -= tf.reduce_min(out_arr)
         out_arr /= tf.reduce_max(out_arr)
@@ -560,15 +556,15 @@ def vm_dense(
 def trt_inference(engine, context, data1, data2):
     nInput = np.sum([engine.binding_is_input(i) for i in range(engine.num_bindings)])
     nOutput = engine.num_bindings - nInput
-    print('nInput:', nInput)
-    print('nOutput:', nOutput)
-
-    for i in range(nInput):
-        print("Bind[%2d]:i[%2d]->" % (i, i), engine.get_binding_dtype(i), engine.get_binding_shape(i),
-              context.get_binding_shape(i), engine.get_binding_name(i))
-    for i in range(nInput, nInput + nOutput):
-        print("Bind[%2d]:o[%2d]->" % (i, i - nInput), engine.get_binding_dtype(i), engine.get_binding_shape(i),
-              context.get_binding_shape(i), engine.get_binding_name(i))
+    # print('nInput:', nInput)
+    # print('nOutput:', nOutput)
+    #
+    # for i in range(nInput):
+    #     print("Bind[%2d]:i[%2d]->" % (i, i), engine.get_binding_dtype(i), engine.get_binding_shape(i),
+    #           context.get_binding_shape(i), engine.get_binding_name(i))
+    # for i in range(nInput, nInput + nOutput):
+    #     print("Bind[%2d]:o[%2d]->" % (i, i - nInput), engine.get_binding_dtype(i), engine.get_binding_shape(i),
+    #           context.get_binding_shape(i), engine.get_binding_name(i))
 
     bufferH = []
     bufferH.append(np.ascontiguousarray(data1.reshape(-1)))
@@ -764,6 +760,7 @@ p.add_argument('-mp', '--model_path', type=str, metavar='MODEL PATH')
 p.add_argument('-mc', '--mc', type=str, metavar='TR_info')
 p.add_argument('-a', '--apply', type=str, metavar='APPLY_TRANS')
 p.add_argument('-ao', '--apply_out', type=str, metavar='APPLY_TRANS_OUT')
+p.add_argument('-cc', '--compute_capability', type=str, metavar='COMPUTE CAPABILITY')
 
 if len(sys.argv) == 1 or '-h' in sys.argv or '--help' in sys.argv:
     print(rewrap(doc), end='\n\n')
@@ -843,6 +840,7 @@ if arg.inspect:
     save(path=input_1, dat=inputs[0], affine=mov.affine @ net_to_mov)
     save(path=input_2, dat=inputs[1], affine=fix.affine @ net_to_fix)
 
+available_compute_capability = ['8.6']
 # Model.
 if is_linear:
     providers = ['CUDAExecutionProvider', 'CPUExecutionProvider']
@@ -852,9 +850,9 @@ if is_linear:
     model_output = model.get_outputs()[0].name
     trans = model.run(None, {model_input_1: inputs[0].numpy(), model_input_2: inputs[1].numpy()})
 else:
-    if gpu != "":
+    if gpu != "" and arg.compute_capability in available_compute_capability:
         TRT_LOGGER = trt.Logger()
-        with open(os.path.join(arg.model_path, 'model_norigid_FP16.engine'), "rb") as f, trt.Runtime(TRT_LOGGER) as runtime:
+        with open(os.path.join(arg.model_path, f'model_norigid_FP16_CC{arg.compute_capability}.engine'), "rb") as f, trt.Runtime(TRT_LOGGER) as runtime:
             engine = runtime.deserialize_cuda_engine(f.read())
         context = engine.create_execution_context()
         context.set_binding_shape(0, (1, in_shape[0], in_shape[1], in_shape[2], 1))
