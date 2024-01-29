@@ -65,7 +65,7 @@ process anat_motioncor {
 }
 
 
-process gpu_schedule_lock {
+process deepprep_init {
 
     cpus 1
     memory '100 MB'
@@ -73,22 +73,30 @@ process gpu_schedule_lock {
 
     input:
     val(freesurfer_home)
+    val(bids_dir)
+    val(output_dir)
     val(subjects_dir)
     val(bold_spaces)
+    val(bold_only)
     output:
-    val(output)
-    val(bold_spaces)
+    val("${output_dir}/BOLD")
+    val("${output_dir}/QC")
+    val("${output_dir}/WorkDir")
+    val(gpu_lock)
 
     script:
     script_py = "gpu_schedule_lock.py"
     deepprep_init_py = "deepprep_init.py"
-    output = "create-lock"
+    gpu_lock = "create-lock"
     """
     ${script_py} ${task.executor}
     ${deepprep_init_py} \
     --freesurfer_home ${freesurfer_home} \
+    --bids_dir ${bids_dir} \
+    --output_dir ${output_dir} \
     --subjects_dir ${subjects_dir} \
-    --bold_spaces ${bold_spaces}
+    --bold_spaces ${bold_spaces} \
+    --bold_only ${bold_only}
     """
 }
 
@@ -1172,6 +1180,7 @@ process anat_balabels_rh {
 }
 
 process bold_anat_prepare {
+    tag "${subject_id}"
     cpus 1
 
     input:
@@ -1216,6 +1225,8 @@ process bold_anat_prepare {
 }
 
 process bold_fieldmap {
+    tag "${subject_id}"
+
     cpus 1
 
     input:
@@ -1257,6 +1268,8 @@ process bold_fieldmap {
 
 
 process bold_pre_process {
+    tag "${bold_id}"
+
     cpus 4
 
     input:
@@ -2480,7 +2493,7 @@ workflow bold_wf {
     bold_skip_frame = params.bold_skip_frame
 
     bold_sdc = params.bold_sdc
-    bold_spaces = params.bold_spaces
+    bold_spaces = params.bold_surface_spaces
 
     do_bold_confounds = params.bold_confounds.toString().toUpperCase()
 
@@ -2491,7 +2504,7 @@ workflow bold_wf {
     synthmorph_home = params.synthmorph_home
     synthmorph_model_path = params.synthmorph_model_path
     template_space = params.bold_template_space  // templateflow
-    template_resolution = params.bold_template_resolution  // templateflow
+    template_resolution = params.bold_template_res  // templateflow
     templateflow_home = params.templateflow_home  // templateflow
 
     qc_utils_path = params.qc_utils_path
@@ -2499,31 +2512,6 @@ workflow bold_wf {
 
     bold_only = params.bold_only.toString().toUpperCase()
     deepprep_version = params.deepprep_version
-
-    _directory = new File(work_dir)
-        if (!_directory.exists()) {
-            _directory.mkdirs()
-            println "create dir: ..."
-            println _directory
-        }
-
-    _directory = new File(bold_preprocess_path)
-        if (!_directory.exists()) {
-            _directory.mkdirs()
-            println "create dir: ..."
-            println _directory
-        }
-
-    _directory = new File(qc_result_path)
-    if (!_directory.exists()) {
-        _directory.mkdirs()
-        println "create dir: ..."
-        println _directory
-    }
-
-    if (subjects_dir == "") {
-        subjects_dir = "${output_dir}/Recon"
-    }
 
     subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, subjects_dir, subjects, bold_task_type, bold_only)
     (subject_id, boldfile_id, subject_boldfile_txt) = subject_boldfile_txt.flatten().multiMap { it ->
@@ -2534,7 +2522,7 @@ workflow bold_wf {
     (subject_id_unique, boldfile_id_unique) = subject_id_boldfile_id.groupTuple(sort: true).multiMap { tuple ->
                                                                                                         a: tuple[0]
                                                                                                         b: tuple[1][0] }
-    if (bold_only == 'TRUE') {
+    if (bold_only == 'TRUE') {  // TODO delete this block and test
         t1_mgz = subject_id_unique.join(t1_mgz)
         norm_mgz = subject_id_unique.join(norm_mgz)
         mask_mgz = subject_id_unique.join(mask_mgz)
@@ -2554,6 +2542,11 @@ workflow bold_wf {
     bold_pre_process_input = subject_id_boldfile_id.groupTuple(sort: true).join(bold_fieldmap_output, by:[0]).join(t1_nii).join(mask_nii, by: [0]).join(wm_dseg_nii, by:[0]).join(fsnative2T1w_xfm, by:[0]).join(pial_surf, by:[0]).transpose().join(subject_boldfile_txt, by:[0])
     subject_boldfile_txt_bold_pre_process = bold_pre_process(bids_dir, subjects_dir, bold_preprocess_path, work_dir, bold_task_type, bold_spaces, bold_pre_process_input, fs_license_file, bold_sdc, templateflow_home, qc_result_path)
 
+    if (do_bold_confounds == 'TRUE') {
+        bold_confounds_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(aseg_mgz).join(mask_mgz, by: [0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
+        subject_boldfile_txt_bold_confounds = bold_confounds(bids_dir, bold_preprocess_path, work_dir, bold_confounds_inputs)
+    }
+
     output_std_volume_spaces = 'TRUE'
     if (output_std_volume_spaces == 'TRUE') {
         bold_T1_to_2mm_input = t1_mgz.join(norm_mgz)
@@ -2569,10 +2562,6 @@ workflow bold_wf {
         t1_native2mm_group = subject_id_boldfile_id.groupTuple(sort: true).join(t1_native2mm).transpose()
         synthmorph_norigid_apply_input = t1_native2mm_group.join(subject_boldfile_txt_bold_pre_process, by: [0,1]).join(transvoxel_group, by: [0,1])
         synth_apply_template = synthmorph_norigid_apply(bids_dir, subjects_dir, bold_preprocess_path, synthmorph_home, work_dir, synthmorph_norigid_apply_input, template_space, template_resolution, device, gpu_lock)
-    }
-    if (do_bold_confounds == 'TRUE') {
-        bold_confounds_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(aseg_mgz).join(mask_mgz, by: [0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
-        subject_boldfile_txt_bold_confounds = bold_confounds(bids_dir, bold_preprocess_path, work_dir, bold_confounds_inputs)
     }
 
     do_bold_qc = 'TRUE'
@@ -2594,18 +2583,22 @@ workflow bold_wf {
 workflow {
 
     freesurfer_home = params.freesurfer_home
+    bids_dir = params.bids_dir
     output_dir = params.output_dir
     subjects_dir = params.subjects_dir
-    bold_spaces = params.bold_spaces
-    
-    if (subjects_dir == "") {
-        subjects_dir = "${output_dir}/Recon"
-    }
-    work_dir = "${output_dir}/WorkDir"
-    bold_preprocess_path = "${output_dir}/BOLD"
-    qc_result_path = "${output_dir}/QC"
+    bold_spaces = params.bold_surface_spaces
+    bold_only = params.bold_only
 
-    (gpu_lock, bold_spaces) = gpu_schedule_lock(freesurfer_home, subjects_dir, bold_spaces)
+    if (subjects_dir.toString().toUpperCase() == 'NONE') {
+        subjects_dir = output_dir / 'Recon'
+    }
+
+    println "INFO: bids_dir           : ${bids_dir}"
+    println "INFO: output_dir         : ${output_dir}"
+    println "INFO: subjects_dir       : ${subjects_dir}"
+    println params
+
+    (bold_preprocess_path, qc_result_path, work_dir, gpu_lock) = deepprep_init(freesurfer_home, bids_dir, output_dir, subjects_dir, bold_spaces, bold_only)
 
     if (params.anat_only.toString().toUpperCase() == 'TRUE') {
         println "INFO: anat preprocess ONLY"
