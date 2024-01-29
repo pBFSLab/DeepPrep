@@ -852,7 +852,7 @@ if is_linear:
 else:
     if gpu != "" and arg.compute_capability in available_compute_capability:
         TRT_LOGGER = trt.Logger()
-        with open(os.path.join(arg.model_path, f'model_norigid_FP16_CC{arg.compute_capability}.engine'), "rb") as f, trt.Runtime(TRT_LOGGER) as runtime:
+        with open(os.path.join(arg.model_path, f'model_norigid_FP16_CC_{arg.compute_capability}.engine'), "rb") as f, trt.Runtime(TRT_LOGGER) as runtime:
             engine = runtime.deserialize_cuda_engine(f.read())
         context = engine.create_execution_context()
         context.set_binding_shape(0, (1, in_shape[0], in_shape[1], in_shape[2], 1))
