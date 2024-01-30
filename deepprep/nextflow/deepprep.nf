@@ -1786,6 +1786,7 @@ process synthmorph_norigid_apply {
 
     script:
     process_num = 8
+    batch_size = 10
     gpu_script_py = "gpu_schedule_run.py"
     script_py = "${synthmorph_home}/bold_synthmorph_apply.py"
     synth_script = "${synthmorph_home}/mri_bold_apply_synthmorph.py"
@@ -1802,6 +1803,7 @@ process synthmorph_norigid_apply {
     --template_space ${template_space} \
     --template_resolution ${template_resolution} \
     --process_num ${process_num} \
+    --batch_size ${batch_size} \
     --synth_script ${synth_script} \
     """
 }
