@@ -1,20 +1,18 @@
 ---------------------
-Outputs of *DeepPrep*
+Outputs of DeepPrep
 ---------------------
 
-DeepPrep outputs conform to the BIDS Derivatives specification. DeepPrep generates
-three broad classes of outcomes:
-  1. **Anatomical derivatives**:Anatomical information about brain structures and generate surface models and parcellation labels.For example, skull stripping、gray/white matter segmentation、surface generation、parcellation and labeling..
-  2. **Functional derivatives**:Contains some results of some BOLD data preprocessing operations.For example, motion correction、spatial normalization、slice timing correction..
-  3. **Visual QA (quality assessment) reports**:one HTML per subject, that allows the user a thorough visual assessment of the quality of processing and ensures the transparency of DeepPrep operation.
+The outputs of DeepPrep have three categories:
 
+1. **Anatomical derivatives**: The anatomical images are preprocessed through motion correction, tissue segmentation, cortical surface reconstruction, volume and cortical surface registration, and etc.
+2. **Functional derivatives**: The functional images are preprocessed through motion correction, slice timing correction, susceptibility distortion correction, confounds estimation, and registration to both standard and non-standard spaces.
+3. **Visual reports**: For better visualization and understanding of the entire process, DeepPrep generates a visual report for each subject.
 
 
 ======================
 Anatomical derivatives
 ======================
-
-If Anatomical is run, then a FreeSurfer subjects directory is created in ``<output dir>/Recon/``: ::
+FreeSurfer carries out preprocessed anatomical derivatives stores in ``<output_dir>/Recon`` by default: ::
 
  <output_dir>/
    Recon/
@@ -27,32 +25,36 @@ If Anatomical is run, then a FreeSurfer subjects directory is created in ``<outp
        ...
      ...
 
-The preprocessed structural MRI data are organized to align with the results of FreeSurfer, encompassing the normalized and skull-stripped brain, reconstructed cortical surfaces and morphometrics, volumetric segmentation, cortical surface parcellation, and their corresponding statistics. Additionally, transformation files for surface spherical registration are included.
+The preprocessed structural MRI data are organized to align with the results of FreeSurfer, encompassing the normalized
+and skull-stripped brain, reconstructed cortical surfaces and morphometrics, volumetric segmentation, cortical surface
+parcellation, and their corresponding statistics. Additionally, transformation files for surface spherical registration
+are included.
 
 ======================
 Functional derivatives
 ======================
-
-For the preprocessed functional MRI data, the naming adheres to the **BIDS** specification for derived data.Functional derivatives are stored in the ``<output dir>/BOLD/`` . All derivatives contain ``task-<task_label>`` (mandatory) and ``run-<run_index>`` (optional), and these will be indicated with ``[specifiers]``: ::
+The preprocessed functional derivatives are stored under the ``<output_dir>/BOLD`` in BIDS structure. All entities are shown in the file name, where ``sub-<subject_label>`` is mandatory, and the rest are optional: ::
 
  <output_dir>/
    BOLD/
      sub-<subject_label>/
      sub-<subject_label>/
        anat/
-         sub-<subject_label>_space-MNI152NLin6Asym_res-02_desc-noskull_T1w.nii.gz
-         sub-<subject_label>_space-T1w_res-2mm_desc-noskull_T1w.nii.gz
+         sub-<subject_label>_space-<space_label>_res-<resolution>_desc-noskull_T1w.nii.gz
+         sub-<subject_label>_space-<space_label>_res-<resolution>_desc-noskull_T1w.nii.gz
           ...
        figures/
-         sub-<subject_label>_[specifiers]_desc-summary_bold.html
+         sub-<subject_label>_task-<task_label>_run-<run_idx>_desc-summary_bold.html
          ...
        func/
-         sub-<subject_label>_from-T1w_to-MNI152NLin6Asym_desc-affine_xfm.txt
-         sub-<subject_label>_[specifiers]_space-MNI152NLin6Asym_res-02_desc-preproc_bold.nii.gz
+         sub-<subject_label>_task-<task_label>_run-<run_idx>_from-<space_label>_to-<space_ref>_mode-image_desc-hmc_xfm.txt
+         sub-<subject_label>_task-<task_label>_run-<run_idx>_space-<space_label>_res-<resolution>_desc-preproc_bold.nii.gz
      ...
      dataset_description.json
 
-For the preprocessed functional MRI data, the naming adheres to the BIDS specification for derived data. The default output spaces for the preprocessed functional MRI consist of three options: 1. the native BOLD fMRI space, 2. the MNI space, and 3. the fsaverage6 surfaces space. However, users have the flexibility to specify other output spaces, including the native T1w space and various volumetric and surface templates available on TemplateFlow. The main outputs of the preprocessed data include:
+The default output spaces for the preprocessed functional MRI consist of three options: 1. the native BOLD fMRI space, 2. the MNI space, and 3. the fsaverage6 surfaces space.
+However, users have the flexibility to specify other output spaces, including the native T1w space and various volumetric and surface templates available on TemplateFlow.
+The main outputs of the preprocessed data include:
 
  | 1.Preprocessed fMRI data.
  | 2.Reference volume for motion correction.
@@ -64,33 +66,33 @@ For the preprocessed functional MRI data, the naming adheres to the BIDS specifi
 Functional derivatives are stored in the ``func/`` subfolder: ::
 
  sub-<subject_label>/
-  func/
-   sub-<subject_label>_[specifiers]_space-MNI152NLin6Asym_res-02_desc-preproc_bold.nii.gz
+   func/
+     sub-<subject_label>_task-<task_label>_run-<run_idx>_space-<space_label>_res-<resolution>_desc-preproc_bold.nii.gz
 
 Corresponding to their reference frames: ::
 
  sub-<subject_label>/
-  func/
-   sub-<subject_label>_[specifiers]_space-MNI152NLin6Asym_res-02_desc-preproc_boldref.nii.gz
+   func/
+     sub-<subject_label>_task-<task_label>_run-<run_idx>_space-<space_label>_res-<resolution>_desc-preproc_boldref.nii.gz
 
 Additionally, the following transforms are saved: ::
 
  sub-<subject_label>/
-  func/
-   sub-<subject_label>_[specifiers]_from-orig_to-boldref_mode-image_desc-hmc_xfm.txt
+   func/
+     sub-<subject_label>_task-<task_label>_run-<run_idx>_from-<space_label>_to-<space_ref>_mode-image_desc-hmc_xfm.txt
 
 Regularly gridded outputs (images). Volumetric output spaces labels(``<space_label>``) include T1w and MNI152NLin6Asym (default),with skull and without skull: ::
 
  sub-<subject_label>/
-  anat/
-   sub-<subject_label>_<space_label>-noskull_T1w.nii.gz
-   sub-<subject_label>_<space_label>-skull_T1w.nii.gz
+   anat/
+     sub-<subject_label>_<space_label>-noskull_T1w.nii.gz
+     sub-<subject_label>_<space_label>-skull_T1w.nii.gz
 
 Extracted confounding time series. For each BOLD run processed with fMRIPrep, an accompanying confounds file will be generated. Confounds are saved as a TXT file: ::
 
  sub-<subject_label>/
-  func/
-   sub-<subject_label>_[specifiers]_desc-confounds_timeseries.txt
+   func/
+     sub-<subject_label>_[specifiers]_desc-confounds_timeseries.txt
 
 These TXT tables look like the example below, where each row of the file corresponds to one time point found in the corresponding BOLD time series: ::
 
