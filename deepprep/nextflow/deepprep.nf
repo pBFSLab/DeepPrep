@@ -1,3 +1,19 @@
+process process_mriqc {
+    cpus 1
+
+    input:
+    val(bids_dir)
+    val(mriqc_result_path)
+
+    output:
+    val(mriqc_result_path)
+
+    script:
+    """
+    mriqc ${bids_dir} ${mriqc_result_path} participant
+    """
+}
+
 process anat_get_t1w_file_in_bids {
     cpus 1
 
@@ -2597,7 +2613,6 @@ workflow {
 
     if (subjects_dir.toString().toUpperCase() == 'NONE') {
         subjects_dir = output_dir / 'Recon'
-    }
     println "INFO: subjects_dir       : ${subjects_dir}"
 
     (bold_preprocess_path, qc_result_path, work_dir, gpu_lock) = deepprep_init(freesurfer_home, bids_dir, output_dir, subjects_dir, bold_spaces, bold_only)
@@ -2631,5 +2646,15 @@ workflow {
         println "INFO: anat && Bold preprocess"
         (t1_mgz, mask_mgz, norm_mgz, aseg_mgz, white_surf, pial_surf, lh_pial_surf, rh_pial_surf, lh_white_surf, rh_white_surf, aparc_aseg_mgz, w_g_pct_mgh) = anat_wf(gpu_lock, subjects_dir, work_dir, bold_preprocess_path, qc_result_path)
         bold_wf(t1_mgz, mask_mgz, norm_mgz, aseg_mgz, white_surf, pial_surf, lh_pial_surf, rh_pial_surf, lh_white_surf, rh_white_surf, aparc_aseg_mgz, w_g_pct_mgh, gpu_lock, subjects_dir, work_dir, bold_preprocess_path, qc_result_path)
+    }
+
+    if (params.mriqc.toString().toUpperCase() == 'TRUE') {
+        mriqc_result_path = "${qc_result_path}/MRIQC"
+        def synthstrip_model = new File("${freesurfer_home}/models/synthstrip.1.pt")
+        if (synthstrip_model.exists()) {
+            process_mriqc(bids_dir, mriqc_result_path)
+        } else {
+            println "Error: process_mriqc : File does not exist: ${synthstrip_model}"
+        }
     }
 }
