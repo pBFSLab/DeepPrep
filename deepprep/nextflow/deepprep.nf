@@ -1,3 +1,20 @@
+process process_mriqc {
+    cpus 1
+
+    input:
+    val(bids_dir)
+    val(mriqc_result_path)
+
+    output:
+    val(mriqc_result_path)
+
+    script:
+    """
+    mriqc ${bids_dir} ${mriqc_result_path} participant
+    """
+
+}
+
 process anat_get_t1w_file_in_bids {
     cpus 1
 
@@ -2597,6 +2614,9 @@ workflow {
     output_dir = params.output_dir
     subjects_dir = params.subjects_dir
     bold_spaces = params.bold_spaces
+
+    bids_dir = params.bids_dir
+    mriqc = params.mriqc
     
     if (subjects_dir == "") {
         subjects_dir = "${output_dir}/Recon"
@@ -2606,6 +2626,19 @@ workflow {
     qc_result_path = "${output_dir}/QC"
 
     (gpu_lock, bold_spaces) = gpu_schedule_lock(freesurfer_home, subjects_dir, bold_spaces)
+
+    if (params.mriqc.toString().toUpperCase() == 'TRUE') {
+        mriqc_result_path = "${output_dir}/QC/MRIQC"
+
+        _directory = new File(mriqc_result_path)
+        if (!_directory.exists()) {
+            _directory.mkdirs()
+            println "create dir: ..."
+            println _directory
+        }
+        process_mriqc(bids_dir, mriqc_result_path)
+    }
+
 
     if (params.anat_only.toString().toUpperCase() == 'TRUE') {
         println "INFO: anat preprocess ONLY"
