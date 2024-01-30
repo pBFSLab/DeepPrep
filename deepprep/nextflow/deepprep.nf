@@ -2581,6 +2581,9 @@ workflow bold_wf {
 
 
 workflow {
+    if (params.debug != 'null') {
+        println "DEBUG: params           : ${params}"
+    }
 
     freesurfer_home = params.freesurfer_home
     bids_dir = params.bids_dir
@@ -2589,14 +2592,13 @@ workflow {
     bold_spaces = params.bold_surface_spaces
     bold_only = params.bold_only
 
+    println "INFO: bids_dir           : ${bids_dir}"
+    println "INFO: output_dir         : ${output_dir}"
+
     if (subjects_dir.toString().toUpperCase() == 'NONE') {
         subjects_dir = output_dir / 'Recon'
     }
-
-    println "INFO: bids_dir           : ${bids_dir}"
-    println "INFO: output_dir         : ${output_dir}"
     println "INFO: subjects_dir       : ${subjects_dir}"
-    println params
 
     (bold_preprocess_path, qc_result_path, work_dir, gpu_lock) = deepprep_init(freesurfer_home, bids_dir, output_dir, subjects_dir, bold_spaces, bold_only)
 
