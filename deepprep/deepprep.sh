@@ -14,13 +14,14 @@ debug=""
 
 help="DeepPrep args:
 deepprep-docker [bids_dir] [output_dir] [{participant}] [--bold_task_type task_id]
+                [--fs_license_file PATH]
                 [--subjects_dir subjects_dir] [--executor {local cluster}]
                 [--anat_only] [--bold_only] [--bold_sdc] [--bold_confounds]
                 [--bold_surface_spaces [fsnative fsaverage fsaverage6 ...]]
                 [--bold_template_space MNI152NLin6Asym] [--bold_template_res {02 03...}]
-                [--device {auto {0 1 2...} cpu}] [--cpus 10] [--memory 5]
-                [--freesurfer_home PATH] [--fs_license_file PATH]
-                [--deepprep_home PATH] [--templateflow_home PATH]
+                [--device {auto {0 1 2...} cpu}] [--gpu_compute_capability {8.6}]
+                [--cpus 10] [--memory 5]
+                [--freesurfer_home PATH] [--deepprep_home PATH] [--templateflow_home PATH]
                 [--ignore_error]
                 [-resume]
 "
