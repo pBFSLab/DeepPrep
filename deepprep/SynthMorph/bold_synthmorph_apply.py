@@ -33,18 +33,13 @@ def split_bold_convert_concat(ori_bold_file, work_dir, tar_t1w_file, bold_id, pr
     with Pool(process_num) as pool:
         pool.starmap(upsampling_bold, multiprocess)
 
-    #3. concat bold
-    concat_bold_file = Path(work_dir) / bold_id / Path(ori_bold_file).name.replace('.nii.gz', '_unsampled.nii.gz')
-    cmd = f'mri_concat --i {unsampling_dir}/* --o {concat_bold_file}'
-    os.system(cmd)
-
     rm_dir = split_bold_dir.parent
-    return concat_bold_file, rm_dir
+    return unsampling_dir, rm_dir
 
 
-def run_norigid_registration_apply(script, bold, bold_output, fframe_bold_output, T1_file, template, transvoxel, bold_file):
+def run_norigid_registration_apply(script, unsampling_dir, bold_output, fframe_bold_output, T1_file, template, transvoxel, bold_file, batch_size):
 
-    cmd = f'python3 {script} -g -b {bold} -bo {bold_output} -fbo {fframe_bold_output} {T1_file} {template} -tv {transvoxel} -ob {bold_file}'
+    cmd = f'python3 {script}  -bo {bold_output} -fbo {fframe_bold_output} {T1_file} {template} -tv {transvoxel} -ob {bold_file} -up {unsampling_dir} -bs {batch_size}'
     os.system(cmd)
 
 def get_space_t1w_bold(bids_orig, bids_preproc, bold_orig_file):
@@ -77,10 +72,9 @@ if __name__ == '__main__':
     parser.add_argument("--template_space", required=True)
     parser.add_argument("--template_resolution", required=True)
     parser.add_argument("--process_num", required=True)
+    parser.add_argument("--batch_size", required=True)
     parser.add_argument("--synth_script", required=True)
     args = parser.parse_args()
-
-
 
     T1_2mm = args.T1_file
     transvoxel = args.trans_vox
@@ -90,13 +84,13 @@ if __name__ == '__main__':
     data = [i.strip() for i in data]
     bold_file = data[1]
     bold_t1w_file = get_space_t1w_bold(args.bids_dir, args.bold_preprocess_dir, bold_file)
-    unsampled_bold, rm_dir = split_bold_convert_concat(bold_t1w_file.path, args.work_dir, T1_2mm, args.bold_id, process_num=int(args.process_num))
+    unsampling_dir, rm_dir = split_bold_convert_concat(bold_t1w_file.path, args.work_dir, T1_2mm, args.bold_id, process_num=int(args.process_num))
 
     template_resolution = args.template_resolution
     template = tflow.get(args.template_space, desc=None, resolution=template_resolution, suffix='T1w', extension='nii.gz')
-    bold_output = Path(bold_t1w_file.dirname) / f'{args.bold_id}_space-{args.template_space}_res-{args.template_resolution}_desc-preproc_bold.nii.gz'
-    fframe_bold_output = Path(bold_t1w_file.dirname) / f'{args.bold_id}_space-{args.template_space}_res-{args.template_resolution}_boldref.nii.gz'
-    run_norigid_registration_apply(args.synth_script, unsampled_bold, bold_output, fframe_bold_output, T1_2mm, template, transvoxel, bold_file)
+    bold_output = Path(bold_t1w_file.dirname) / f'{args.bold_id}_space-{args.template_space}_res-{template_resolution}_desc-preproc_bold.nii.gz'
+    fframe_bold_output = Path(bold_t1w_file.dirname) / f'{args.bold_id}_space-{args.template_space}_res-{template_resolution}_boldref.nii.gz'
+    run_norigid_registration_apply(args.synth_script, unsampling_dir, bold_output, fframe_bold_output, T1_2mm, template, transvoxel, bold_file, int(args.batch_size))
     assert os.path.exists(bold_output), f'{bold_output}'
     assert os.path.exists(fframe_bold_output), f'{fframe_bold_output}'
     shutil.rmtree(rm_dir)

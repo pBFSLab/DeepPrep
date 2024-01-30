@@ -2,11 +2,12 @@
 import os
 import argparse
 import tensorflow.keras.backend as K
-import time
 import numpy as np
 import nibabel as nib
 import tensorflow as tf
 import voxelmorph as vxm
+from pathlib import Path
+import math
 
 
 def vxm_batch_transform(vol, loc_shift,
@@ -63,63 +64,40 @@ def vxm_batch_transform(vol, loc_shift,
         'Dimension check failed for ne.utils.transform(): {}D volume (shape {}) called ' \
         'with {}D transform'.format(ndim, vol.shape[:-1], loc_shift.shape[-1])
 
-    # reshape vol [B, *vol_shape, C] --> [*vol_shape, C * B]
     vol_reshape = K.permute_dimensions(vol, list(range(1, ndim + 2)) + [0])
     vol_reshape = K.reshape(vol_reshape, list(vol.shape[1:ndim + 1]) + [BC])
 
-    # reshape loc_shift [B, *loc_shift_shape, C, D] --> [*loc_shift_shape, C * B, D]
     loc_reshape = K.permute_dimensions(loc_shift, list(range(1, ndim + 2)) + [0] + [ndim + 2])
     loc_reshape_shape = list(loc_shift.shape[1:ndim + 1]) + [BC] + [loc_shift.shape[ndim + 2]]
     loc_reshape = K.reshape(loc_reshape, loc_reshape_shape)
 
-    # transform (output is [*loc_shift_shape, C*B])
     vol_trf = vxm.utils.transform(vol_reshape, loc_reshape,
                         interp_method=interp_method, indexing=indexing, fill_value=fill_value)
 
-    # reshape vol back to [*vol_shape, C, B]
-    # new_shape = tf.concat([vol_shape_tf[1:], vol_shape_tf[0:1]], 0)
-    # vol_trf_reshape = K.reshape(vol_trf, new_shape)
     vol_trf_reshape = tf.expand_dims(vol_trf, axis=-2)
-    # reshape back to [B, *vol_shape, C]
     return K.permute_dimensions(vol_trf_reshape, [ndim + 1] + list(range(ndim + 1)))
 
 
 def batch_transform(image, trans, normalize=False):
     if isinstance(image, nib.filebasedimages.FileBasedImage):
         image = image.get_fdata(dtype=np.float32)
-        # Add singleton feature dimension if needed.
 
-    split = 10
-    n = image.shape[-1]
-    iterations = n // split if n >= split else 1
-    print('len_num_splits: ', iterations)
-    sliced_im = np.array_split(image, iterations, axis=-1)
     trans = tf.expand_dims(trans, axis=0)
     trans = tf.expand_dims(trans, axis=-2)
-    out_arr = np.zeros(image.shape[-1] + trans.shape[1:5])
-    frames = 0
-    for i in range(iterations):
-        sliced_im_i = tf.transpose(sliced_im[i], perm=(3, 0, 1, 2))
-        if tf.rank(sliced_im_i) == 4:
-            sliced_im_i = sliced_im_i[..., tf.newaxis]
+    sliced_im_i = tf.transpose(image, perm=(3, 0, 1, 2))
+    if tf.rank(sliced_im_i) == 4:
+        sliced_im_i = sliced_im_i[..., tf.newaxis]
 
-        sliced_trans_i = tf.tile(trans, [sliced_im_i.shape[0], 1, 1, 1, 1, 1])
-        out_i = vxm_batch_transform(
-            sliced_im_i, sliced_trans_i, batch_size=sliced_im_i.shape[0], fill_value=0)
-        if i == 0:
-            out_arr[:out_i.shape[0]] = out_i
-            frames += out_i.shape[0]
-        else:
-            out_arr[frames:frames+out_i.shape[0]] = out_i
-            frames += out_i.shape[0]
-    print('done loop!!!!!!!!!!!!')
+    sliced_trans_i = tf.tile(trans, [sliced_im_i.shape[0], 1, 1, 1, 1, 1])
+    out_i = vxm_batch_transform(
+        sliced_im_i, sliced_trans_i, batch_size=sliced_im_i.shape[0], fill_value=0)
     if normalize:
-        out_arr -= tf.reduce_min(out_arr)
-        out_arr /= tf.reduce_max(out_arr)
-    return out_arr[tf.newaxis, ...]
+        out_i -= tf.reduce_min(out_i)
+        out_i /= tf.reduce_max(out_i)
+    return out_i[tf.newaxis, ...]
 
 
-def bold_save(path, fframe_bold_path, data, affine, header, ori_header, dtype=None):
+def bold_save(path, fframe_bold_path, num, data, affine, header, ori_header, dtype=None):
     """Save image file.
 
     Helper function for saving a spatial image using NiBabel. Removes singleton
@@ -150,23 +128,42 @@ def bold_save(path, fframe_bold_path, data, affine, header, ori_header, dtype=No
     # Use Nifti1Image instead of MGHImage for FP64 support. Set units to avoid
     # warnings when reading with FreeSurfer.
     out = nib.Nifti1Image(data, affine=affine, header=ori_header)
-    fframe_out = nib.Nifti1Image(data[..., 0], affine=affine, header=ori_header)
-    # out.header.set_xyzt_units(xyz='mm', t='sec')
     nib.save(out, filename=path)
-    nib.save(fframe_out, filename=fframe_bold_path)
+    if num == 0:
+        fframe_out = nib.Nifti1Image(data[..., 0], affine=affine, header=ori_header)
+        nib.save(fframe_out, filename=fframe_bold_path)
+
+
+def read_batch_nifty_file(next_datafiles):
+    batch_size = next_datafiles.shape[0]
+    for i, file_path in enumerate(next_datafiles):
+        if i == 0:
+            img = nib.load(str(file_path.numpy(), encoding="utf-8"))
+            data = img.get_fdata()
+            data_array = np.zeros((data.shape[0], data.shape[1], data.shape[2], batch_size))
+            data_array[:, :, :, i] = data
+        else:
+            img = nib.load(str(file_path.numpy(), encoding="utf-8"))
+            data = img.get_fdata()
+            data_array[:, :, :, i] = data
+    return data_array
+
+
+def concat_bold(transformed_dir, concat_bold_file):
+    cmd = f'mri_concat --i {transformed_dir}/* --o {concat_bold_file}'
+    os.system(cmd)
+
 
 p = argparse.ArgumentParser()
 p.add_argument('moving', type=str, metavar='MOVING')
 p.add_argument('fixed', type=str, metavar='FIXED')
-p.add_argument('-o', '--moved', type=str)
 p.add_argument('-j', '--threads', type=int)
-p.add_argument('-g', '--gpu', action='store_true')
-p.add_argument('-b', '--bold', type=str, metavar='BOLD')
 p.add_argument('-bo', '--bold_out', type=str, metavar='BOLD_OUT')
 p.add_argument('-fbo', '--fframe_bold_out', type=str, metavar='BOLD_OUT')
-# p.add_argument('-mc', '--mc', type=str, metavar='TR_INFO')
 p.add_argument('-tv', '--trans_vox', type=str, metavar='TRANS VOXEL')
 p.add_argument('-ob', '--orig_bold', type=str, metavar='ORIGINAL BOLD')
+p.add_argument('-up', '--unsampled_path', type=str, metavar='UNSAMPLED_BOLD PATH')
+p.add_argument('-bs', '--batch_size', type=int, metavar='BATCH SIZE')
 
 arg = p.parse_args()
 
@@ -184,11 +181,23 @@ if arg.threads:
 mov = nib.load(arg.moving)
 fix = nib.load(arg.fixed)
 assert len(mov.shape) == len(fix.shape) == 3, 'input images not single volumes'
+
 orig_bold = nib.load(arg.orig_bold)
-bold = nib.load(arg.bold)
 trans_vox = tf.convert_to_tensor(np.load(f'{arg.trans_vox}')['arr_0'])
-out_bold = batch_transform(bold, trans=trans_vox)
-bold_save(arg.bold_out, arg.fframe_bold_out, data=out_bold, affine=fix.affine, header=fix.header, ori_header=orig_bold.header, dtype=mov.dataobj.dtype)
+batch_size = arg.batch_size
+transform_save_path = Path(arg.unsampled_path).parent / 'transform'
+transform_save_path.mkdir(parents=True, exist_ok=True)
+unsamping_file_list = sorted([os.path.join(arg.unsampled_path, f) for f in os.listdir(arg.unsampled_path) if f.endswith('.nii.gz')])
+datafiles = tf.data.Dataset.from_tensor_slices(unsamping_file_list)
+dataset = datafiles.batch(batch_size)
+iterator = iter(dataset)
+iter_nums = math.ceil(len(unsamping_file_list) / batch_size)
+for i in range(iter_nums):
+    next_datafiles = iterator.get_next()
+    bold = read_batch_nifty_file(next_datafiles)
+    out_bold = batch_transform(bold, trans=trans_vox)
+    bold_out = f'{transform_save_path}/t00{i}.nii.gz'
+    bold_save(bold_out, arg.fframe_bold_out, num=i, data=out_bold, affine=fix.affine, header=fix.header, ori_header=orig_bold.header, dtype=mov.dataobj.dtype)
+concat_bold(transform_save_path, arg.bold_out)
 assert os.path.exists(arg.bold_out), f'{arg.bold_out}'
 assert os.path.exists(arg.fframe_bold_out), f'{arg.fframe_bold_out}'
-os.remove(arg.bold)
