@@ -136,16 +136,13 @@ def bold_save(path, fframe_bold_path, num, data, affine, header, ori_header, dty
 
 def read_batch_nifty_file(next_datafiles):
     batch_size = next_datafiles.shape[0]
+    data_array = None
     for i, file_path in enumerate(next_datafiles):
-        if i == 0:
-            img = nib.load(str(file_path.numpy(), encoding="utf-8"))
-            data = img.get_fdata()
+        img = nib.load(str(file_path.numpy(), encoding="utf-8"))
+        data = img.get_fdata()
+        if data_array is None:
             data_array = np.zeros((data.shape[0], data.shape[1], data.shape[2], batch_size))
-            data_array[:, :, :, i] = data
-        else:
-            img = nib.load(str(file_path.numpy(), encoding="utf-8"))
-            data = img.get_fdata()
-            data_array[:, :, :, i] = data
+        data_array[:, :, :, i] = data
     return data_array
 
 
