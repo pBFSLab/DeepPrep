@@ -4,10 +4,10 @@
 Installation
 ============
 
-Running with Docker step-by-step
+Run with Docker (step-by-step)
 ---------------------------------
 
-DeepPrep provides a docker image as the recommended way to get started.
+DeepPrep provides a Docker image as the recommended way to get started.
 
 .. note::
     **Required Environment**
@@ -32,8 +32,7 @@ DeepPrep provides a docker image as the recommended way to get started.
 
 The following message should appear:
 
-.. code-block:: python
-    :linenos:
+::
 
     Hello from Docker!
     This message shows that your installation appears to be working correctly.
@@ -78,64 +77,49 @@ The same output as before is expected.
     :linenos:
 
     $ docker run -it --rm --gpus all \
-    -v <input_dir>:/BIDS_DATASET \
+    -v <bids_dir>:/BIDS_DATASET \
     -v <output_dir>:/DEEPPREP_RESULT_DIR \
     -v <freesurfer_license>:/usr/local/freesurfer/license.txt \
-    -v <config_file>:/nextflow.docker.local.config \
     deepprep:latest \
-    -with-report /DEEPPREP_RESULT_DIR/QC/report.html \
-    -with-timeline /DEEPPREP_RESULT_DIR/QC/timeline.html \
-    -resume \
-    -c /nextflow.docker.local.config \
-    --bids_dir /BIDS_DATASET \
-    --bold_task_type rest
+    <bids_dir> <output_dir> participant \
+    --bold_task_type rest \
+    --fs_license_file freesurfer_license \
+    --bold_surface_spaces 'fsnative fsaverage6' \
+    --bold_template_space MNI152NLin6Asym \
+    --bold_template_res 02 \
+    -resume
 
 **Let's dig into the mandatory commands**
-    + ``--gpus all`` assigns all the available GPUs on the local host to the container.
-    + ``-v`` flag mounts your local directories to the directories inside the container. The input directories should be in *absolute path* to avoid any confusions.
-    + The ``<input_dir>`` should be in `bids format`_.
-    .. _bids format: https://bids-specification.readthedocs.io/en/stable/index.html
-    + ``<freesurfer_license>`` is the directory of a valid FreeSurfer License.
-    + ``deepprep:latest`` is the docker image.
+    + ``--gpus all`` - (Docker argument) assigns all the available GPUs on the local host to the container.
+    + ``-v`` - (Docker argument) flag mounts your local directories to the directories inside the container. The input directories should be in *absolute path* to avoid any confusions.
+    + ``<bids_dir>`` - refers to the directory of the input dataset, which should be in `BIDS format`_.
+    .. _BIDS format: https://bids-specification.readthedocs.io/en/stable/index.html
+    + ``<output_dir>`` - refers to the directory for the outputs of DeepPrep.
+    + ``<freesurfer_license>`` - the directory of a valid FreeSurfer License.
+    + ``deepprep:latest`` - the latest version of the Docker image. One can specify the version by ``deepprep:<version>``.
+    + ``participant`` - refers to the analysis level.
+    + ``--bold_task_type`` - the task label of BOLD images (i.e. rest, motor).
 
 **Dig further (optional commands)**
-    + ``-it`` starts the container in an interactive mode.
-    + ``--rm`` the container will be removed when exit.
-    + ``-resume`` allows the deepprep pipeline starts from the last exit point.
-    + ``--bold_task_type`` is the task type of BOLD images (i.e. rest, motor).
-    + ``--subjects`` is the subject id you want to process, otherwise all the subjects in the ``<input_dir>`` will be processed.
-    + ``--subjects_dir`` is the output directory of *Recon* files, the default directory is ``<output_dir>/Recon``.
-    + ``--anat_only True`` only the anatomical images will be processed, default is ``False``.
-    + ``--bold_only True`` only the functional images will be processed, where *Recon* files are pre-requests. The default is ``False``.
-    + ``--bold_sdc`` applies Susceptibility Distortion Correction (SDC) on BOLD images, default is ``True``.
-
-
-
-
-..
-    There are two container ways to install DeepPrep：
-       * using Docker container technology.or
-       * using Singularity container technology.
-
-    The deepprep command-line adheres to the BIDS-Apps recommendations for the user interface.
-    Therefore, the command-line has the following structure: ::
-        $ deepprep <input_bids_path> <output_derivatives_path> <analysis_level> <named_options>
-
-    The deepprep command-line options are documented in the **Usage Notes** section.
-
-    Minimal system requirements
-        * Operating system: Ubuntu 20.04 or higher
-        * RAM: at least 16 GB
-        * Swap space: at least 16 GB
-        * Hard disk: at least 20 GB
-        * GPU VRAM: at least 24 GB
-        * NVIDIA Driver: CUDA Toolkit 11.8 or higher
-
-    After successfully downloading and installing the container (docker and singularity), load the image
-    package into the Docker local warehouse::
-
-        $ sudo docker load --input deepprep_v0.0.14ubuntu22.04.tar.gz
-
-    load the image package into the Singularity local warehouse::
-
-        $ Singularity 安装 DeepPrep
+    + ``-it`` - (Docker argument) starts the container in an interactive mode.
+    + ``--rm`` - (Docker argument) the container will be removed when exit.
+    + ``--subjects_dir`` - the output directory of *Recon* files, the default directory is ``<output_dir>/Recon``.
+    + ``--participant_label`` - the subject id you want to process, otherwise all the subjects in the ``<bids_dir>`` will be processed.
+    + ``--anat_only`` - with this flag, only the *anatomical* images will be processed.
+    + ``--bold_only`` - with this flag, only the *functional* images will be processed, where *Recon* files are pre-requested.
+    + ``--bold_sdc`` - with this flag, susceptibility distortion correction (SDC) will be applied.
+    + ``--bold_confounds`` - with this flag, confounds will be generated.
+    + ``--bold_surface_spaces`` - specifies surfaces spaces, i.e. 'fsnative fsaverage fsaverage6'. (*Note:* the space names must be quoted using single quotation marks.)
+    + ``--bold_template_space`` - specifies an available template space from `TemplateFlow`_, i.e. MNI152NLin6Asym.
+    .. _TemplateFlow: https://www.templateflow.org/browse/
+    + ``--bold_template_res`` - specifies the resolution of the corresponding template space from `TemplateFlow`_, i.e. 02.
+    + ``--device`` - specifies the device, i.e. cpu.
+    + ``--gpu_compute_capability`` - refers to the GPU compute capability, you can find yours `here`_.
+    .. _here: https://developer.nvidia.com/cuda-gpus
+    + ``--cpus`` - refers to the maximum CPUs for usage.
+    + ``--memory`` - refers to the maximum memory resources for usage.
+    + ``--freesurfer_home`` - the directory of the FreeSurfer home.
+    + ``--deepprep_home`` - the directory of the DeepPrep home.
+    + ``--templateflow_home`` - the directory of the TemplateFlow home.
+    + ``--ignore_error`` - ignores the errors occurred during processing.
+    + ``-resume`` - allows the DeepPrep pipeline starts from the last exit point.
