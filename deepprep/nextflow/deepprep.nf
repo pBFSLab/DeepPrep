@@ -2249,7 +2249,7 @@ workflow anat_wf {
 
     main:
     bids_dir = params.bids_dir
-    subjects = params.subjects
+    participant_label = params.participant_label
     bold_task_type = params.bold_task_type
 
     fsthreads = params.anat_fsthreads
@@ -2257,7 +2257,6 @@ workflow anat_wf {
     fastsurfer_home = params.fastsurfer_home
 
     freesurfer_home = params.freesurfer_home
-    freesurfer_fsaverage_dir = params.freesurfer_fsaverage_dir
 
     fastcsr_home = params.fastcsr_home
     fastcsr_model_path = params.fastcsr_model_path
@@ -2272,29 +2271,7 @@ workflow anat_wf {
 
     device = params.device
 
-    // BIDS and SUBJECTS_DIR
-    _directory = new File(subjects_dir)
-    if (!_directory.exists()) {
-        _directory.mkdirs()
-        println "create dir: ..."
-        println _directory
-    }
-
-    _directory = new File(work_dir)
-        if (!_directory.exists()) {
-            _directory.mkdirs()
-            println "create dir: ..."
-            println _directory
-        }
-
-    _directory = new File(qc_result_path)
-    if (!_directory.exists()) {
-        _directory.mkdirs()
-        println "create dir: ..."
-        println _directory
-    }
-
-    subject_t1wfile_txt = anat_get_t1w_file_in_bids(bids_dir, subjects)
+    subject_t1wfile_txt = anat_get_t1w_file_in_bids(bids_dir, participant_label)
     subject_id = anat_create_subject_orig_dir(subjects_dir, subject_t1wfile_txt, deepprep_version)
 
     // freesurfer
@@ -2447,8 +2424,8 @@ workflow anat_wf {
         aparc_a2009s_aseg_mgz = anat_aparc_a2009s2aseg(subjects_dir, anat_aparc_a2009s2aseg_inputs, fsthreads)  // if for paper, comment out
 
         //  *exvivo* labels
-        balabels_lh = Channel.fromPath("${freesurfer_fsaverage_dir}/label/*lh*exvivo*.label")
-        balabels_rh = Channel.fromPath("${freesurfer_fsaverage_dir}/label/*rh*exvivo*.label")
+        balabels_lh = Channel.fromPath("${freesurfer_home}/subjects/fsaverage/label/*lh*exvivo*.label")
+        balabels_rh = Channel.fromPath("${freesurfer_home}/subjects/fsaverage/label/*rh*exvivo*.label")
         anat_balabels_input_lh = sphere_reg_surf.join(white_surf, by: [0, 1]).join(subject_id_lh, by: [0, 1])
         anat_balabels_input_rh = sphere_reg_surf.join(white_surf, by: [0, 1]).join(subject_id_rh, by: [0, 1])
         balabel_lh = anat_balabels_lh(subjects_dir, anat_balabels_input_lh, balabels_lh)  // if for paper, comment out
@@ -2614,7 +2591,7 @@ workflow {
     println "INFO: output_dir         : ${output_dir}"
 
     if (subjects_dir.toString().toUpperCase() == 'NONE') {
-        subjects_dir = output_dir / 'Recon'
+        subjects_dir = "${output_dir}/Recon"
     }
     println "INFO: subjects_dir       : ${subjects_dir}"
 
