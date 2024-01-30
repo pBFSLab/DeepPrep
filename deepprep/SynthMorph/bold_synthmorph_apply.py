@@ -42,9 +42,9 @@ def split_bold_convert_concat(ori_bold_file, work_dir, tar_t1w_file, bold_id, pr
     return concat_bold_file, rm_dir
 
 
-def run_norigid_registration_apply(script, bold, bold_output, fframe_bold_output, T1_file, template, transvoxel):
+def run_norigid_registration_apply(script, bold, bold_output, fframe_bold_output, T1_file, template, transvoxel, bold_file):
 
-    cmd = f'python3 {script} -g -b {bold} -bo {bold_output} -fbo {fframe_bold_output} {T1_file} {template} -tv {transvoxel}'
+    cmd = f'python3 {script} -g -b {bold} -bo {bold_output} -fbo {fframe_bold_output} {T1_file} {template} -tv {transvoxel} -ob {bold_file}'
     os.system(cmd)
 
 def get_space_t1w_bold(bids_orig, bids_preproc, bold_orig_file):
@@ -96,7 +96,7 @@ if __name__ == '__main__':
     template = tflow.get(args.template_space, desc=None, resolution=template_resolution, suffix='T1w', extension='nii.gz')
     bold_output = Path(bold_t1w_file.dirname) / f'{args.bold_id}_space-{args.template_space}_res-{args.template_resolution}_desc-preproc_bold.nii.gz'
     fframe_bold_output = Path(bold_t1w_file.dirname) / f'{args.bold_id}_space-{args.template_space}_res-{args.template_resolution}_boldref.nii.gz'
-    run_norigid_registration_apply(args.synth_script, unsampled_bold, bold_output, fframe_bold_output, T1_2mm, template, transvoxel)
+    run_norigid_registration_apply(args.synth_script, unsampled_bold, bold_output, fframe_bold_output, T1_2mm, template, transvoxel, bold_file)
     assert os.path.exists(bold_output), f'{bold_output}'
     assert os.path.exists(fframe_bold_output), f'{fframe_bold_output}'
     shutil.rmtree(rm_dir)

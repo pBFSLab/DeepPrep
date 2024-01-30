@@ -119,7 +119,7 @@ def batch_transform(image, trans, normalize=False):
     return out_arr[tf.newaxis, ...]
 
 
-def bold_save(path, fframe_bold_path, data, affine, header, dtype=None):
+def bold_save(path, fframe_bold_path, data, affine, header, ori_header, dtype=None):
     """Save image file.
 
     Helper function for saving a spatial image using NiBabel. Removes singleton
@@ -149,8 +149,8 @@ def bold_save(path, fframe_bold_path, data, affine, header, dtype=None):
     data = data.transpose((1, 2, 3, 0))
     # Use Nifti1Image instead of MGHImage for FP64 support. Set units to avoid
     # warnings when reading with FreeSurfer.
-    out = nib.Nifti1Image(data, affine=affine, header=header)
-    fframe_out = nib.Nifti1Image(data[..., 0], affine=affine, header=header)
+    out = nib.Nifti1Image(data, affine=affine, header=ori_header)
+    fframe_out = nib.Nifti1Image(data[..., 0], affine=affine, header=ori_header)
     # out.header.set_xyzt_units(xyz='mm', t='sec')
     nib.save(out, filename=path)
     nib.save(fframe_out, filename=fframe_bold_path)
@@ -166,6 +166,7 @@ p.add_argument('-bo', '--bold_out', type=str, metavar='BOLD_OUT')
 p.add_argument('-fbo', '--fframe_bold_out', type=str, metavar='BOLD_OUT')
 # p.add_argument('-mc', '--mc', type=str, metavar='TR_INFO')
 p.add_argument('-tv', '--trans_vox', type=str, metavar='TRANS VOXEL')
+p.add_argument('-ob', '--orig_bold', type=str, metavar='ORIGINAL BOLD')
 
 arg = p.parse_args()
 
@@ -183,12 +184,11 @@ if arg.threads:
 mov = nib.load(arg.moving)
 fix = nib.load(arg.fixed)
 assert len(mov.shape) == len(fix.shape) == 3, 'input images not single volumes'
-
-
+orig_bold = nib.load(arg.orig_bold)
 bold = nib.load(arg.bold)
 trans_vox = tf.convert_to_tensor(np.load(f'{arg.trans_vox}')['arr_0'])
 out_bold = batch_transform(bold, trans=trans_vox)
-bold_save(arg.bold_out, arg.fframe_bold_out, data=out_bold, affine=fix.affine, header=fix.header, dtype=mov.dataobj.dtype)
+bold_save(arg.bold_out, arg.fframe_bold_out, data=out_bold, affine=fix.affine, header=fix.header, ori_header=orig_bold.header, dtype=mov.dataobj.dtype)
 assert os.path.exists(arg.bold_out), f'{arg.bold_out}'
 assert os.path.exists(arg.fframe_bold_out), f'{arg.fframe_bold_out}'
 os.remove(arg.bold)
