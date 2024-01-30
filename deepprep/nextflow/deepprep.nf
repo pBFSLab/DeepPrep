@@ -2500,7 +2500,7 @@ workflow bold_wf {
     main:
     // GPU
     device = params.device
-    subjects = params.subjects
+    participant_label = params.participant_label
 
     // set dir path
     bids_dir = params.bids_dir
@@ -2531,7 +2531,7 @@ workflow bold_wf {
     bold_only = params.bold_only.toString().toUpperCase()
     deepprep_version = params.deepprep_version
 
-    subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, subjects_dir, subjects, bold_task_type, bold_only)
+    subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, subjects_dir, participant_label, bold_task_type, bold_only)
     (subject_id, boldfile_id, subject_boldfile_txt) = subject_boldfile_txt.flatten().multiMap { it ->
                                                                                      a: it.name.split('_')[0]
                                                                                      c: it.name
@@ -2615,7 +2615,9 @@ workflow {
 
     if (subjects_dir.toString().toUpperCase() == 'NONE') {
         subjects_dir = output_dir / 'Recon'
+    }
     println "INFO: subjects_dir       : ${subjects_dir}"
+
 
     (bold_preprocess_path, qc_result_path, work_dir, gpu_lock) = deepprep_init(freesurfer_home, bids_dir, output_dir, subjects_dir, bold_spaces, bold_only)
 
@@ -2652,7 +2654,7 @@ workflow {
 
     if (params.mriqc.toString().toUpperCase() == 'TRUE') {
         mriqc_result_path = "${qc_result_path}/MRIQC"
-        def synthstrip_model = new File("${freesurfer_home}/models/synthstrip.1.pt")
+        synthstrip_model = new File("${freesurfer_home}/models/synthstrip.1.pt")
         if (synthstrip_model.exists()) {
             process_mriqc(bids_dir, mriqc_result_path)
         } else {
