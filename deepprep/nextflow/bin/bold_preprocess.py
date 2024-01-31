@@ -63,16 +63,12 @@ def update_config(bids_dir, bold_preprocess_dir, work_dir, fs_license_file, fs_s
 
 def get_bold_func_path(bids_orig, bids_preproc, bold_orig_file):
     from bids import BIDSLayout
-    layout_orig = BIDSLayout(bids_orig, validate=False)
-    layout_preproc = BIDSLayout(bids_preproc, validate=False)
+    layout_orig = BIDSLayout(bids_orig, validate=False, absolute_paths=False)
     info = layout_orig.parse_file_entities(bold_orig_file)
-
-    boldref_t1w_info = info.copy()
-    boldref_t1w_info['space'] = 'T1w'
-    boldref_t1w_info['suffix'] = 'boldref'
-    boldref_t1w_file = layout_preproc.get(**boldref_t1w_info)[0]
-
-    return Path(boldref_t1w_file).parent
+    del info['extension']
+    bold_orig_path = layout_orig.get(**info)[0]
+    func_path = Path(bids_preproc) / bold_orig_path
+    return func_path.parent
 
 
 if __name__ == '__main__':
