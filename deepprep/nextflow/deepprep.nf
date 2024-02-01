@@ -1760,9 +1760,43 @@ process synthmorph_norigid {
 }
 
 
+process bold_upsampled {
+    tag "${bold_id}"
+
+    cpus 1
+    memory '5 GB'
+
+    input:
+    val(bids_dir)
+    val(subjects_dir)
+    val(bold_preprocess_path)
+    val(work_dir)
+    tuple(val(subject_id), val(bold_id), path(t1_native2mm), path(subject_boldfile_txt_bold))
+
+    output:
+    tuple(val(subject_id), val(bold_id), val(upsampled_dir))
+
+    script:
+    process_num = 8
+    script_py = "bold_upsampled.py"
+    upsampled_dir = "${work_dir}/synthmorph_norigid_apply/${bold_id}/upsampling"
+
+    """
+    ${script_py} \
+    --bids_dir ${bids_dir} \
+    --bold_preprocess_dir ${bold_preprocess_path} \
+    --work_dir ${work_dir}/synthmorph_norigid_apply \
+    --bold_id ${bold_id} \
+    --T1_file ${t1_native2mm} \
+    --subject_boldfile_txt_bold ${subject_boldfile_txt_bold} \
+    --process_num ${process_num}
+    """
+}
+
+
 process synthmorph_norigid_apply {
     // 8660
-    tag "${subject_id}"
+    tag "${bold_id}"
 
     cpus 2
     label "with_gpu"
@@ -1770,11 +1804,10 @@ process synthmorph_norigid_apply {
 
     input:
     val(bids_dir)
-    val(subjects_dir)
     val(bold_preprocess_path)
     val(synthmorph_home)
     val(work_dir)
-    tuple(val(subject_id), val(bold_id), path(t1_native2mm), path(subject_boldfile_txt_bold), path(transvoxel))
+    tuple(val(subject_id), val(bold_id), path(t1_native2mm), path(subject_boldfile_txt_bold), path(transvoxel), val(upsampled_dir))
     val(template_space)
     val(template_resolution)
     val(device)
@@ -1782,29 +1815,59 @@ process synthmorph_norigid_apply {
     val(gpu_lock)
 
     output:
-    tuple(val(subject_id), val(bold_id), val(template_space)) //emit: {bild_id}_space-{template_space}_res-{template_resolution}_desc-preproc_bold.nii.gz & {bild_id}_space-{template_space}_res-{template_resolution}_boldref.nii.gz
+    tuple(val(subject_id), val(bold_id), val(transform_dir)) //emit: {bild_id}_space-{template_space}_res-{template_resolution}_boldref.nii.gz
 
     script:
-    process_num = 8
     batch_size = 10
     gpu_script_py = "gpu_schedule_run.py"
     script_py = "${synthmorph_home}/bold_synthmorph_apply.py"
     synth_script = "${synthmorph_home}/mri_bold_apply_synthmorph.py"
+    transform_dir = "${work_dir}/synthmorph_norigid_apply/${bold_id}/transform"
     """
     ${gpu_script_py} ${device} double ${task.executor} ${script_py} \
     --bids_dir ${bids_dir} \
     --bold_preprocess_dir ${bold_preprocess_path} \
-    --work_dir ${work_dir}/synthmorph_norigid_apply \
-    --subject_id ${subject_id} \
+    --upsampled_dir ${upsampled_dir} \
     --bold_id ${bold_id} \
     --T1_file ${t1_native2mm} \
     --subject_boldfile_txt_bold ${subject_boldfile_txt_bold} \
     --trans_vox ${transvoxel} \
     --template_space ${template_space} \
     --template_resolution ${template_resolution} \
-    --process_num ${process_num} \
     --batch_size ${batch_size} \
     --synth_script ${synth_script} \
+    """
+}
+
+
+process bold_concat {
+    tag "${bold_id}"
+
+    cpus 1
+    memory '5 GB'
+
+    input:
+    val(bids_dir)
+    val(bold_preprocess_path)
+    val(template_space)
+    val(template_resolution)
+    tuple(val(subject_id), val(bold_id), val(transform_dir), path(subject_boldfile_txt_bold)) //emit: {bild_id}_space-{template_space}_res-{template_resolution}_desc-preproc_bold.nii.gz
+
+    output:
+    tuple(val(subject_id), val(bold_id), val(template_space))
+
+    script:
+    script_py = "bold_concat.py"
+
+    """
+    ${script_py} \
+    --bids_dir ${bids_dir} \
+    --bold_preprocess_dir ${bold_preprocess_path} \
+    --bold_id ${bold_id} \
+    --subject_boldfile_txt_bold ${subject_boldfile_txt_bold} \
+    --template_space ${template_space} \
+    --template_resolution ${template_resolution} \
+    --transform_dir ${transform_dir}
     """
 }
 
@@ -2557,8 +2620,12 @@ workflow bold_wf {
         (t1_norigid_nii, norm_norigid_nii, transvoxel) = synthmorph_norigid(subjects_dir, bold_preprocess_path, synthmorph_home, synthmorph_norigid_input, synthmorph_model_path, template_space, device, gpu_lock, compute_capability)
         transvoxel_group = subject_id_boldfile_id.groupTuple(sort: true).join(transvoxel).transpose()
         t1_native2mm_group = subject_id_boldfile_id.groupTuple(sort: true).join(t1_native2mm).transpose()
-        synthmorph_norigid_apply_input = t1_native2mm_group.join(subject_boldfile_txt_bold_pre_process, by: [0,1]).join(transvoxel_group, by: [0,1])
-        synth_apply_template = synthmorph_norigid_apply(bids_dir, subjects_dir, bold_preprocess_path, synthmorph_home, work_dir, synthmorph_norigid_apply_input, template_space, template_resolution, device, gpu_lock)
+        bold_upsampled_input = t1_native2mm_group.join(subject_boldfile_txt_bold_pre_process, by: [0,1])
+        upsampled_dir = bold_upsampled(bids_dir, subjects_dir, bold_preprocess_path, work_dir, bold_upsampled_input)
+        synthmorph_norigid_apply_input = t1_native2mm_group.join(subject_boldfile_txt_bold_pre_process, by: [0,1]).join(transvoxel_group, by: [0,1]).join(upsampled_dir, by: [0,1])
+        transform_dir = synthmorph_norigid_apply(bids_dir, bold_preprocess_path, synthmorph_home, work_dir, synthmorph_norigid_apply_input, template_space, template_resolution, device, gpu_lock)
+        bold_concat_input = transform_dir.join(subject_boldfile_txt_bold_pre_process, by: [0,1])
+        synth_apply_template = bold_concat(bids_dir, bold_preprocess_path, template_space, template_resolution, bold_concat_input)
     }
 
     do_bold_qc = 'TRUE'
