@@ -142,8 +142,13 @@ RUN mkdir ${FREESURFER_HOME}/models && wget --content-disposition -P ${FREESURFE
 ### default template
 RUN python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin6Asym', desc=None, resolution=2, suffix='T1w', extension='nii.gz')"
 
-COPY model /opt/DeepPrep/deepprep/model
-COPY deepprep /opt/DeepPrep/deepprep
+COPY deepprep/model /opt/DeepPrep/deepprep/model
+COPY deepprep/FastCSR /opt/DeepPrep/deepprep/FastCSR
+COPY deepprep/SageReg /opt/DeepPrep/deepprep/SageReg
+COPY deepprep/FastSurfer /opt/DeepPrep/deepprep/FastSurfer
+COPY deepprep/SynthMorph /opt/DeepPrep/deepprep/SynthMorph
+COPY deepprep/nextflow /opt/DeepPrep/deepprep/nextflow
+COPY deepprep/deepprep.sh /opt/DeepPrep/deepprep/deepprep.sh
 RUN chmod 755 /opt/DeepPrep/deepprep/deepprep.sh && chmod 755 /opt/DeepPrep/deepprep/nextflow/bin/*.py
 ENV PATH="/opt/DeepPrep/deepprep/nextflow/bin:${PATH}"
 
