@@ -6,7 +6,7 @@ config_file=""
 executor="local"
 cpus=""
 memory=""
-freesurfer_home="/usr/local/freesurfer"
+freesurfer_home="/opt/freesurfer"
 fs_license_file=""
 deepprep_home="/opt/DeepPrep"
 ignore_error=""
@@ -58,9 +58,9 @@ while [[ $# -gt 0 ]]; do
       echo "Input --freesurfer_home : ${freesurfer_home}"
       shift
       ;;
-    --freesurfer_license)
-      freesurfer_license="$2"
-      echo "Input --freesurfer_license : ${freesurfer_license}"
+    --fs_license_file)
+      fs_license_file="$2"
+      echo "Input --fs_license_file : ${fs_license_file}"
       shift
       ;;
     -c|--config_file)
@@ -151,13 +151,16 @@ fi
 
 if [ -n "${freesurfer_home}" ]; then
   echo "INFO: freesurfer_home : ${freesurfer_home}"
-  sed -i "s@/usr/local/freesurfer@${freesurfer_home}@g" "${run_config}"
+  sed -i "s@/opt/freesurfer@${freesurfer_home}@g" "${run_config}"
 fi
 
 if [ -n "${fs_license_file}" ]; then
   echo "INFO: fs_license_file : ${fs_license_file}"
   export FS_LICENSE=${fs_license_file}
   sed -i "s@\${freesurfer_home}/license.txt@${fs_license_file}@g" "${run_config}"
+  else
+  echo "ERROR: No Input --fs_license_file : ${fs_license_file}"
+  exit 1
 fi
 
 if [ -n "${cpus}" ]; then
