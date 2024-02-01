@@ -144,7 +144,7 @@ if [ ! -d "${deepprep_home}" ]; then
   echo "ERROR: deepprep_home is not exists : ${deepprep_home}"
   exit 1
 fi
-sed -i "s@/opt/DeepPrep@${deepprep_home}@g" "${run_config}"
+sed -i "s@\${deepprep_home}@${deepprep_home}@g" "${run_config}"
 
 if [ -z "${freesurfer_home}" ]; then
   echo "ERROR: freesurfer_home is empty : ${freesurfer_home}"
