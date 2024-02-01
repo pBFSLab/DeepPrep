@@ -1,26 +1,40 @@
 Bootstrap: docker-daemon
-From: deepprep:v0.0.10ubuntu22.04
+From: deepprep:$Version
 Stage: build
 
 %files
-    deepprep/README.md /README.md
-
+    Docker/singularity_ubuntu22.04.def /singularity_ubuntu22.04.def
 
 %environment
-    export TMPDIR=$HOME/TEMPDIR
-    export TEMP=$HOME/TEMPDIR
-    export TMP=$HOME/TEMPDIR
+    export FREESURFER_HOME=/opt/freesurfer
+
+    export PATH="/opt/workbench/bin_linux64:${PATH}"
+
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/lib/jvm/java-11-openjdk-amd64/lib:/usr/lib/jvm/java-11-openjdk-amd64/lib/server"
+    export JAVA_HOME="/usr/lib/jvm/java-11-openjdk-amd64"
+
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/lib/python3.10/dist-packages/tensorrt_libs"
+
+    export ANTSPATH="/opt/ANTs"
+    export PATH="${ANTSPATH}/bin:${PATH}"
+
+    export FSLDIR="/opt/fsl"
+    export FSLOUTPUTTYPE="NIFTI"
+    export PATH="${FSLDIR}/bin:${PATH}"
+
+    export PATH="/opt/abin:${PATH}"
+
+    export PATH="/opt/DeepPrep/deepprep/nextflow/bin:${PATH}"
 
 %post
     NOW=`date`
     echo "export NOW=\"${NOW}\"" >> $SINGULARITY_ENVIRONMENT
-
-    echo ". /usr/local/freesurfer/SetUpFreeSurfer.sh" >> $SINGULARITY_ENVIRONMENT
+    echo ". /opt/freesurfer/SetUpFreeSurfer.sh" >> $SINGULARITY_ENVIRONMENT
 
 %runscript
-    echo "Container was created $NOW"
+    echo "Container was created $NOW. Version: $Version"
     echo "Arguments received: $*"
-    exec echo "$@"
+    exec /opt/DeepPrep/deepprep/deepprep.sh "$@"
 
 %test
     grep -q NAME=\"Ubuntu\" /etc/os-release
@@ -33,7 +47,7 @@ Stage: build
 
 %labels
     Author anning@cpl.ac.cn
-    Version v0.0.10ubuntu22.04
+    Version $Version
 
 %help
     This is a DeepPrep container used to preprocess sMRI and fMRI
