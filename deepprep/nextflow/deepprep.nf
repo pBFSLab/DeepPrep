@@ -122,7 +122,7 @@ process anat_segment {
     tag "${subject_id}"
 
     label "with_gpu"
-    cpus 3
+    cpus 8
     memory '7 GB'
 
     input:
@@ -146,7 +146,7 @@ process anat_segment {
     network_coronal_path = "${fastsurfer_home}/checkpoints/Coronal_Weights_FastSurferCNN/ckpts/Epoch_30_training_state.pkl"
     network_axial_path = "${fastsurfer_home}/checkpoints/Axial_Weights_FastSurferCNN/ckpts/Epoch_30_training_state.pkl"
     """
-    ${gpu_script_py} ${device} single ${task.executor} ${script_py} \
+    ${gpu_script_py} ${device} double ${task.executor} ${script_py} \
     --in_name ${orig_mgz} \
     --out_name ${seg_deep_mgz} \
     --conformed_name ${subjects_dir}/${subject_id}/mri/conformed.mgz \
@@ -511,7 +511,7 @@ process anat_fastcsr_levelset {
     tag "${subject_id}"
 
     label "with_gpu"
-    cpus 1
+    cpus 8
     memory '6 GB'
 
     input:
@@ -533,7 +533,7 @@ process anat_fastcsr_levelset {
     script_py = "${fastcsr_home}/fastcsr_model_infer.py"
 
     """
-    ${gpu_script_py} ${device} single ${task.executor} ${script_py} \
+    ${gpu_script_py} ${device} double ${task.executor} ${script_py} \
     --fastcsr_subjects_dir ${subjects_dir} \
     --subj ${subject_id} \
     --hemi ${hemi} \
@@ -802,7 +802,7 @@ process anat_sphere_register {
     threads = 1
 
     """
-    ${gpu_script_py} ${device} single ${task.executor} ${script_py} --sd ${subjects_dir} --sid ${subject_id} --fsd ${freesurfer_home} \
+    ${gpu_script_py} ${device} double ${task.executor} ${script_py} --sd ${subjects_dir} --sid ${subject_id} --fsd ${freesurfer_home} \
     --hemi ${hemi} --model_path ${surfreg_model_path} --device ${device}
     """
 }
@@ -1683,7 +1683,7 @@ process synthmorph_affine {
     tag "${subject_id}"
 
     label "with_gpu"
-    cpus 1
+    cpus 8
     memory '5 GB'
 
     input:
@@ -1721,7 +1721,7 @@ process synthmorph_norigid {
     // 22202
     tag "${subject_id}"
 
-    cpus 2
+    cpus 8
     label "with_gpu"
     memory '5 GB'
 
@@ -1798,7 +1798,7 @@ process synthmorph_norigid_apply {
     // 8660
     tag "${bold_id}"
 
-    cpus 2
+    cpus 8
     label "with_gpu"
     memory '15 GB'
 
@@ -2465,7 +2465,7 @@ workflow anat_wf {
     qc_plot_aparc_aseg_input = norm_mgz.join(aparc_aseg_mgz)
     aparc_aseg_svg = qc_plot_aparc_aseg(subjects_dir, qc_plot_aparc_aseg_input, qc_utils_path, qc_result_path, freesurfer_home)
 
-//     qc_report = qc_anat_create_report(bids_dir, subjects_dir, qc_result_path, aparc_aseg_svg, reports_utils_path, deepprep_version)
+    qc_report = qc_anat_create_report(bids_dir, subjects_dir, qc_result_path, aparc_aseg_svg, reports_utils_path, deepprep_version)
 
     lh_pial_surf = pial_surf.join(subject_id_lh, by: [0, 1]).map { tuple -> return tuple[0, 2] }
     rh_pial_surf = pial_surf.join(subject_id_rh, by: [0, 1]).map { tuple -> return tuple[0, 2] }
