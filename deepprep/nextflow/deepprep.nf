@@ -2254,7 +2254,7 @@ workflow anat_wf {
     participant_label = params.participant_label
     bold_task_type = params.bold_task_type
 
-    fsthreads = params.anat_fsthreads
+    fsthreads = params.fs_threads
 
     fastsurfer_home = params.fastsurfer_home
 
