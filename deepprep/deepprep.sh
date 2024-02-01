@@ -25,7 +25,11 @@ deepprep-docker [bids_dir] [output_dir] [{participant}] [--bold_task_type TASK_L
                 [--ignore_error] [--resume]
 "
 
-if [ $# -lt 5 ]; then
+if [ $# -le 1 ]; then
+  echo "${help}"
+  exit 0
+fi
+if [ $# -gt 1 ] && [ $# -lt 5 ]; then
   echo "ERROR: args less than required."
   echo "${help}"
   exit 1
