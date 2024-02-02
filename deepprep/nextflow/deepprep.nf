@@ -1261,7 +1261,7 @@ process bold_fieldmap {
 
     script:
     script_py = "bold_preprocess.py"
-    if (bold_sdc.toUpperCase() == 'TRUE') {
+    if (bold_sdc == 'TRUE') {
         """
         ${script_py} \
         --bids_dir ${bids_dir} \
@@ -2551,7 +2551,7 @@ workflow bold_wf {
     bold_task_type = params.bold_task_type
     bold_skip_frame = params.bold_skip_frame
 
-    bold_sdc = params.bold_sdc
+    bold_sdc = params.bold_sdc.toString().toUpperCase()
     bold_spaces = params.bold_surface_spaces
 
     do_bold_confounds = params.bold_confounds.toString().toUpperCase()
