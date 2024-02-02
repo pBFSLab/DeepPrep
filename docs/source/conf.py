@@ -32,6 +32,7 @@ extensions = [ "sphinx.ext.autodoc",
                 "sphinx.ext.githubpages",
                 "sphinxcontrib.apidoc",
                 "nipype.sphinxext.apidoc",
+                'sphinx.ext.extlinks'
                 ]
 
 # Mock modules in autodoc:
@@ -67,8 +68,10 @@ html_static_path = ['_static']
 extensions = ['sphinx.ext.autodoc','sphinx.ext.napoleon','sphinx.ext.viewcode']
 # 解析文件格式
 source_suffix = {'.rst': 'restructuredtext'}
+highlight_options = {'style': 'solarized'}
 # Bibliographic Dublin Core info.
 epub_title = project
+html_copy_source = False
 
 # The master toctree document.
 master_doc = "index"

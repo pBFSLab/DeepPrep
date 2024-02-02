@@ -6,8 +6,8 @@ import os
 
 
 def cmd(subject_id: str, subj_func_dir: Path, T1_file, norm_file):
-    T1_fsnative2mm_file = subj_func_dir / f'{subject_id}_space-T1w_res-2mm_desc-skull_T1w.nii.gz'
-    norm_fsnative2mm_file = subj_func_dir / f'{subject_id}_space-T1w_res-2mm_desc-noskull_T1w.nii.gz'
+    T1_fsnative2mm_file = subj_anat_dir / f'{subject_id}_space-T1w_res-2mm_desc-skull_T1w.nii.gz'
+    norm_fsnative2mm_file = subj_anat_dir / f'{subject_id}_space-T1w_res-2mm_desc-noskull_T1w.nii.gz'
     if not T1_fsnative2mm_file.exists():
         sh.mri_convert('-ds', 2, 2, 2,
                        '-i', T1_file,
@@ -33,10 +33,10 @@ if __name__ == '__main__':
     cur_path = os.getcwd()
 
     preprocess_dir = Path(cur_path) / str(args.bold_preprocess_dir) / args.subject_id
-    subj_func_dir = Path(preprocess_dir) / 'func'
-    subj_func_dir.mkdir(parents=True, exist_ok=True)
+    subj_anat_dir = Path(preprocess_dir) / 'anat'
+    subj_anat_dir.mkdir(parents=True, exist_ok=True)
     subject_dir = Path(cur_path) / str(args.subjects_dir) / args.subject_id
     t1_mgz = subject_dir / 'mri' / 'T1.mgz'
     norm_mgz = subject_dir / 'mri' / 'norm.mgz'
 
-    cmd(args.subject_id, subj_func_dir, t1_mgz, norm_mgz)
+    cmd(args.subject_id, subj_anat_dir, t1_mgz, norm_mgz)

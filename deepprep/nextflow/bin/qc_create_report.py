@@ -30,6 +30,14 @@ def get_t1w_and_bold(bids_dir, subject_id, bold_task_type):
             bold_files.append(bold_file)
     return t1w_files, bold_files
 
+def get_t1w(bids_dir, subject_id):
+    layout = bids.BIDSLayout(bids_dir, derivatives=False)
+    t1w_files = []
+
+    for t1w_file in layout.get(return_type='filename', subject=subject_id.split('-')[1], suffix="T1w", extension='.nii.gz'):
+        t1w_files.append(t1w_file)
+
+    return t1w_files
 
 def SubjectSummary_run(subject_id, t1w_files, bold_files, subjects_dir, qc_report_path, std_spaces, nstd_spaces):
 
@@ -115,35 +123,6 @@ def copy_config_and_get_command(qc_result_dir: Path, nextflow_log: Path):
     return command
 
 
-def create_dataset_description(qc_report_path, bold_task_type):
-    descriptions_info_qc = {
-        "Name": "DeepPrep - MRI PREProcessing workflow",
-        "BIDSVersion": "1.4.0",
-        "DatasetType": "derivative",
-        "GeneratedBy": [
-            {
-                "Name": "DeepPrep",
-                "Version": args.deepprep_version,
-                "CodeURL": "***"
-            }
-        ],
-        "HowToAcknowledge": "Please cite our paper ***, and include the generated citation boilerplate within the Methods section of the text."
-    }
-    dataset_description_file_qc = qc_report_path / 'dataset_description.json'
-    if not dataset_description_file_qc.exists():
-        with open(dataset_description_file_qc, 'w') as jf_config:
-            json.dump(descriptions_info_qc, jf_config, indent=4)
-        print(f'create bold results dataset_description.json: {dataset_description_file_qc}')
-    if bold_task_type is not None:
-        bold_result_path = qc_report_path.parent / 'BOLD'
-        dataset_description_file_bold = bold_result_path / 'dataset_description.json'
-        descriptions_info_bold = descriptions_info_qc
-        descriptions_info_bold["Name"] = "DeepPrep - fMRI PREProcessing workflow"
-        with open(dataset_description_file_bold, 'w') as jf_config:
-            json.dump(descriptions_info_bold, jf_config, indent=4)
-        print(f'create bold results dataset_description.json: {dataset_description_file_bold}')
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="DeepPrep: create qc report"
@@ -153,29 +132,30 @@ if __name__ == '__main__':
     parser.add_argument("--subjects_dir", help="SUBJECTS_DIR path", required=True)
     parser.add_argument("--qc_result_path", help="save qc report path", required=True)
     parser.add_argument("--subject_id", required=True)
+    parser.add_argument('--space_template', help='space_mni152_bold_path', required=True)
     parser.add_argument("--bold_task_type", help="save qc report path", default=None)
     parser.add_argument("--deepprep_version", help="DeepPrep version", required=True)
     parser.add_argument("--nextflow_log", help="nextflow run log", required=True)
     args = parser.parse_args()
 
     # cur_path = os.getcwd()  # 必须添加这一行，否则生成的html会有图片重复
-    # qc_report_path = Path(cur_path) / os.path.basename(args.qc_result_path)
+    # dataset_path = Path(cur_path) / os.path.basename(args.qc_result_path)
     qc_report_path = Path(args.qc_result_path)
     subj_qc_report_path = qc_report_path / args.subject_id
     subj_qc_report_path.mkdir(parents=True, exist_ok=True)
     reports_utils_path = Path(args.reports_utils_path)
 
-    t1w_files, bold_files = get_t1w_and_bold(args.bids_dir, args.subject_id, args.bold_task_type)
-
-    std_spaces = ["MNI152_T1_2mm"]
-    nstd_spaces = ["reorient", "mc", "T1w_2mm"]
+    if args.bold_task_type != "None":
+        t1w_files, bold_files = get_t1w_and_bold(args.bids_dir, args.subject_id, args.bold_task_type)
+        std_spaces = [str(args.space_template)]
+        nstd_spaces = ["T1w", "fs_native"]
+        SubjectSummary_run(args.subject_id, t1w_files, bold_files, args.subjects_dir, qc_report_path, std_spaces, nstd_spaces)
+    else:
+        t1w_files = get_t1w(args.bids_dir, args.subject_id)
     command = copy_config_and_get_command(qc_report_path, Path(args.nextflow_log))
 
-    SubjectSummary_run(args.subject_id, t1w_files, bold_files, args.subjects_dir, qc_report_path, std_spaces, nstd_spaces)
     if len(t1w_files) > 0:
         TemplateDimensions_run(args.subject_id, t1w_files, qc_report_path)
     AboutSummary_run(args.subject_id, command, args.deepprep_version)
 
     create_report(subj_qc_report_path, qc_report_path, args.subject_id, reports_utils_path)
-
-    create_dataset_description(qc_report_path, args.bold_task_type)
