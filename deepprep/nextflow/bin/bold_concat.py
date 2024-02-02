@@ -2,13 +2,13 @@
 import os
 from pathlib import Path
 import argparse
-import templateflow.api as tflow
+import shutil
 
 
-def run_norigid_registration_apply(script, upsampled_dir, fframe_bold_output, T1_file, template, transvoxel, bold_file, batch_size):
-
-    cmd = f'python3 {script}  -fbo {fframe_bold_output} {T1_file} {template} -tv {transvoxel} -ob {bold_file} -up {upsampled_dir} -bs {batch_size}'
+def concat_bold(transformed_dir, concat_bold_file):
+    cmd = f'mri_concat --i {transformed_dir}/* --o {concat_bold_file}'
     os.system(cmd)
+
 
 def get_space_t1w_bold(bids_orig, bids_preproc, bold_orig_file):
     from bids import BIDSLayout
@@ -26,24 +26,16 @@ def get_space_t1w_bold(bids_orig, bids_preproc, bold_orig_file):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description="DeepPrep: Bold PreProcessing workflows -- SynthmorphBoldApply"
+        description="DeepPrep: Bold PreProcessing workflows -- BoldConcat"
     )
-
     parser.add_argument("--bids_dir", required=True)
     parser.add_argument("--bold_preprocess_dir", required=True)
-    parser.add_argument("--upsampled_dir", required=True)
     parser.add_argument("--bold_id", required=True)
-    parser.add_argument("--T1_file", required=True)
     parser.add_argument("--subject_boldfile_txt_bold", required=True)
-    parser.add_argument("--trans_vox", required=True)
     parser.add_argument("--template_space", required=True)
     parser.add_argument("--template_resolution", required=True)
-    parser.add_argument("--batch_size", required=True)
-    parser.add_argument("--synth_script", required=True)
+    parser.add_argument("--transform_dir", required=True)
     args = parser.parse_args()
-
-    T1_2mm = args.T1_file
-    transvoxel = args.trans_vox
 
     with open(args.subject_boldfile_txt_bold, 'r') as f:
         data = f.readlines()
@@ -51,9 +43,8 @@ if __name__ == '__main__':
     bold_file = data[1]
     bold_t1w_file = get_space_t1w_bold(args.bids_dir, args.bold_preprocess_dir, bold_file)
 
-    template_resolution = args.template_resolution
-    template = tflow.get(args.template_space, desc=None, resolution=template_resolution, suffix='T1w', extension='nii.gz')
-    fframe_bold_output = Path(bold_t1w_file.dirname) / f'{args.bold_id}_space-{args.template_space}_res-{template_resolution}_boldref.nii.gz'
-    run_norigid_registration_apply(args.synth_script, args.upsampled_dir, fframe_bold_output, T1_2mm, template, transvoxel, bold_file, int(args.batch_size))
-
-    assert os.path.exists(fframe_bold_output), f'{fframe_bold_output}'
+    bold_output = Path(bold_t1w_file.dirname) / f'{args.bold_id}_space-{args.template_space}_res-{args.template_resolution}_desc-preproc_bold.nii.gz'
+    concat_bold(args.transform_dir, bold_output)
+    assert os.path.exists(bold_output), f'{bold_output}'
+    rm_dir = Path(args.transform_dir).parent
+    shutil.rmtree(rm_dir)
