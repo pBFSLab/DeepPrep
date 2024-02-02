@@ -108,6 +108,17 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
+# 判断目录是否存在
+if [ ! -d "${deepprep_home}" ]; then
+  echo "ERROR: deepprep_home is not exists : ${deepprep_home}"
+  exit 1
+fi
+
+if [ -z "${freesurfer_home}" ]; then
+  echo "ERROR: freesurfer_home is empty : ${freesurfer_home}"
+  exit 1
+fi
+
 # 定义目录路径
 nextflow_work_dir="${output_dir}/WorkDir/nextflow"  # output_dir/WorkDir/nextflow
 qc_dir="${output_dir}/QC"  # output_dir/QC
@@ -133,24 +144,19 @@ if [ -n "${debug}" ]; then
   echo "DEBUG: local_config : ${local_config}"
   echo "DEBUG: config_file : ${config_file}"
 fi
+if [ ! -f "${common_config}" ]; then
+  echo "ERROR: common_config is not exists : ${common_config}"
+  exit 1
+fi
+if [ ! -f "${config_file}" ]; then
+  echo "ERROR: config_file is not exists : ${config_file}"
+  exit 1
+fi
 
 run_config="${nextflow_work_dir}/run.config"
 echo "INFO: run_config : ${run_config}"
-
 cat "${common_config}" > "${run_config}"
 cat "${config_file}" >> "${run_config}"
-
-if [ ! -d "${deepprep_home}" ]; then
-  echo "ERROR: deepprep_home is not exists : ${deepprep_home}"
-  exit 1
-fi
-sed -i "s@\${deepprep_home}@${deepprep_home}@g" "${run_config}"
-
-if [ -z "${freesurfer_home}" ]; then
-  echo "ERROR: freesurfer_home is empty : ${freesurfer_home}"
-  exit 1
-fi
-sed -i "s@\${freesurfer_home}@${freesurfer_home}@g" "${run_config}"
 
 if [ -z "${fs_license_file}" ]; then
   echo "ERROR: No Input --fs_license_file : ${fs_license_file}"
@@ -175,8 +181,7 @@ if [ -n "${ignore_error}" ]; then
 fi
 
 if [ "${executor}" = "local" ]; then
-  if pgrep redis-server > /dev/null
-  then
+  if pgrep redis-server > /dev/null; then
     echo "INFO: Redis is already running."
   else
     echo "INFO: Starting Redis..."
