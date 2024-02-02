@@ -146,20 +146,14 @@ def read_batch_nifty_file(next_datafiles):
     return data_array
 
 
-def concat_bold(transformed_dir, concat_bold_file):
-    cmd = f'mri_concat --i {transformed_dir}/* --o {concat_bold_file}'
-    os.system(cmd)
-
-
 p = argparse.ArgumentParser()
 p.add_argument('moving', type=str, metavar='MOVING')
 p.add_argument('fixed', type=str, metavar='FIXED')
 p.add_argument('-j', '--threads', type=int)
-p.add_argument('-bo', '--bold_out', type=str, metavar='BOLD_OUT')
 p.add_argument('-fbo', '--fframe_bold_out', type=str, metavar='BOLD_OUT')
 p.add_argument('-tv', '--trans_vox', type=str, metavar='TRANS VOXEL')
 p.add_argument('-ob', '--orig_bold', type=str, metavar='ORIGINAL BOLD')
-p.add_argument('-up', '--unsampled_path', type=str, metavar='UNSAMPLED_BOLD PATH')
+p.add_argument('-up', '--upsampled_path', type=str, metavar='UPSAMPLED_BOLD PATH')
 p.add_argument('-bs', '--batch_size', type=int, metavar='BATCH SIZE')
 
 arg = p.parse_args()
@@ -182,19 +176,17 @@ assert len(mov.shape) == len(fix.shape) == 3, 'input images not single volumes'
 orig_bold = nib.load(arg.orig_bold)
 trans_vox = tf.convert_to_tensor(np.load(f'{arg.trans_vox}')['arr_0'])
 batch_size = arg.batch_size
-transform_save_path = Path(arg.unsampled_path).parent / 'transform'
+transform_save_path = Path(arg.upsampled_path).parent / 'transform'
 transform_save_path.mkdir(parents=True, exist_ok=True)
-unsamping_file_list = sorted([os.path.join(arg.unsampled_path, f) for f in os.listdir(arg.unsampled_path) if f.endswith('.nii.gz')])
-datafiles = tf.data.Dataset.from_tensor_slices(unsamping_file_list)
+upsamping_file_list = sorted([os.path.join(arg.upsampled_path, f) for f in os.listdir(arg.upsampled_path) if f.endswith('.nii.gz')])
+datafiles = tf.data.Dataset.from_tensor_slices(upsamping_file_list)
 dataset = datafiles.batch(batch_size)
 iterator = iter(dataset)
-iter_nums = math.ceil(len(unsamping_file_list) / batch_size)
+iter_nums = math.ceil(len(upsamping_file_list) / batch_size)
 for i in range(iter_nums):
     next_datafiles = iterator.get_next()
     bold = read_batch_nifty_file(next_datafiles)
     out_bold = batch_transform(bold, trans=trans_vox)
     bold_out = f'{transform_save_path}/t00{i}.nii.gz'
     bold_save(bold_out, arg.fframe_bold_out, num=i, data=out_bold, affine=fix.affine, header=fix.header, ori_header=orig_bold.header, dtype=mov.dataobj.dtype)
-concat_bold(transform_save_path, arg.bold_out)
-assert os.path.exists(arg.bold_out), f'{arg.bold_out}'
 assert os.path.exists(arg.fframe_bold_out), f'{arg.fframe_bold_out}'
