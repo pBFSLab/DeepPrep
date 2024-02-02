@@ -26,7 +26,7 @@ if __name__ == '__main__':
     bold_subject_dict = {}
     anat_subject_dict = {}
     bold_filess = []
-    if args.task_type is not None:
+    if args.task_type is not None:  # TODO delete extension=.nii.gz
         bids_bolds = layout.get(return_type='filename', subject=bold_subject_ids, task=args.task_type, suffix='bold', extension='.nii.gz')
     else:
         bids_bolds = layout.get(return_type='filename', subject=bold_subject_ids, suffix='bold', extension='.nii.gz')
@@ -57,8 +57,7 @@ if __name__ == '__main__':
     for subject_id, bold_files in zip(sorted(bold_subject_ids), sorted(filter_bold_filess)):
         for bold_file in bold_files:
             if os.path.basename(bold_file).split('_')[0] in bold_subject_ids:
-                filename = os.path.basename(bold_file).split('.')[0]
-                bold_id = filename.replace('_bold', '')
+                bold_id = os.path.basename(bold_file).split('_bold')[0]
                 with open(f'{bold_id}', 'w') as f:
                     f.write(subject_id + '\n')
                     f.writelines(bold_file)
