@@ -10,6 +10,7 @@ from nipype.algorithms.confounds import TSNR
 from nipype import Node
 import numpy as np
 from PIL import Image as image_plt
+import bids
 
 
 svg_img_head = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 {view_height} {view_width}" preserveAspectRatio="xMidYMid meet">'
@@ -88,50 +89,65 @@ def combine_bar(output_tsnr_savepath, color_bar_png):
     image1.close()
     image2.close()
 
+def get_space_t1w_bold(bids_orig, bids_preproc, bold_orig_file):
+    from bids import BIDSLayout
+    layout_orig = BIDSLayout(bids_orig, validate=False)
+    layout_preproc = BIDSLayout(bids_preproc, validate=False)
+    info = layout_orig.parse_file_entities(bold_orig_file)
+
+    bold_t1w_info = info.copy()
+    bold_t1w_info['space'] = 'T1w'
+    bold_t1w_file = layout_preproc.get(**bold_t1w_info)[0]
+
+    boldmask_t1w_info = info.copy()
+    boldmask_t1w_info['suffix'] = 'mask'
+    boldmask_t1w_file = layout_preproc.get(**boldmask_t1w_info)[0]
+
+    return bold_t1w_file, boldmask_t1w_file
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="plot subject mc tsnr fig")
-    parser.add_argument('--subject_id', help='输入的subjects id', required=True)
-    parser.add_argument('--bold_id', help='输入的bold id', required=True)
-    parser.add_argument('--bold_preprocess_path', help='bold preprocess', required=True)
-    parser.add_argument('--qc_result_path', help='QC result path', required=True)
-    parser.add_argument('--mc', help='bold_mc_file', required=True)
-    parser.add_argument('--mc_brainmask', help='bold_mc_brainlmask_file', required=True)
-    parser.add_argument('--scene_file', help='画图所需要的scene文件', required=True)
-    parser.add_argument('--color_bar_png', help='画图所需要的color bar png', required=True)
-    parser.add_argument('--svg_outpath', help='输出的svg图片保存路径', required=True)
+    parser.add_argument('--bids_dir', required=True)
+    parser.add_argument('--subject_id', required=True)
+    parser.add_argument('--bold_file_txt', required=True)
+    parser.add_argument('--bold_preprocess_path', required=True)
+    parser.add_argument('--qc_result_path', required=True)
+    parser.add_argument('--scene_file', required=True)
+    parser.add_argument('--color_bar_png', required=True)
+    parser.add_argument('--svg_outpath', required=True)
     args = parser.parse_args()
 
-    subject_id = args.subject_id
-    bold_id = args.bold_id
-    bold_preprocess_dir = args.bold_preprocess_path
+    with open(args.bold_file_txt, 'r') as f:
+        data = f.readlines()
+    data = [i.strip() for i in data]
+    bold_file = data[1]
+    bold_name = os.path.basename(bold_file).split('.')[0]
+
+    bids_bold, brainmask = get_space_t1w_bold(args.bids_dir, args.bold_preprocess_path, bold_file)
+
     qc_result_path = args.qc_result_path
     scene_file = args.scene_file
     color_bar_png = args.color_bar_png
     savepath_svg = args.svg_outpath
 
-    subject_resultdir = Path(args.qc_result_path) / subject_id / 'figures'
+    subject_resultdir = Path(args.qc_result_path) / args.subject_id / 'figures'
     subject_resultdir.mkdir(parents=True, exist_ok=True)
-    subject_workdir = Path(subject_resultdir) / f'{bold_id}_mctsnr'
+    subject_workdir = Path(subject_resultdir) / f'{bold_name}_mctsnr'
     subject_workdir.mkdir(parents=True, exist_ok=True)
 
-    cur_path = os.getcwd()
+    mc_tsnr_path = Path(args.qc_result_path) / str(subject_workdir) / 'mc_tsnr.nii.gz'
 
-    bold_mc = args.mc
-    mc_brainmask = args.mc_brainmask
+    TSNR_test(bids_bold, mc_tsnr_path)
+    rewrite_tsnr(mc_tsnr_path, brainmask)
 
-    mc_tsnr_path = Path(cur_path) / str(subject_workdir) / 'mc_tsnr.nii.gz'
-
-    TSNR_test(bold_mc, mc_tsnr_path)
-    rewrite_tsnr(mc_tsnr_path, mc_brainmask)
-
-    output_tsnr_savepath = subject_workdir / f'{bold_id}_mc_tsnr.png'
+    output_tsnr_savepath = subject_workdir / f'{bold_name}_mc_tsnr.png'
     McTSNR_scene = subject_workdir / 'McTSNR.scene'
     if McTSNR_scene.exists() is False:
         shutil.copyfile(scene_file, McTSNR_scene)
     scene_plot(McTSNR_scene, output_tsnr_savepath, 2000, 815)
     combine_bar(str(output_tsnr_savepath), str(color_bar_png))
-    mctsnr_savepath_svg = subject_resultdir / f'{bold_id}_desc-tsnr_bold.svg'
+    mctsnr_savepath_svg = subject_resultdir / f'{bold_name}_desc-tsnr_bold.svg'
     print(f'>>> {mctsnr_savepath_svg}')
     write_single_svg(mctsnr_savepath_svg, output_tsnr_savepath, 2000, 815)
     shutil.rmtree(subject_workdir)
