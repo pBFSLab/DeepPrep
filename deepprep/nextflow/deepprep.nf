@@ -2563,8 +2563,8 @@ workflow bold_wf {
     synthmorph_home = params.synthmorph_home
     synthmorph_model_path = params.synthmorph_model_path
     compute_capability = params.gpu_compute_capability
-    template_space = params.bold_template_space  // templateflow
-    template_resolution = params.bold_template_res  // templateflow
+    template_space = params.bold_volume_space  // templateflow
+    template_resolution = params.bold_volume_res  // templateflow
     templateflow_home = params.templateflow_home  // templateflow
 
     qc_utils_path = params.qc_utils_path
