@@ -6,9 +6,10 @@ config_file=""
 executor="local"
 cpus=""
 memory=""
-freesurfer_home="/usr/local/freesurfer"
+freesurfer_home="/opt/freesurfer"
 fs_license_file=""
 deepprep_home="/opt/DeepPrep"
+container=""
 ignore_error=""
 debug=""
 
@@ -19,14 +20,17 @@ deepprep-docker [bids_dir] [output_dir] [{participant}] [--bold_task_type TASK_L
                 [--anat_only] [--bold_only] [--bold_sdc] [--bold_confounds]
                 [--bold_surface_spaces '[fsnative fsaverage fsaverage6 ...]']
                 [--bold_template_space {MNI152NLin6Asym MNI152NLin2009cAsym}] [--bold_template_res {02 03...}]
-                [--device {auto {0 1 2...} cpu}] [--gpu_compute_capability {8.6}]
+                [--device { {auto 0 1 2...} cpu}] [--gpu_compute_capability {8.6}]
                 [--cpus 10] [--memory 5]
-                [--freesurfer_home PATH] [--deepprep_home PATH] [--templateflow_home PATH]
-                [--ignore_error]
-                [-resume]
+                [--ignore_error] [--resume]
 "
 
-if [ $# -lt 3 ]; then
+if [ $# -le 1 ]; then
+  echo "${help}"
+  exit 0
+fi
+if [ $# -gt 1 ] && [ $# -lt 5 ]; then
+  echo "ERROR: args less than required."
   echo "${help}"
   exit 1
 fi
@@ -53,19 +57,19 @@ while [[ $# -gt 0 ]]; do
       echo "Input --deepprep_home : ${deepprep_home}"
       shift
       ;;
-    --freesurfer_home)
-      freesurfer_home="$2"
-      echo "Input --freesurfer_home : ${freesurfer_home}"
+    --fs_license_file)
+      fs_license_file="$2"
+      echo "Input --fs_license_file : ${fs_license_file}"
       shift
       ;;
-    --freesurfer_license)
-      freesurfer_license="$2"
-      echo "Input --freesurfer_license : ${freesurfer_license}"
-      shift
-      ;;
-    -c|--config_file)
+    --config_file)
       config_file="$2"
       echo "Input --config_file : ${config_file}"
+      shift
+      ;;
+    --container)
+      container="$2"
+      echo "Input --container : ${container}"
       shift
       ;;
     --executor)
@@ -87,11 +91,16 @@ while [[ $# -gt 0 ]]; do
       ignore_error="True"
       echo "Input --ignore_error : ${ignore_error}"
       ;;
+    --resume)
+      resume="True"
+      echo "Input --resume : ${resume}"
+      args+=("-resume")
+      ;;
     --debug)
       debug="True"
       echo "Input --debug : ${debug}"
       ;;
-    -h|--help)
+    -h|-help|--help)
       echo "${help}"
       exit 0
       ;;
@@ -99,18 +108,16 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
-if [ "${executor}" = "local" ]; then
-  if pgrep redis-server > /dev/null
-  then
-    echo "INFO: Redis is already running."
-  else
-    echo "INFO: Starting Redis..."
-    nohup redis-server > /dev/null 2>&1 &
-    echo "INFO: Redis is running."
-  fi
+# 判断目录是否存在
+if [ ! -d "${deepprep_home}" ]; then
+  echo "ERROR: deepprep_home is not exists : ${deepprep_home}"
+  exit 1
 fi
 
-source "${freesurfer_home}/SetUpFreeSurfer.sh"
+if [ -z "${freesurfer_home}" ]; then
+  echo "ERROR: freesurfer_home is empty : ${freesurfer_home}"
+  exit 1
+fi
 
 # 定义目录路径
 nextflow_work_dir="${output_dir}/WorkDir/nextflow"  # output_dir/WorkDir/nextflow
@@ -137,28 +144,29 @@ if [ -n "${debug}" ]; then
   echo "DEBUG: local_config : ${local_config}"
   echo "DEBUG: config_file : ${config_file}"
 fi
+if [ ! -f "${common_config}" ]; then
+  echo "ERROR: common_config is not exists : ${common_config}"
+  exit 1
+fi
+if [ ! -f "${config_file}" ]; then
+  echo "ERROR: config_file is not exists : ${config_file}"
+  exit 1
+fi
 
 run_config="${nextflow_work_dir}/run.config"
 echo "INFO: run_config : ${run_config}"
-
 cat "${common_config}" > "${run_config}"
 cat "${config_file}" >> "${run_config}"
 
-if [ -n "${deepprep_home}" ]; then
-  echo "INFO: deepprep_home : ${deepprep_home}"
-  sed -i "s@/opt/DeepPrep@${deepprep_home}@g" "${run_config}"
+if [ -z "${fs_license_file}" ]; then
+  echo "ERROR: No Input --fs_license_file : ${fs_license_file}"
+  exit 1
 fi
-
-if [ -n "${freesurfer_home}" ]; then
-  echo "INFO: freesurfer_home : ${freesurfer_home}"
-  sed -i "s@/usr/local/freesurfer@${freesurfer_home}@g" "${run_config}"
+if [ ! -f "${fs_license_file}" ]; then
+  echo "ERROR: fs_license_file is not exists : ${fs_license_file}"
+  exit 1
 fi
-
-if [ -n "${fs_license_file}" ]; then
-  echo "INFO: fs_license_file : ${fs_license_file}"
-  export FS_LICENSE=${fs_license_file}
-  sed -i "s@\${freesurfer_home}/license.txt@${fs_license_file}@g" "${run_config}"
-fi
+sed -i "s@\${fs_license_file}@${fs_license_file}@g" "${run_config}"
 
 if [ -n "${cpus}" ]; then
   sed -i "s@//cpus=@    cpus=${cpus}@g" "${run_config}"
@@ -170,6 +178,33 @@ fi
 
 if [ -n "${ignore_error}" ]; then
   sed -i "s@//errorStrategy@    errorStrategy@g" "${run_config}"
+fi
+
+if [ "${executor}" = "local" ]; then
+  if pgrep redis-server > /dev/null; then
+    echo "INFO: Redis is already running."
+  else
+    echo "INFO: Starting Redis..."
+    nohup redis-server > /dev/null 2>&1 &
+    echo "INFO: Redis is running."
+  fi
+  if [ ! -d "${freesurfer_home}" ]; then
+    echo "ERROR: freesurfer_home is not exists : ${freesurfer_home}"
+    exit 1
+  fi
+  source "${freesurfer_home}/SetUpFreeSurfer.sh"
+  export FS_LICENSE=${fs_license_file}
+else
+  if [ -z "${container}" ]; then
+  echo "ERROR: No Input --container : ${container}"
+  exit 1
+  fi
+  if [ ! -f "${container}" ]; then
+    echo "ERROR: container file is not exists : ${container}"
+    exit 1
+  fi
+  sed -i "s@\${nextflow_work_dir}@${nextflow_work_dir}@g" "${run_config}"
+  sed -i "s@\${container}@${container}@g" "${run_config}"
 fi
 
 cd "${nextflow_work_dir}" && \

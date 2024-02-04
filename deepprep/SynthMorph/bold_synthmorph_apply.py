@@ -3,43 +3,11 @@ import os
 from pathlib import Path
 import argparse
 import templateflow.api as tflow
-import shutil
-from multiprocessing import Pool
 
 
-def upsampling_bold(tar_t1w_file, split_bold_file, unsampling_dir):
-    tar_split_bold_file = Path(unsampling_dir) / Path(split_bold_file).name
-    cmd = f'mri_convert -rl {tar_t1w_file} {split_bold_file} {tar_split_bold_file} --out_data_type float'
-    os.system(cmd)
+def run_norigid_registration_apply(script, upsampled_dir, fframe_bold_output, T1_file, template, transvoxel, bold_file, batch_size):
 
-def split_bold_convert_concat(ori_bold_file, work_dir, tar_t1w_file, bold_id, process_num):
-    split_bold_dir = Path(work_dir) / bold_id / 'split'
-    split_bold_dir.mkdir(exist_ok=True, parents=True)
-    split_bold_files = split_bold_dir / 's.nii.gz'
-    unsampling_dir = Path(work_dir) / bold_id / 'unsampling'
-    unsampling_dir.mkdir(exist_ok=True, parents=True)
-
-    # 1.split bold
-    cmd = f'mri_convert --split {ori_bold_file} {split_bold_files}'
-    os.system(cmd)
-
-    #2. unsampled bold
-    multiprocess = []
-
-    split_bold_files = sorted(os.listdir(split_bold_dir))
-    for n in range(len(split_bold_files)):
-        split_bold_file = split_bold_dir / split_bold_files[n]
-        multiprocess.append((tar_t1w_file, split_bold_file, unsampling_dir))
-    with Pool(process_num) as pool:
-        pool.starmap(upsampling_bold, multiprocess)
-
-    rm_dir = split_bold_dir.parent
-    return unsampling_dir, rm_dir
-
-
-def run_norigid_registration_apply(script, unsampling_dir, bold_output, fframe_bold_output, T1_file, template, transvoxel, bold_file, batch_size):
-
-    cmd = f'python3 {script}  -bo {bold_output} -fbo {fframe_bold_output} {T1_file} {template} -tv {transvoxel} -ob {bold_file} -up {unsampling_dir} -bs {batch_size}'
+    cmd = f'python3 {script}  -fbo {fframe_bold_output} {T1_file} {template} -tv {transvoxel} -ob {bold_file} -up {upsampled_dir} -bs {batch_size}'
     os.system(cmd)
 
 def get_space_t1w_bold(bids_orig, bids_preproc, bold_orig_file):
@@ -63,15 +31,13 @@ if __name__ == '__main__':
 
     parser.add_argument("--bids_dir", required=True)
     parser.add_argument("--bold_preprocess_dir", required=True)
-    parser.add_argument("--work_dir", required=True)
-    parser.add_argument("--subject_id", required=True)
+    parser.add_argument("--upsampled_dir", required=True)
     parser.add_argument("--bold_id", required=True)
     parser.add_argument("--T1_file", required=True)
     parser.add_argument("--subject_boldfile_txt_bold", required=True)
     parser.add_argument("--trans_vox", required=True)
     parser.add_argument("--template_space", required=True)
     parser.add_argument("--template_resolution", required=True)
-    parser.add_argument("--process_num", required=True)
     parser.add_argument("--batch_size", required=True)
     parser.add_argument("--synth_script", required=True)
     args = parser.parse_args()
@@ -84,13 +50,10 @@ if __name__ == '__main__':
     data = [i.strip() for i in data]
     bold_file = data[1]
     bold_t1w_file = get_space_t1w_bold(args.bids_dir, args.bold_preprocess_dir, bold_file)
-    unsampling_dir, rm_dir = split_bold_convert_concat(bold_t1w_file.path, args.work_dir, T1_2mm, args.bold_id, process_num=int(args.process_num))
 
     template_resolution = args.template_resolution
     template = tflow.get(args.template_space, desc=None, resolution=template_resolution, suffix='T1w', extension='nii.gz')
-    bold_output = Path(bold_t1w_file.dirname) / f'{args.bold_id}_space-{args.template_space}_res-{template_resolution}_desc-preproc_bold.nii.gz'
     fframe_bold_output = Path(bold_t1w_file.dirname) / f'{args.bold_id}_space-{args.template_space}_res-{template_resolution}_boldref.nii.gz'
-    run_norigid_registration_apply(args.synth_script, unsampling_dir, bold_output, fframe_bold_output, T1_2mm, template, transvoxel, bold_file, int(args.batch_size))
-    assert os.path.exists(bold_output), f'{bold_output}'
+    run_norigid_registration_apply(args.synth_script, args.upsampled_dir, fframe_bold_output, T1_2mm, template, transvoxel, bold_file, int(args.batch_size))
+
     assert os.path.exists(fframe_bold_output), f'{fframe_bold_output}'
-    shutil.rmtree(rm_dir)
