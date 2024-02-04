@@ -19,7 +19,7 @@ deepprep-docker [bids_dir] [output_dir] [{participant}] [--bold_task_type TASK_L
                 [--subjects_dir PATH] [--executor {local cluster}]
                 [--anat_only] [--bold_only] [--bold_sdc] [--bold_confounds]
                 [--bold_surface_spaces '[fsnative fsaverage fsaverage6 ...]']
-                [--bold_template_space {MNI152NLin6Asym MNI152NLin2009cAsym}] [--bold_template_res {02 03...}]
+                [--bold_volume_space {MNI152NLin6Asym MNI152NLin2009cAsym}] [--bold_volume_res {02 03...}]
                 [--device { {auto 0 1 2...} cpu}] [--gpu_compute_capability {8.6}]
                 [--cpus 10] [--memory 5]
                 [--ignore_error] [--resume]
