@@ -110,8 +110,8 @@ process deepprep_init {
     input_bids_validator_py = "input_bids_validator.py"
     gpu_lock = "create-lock"
 
-    if (participant_label == '') {
-        participant_label = 'None'
+    if (participant_label != '') {
+        participant_label = "--participant_label ${participant_label}"
     }
 
     """
@@ -130,7 +130,7 @@ process deepprep_init {
     ${input_bids_validator_py} \
     --bids_dir ${bids_dir} \
     --exec_env ${exec_env} \
-    --participant_label ${participant_label} \
+    ${participant_label} \
     --skip_bids_validation ${skip_bids_validation}
     """
 }
@@ -2678,6 +2678,10 @@ workflow {
     bold_spaces = params.bold_surface_spaces
     bold_only = params.bold_only
 
+    participant_label = params.participant_label
+    exec_env = params.exec_env
+    skip_bids_validation = params.skip_bids_validation
+
     println "INFO: bids_dir           : ${bids_dir}"
     println "INFO: output_dir         : ${output_dir}"
 
@@ -2686,8 +2690,7 @@ workflow {
     }
     println "INFO: subjects_dir       : ${subjects_dir}"
 
-
-    (bold_preprocess_path, qc_result_path, work_dir, gpu_lock) = deepprep_init(freesurfer_home, bids_dir, output_dir, subjects_dir, bold_spaces, bold_only)
+    (bold_preprocess_path, qc_result_path, work_dir, gpu_lock) = deepprep_init(freesurfer_home, bids_dir, output_dir, subjects_dir, bold_spaces, bold_only, participant_label, exec_env, skip_bids_validation)
 
     if (params.anat_only.toString().toUpperCase() == 'TRUE') {
         println "INFO: anat preprocess ONLY"
