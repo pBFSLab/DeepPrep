@@ -108,7 +108,6 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
-# 判断目录是否存在
 if [ ! -d "${deepprep_home}" ]; then
   echo "ERROR: deepprep_home is not exists : ${deepprep_home}"
   exit 1
@@ -119,17 +118,22 @@ if [ -z "${freesurfer_home}" ]; then
   exit 1
 fi
 
-# 定义目录路径
 nextflow_work_dir="${output_dir}/WorkDir/nextflow"  # output_dir/WorkDir/nextflow
 qc_dir="${output_dir}/QC"  # output_dir/QC
 
-# 判断目录是否存在
 if [ ! -d "${nextflow_work_dir}" ]; then
-  # 目录不存在，进行创建
   mkdir -p "${nextflow_work_dir}"
   echo "INFO: create  nextflow WorkDir: ${nextflow_work_dir}"
 else
   echo "INFO: existed nextflow WorkDir: ${nextflow_work_dir}"
+fi
+if [ ! -d "${output_dir}/WorkDir/home" ]; then
+  mkdir -p "${output_dir}/WorkDir/home"
+  echo "INFO: create  nextflow WorkDir: ${output_dir}/WorkDir/home"
+fi
+if [ ! -d "${output_dir}/WorkDir/tmp" ]; then
+  mkdir -p "${output_dir}/WorkDir/tmp"
+  echo "INFO: create  nextflow WorkDir: ${output_dir}/WorkDir/tmp"
 fi
 
 nextflow_file="${deepprep_home}/deepprep/nextflow/deepprep.nf"
@@ -205,6 +209,8 @@ else
   fi
   sed -i "s@\${nextflow_work_dir}@${nextflow_work_dir}@g" "${run_config}"
   sed -i "s@\${container}@${container}@g" "${run_config}"
+  sed -i "s@\${bids_dir}@${bids_dir}@g" "${run_config}"
+  sed -i "s@\${output_dir}@${output_dir}@g" "${run_config}"
 fi
 
 cd "${nextflow_work_dir}" && \
