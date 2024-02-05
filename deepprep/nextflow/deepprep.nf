@@ -108,6 +108,11 @@ process deepprep_init {
     deepprep_init_py = "deepprep_init.py"
     input_bids_validator_py = "input_bids_validator.py"
     gpu_lock = "create-lock"
+
+    if (participant_label == '') {
+        participant_label = 'None'
+    }
+
     """
     ${script_py} ${task.executor}
     ${deepprep_init_py} \
@@ -2676,7 +2681,6 @@ workflow {
     }
     println "INFO: subjects_dir       : ${subjects_dir}"
 
-    println(skip_bids_validation)
     (bold_preprocess_path, qc_result_path, work_dir, gpu_lock) = deepprep_init(freesurfer_home, bids_dir, output_dir, subjects_dir, bold_spaces, bold_only, participant_label, exec_env, skip_bids_validation)
 
     if (params.anat_only.toString().toUpperCase() == 'TRUE') {
