@@ -16,7 +16,7 @@ debug=""
 help="DeepPrep args:
 deepprep-docker [bids_dir] [output_dir] [{participant}] [--bold_task_type TASK_LABEL]
                 [--fs_license_file PATH] [--participant-label PARTICIPANT_LABEL [PARTICIPANT_LABEL ...]]
-                [--subjects_dir PATH] [--executor {local cluster}]
+                [--subjects_dir PATH] [--executor {local cluster}] [--skip_bids_validation]
                 [--anat_only] [--bold_only] [--bold_sdc] [--bold_confounds]
                 [--bold_surface_spaces '[fsnative fsaverage fsaverage6 ...]']
                 [--bold_volume_space {MNI152NLin6Asym MNI152NLin2009cAsym}] [--bold_volume_res {02 03...}]

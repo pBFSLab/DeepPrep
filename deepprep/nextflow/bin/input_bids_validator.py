@@ -17,8 +17,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Validate inputs
-    skip_bids_validation = False if args.skip_bids_validation=='False' else True
-    participant_label = None if args.participant_label=='None' else args.participant_label
+    skip_bids_validation = False if args.skip_bids_validation == 'False' else True
+    participant_label = args.participant_label if args.participant_label else None
     bids_dir = Path(args.bids_dir)
     if not skip_bids_validation:
         validate_input_dir(args.exec_env, bids_dir, participant_label)

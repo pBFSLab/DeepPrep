@@ -144,7 +144,7 @@ RUN python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin6Asym', d
 
 COPY deepprep/model /opt/DeepPrep/deepprep/model
 COPY deepprep/FastCSR /opt/DeepPrep/deepprep/FastCSR
-COPY deepprep/SageReg /opt/DeepPrep/deepprep/SageReg
+COPY deepprep/SUGAR /opt/DeepPrep/deepprep/SUGAR
 COPY deepprep/FastSurfer /opt/DeepPrep/deepprep/FastSurfer
 COPY deepprep/SynthMorph /opt/DeepPrep/deepprep/SynthMorph
 COPY deepprep/nextflow /opt/DeepPrep/deepprep/nextflow
