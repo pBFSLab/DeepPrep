@@ -94,6 +94,9 @@ process deepprep_init {
     val(subjects_dir)
     val(bold_spaces)
     val(bold_only)
+    val(participant_label)
+    val(exec_env)
+    val(skip_bids_validation)
     output:
     val("${output_dir}/BOLD")
     val("${output_dir}/QC")
@@ -103,7 +106,13 @@ process deepprep_init {
     script:
     script_py = "gpu_schedule_lock.py"
     deepprep_init_py = "deepprep_init.py"
+    input_bids_validator_py = "input_bids_validator.py"
     gpu_lock = "create-lock"
+
+    if (participant_label == '') {
+        participant_label = 'None'
+    }
+
     """
     ${script_py} ${task.executor}
     ${deepprep_init_py} \
@@ -113,6 +122,11 @@ process deepprep_init {
     --subjects_dir ${subjects_dir} \
     --bold_spaces ${bold_spaces} \
     --bold_only ${bold_only}
+    ${input_bids_validator_py} \
+    --bids_dir ${bids_dir} \
+    --exec_env ${exec_env} \
+    --participant_label ${participant_label} \
+    --skip_bids_validation ${skip_bids_validation}
     """
 }
 
