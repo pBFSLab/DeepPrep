@@ -20,6 +20,7 @@ process anat_get_t1w_file_in_bids {
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
     val(bids_dir)
     val(subjects)
+    val(gpu_lock)
 
     output:
     path "sub-*"
@@ -114,7 +115,10 @@ process deepprep_init {
     }
 
     """
+    df -h
+
     ${script_py} ${task.executor}
+
     ${deepprep_init_py} \
     --freesurfer_home ${freesurfer_home} \
     --bids_dir ${bids_dir} \
@@ -122,6 +126,7 @@ process deepprep_init {
     --subjects_dir ${subjects_dir} \
     --bold_spaces ${bold_spaces} \
     --bold_only ${bold_only}
+
     ${input_bids_validator_py} \
     --bids_dir ${bids_dir} \
     --exec_env ${exec_env} \
@@ -136,7 +141,7 @@ process anat_segment {
     tag "${subject_id}"
 
     label "with_gpu"
-    cpus 8
+    cpus 16
     memory '7 GB'
 
     input:
@@ -559,8 +564,8 @@ process anat_fastcsr_levelset {
 process anat_fastcsr_mksurface {
     tag "${subject_id}"
 
-    cpus 1
-    memory '4 GB'
+    cpus 8
+    memory '10 GB'
 
     input:
     val(subjects_dir)
@@ -1351,6 +1356,7 @@ process bold_get_bold_file_in_bids {
     val(subjects)
     val(bold_task_type)
     val(bold_only)
+    val(gpu_lock)
 
     output:
     path "sub-*" // emit: subject_boldfile_txt
@@ -1697,8 +1703,8 @@ process synthmorph_affine {
     tag "${subject_id}"
 
     label "with_gpu"
-    cpus 8
-    memory '5 GB'
+    cpus 8  // only use one with --device=cpu
+    memory '10 GB'
 
     input:
     val(subjects_dir)
@@ -1737,7 +1743,7 @@ process synthmorph_norigid {
 
     cpus 8
     label "with_gpu"
-    memory '5 GB'
+    memory '19 GB'
 
     input:
     val(subjects_dir)
@@ -2208,7 +2214,8 @@ process qc_anat_create_report {
     val(bids_dir)
     val(subjects_dir)
     val(qc_result_path)
-    tuple(val(subject_id), path(anything))
+    val(work_dir)
+    tuple(val(subject_id), val(anything))
     val(reports_utils_path)
     val(deepprep_version)
     output:
@@ -2228,7 +2235,7 @@ process qc_anat_create_report {
     --bold_task_type ${bold_task_type} \
     --qc_result_path ${qc_result_path} \
     --deepprep_version ${deepprep_version} \
-    --nextflow_log ${launchDir}/.nextflow.log
+    --nextflow_log ${work_dir}/nextflow/.nextflow.log
     """
 
 }
@@ -2245,6 +2252,7 @@ process qc_bold_create_report {
     val(bids_dir)
     val(subjects_dir)
     val(qc_result_path)
+    val(work_dir)
     val(bold_task_type)
     val(deepprep_version)
     output:
@@ -2262,7 +2270,7 @@ process qc_bold_create_report {
     --qc_result_path ${qc_result_path} \
     --bold_task_type ${bold_task_type} \
     --deepprep_version ${deepprep_version} \
-    --nextflow_log ${launchDir}/.nextflow.log
+    --nextflow_log ${work_dir}/nextflow/.nextflow.log
     """
 
 }
@@ -2350,7 +2358,7 @@ workflow anat_wf {
 
     device = params.device
 
-    subject_t1wfile_txt = anat_get_t1w_file_in_bids(bids_dir, participant_label)
+    subject_t1wfile_txt = anat_get_t1w_file_in_bids(bids_dir, participant_label, gpu_lock)
     subject_id = anat_create_subject_orig_dir(subjects_dir, subject_t1wfile_txt, deepprep_version)
 
     // freesurfer
@@ -2479,7 +2487,7 @@ workflow anat_wf {
     qc_plot_aparc_aseg_input = norm_mgz.join(aparc_aseg_mgz)
     aparc_aseg_svg = qc_plot_aparc_aseg(subjects_dir, qc_plot_aparc_aseg_input, qc_utils_path, qc_result_path, freesurfer_home)
 
-    qc_report = qc_anat_create_report(bids_dir, subjects_dir, qc_result_path, aparc_aseg_svg, reports_utils_path, deepprep_version)
+    qc_report = qc_anat_create_report(bids_dir, subjects_dir, qc_result_path, work_dir, aparc_aseg_svg, reports_utils_path, deepprep_version)
 
     lh_pial_surf = pial_surf.join(subject_id_lh, by: [0, 1]).map { tuple -> return tuple[0, 2] }
     rh_pial_surf = pial_surf.join(subject_id_rh, by: [0, 1]).map { tuple -> return tuple[0, 2] }
@@ -2587,7 +2595,7 @@ workflow bold_wf {
     bold_only = params.bold_only.toString().toUpperCase()
     deepprep_version = params.deepprep_version
 
-    subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, subjects_dir, participant_label, bold_task_type, bold_only)
+    subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, subjects_dir, participant_label, bold_task_type, bold_only, gpu_lock)
     (subject_id, boldfile_id, subject_boldfile_txt) = subject_boldfile_txt.flatten().multiMap { it ->
                                                                                      a: it.name.split('_')[0]
                                                                                      c: it.name
@@ -2653,7 +2661,7 @@ workflow bold_wf {
         bold_to_mni152_svg = qc_plot_bold_to_space(qc_plot_bold_to_space_inputs, bids_dir, bold_preprocess_path, work_dir, qc_utils_path, qc_result_path)
 
         qc_bold_create_report_input = bold_to_mni152_svg.join(synth_apply_template, by: [0,1])
-        qc_report = qc_bold_create_report(qc_bold_create_report_input, reports_utils_path, bids_dir, subjects_dir, qc_result_path, bold_task_type, deepprep_version)
+        qc_report = qc_bold_create_report(qc_bold_create_report_input, reports_utils_path, bids_dir, subjects_dir, qc_result_path, work_dir, bold_task_type, deepprep_version)
     }
 }
 
