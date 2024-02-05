@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-""" deepprep setup script """
+""" DeepPrep setup script """
 import setuptools
 
 packages = ['deepprep']
 
 setuptools.setup(
     name="deepprep",
-    version='v0.0.1',
+    version='23.1.0',
     author="Ning An, Cong Lin, Youjia Zhang, Zhenyu Sun, Weiwei Wang",
     author_email="ninganme0317@gmail.com, "
                  "lincong8722@gmail.com, "
@@ -18,8 +18,7 @@ setuptools.setup(
     classifiers=[
         "Programming Language :: Python :: 3",
         "Development Status :: 3 - Alpha",
-        "License :: OSI Approved :: "
+        "License :: Apache-2.0 License :: "
     ],
-    python_requires='>=3.8',
-    install_requires=['numpy', 'scipy'],
+    python_requires='>=3.10',
 )
