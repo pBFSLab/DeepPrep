@@ -39,10 +39,10 @@ class ComputeDVARSNode:
 
 
 class FramewiseDisplacementNode:
-    def __call__(self, mcdat, base_dir):
+    def __call__(self, mcpar, base_dir):
         FramewiseDisplacement_node = Node(FramewiseDisplacement(), f'FramewiseDisplacement_node')
-        FramewiseDisplacement_node.inputs.in_file = mcdat
-        FramewiseDisplacement_node.inputs.parameter_source = 'FSFAST'
+        FramewiseDisplacement_node.inputs.in_file = mcpar
+        FramewiseDisplacement_node.inputs.parameter_source = 'FSL'
         FramewiseDisplacement_node.base_dir = base_dir
         result = FramewiseDisplacement_node.run()
         return os.path.abspath(result.outputs.out_file)
@@ -78,7 +78,7 @@ def calculate_mc(mcdat):
 
 
 def AverageSingnal(tmp_work_dir, save_svg_dir, bold_id,
-                   bold_space_t1w, abs_dat_file, rel_dat_file, aseg, brainmask, brainmask_bin, wm, csf):
+                   bold_space_t1w, mcpar, rel_dat_file, aseg, brainmask, brainmask_bin, wm, csf):
 
     bold = reshape_bold(bold_space_t1w)
     roi_inf = {'global_signal': brainmask_bin, 'white_matter': wm, 'csf': csf}
@@ -96,7 +96,11 @@ def AverageSingnal(tmp_work_dir, save_svg_dir, bold_id,
     std_dvars = np.insert(std_dvars, 0, np.array([np.nan]), axis=0)
     results.append(std_dvars)
     columns.append('std_dvars')
-    fd = np.loadtxt(abs_dat_file).reshape(-1, 1)
+
+    framewisedisplacement = FramewiseDisplacementNode()
+    fd_path = framewisedisplacement(mcpar, tmp_work_dir)
+    fd = pd.read_csv(fd_path, sep='\t', encoding='utf-8').values
+    fd = np.insert(fd, 0, np.array([np.nan]), axis=0)
     results.append(fd)
     columns.append('framewise_displacement')
     rel_transform = np.loadtxt(rel_dat_file)
@@ -134,7 +138,7 @@ def get_space_t1w_bold(bids_orig, bids_preproc, bold_orig_file):
 
     fd_t1w_info = info.copy()
     fd_t1w_info['suffix'] = 'mcf'
-    fd_t1w_info['extension'] = 'nii.gz_abs.rms'
+    fd_t1w_info['extension'] = 'nii.gz.par'
     fd_t1w_file = layout_preproc.get(**fd_t1w_info)[0]
 
     rel_t1w_info = info.copy()
@@ -166,7 +170,7 @@ if __name__ == '__main__':
     data = [i.strip() for i in data]
     bold_orig_file = data[1]
 
-    bold_space_t1w_file, boldref_space_t1w_file, abs_dat_file, rel_dat_file = get_space_t1w_bold(args.bids_dir,
+    bold_space_t1w_file, boldref_space_t1w_file, mcpar, rel_dat_file = get_space_t1w_bold(args.bids_dir,
                                                                                      args.bold_preprocess_dir,
                                                                                      bold_orig_file)
 
@@ -181,10 +185,11 @@ if __name__ == '__main__':
     mask = bold_averagesingnal_dir / 'desc-brain_mask.nii.gz'
     binmask = bold_averagesingnal_dir / 'desc-brain_maskbin.nii.gz'
 
+
     anat2bold_t1w(args.aseg_mgz, args.brainmask_mgz, boldref_space_t1w_file,
                   str(aseg), str(wm), str(vent), str(csf), str(mask), str(binmask))
 
     svg_path = Path(args.qc_result_path) / args.subject_id / 'figures'
     svg_path.mkdir(parents=True, exist_ok=True)
     AverageSingnal(bold_averagesingnal_dir, svg_path, args.bold_id,
-                   bold_space_t1w_file, abs_dat_file, rel_dat_file, aseg, mask, binmask, wm, csf)
+                   bold_space_t1w_file, mcpar, rel_dat_file, aseg, mask, binmask, wm, csf)
