@@ -175,6 +175,16 @@ if __name__ == '__main__':
             single_subject_fieldmap_wf.base_dir = base_dir
             single_subject_fieldmap_wf.run()
 
+            # copy figures to qc_dir
+            fig_dir = Path(args.bold_preprocess_dir) / subject_id / 'figures'
+            qc_dir = Path(args.qc_result_path) / subject_id / 'figures'
+            source_files = fig_dir.glob(f'{subject_id}*_fieldmap.svg')
+            qc_dir.mkdir(parents=True, exist_ok=True)
+            for source_file in source_files:
+                dest_file = qc_dir / source_file.name
+                if not dest_file.exists():
+                    shutil.copyfile(source_file, dest_file)
+
     else:  # run preproc
         with open(args.bold_series[0], 'r') as f:
             data = f.readlines()
