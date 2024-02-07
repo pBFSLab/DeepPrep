@@ -152,5 +152,9 @@ COPY deepprep/deepprep.sh /opt/DeepPrep/deepprep/deepprep.sh
 RUN chmod 755 /opt/DeepPrep/deepprep/deepprep.sh && chmod 755 /opt/DeepPrep/deepprep/nextflow/bin/*.py
 ENV PATH="/opt/DeepPrep/deepprep/nextflow/bin:${PATH}"
 
+### aws cli
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+    unzip awscliv2.zip && sudo ./aws/install && rm -rf aws awscliv2.zip
+
 ### CMD
 ENTRYPOINT ["/opt/DeepPrep/deepprep/deepprep.sh"]
