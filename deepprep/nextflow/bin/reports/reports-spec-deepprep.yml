@@ -17,7 +17,7 @@ sections:
     caption: The cortical parcellations were generated based on the cortical surface registration of SUGAR. Parcellations are shown on the white (upper row) and pial surfaces (lower row).
     subtitle: Cortical surface anatomical parcellations.
   - bids: { datatype: figures, desc: T1toMNI152, suffix: combine}
-    caption: SynthMorph was used to perform nonlinear registration between the T1w reference and the template space. Hover on the panels with the mouse pointer to transition between both native T1w and template spaces.Spatial normalization of the T1w image to the MNI152NLin6Asym template.
+    caption: SynthMorph was used to perform nonlinear registration between the T1w reference and the template space. Hover on the panels with the mouse pointer to transition between both native T1w and template spaces. Spatial normalization of the T1w image to the MNI152NLin6Asym template.
     static: false
     subtitle: Spatial normalization of the anatomical T1w reference.
 - name: Fieldmaps
@@ -47,7 +47,7 @@ sections:
     caption: The temporal SNR map was estimated by the TSNR from nipype.
     subtitle: temporal SNR (tSNR)
   - bids: { datatype: figures, desc: carpet, suffix: bold }
-    caption: Summary statistics are plotted, which may reveal trends or artifacts in the BOLD data.Global signals (GS) were calculated within the whole-brain, and the white-matter (GSWM) and the cerebro-spinal fluid (GSCSF) were calculated with their corresponding masks. The standardized DVARS, framewise-displacement measures (FD), and relative head motion (RHM) were calculated.A carpet plot shows the time series for all voxels within the brain mask. Cortical gray matter (Ctx GM), subcortical gray matter (dGM), white matter and CSF (WM+CSF), and the rest of brain (The rest) were divided into four groups.
+    caption: Summary statistics are plotted, which may reveal trends or artifacts in the BOLD data. Global signals (GS) were calculated within the whole-brain, and the white-matter (GSWM) and the cerebro-spinal fluid (GSCSF) were calculated with their corresponding masks. The standardized DVARS, framewise-displacement measures (FD), and relative head motion (RHM) were calculated. A carpet plot shows time series for all voxels within the brain mask, including cortical gray matter (Ctx GM), deep (subcortical) gray matter (dGM), white-matter and CSF (WM+CSF), and the rest of the brain (The rest).
     subtitle: BOLD Summary
 - name: About
   reportlets:
