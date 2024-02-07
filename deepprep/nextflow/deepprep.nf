@@ -2247,7 +2247,7 @@ process qc_bold_create_report {
     cpus 1
 
     input:
-    tuple(val(subject_id), val(anything), val(anything), val(synth_apply_template))
+    tuple(val(subject_id), val(anything), val(anything), val(anything), val(synth_apply_template))
     val(reports_utils_path)
     val(bids_dir)
     val(subjects_dir)
@@ -2660,7 +2660,9 @@ workflow bold_wf {
         qc_plot_bold_to_space_inputs = subject_boldfile_txt_bold_pre_process.join(synth_apply_template, by: [0,1])
         bold_to_mni152_svg = qc_plot_bold_to_space(qc_plot_bold_to_space_inputs, bids_dir, bold_preprocess_path, work_dir, qc_utils_path, qc_result_path)
 
-        qc_bold_create_report_input = bold_to_mni152_svg.join(synth_apply_template, by: [0,1])
+        norm_to_mni152_svg = qc_plot_norm_to_mni152(norm_norigid_nii, bold_preprocess_path, qc_utils_path, qc_result_path)
+
+        qc_bold_create_report_input = subject_id_boldfile_id.groupTuple(sort: true).join(norm_to_mni152_svg).transpose().join(bold_to_mni152_svg, by: [0,1]).join(synth_apply_template, by: [0,1])
         qc_report = qc_bold_create_report(qc_bold_create_report_input, reports_utils_path, bids_dir, subjects_dir, qc_result_path, work_dir, bold_task_type, deepprep_version)
     }
 }
