@@ -7,40 +7,47 @@ sections:
   reportlets:
   - bids: {datatype: figures, desc: templatedimensions, extension:[.html], suffix: report}
   - bids: {datatype: figures, desc: volparc, suffix: T1w}
-    caption: Results of the brain extraction and the segmentation of the T1w image, which shows the brain tissue segmentation and brain cortical surface structural parcellations.
-    subtitle: Brain mask and brain tissue segmentation of the T1w
+    caption: This panel shows skull-stripped brain and cortical/subcortical segmentation of the T1w image.
+    subtitle: Brain mask and brain tissue segmentation of the T1w.
   - bids: {datatype: figures, desc: volsurf, suffix: T1w}
-    caption: Surfaces (white and pial) were reconstructed with FastCSR overlaied on the T1w space.
+    caption: The white surface (blue contours) and pial surface (red contours) were reconstructed with FastCSR and are overlaied on the native T1w image.
     static: false
-    subtitle: Surface reconstuction
+    subtitle: Surface reconstruction
   - bids: {datatype: figures, desc: surfparc, suffix: T1w}
-    caption: The parcellations were created based on the registration result generated from SUGAR, which aligns participants' surfaces with fsavreage template surfaces.
-    subtitle: Cortical surface structural parcellations
+    caption: The cortical parcellations were generated based on the cortical surface registration of SUGAR. Parcellations are shown on the white (upper row) and pial surfaces (lower row).
+    subtitle: Cortical surface anatomical parcellations.
   - bids: { datatype: figures, desc: T1toMNI152, suffix: combine}
-    caption: Results of nonlinear alignment of the T1w reference one or more template space(s). Hover on the panels with the mouse pointer to transition between both spaces.\n Spatial normalization of the T1w image to the MNI152NLin2009cAsym template.
+    caption: SynthMorph was used to perform nonlinear registration between the T1w reference and the template space. Hover on the panels with the mouse pointer to transition between both native T1w and template spaces. Spatial normalization of the T1w image to the MNI152NLin6Asym template.
     static: false
-    subtitle: Spatial normalization of the T1w
+    subtitle: Spatial normalization of the anatomical T1w reference.
+- name: Fieldmaps
+  ordering: session,task,acquisition,ceagent,reconstruction,direction,run,echo
+  reportlets:
+  - bids: { datatype: figures, desc: phasediff, suffix: fieldmap}
+    caption: Hover on the panel with the cursor allows for the observation of field inhomogeneity intensity measured in Hertz, using the "magnitude map" for anatomical reference. The inhomogeneities of the B0 field cause spatial distortions in the phase-encoding direction of the image.
+    static: false
+    subtitle: Fieldmaps processing
 - name: Functional processing
   ordering: session,task,acquisition,ceagent,reconstruction,direction,run,echo
   reportlets:
   - bids: { datatype: figures, desc: summary, extension:[.html], suffix: bold }
   - bids: { datatype: figures, desc: sdc, suffix: bold }
-    caption: Compare MRI data before and after Susceptibility Distortion Correction.
+    caption: Results of performing susceptibility distortion correction (SDC) on the EPI-BOLD image.
     static: false
     subtitle: Susceptibility Distortion Correction
   - bids: { datatype: figures, desc: coreg, suffix: bold }
-    caption: bbregister was used to generate transormations from EPI-space to T1w-space.
+    caption: bbregister was used to generate transformations from EPI-BOLD space to T1w-space.
     static: false
-    subtitle: Alignment of function and anatomical MRI data
-  - bids: { datatype: figures, desc: reg2MNI152, suffix: bold } # reg2MNI152可能需要替换
-    caption: SynthMorph used anatomical MRI data to generate transformations from T1w-space to standard-template-space, and then applied the transformations to functional data in T1w-space.
+    subtitle: Co-registration between functional and anatomical MRI data.
+  - bids: { datatype: figures, desc: reg2MNI152, suffix: bold }
+    caption: Functional MRI was resampled to the MNI152NLin6Asym template space based on bbregister, SUGAR and SynthMorph.
     static: false
     subtitle: Resample function MRI data to standard template space
   - bids: { datatype: figures, desc: tsnr, suffix: bold }
-    caption: TSNR from nipype was used to compute the temporal SNR maps.
-    subtitle: time-course SNR(tSNR)
+    caption: The temporal SNR map was estimated by the TSNR from nipype.
+    subtitle: temporal SNR (tSNR)
   - bids: { datatype: figures, desc: carpet, suffix: bold }
-    caption: The picture was ploted by the FMRISunmmary from the nipype and these values were calculated by the following methods.\n Global signals (GS) were calculated within the whole-brain, and the white-matter (GSWM) and the cerebro-spinal fluid (GSCSF) were calculated with their corresponding masks. The standardized DVARS was calculated by ComputeDVARS from the nipype. The framewise-displacement measures (FD) were calculated by FramewiseDisplacement from the nipype. The relative head motion (RHM) was calculated in this pipeline. \n A carpet plot shows the time series for all voxels within the brain mask. Cortical gray matter (Ctx GM), subcortical gray matter (dGM), white matter and CSF (WM+CSF), and the rest of brain (The rest) were devided into four groups.
+    caption: Summary statistics are plotted, which may reveal trends or artifacts in the BOLD data. Global signals (GS) were calculated within the whole-brain, and the white-matter (GSWM) and the cerebro-spinal fluid (GSCSF) were calculated with their corresponding masks. The standardized DVARS, framewise-displacement measures (FD), and relative head motion (RHM) were calculated. A carpet plot shows time series for all voxels within the brain mask, including cortical gray matter (Ctx GM), deep (subcortical) gray matter (dGM), white-matter and CSF (WM+CSF), and the rest of the brain (The rest).
     subtitle: BOLD Summary
 - name: About
   reportlets:
