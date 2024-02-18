@@ -9,24 +9,22 @@ Run with Docker (step-by-step)
 
 DeepPrep provides a Docker image as the recommended way to get started.
 
-.. note::
+.. warning::
     **Required Environment**
-        + Graphics Driver VRAM: >= 24GB
-        + Disk: >= 20G
+        + Ubuntu:  >= 20.04
         + RAM: >= 16GB
         + Swap space: >=16G
-        + Ubuntu:  >= 20.04
-        + NVIDIA Driver: >= 11.8
+        + Disk: >= 20G
+        + Graphics Driver VRAM: >= 12GB (optional GPU device)
+        + NVIDIA Driver Version: >= 520.61.05 (optional GPU device)
+        + CUDA Version: >= 11.8 (optional GPU device)
 
 1. Install Docker if you don't have one (`Docker Installation Page`_).
 
 .. _Docker Installation Page: https://www.docker.com/get-started/
 
 
-2. Test Docker with the ``hello-world`` image:
-
-.. code-block:: python
-    :linenos:
+2. Test Docker with the ``hello-world`` image::
 
     $ docker run -it --rm hello-world
 
@@ -55,71 +53,42 @@ The following message should appear:
     For more examples and ideas, visit:
      https://docs.docker.com/get-started/
 
-3. Please make sure GPUs are accessible by adding the flag ``--gpus all``:
+3. If you have GPUs on your host machine, you can check whether the GPUs are accessible by adding the flag ``--gpus all``::
 
-.. code-block:: python
-    :linenos:
+    $ docker run -it --rm --gpus all hello-world
 
-    $ docker run -it --gpus all --rm hello-world
+The same output as before is expected. If an error message pops up (something like below), please double-check that the Docker was installed properly.
 
-The same output as before is expected.
+.. code-block:: none
 
-4. Pull the Docker image
+    docker: Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: error during container init: error running hook #0: error running hook: exit status 1, stdout: , stderr: Auto-detected mode as 'legacy'
+    nvidia-container-cli: initialization error: load library failed: libnvidia-ml.so.1: cannot open shared object file: no such file or directory: unknown.
 
-.. code-block:: python
-    :linenos:
 
-    $ docker pull deepprep:latest
+.. note::
 
-5. Sample Docker command
+    Without ``--gpus all``, the container will only have access to the CPU resources of the host machine.
 
-.. code-block:: bash
-    :linenos:
+4. Pull the Docker image::
 
-    $ docker run -it --rm --gpus all \
-    -v <bids_dir>:/BIDS_DATASET \
-    -v <output_dir>:/DEEPPREP_RESULT_DIR \
-    -v <freesurfer_license>:/usr/local/freesurfer/license.txt \
-    deepprep:latest \
-    <bids_dir> <output_dir> participant \
-    --bold_task_type rest \
-    --fs_license_file freesurfer_license \
-    --bold_surface_spaces 'fsnative fsaverage6' \
-    --bold_template_space MNI152NLin6Asym \
-    --bold_template_res 02 \
-    -resume
+    $ docker pull ninganme/deepprep:23.1.0
 
-**Let's dig into the mandatory commands**
-    + ``--gpus all`` - (Docker argument) assigns all the available GPUs on the local host to the container.
-    + ``-v`` - (Docker argument) flag mounts your local directories to the directories inside the container. The input directories should be in *absolute path* to avoid any confusions.
-    + ``<bids_dir>`` - refers to the directory of the input dataset, which should be in `BIDS format`_.
-    .. _BIDS format: https://bids-specification.readthedocs.io/en/stable/index.html
-    + ``<output_dir>`` - refers to the directory for the outputs of DeepPrep.
-    + ``<freesurfer_license>`` - the directory of a valid FreeSurfer License.
-    + ``deepprep:latest`` - the latest version of the Docker image. One can specify the version by ``deepprep:<version>``.
-    + ``participant`` - refers to the analysis level.
-    + ``--bold_task_type`` - the task label of BOLD images (i.e. rest, motor).
+5. Run the Docker image ::
 
-**Dig further (optional commands)**
-    + ``-it`` - (Docker argument) starts the container in an interactive mode.
-    + ``--rm`` - (Docker argument) the container will be removed when exit.
-    + ``--subjects_dir`` - the output directory of *Recon* files, the default directory is ``<output_dir>/Recon``.
-    + ``--participant_label`` - the subject id you want to process, otherwise all the subjects in the ``<bids_dir>`` will be processed.
-    + ``--anat_only`` - with this flag, only the *anatomical* images will be processed.
-    + ``--bold_only`` - with this flag, only the *functional* images will be processed, where *Recon* files are pre-requested.
-    + ``--bold_sdc`` - with this flag, susceptibility distortion correction (SDC) will be applied.
-    + ``--bold_confounds`` - with this flag, confounds will be generated.
-    + ``--bold_surface_spaces`` - specifies surfaces spaces, i.e. 'fsnative fsaverage fsaverage6'. (*Note:* the space names must be quoted using single quotation marks.)
-    + ``--bold_template_space`` - specifies an available template space from `TemplateFlow`_, i.e. MNI152NLin6Asym.
-    .. _TemplateFlow: https://www.templateflow.org/browse/
-    + ``--bold_template_res`` - specifies the resolution of the corresponding template space from `TemplateFlow`_, i.e. 02.
-    + ``--device`` - specifies the device, i.e. cpu.
-    + ``--gpu_compute_capability`` - refers to the GPU compute capability, you can find yours `here`_.
-    .. _here: https://developer.nvidia.com/cuda-gpus
-    + ``--cpus`` - refers to the maximum CPUs for usage.
-    + ``--memory`` - refers to the maximum memory resources for usage.
-    + ``--freesurfer_home`` - the directory of the FreeSurfer home.
-    + ``--deepprep_home`` - the directory of the DeepPrep home.
-    + ``--templateflow_home`` - the directory of the TemplateFlow home.
-    + ``--ignore_error`` - ignores the errors occurred during processing.
-    + ``-resume`` - allows the DeepPrep pipeline starts from the last exit point.
+    $ docker run --rm ninganme/deepprep:23.1.0
+
+If the Docker image was pulled successfully, you would see the following message:
+
+.. code-block:: none
+
+    INFO: args:
+    DeepPrep args:
+    deepprep-docker [bids_dir] [output_dir] [{participant}] [--bold_task_type TASK_LABEL]
+                    [--fs_license_file PATH] [--participant-label PARTICIPANT_LABEL [PARTICIPANT_LABEL ...]]
+                    [--subjects_dir PATH] [--skip_bids_validation]
+                    [--anat_only] [--bold_only] [--bold_sdc] [--bold_confounds]
+                    [--bold_surface_spaces '[fsnative fsaverage fsaverage6 ...]']
+                    [--bold_volume_space {MNI152NLin6Asym MNI152NLin2009cAsym}] [--bold_volume_res {02 03...}]
+                    [--device { {auto 0 1 2...} cpu}] [--gpu_compute_capability {8.6}]
+                    [--cpus 10] [--memory 5]
+                    [--ignore_error] [--resume]
