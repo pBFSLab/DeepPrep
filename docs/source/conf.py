@@ -1,9 +1,6 @@
 import os
 import sys
-from datetime import datetime
-from os.path import abspath, dirname
-from sphinx.ext.napoleon import Config
-sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('../..'))
 
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
@@ -12,7 +9,7 @@ sys.path.insert(0, os.path.abspath('..'))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'DeepPrep'
-copyright = '2023, deep'
+copyright = '2024, deep'
 author = 'deep'
 
 # -- General configuration ---------------------------------------------------
@@ -61,8 +58,6 @@ language = 'en'
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-# html_theme = 'alabaster'
-# html_static_path = ['_static']
 html_theme = "sphinx_rtd_theme"
 html_static_path = ['_static']
 extensions = ['sphinx.ext.autodoc','sphinx.ext.napoleon','sphinx.ext.viewcode']
@@ -93,8 +88,11 @@ texinfo_documents = [
 ]
 # -- Extension configuration -------------------------------------------------
 
-apidoc_module_dir = "../deepprep"
-apidoc_output_dir = "api"
-apidoc_excluded_paths = ["model/*"]
-apidoc_separate_modules = True
-apidoc_extra_args = ["--module-first", "-d 1", "-T"]
+# apidoc_module_dir = "../deepprep"
+# apidoc_output_dir = "api"
+# apidoc_excluded_paths = ["model/*"]
+# apidoc_separate_modules = True
+# apidoc_extra_args = ["--module-first", "-d 1", "-T"]
+
+def setup(app):
+    app.add_css_file('custom.css')
