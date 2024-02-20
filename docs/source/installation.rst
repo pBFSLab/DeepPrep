@@ -21,8 +21,6 @@ DeepPrep provides a Docker image as the recommended way to get started.
 
 1. Install Docker if you don't have one (`Docker Installation Page`_).
 
-.. _Docker Installation Page: https://www.docker.com/get-started/
-
 
 2. Test Docker with the ``hello-world`` image::
 
