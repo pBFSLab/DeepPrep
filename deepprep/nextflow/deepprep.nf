@@ -1754,7 +1754,6 @@ process synthmorph_norigid {
     val(template_space)
     val(device)
     val(gpu_lock)
-    val(compute_capability)
 
     output:
     tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/anat/${subject_id}_space-${template_space}_res-02_desc-skull_T1w.nii.gz")) //emit: t1_norigid_nii
@@ -1774,8 +1773,7 @@ process synthmorph_norigid {
     --norm_native2mm ${norm_native2mm} \
     --affine_trans ${affine_trans} \
     --template_space ${template_space} \
-    --synth_model_path ${synth_model_path} \
-    --compute_capability ${compute_capability}
+    --synth_model_path ${synth_model_path}
     """
 }
 
@@ -2584,7 +2582,6 @@ workflow bold_wf {
 
     synthmorph_home = params.synthmorph_home
     synthmorph_model_path = params.synthmorph_model_path
-    compute_capability = params.gpu_compute_capability
     template_space = params.bold_volume_space  // templateflow
     template_resolution = params.bold_volume_res  // templateflow
     templateflow_home = params.templateflow_home  // templateflow
@@ -2639,7 +2636,7 @@ workflow bold_wf {
         (affine_nii, affine_trans) = synthmorph_affine(subjects_dir, bold_preprocess_path, synthmorph_home, t1_native2mm_aparc_aseg, synthmorph_model_path, template_space, device, gpu_lock)
 
         synthmorph_norigid_input = t1_native2mm.join(norm_native2mm, by: [0]).join(affine_trans, by: [0])
-        (t1_norigid_nii, norm_norigid_nii, transvoxel) = synthmorph_norigid(subjects_dir, bold_preprocess_path, synthmorph_home, synthmorph_norigid_input, synthmorph_model_path, template_space, device, gpu_lock, compute_capability)
+        (t1_norigid_nii, norm_norigid_nii, transvoxel) = synthmorph_norigid(subjects_dir, bold_preprocess_path, synthmorph_home, synthmorph_norigid_input, synthmorph_model_path, template_space, device, gpu_lock)
         transvoxel_group = subject_id_boldfile_id.groupTuple(sort: true).join(transvoxel).transpose()
         t1_native2mm_group = subject_id_boldfile_id.groupTuple(sort: true).join(t1_native2mm).transpose()
         bold_upsampled_input = t1_native2mm_group.join(subject_boldfile_txt_bold_pre_process, by: [0,1])
