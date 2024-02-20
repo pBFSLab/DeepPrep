@@ -89,6 +89,10 @@ RUN curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash - && \
 RUN sed -i '147c\supervised systemd' /etc/redis/redis.conf
 RUN pip3 install python-redis-lock  && pip3 cache purge && rm -rf /tmp/* /var/tmp/*
 
+### aws cli
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+    unzip awscliv2.zip && sudo ./aws/install && rm -rf aws awscliv2.zip
+
 ## Install FreeSurfer
 RUN wget --content-disposition -P /opt/ http://30.30.30.204/DeepPrep_new/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz && tar -C /opt -xzvf /opt/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz && rm /opt/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz
 #RUN wget --content-disposition -P /opt/ http://30.30.30.141:8080/f/4863e1ddb58d416bb6d3/?dl=1 && tar -C /opt -xzvf /opt/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz && rm /opt/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz
@@ -118,7 +122,7 @@ RUN apt-get update && apt-get --no-install-recommends -y install libopenblas-dev
 RUN wget --content-disposition -P /opt/ http://30.30.30.204/DeepPrep_new/FSL_6.0.5.1.tar.gz && tar -C /opt -xzvf /opt/FSL_6.0.5.1.tar.gz && rm /opt/FSL_6.0.5.1.tar.gz
 #RUN wget --content-disposition -P /opt/ http://30.30.30.141:8080/f/22e8940b945b49758a76/?dl=1 && tar -C /opt -xzvf /opt/FSL_6.0.5.1.tar.gz && rm /opt/FSL_6.0.5.1.tar.gz
 ENV FSLDIR="/opt/fsl"
-ENV FSLOUTPUTTYPE="NIFTI"
+ENV FSLOUTPUTTYPE="NIFTI_GZ"
 ENV PATH="${FSLDIR}/bin:${PATH}"
 
 #### AFNI 23.3.14
@@ -141,6 +145,9 @@ RUN mkdir ${FREESURFER_HOME}/models && wget --content-disposition -P ${FREESURFE
 
 ### default template
 RUN python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin6Asym', desc=None, resolution=2, suffix='T1w', extension='nii.gz')"
+RUN python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin2009cAsym', desc='brain', resolution=2, suffix='mask', extension='nii.gz')"
+RUN python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin2009cAsym', desc='fMRIPrep', resolution=2, suffix='boldref', extension='nii.gz')"
+RUN python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin2009cAsym', label='brain', resolution=1, suffix='probseg', extension='nii.gz')"
 
 COPY deepprep/model /opt/DeepPrep/deepprep/model
 COPY deepprep/FastCSR /opt/DeepPrep/deepprep/FastCSR
@@ -152,9 +159,28 @@ COPY deepprep/deepprep.sh /opt/DeepPrep/deepprep/deepprep.sh
 RUN chmod 755 /opt/DeepPrep/deepprep/deepprep.sh && chmod 755 /opt/DeepPrep/deepprep/nextflow/bin/*.py
 ENV PATH="/opt/DeepPrep/deepprep/nextflow/bin:${PATH}"
 
-### aws cli
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
-    unzip awscliv2.zip && sudo ./aws/install && rm -rf aws awscliv2.zip
+### souce ${FREESURFER_HOME}/SetUpFreeSurfer.sh
+ENV FSLDISPLAY=/usr/bin/display
+ENV FREESURFER=${FREESURFER_HOME}
+ENV FSL_DIR="${FSLDIR}"
+ENV OS=Linux
+ENV MINC_BIN_DIR=${FREESURFER_HOME}/mni/bin
+ENV FSFAST_HOME=${FREESURFER_HOME}/fsfast
+ENV MNI_DATAPATH=${FREESURFER_HOME}/mni/data
+ENV FS_OVERRIDE=0
+ENV FUNCTIONALS_DIR=${FREESURFER_HOME}/sessions
+ENV MINC_LIB_DIR=${FREESURFER_HOME}/mni/lib
+ENV FMRI_ANALYSIS_DIR=${FREESURFER_HOME}/fsfast
+ENV MNI_DIR=${FREESURFER_HOME}/mni
+ENV PERL5LIB=${FREESURFER_HOME}/mni/share/perl5
+ENV MNI_PERL5LIB=${FREESURFER_HOME}/mni/share/perl5
+ENV LOCAL_DIR=${FREESURFER_HOME}/local
+ENV FIX_VERTEX_AREA=""
+ENV FSLCONVERT=/usr/bin/convert
+ENV SUBJECTS_DIR=${FREESURFER_HOME}/subjects
+ENV FSF_OUTPUT_FORMAT=nii.gz
+ENV FSL_BIN=${FSLDIR}/bin
+ENV PATH="${FREESURFER_HOME}/bin:${FREESURFER_HOME}/fsfast/bin:${FREESURFER_HOME}/tktools:${FSLDIR}/bin:${FREESURFER_HOME}/mni/bin:${PATH}"
 
-### CMD
+## CMD
 ENTRYPOINT ["/opt/DeepPrep/deepprep/deepprep.sh"]

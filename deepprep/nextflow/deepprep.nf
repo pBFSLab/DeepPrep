@@ -85,7 +85,7 @@ process anat_motioncor {
 process deepprep_init {
 
     cpus 1
-    memory '100 MB'
+    memory '200 MB'
     cache false
 
     input:
@@ -117,7 +117,13 @@ process deepprep_init {
     """
     df -h
 
-    ${script_py} ${task.executor}
+    ${script_py} executor
+
+    ${input_bids_validator_py} \
+    --bids_dir ${bids_dir} \
+    --exec_env ${exec_env} \
+    ${participant_label} \
+    --skip_bids_validation ${skip_bids_validation}
 
     ${deepprep_init_py} \
     --freesurfer_home ${freesurfer_home} \
@@ -126,12 +132,6 @@ process deepprep_init {
     --subjects_dir ${subjects_dir} \
     --bold_spaces ${bold_spaces} \
     --bold_only ${bold_only}
-
-    ${input_bids_validator_py} \
-    --bids_dir ${bids_dir} \
-    --exec_env ${exec_env} \
-    ${participant_label} \
-    --skip_bids_validation ${skip_bids_validation}
     """
 }
 
@@ -165,7 +165,7 @@ process anat_segment {
     network_coronal_path = "${fastsurfer_home}/checkpoints/Coronal_Weights_FastSurferCNN/ckpts/Epoch_30_training_state.pkl"
     network_axial_path = "${fastsurfer_home}/checkpoints/Axial_Weights_FastSurferCNN/ckpts/Epoch_30_training_state.pkl"
     """
-    ${gpu_script_py} ${device} double ${task.executor} ${script_py} \
+    ${gpu_script_py} ${device} double executor ${script_py} \
     --in_name ${orig_mgz} \
     --out_name ${seg_deep_mgz} \
     --conformed_name ${subjects_dir}/${subject_id}/mri/conformed.mgz \
@@ -552,7 +552,7 @@ process anat_fastcsr_levelset {
     script_py = "${fastcsr_home}/fastcsr_model_infer.py"
 
     """
-    ${gpu_script_py} ${device} double ${task.executor} ${script_py} \
+    ${gpu_script_py} ${device} double executor ${script_py} \
     --fastcsr_subjects_dir ${subjects_dir} \
     --subj ${subject_id} \
     --hemi ${hemi} \
@@ -821,7 +821,7 @@ process anat_sphere_register {
     threads = 1
 
     """
-    ${gpu_script_py} ${device} double ${task.executor} ${script_py} --sd ${subjects_dir} --sid ${subject_id} --fsd ${freesurfer_home} \
+    ${gpu_script_py} ${device} double executor ${script_py} --sd ${subjects_dir} --sid ${subject_id} --fsd ${freesurfer_home} \
     --hemi ${hemi} --model_path ${surfreg_model_path} --device ${device}
     """
 }
@@ -1726,7 +1726,7 @@ process synthmorph_affine {
     script_py = "${synthmorph_home}/bold_synthmorph_affine.py"
     synth_script = "${synthmorph_home}/mri_bold_synthmorph.py"
     """
-    ${gpu_script_py} ${device} double ${task.executor} ${script_py} \
+    ${gpu_script_py} ${device} double executor ${script_py} \
     --bold_preprocess_dir ${bold_preprocess_path} \
     --subject_id ${subject_id} \
     --synth_script ${synth_script} \
@@ -1766,7 +1766,7 @@ process synthmorph_norigid {
     script_py = "${synthmorph_home}/bold_synthmorph_norigid.py"
     synth_script = "${synthmorph_home}/mri_bold_synthmorph.py"
     """
-    ${gpu_script_py} ${device} double ${task.executor} ${script_py} \
+    ${gpu_script_py} ${device} double executor ${script_py} \
     --bold_preprocess_dir ${bold_preprocess_path} \
     --subject_id ${subject_id} \
     --synth_script ${synth_script} \
@@ -1844,7 +1844,7 @@ process synthmorph_norigid_apply {
     synth_script = "${synthmorph_home}/mri_bold_apply_synthmorph.py"
     transform_dir = "${work_dir}/synthmorph_norigid_apply/${bold_id}/transform"
     """
-    ${gpu_script_py} ${device} double ${task.executor} ${script_py} \
+    ${gpu_script_py} ${device} double executor ${script_py} \
     --bids_dir ${bids_dir} \
     --bold_preprocess_dir ${bold_preprocess_path} \
     --upsampled_dir ${upsampled_dir} \
@@ -1893,7 +1893,7 @@ process bold_concat {
 
 
 process bold_mkbrainmask {
-    tag "${subject_id}"
+    tag "${bold_id}"
 
     cpus 1
 
@@ -1924,7 +1924,7 @@ process bold_mkbrainmask {
 
 
 process bold_confounds {
-    tag "${subject_id}"
+    tag "${bold_id}"
 
     cpus 3
     memory '7 GB'
@@ -1955,7 +1955,7 @@ process bold_confounds {
 
 
 process qc_plot_tsnr {
-    tag "${subject_id}"
+    tag "${bold_id}"
 
     cpus 1
     memory '3 GB'
@@ -1992,10 +1992,10 @@ process qc_plot_tsnr {
 
 
 process qc_plot_carpet {
-    tag "${subject_id}"
+    tag "${bold_id}"
 
     cpus 1
-    memory '400 MB'
+    memory '2 GB'
 
     input:
     val(bids_dir)
@@ -2169,7 +2169,7 @@ process qc_plot_norm_to_mni152 {
 
 
 process qc_plot_bold_to_space {
-    tag "${subject_id}"
+    tag "${bold_id}"
 
     cpus 5
     memory '1.5 GB'

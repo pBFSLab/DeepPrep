@@ -200,12 +200,13 @@ if [ "${executor}" = "local" ]; then
   export FS_LICENSE=${fs_license_file}
 else
   if [ -z "${container}" ]; then
-  echo "ERROR: No Input --container : ${container}"
-  exit 1
-  fi
-  if [ ! -f "${container}" ]; then
-    echo "ERROR: container file is not exists : ${container}"
+    echo "ERROR: No Input --container : ${container}"
     exit 1
+  else
+    if [[ ${container} == *sif && ! -f "${container}" ]]; then
+        echo "ERROR: container file does not exist: ${container}"
+        exit 1
+    fi
   fi
   sed -i "s@\${nextflow_work_dir}@${nextflow_work_dir}@g" "${run_config}"
   sed -i "s@\${container}@${container}@g" "${run_config}"
