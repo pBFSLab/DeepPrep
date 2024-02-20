@@ -5,7 +5,7 @@ import subprocess
 import redis_lock
 from redis_lock import StrictRedis
 
-from gpu_manage import GPUManager
+from gpu_manage import GPUManager, check_gpus
 
 
 if __name__ == '__main__':
@@ -16,9 +16,14 @@ if __name__ == '__main__':
         gpu = ''
     else:
         gpu = sys.argv[1]
+
     os.environ['CUDA_VISIBLE_DEVICES'] = gpu
     print(f'INFO: GPU: {gpu}')
     print(f'INFO: sys.argv : {sys.argv}')
+    if gpu:
+        gpu_available, info = check_gpus(11.8, 11000)
+        if not gpu_available:
+            raise ImportError(info)
     assert os.path.exists(sys.argv[4]), f"{sys.argv[4]}"
     if sys.argv[3].lower() == 'local':
         conn = StrictRedis()
