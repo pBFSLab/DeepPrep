@@ -67,6 +67,12 @@ highlight_options = {'style': 'solarized'}
 # Bibliographic Dublin Core info.
 epub_title = project
 html_copy_source = False
+# display logo
+html_logo = 'logo_title3.svg'
+html_theme_options = {
+    'logo_only': True,
+    'display_version': False,
+}
 
 # The master toctree document.
 master_doc = "index"
