@@ -15,11 +15,7 @@ that requires a complete Recon folder to be specified. The DeepPrep workflow tak
 that is to be processed as the input, which is required to be in the valid BIDS format.
 It is highly recommended that you validate your dataset with this free, online `BIDS Validator`_.
 
-.. _BIDS Validator: http://bids-standard.github.io/bids-validator/
-
 For more information about BIDS and BIDS-Apps, please check the `NiPreps portal`_.
-
-.. _NiPreps portal: https://www.nipreps.org/apps/framework/
 
 
 ======================
@@ -83,8 +79,6 @@ Sample Docker Command
     + ``participant`` - refers to the analysis level.
     + ``--bold_task_type`` - the task label of BOLD images (i.e. ``rest``, ``motor``).
 
-.. _BIDS format: https://bids-specification.readthedocs.io/en/stable/index.html
-
 **Dig further (optional commands)**
     + ``--participant_label`` - the subject ID you want to process, i.e. ``'sub-001 sub-002'``. Otherwise, all the subjects in the ``<bids_dir>`` will be processed by default.
     + ``--subjects_dir`` - the output directory of *Recon* files, default is ``<output_dir>/Recon``.
@@ -103,15 +97,11 @@ Sample Docker Command
     + ``--ignore_error`` - ignores the errors that occurred during processing.
     + ``--resume`` - allows the DeepPrep pipeline to start from the last exit point.
 
-.. _TemplateFlow: https://www.templateflow.org/browse/
-.. _here: https://developer.nvidia.com/cuda-gpus
 
 Quick Start
 -----------
 
 Get started with a ``test_sample``, `download here`_.
-
-.. _download here: https://drive.google.com/file/d/1Ddf56ohx83lZNZfIXB60A7AnoayitHsU/view?usp=drive_link
 
 The BIDS formatted sample contains one subject with one anatomical image and two functional images.
 
