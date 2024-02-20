@@ -47,8 +47,6 @@ Download the DeepPrep sif image from Google Drive
 
 1. Download from the `website`_.
 
-.. _website: https://drive.google.com/file/d/1iqopJLSsXaFLHZnNQsQuASXnkfUT62UO/view?usp=drive_link
-
 2. Download via ``gdown``:
 
 .. code-block:: none
@@ -88,8 +86,6 @@ Install Nextflow >= 23
 
 Please install `Nexflow`_ if you don't have one or the version < 23.
 
-.. _Nexflow: https://www.nextflow.io/docs/latest/getstarted.html
-
 Check the version of Nextflow with ``nextflow -version``:
 
 .. code-block:: none
@@ -111,10 +107,6 @@ Sample --- Install on Ubuntu
 
 The Cluster implemented in DeepPrep is based on Nextflow, which requires JAVA > 11.
 Please install `Java`_ if it doesn't exist or the version < 11. (`How to install Java`_)
-
-.. _Java: https://www.openlogic.com/openjdk-downloads
-
-.. _How to install Java: https://www.java.com/en/download/help/index.html
 
 Check the version of Java with ``java -version``:
 
@@ -153,9 +145,7 @@ Update the Configuration file (with GPU)
 
     It is **mandatory** to update the DeepPrep configuration file to meet the requirements of your cluster platform.
 
-DeepPrep is developed based on Nextflow, enabling a scalable computation on the platforms list `here`_.
-
-.. _here: https://www.nextflow.io/docs/latest/executor.html
+DeepPrep is developed based on Nextflow, enabling a scalable computation on the `platforms list`_.
 
 Let's first walk through the detailed introduction of executing DeepPrep on SLURM.
 Following that, samples for SLURM, PBS, and AWS will be provided.
@@ -345,8 +335,6 @@ Samples on three platforms
 ==========================
 
 Get started with a ``test_sample``, `download here`_.
-
-.. _download here: https://drive.google.com/file/d/1Ddf56ohx83lZNZfIXB60A7AnoayitHsU/view?usp=drive_link
 
 The BIDS formatted sample contains one subject with one anatomical image and two functional images.
 
