@@ -68,7 +68,7 @@ highlight_options = {'style': 'solarized'}
 epub_title = project
 html_copy_source = False
 # display logo
-html_logo = 'logo_title3.svg'
+html_logo = 'logo_title4.svg'
 html_theme_options = {
     'logo_only': True,
     'display_version': False,
