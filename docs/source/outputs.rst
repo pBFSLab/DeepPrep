@@ -27,8 +27,7 @@ FreeSurfer carries out preprocessed anatomical derivatives store in ``<output_di
 
 The preprocessed structural MRI data are organized to align with the results of FreeSurfer, encompassing the normalized
 and skull-stripped brain, reconstructed cortical surfaces and morphometrics, volumetric segmentation, cortical surface
-parcellation, and their corresponding statistics. Additionally, transformation files for surface spherical registration
-are included.
+parcellation, and their corresponding statistics. Additionally, transformation files for surface spherical registration are included.
 
 ======================
 Functional derivatives
@@ -53,7 +52,7 @@ The preprocessed functional derivatives are stored under the ``<output_dir>/BOLD
  ├── ...
  └── dataset_description.json
 
-The default output spaces for the preprocessed functional MRI consist of three options: 1. the native BOLD fMRI space, 2. the MNI space, and 3. the fsaverage6 surfaces space.
+The default output spaces for the preprocessed functional MRI consist of three options: 1. the native BOLD fMRI space, 2. the MNI152NLin6Asym space, and 3. the fsaverage6 surfaces space.
 However, users have the flexibility to specify other output spaces, including the native T1w space and various volumetric and surface templates available on TemplateFlow.
 The main outputs of the preprocessed data include:
 
@@ -165,11 +164,12 @@ DeepPrep outputs summary reports, written to ``<output dir>/QC``. These reports 
 DeepPrep automatically generates a descriptive HTML report for each participant and session. `View a sample report <_static/qc_report/sub-01.html>`_.
 The report commences with a concise summary of key imaging parameters extracted from the BIDS meta information.
 Subsequently, the report provides an overview of the overall CPU and GPU processing times for the data preprocessing.
-Key processing steps and results for structural images are visually presented, including segmentation, parcellation, spatial normalization, and coregistration.
-The normalization and coregistration outcomes are demonstrated through dynamic ‘before’ versus ‘after’ animations.
-Additionally, the report includes a carpet plot, showcasing both the raw and preprocessed fMRI data, along with a temporal signal-to-noise ratio (tSNR) map.
-Finally, the report concludes with comprehensive boilerplate methods text, offering a clear and consistent description of all preprocessing steps employed,
-accompanied by appropriate citations. Some examples are shown below:
+Key processing steps and results for structural images are visually presented, including segmentation, parcellation,
+spatial normalization, and coregistration. The normalization and coregistration outcomes are demonstrated through dynamic
+‘before’ versus ‘after’ animations. Additionally, the report includes a carpet plot, showcasing both the raw and preprocessed fMRI data,
+along with a temporal signal-to-noise ratio (tSNR) map. Finally, the report concludes with comprehensive boilerplate methods text,
+offering a clear and consistent description of all preprocessing steps employed, accompanied by appropriate citations. Some examples are shown below:
+
 
 .. image:: _static/report_timeline.png
    :align: center
