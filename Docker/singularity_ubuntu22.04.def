@@ -48,7 +48,7 @@ Stage: build
 
 %labels
     Author anning@cpl.ac.cn
-    Version 23.1.0
+    Version $Version
 
 %help
     This is a DeepPrep container used to preprocess sMRI and fMRI
