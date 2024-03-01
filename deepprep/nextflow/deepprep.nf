@@ -146,7 +146,7 @@ process anat_segment {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), path(orig_mgz))
+    tuple(val(subject_id), val(orig_mgz))
 
     val(fastsurfer_home)
     val(device)
@@ -185,7 +185,7 @@ process anat_reduce_to_aseg {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), path(seg_deep_mgz))
+    tuple(val(subject_id), val(seg_deep_mgz))
 
     val(fastsurfer_home)
 
@@ -216,7 +216,7 @@ process anat_N4_bias_correct {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), path(orig_mgz), path(mask_mgz))
+    tuple(val(subject_id), val(orig_mgz), val(mask_mgz))
 
     val(fastsurfer_home)
 
@@ -248,7 +248,7 @@ process anat_talairach_and_nu {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), path(orig_mgz), path(orig_nu_mgz))
+    tuple(val(subject_id), val(orig_mgz), val(orig_nu_mgz))
 
     val(freesurfer_home)
 
@@ -295,7 +295,7 @@ process anat_T1 {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), path(nu_mgz))
+    tuple(val(subject_id), val(nu_mgz))
 
     output:
     tuple(val(subject_id), val("${t1_mgz}")) // emit: t1_mgz
@@ -316,7 +316,7 @@ process anat_brainmask {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), path(nu_mgz), path(mask_mgz))
+    tuple(val(subject_id), val(nu_mgz), val(mask_mgz))
 
     output:
     tuple(val(subject_id), val("${norm_mgz}")) // emit: norm_mgz
@@ -341,7 +341,7 @@ process anat_paint_cc_to_aseg {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), path(norm_mgz), path(seg_deep_mgz), path(aseg_auto_noccseg_mgz))
+    tuple(val(subject_id), val(norm_mgz), val(seg_deep_mgz), val(aseg_auto_noccseg_mgz))
 
     val(fastsurfer_home)
 
@@ -370,7 +370,7 @@ process anat_fill {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), path(aseg_auto_mgz), path(norm_mgz), path(brainmask_mgz), path(talairach_lta))
+    tuple(val(subject_id), val(aseg_auto_mgz), val(norm_mgz), val(brainmask_mgz), val(talairach_lta))
 
     val(fsthreads)
 
@@ -396,7 +396,7 @@ process subject_id_hemi_lh {
     cpus 1
 
     input:
-    tuple(val(subject_id), path(aseg_presurf_mgz))
+    tuple(val(subject_id), val(aseg_presurf_mgz))
     output:
     tuple(val(subject_id), val('lh'))
     script:
@@ -410,7 +410,7 @@ process subject_id_hemi_rh {
     cpus 1
 
     input:
-    tuple(val(subject_id), path(aseg_presurf_mgz))
+    tuple(val(subject_id), val(aseg_presurf_mgz))
     output:
     tuple(val(subject_id), val('rh'))
     script:
@@ -425,9 +425,9 @@ process split_hemi_orig_mgz {
 
     input:
     each hemi
-    tuple(val(subject_id), path(in_data))
+    tuple(val(subject_id), val(in_data))
     output:
-    tuple(val(subject_id), val(hemi), path(in_data))
+    tuple(val(subject_id), val(hemi), val(in_data))
     script:
     """
     echo ${in_data}
@@ -440,9 +440,9 @@ process split_hemi_rawavg_mgz {
 
     input:
     each hemi
-    tuple(val(subject_id), path(in_data))
+    tuple(val(subject_id), val(in_data))
     output:
-    tuple(val(subject_id), val(hemi), path(in_data))
+    tuple(val(subject_id), val(hemi), val(in_data))
     script:
     """
     echo ${in_data}
@@ -455,9 +455,9 @@ process split_hemi_brainmask_mgz {
 
     input:
     each hemi
-    tuple(val(subject_id), path(in_data))
+    tuple(val(subject_id), val(in_data))
     output:
-    tuple(val(subject_id), val(hemi), path(in_data))
+    tuple(val(subject_id), val(hemi), val(in_data))
     script:
     """
     echo ${in_data}
@@ -470,9 +470,9 @@ process split_hemi_aseg_presurf_mgz {
 
     input:
     each hemi
-    tuple(val(subject_id), path(in_data))
+    tuple(val(subject_id), val(in_data))
     output:
-    tuple(val(subject_id), val(hemi), path(in_data))
+    tuple(val(subject_id), val(hemi), val(in_data))
     script:
     """
     echo ${in_data}
@@ -485,9 +485,9 @@ process split_hemi_brain_finalsurfs_mgz {
 
     input:
     each hemi
-    tuple(val(subject_id), path(in_data))
+    tuple(val(subject_id), val(in_data))
     output:
-    tuple(val(subject_id), val(hemi), path(in_data))
+    tuple(val(subject_id), val(hemi), val(in_data))
     script:
     """
     echo ${in_data}
@@ -500,9 +500,9 @@ process split_hemi_wm_mgz {
 
     input:
     each hemi
-    tuple(val(subject_id), path(in_data))
+    tuple(val(subject_id), val(in_data))
     output:
-    tuple(val(subject_id), val(hemi), path(in_data))
+    tuple(val(subject_id), val(hemi), val(in_data))
     script:
     """
     echo ${in_data}
@@ -515,9 +515,9 @@ process split_hemi_filled_mgz {
 
     input:
     each hemi
-    tuple(val(subject_id), path(in_data))
+    tuple(val(subject_id), val(in_data))
     output:
-    tuple(val(subject_id), val(hemi), path(in_data))
+    tuple(val(subject_id), val(hemi), val(in_data))
     script:
     """
     echo ${in_data}
@@ -535,7 +535,7 @@ process anat_fastcsr_levelset {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), path(orig_mgz),path(filled_mgz))
+    tuple(val(subject_id), val(orig_mgz),val(filled_mgz))
 
     val(fastcsr_home)
     val(fastcsr_model_path)
@@ -570,7 +570,7 @@ process anat_fastcsr_mksurface {
     input:
     val(subjects_dir)
 
-    tuple(val(subject_id), val(hemi), path(levelset_nii), path(orig_mgz), path(brainmask_mgz), path(aseg_presurf_mgz))
+    tuple(val(subject_id), val(hemi), val(levelset_nii), val(orig_mgz), val(brainmask_mgz), val(aseg_presurf_mgz))
     val(fastcsr_home)
 
     output:
@@ -600,7 +600,7 @@ process anat_autodet_gwstats {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), val(hemi), path(orig_premesh_surf), path(brain_finalsurfs_mgz), path(wm_mgz))
+    tuple(val(subject_id), val(hemi), val(orig_premesh_surf), val(brain_finalsurfs_mgz), val(wm_mgz))
 
     output:
     tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/surf/autodet.gw.stats.${hemi}.dat")) // emit: autodet_gwstats
@@ -622,7 +622,7 @@ process anat_white_surface {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), val(hemi), path(orig_surf), path(autodet_gwstats), path(aseg_presurf_mgz), path(brain_finalsurfs_mgz), path(wm_mgz), path(filled_mgz))
+    tuple(val(subject_id), val(hemi), val(orig_surf), val(autodet_gwstats), val(aseg_presurf_mgz), val(brain_finalsurfs_mgz), val(wm_mgz), val(filled_mgz))
 
     output:
     tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/surf/${hemi}.white.preaparc")) // emit: white_preaparc_surf
@@ -664,7 +664,7 @@ process anat_cortex_label {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), val(hemi), path(white_preaparc_surf), path(aseg_presurf_mgz))
+    tuple(val(subject_id), val(hemi), val(white_preaparc_surf), val(aseg_presurf_mgz))
 
     output:
     tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/label/${hemi}.cortex.label")) // emit: cortex_label
@@ -686,7 +686,7 @@ process anat_cortex_hipamyg_label {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), val(hemi), path(white_preaparc_surf), path(aseg_presurf_mgz))
+    tuple(val(subject_id), val(hemi), val(white_preaparc_surf), val(aseg_presurf_mgz))
 
     output:
     tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/label/${hemi}.cortex+hipamyg.label")) // emit: cortex_hipamyg_label
@@ -708,7 +708,7 @@ process anat_hyporelabel {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), path(aseg_presurf_mgz), path(lh_white_surf), path(rh_white_surf))
+    tuple(val(subject_id), val(aseg_presurf_mgz), val(lh_white_surf), val(rh_white_surf))
 
     output:
     tuple(val(subject_id), val("${subjects_dir}/${subject_id}/mri/aseg.presurf.hypos.mgz")) // emit: aseg_presurf_hypos_mgz
@@ -732,7 +732,7 @@ process anat_smooth_inflated {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), val(hemi), path(white_preaparc_surf))
+    tuple(val(subject_id), val(hemi), val(white_preaparc_surf))
 
     output:
     tuple(val(subject_id),val(hemi), val("${subjects_dir}/${subject_id}/surf/${hemi}.smoothwm")) // emit: smoothwm_surf
@@ -757,7 +757,7 @@ process anat_curv_stats {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), val(hemi), path(smoothwm_surf), path(curv_surf), path(sulc_surf))
+    tuple(val(subject_id), val(hemi), val(smoothwm_surf), val(curv_surf), val(sulc_surf))
 
     output:
     tuple(val(hemi), val("${subjects_dir}/${subject_id}/stats/${hemi}.curv.stats")) // emit: curv_stats
@@ -781,7 +781,7 @@ process anat_sphere {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), val(hemi), path(inflated_surf))
+    tuple(val(subject_id), val(hemi), val(inflated_surf))
 
     output:
     tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/surf/${hemi}.sphere")) // emit: sphere_surf
@@ -803,7 +803,7 @@ process anat_sphere_register {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), val(hemi), path(curv_surf), path(sulc_surf), path(sphere_surf))
+    tuple(val(subject_id), val(hemi), val(curv_surf), val(sulc_surf), val(sphere_surf))
 
     val(surfreg_home)
     val(surfreg_model_path)
@@ -834,7 +834,7 @@ process anat_jacobian {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), val(hemi), path(white_preaparc_surf), path(sphere_reg_surf))
+    tuple(val(subject_id), val(hemi), val(white_preaparc_surf), val(sphere_reg_surf))
 
     output:
     tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/surf/${hemi}.jacobian_white")) // emit: jacobian_white
@@ -855,7 +855,7 @@ process anat_avgcurv {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), val(hemi), path(sphere_reg_surf))
+    tuple(val(subject_id), val(hemi), val(sphere_reg_surf))
 
     val(freesurfer_home)
 
@@ -878,7 +878,7 @@ process anat_cortparc_aparc {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), val(hemi), path(cortex_label), path(sphere_reg_surf), path(smoothwm_surf), path(aseg_presurf_mgz))
+    tuple(val(subject_id), val(hemi), val(cortex_label), val(sphere_reg_surf), val(smoothwm_surf), val(aseg_presurf_mgz))
     // smoothwm_surf is hidden needed
     val(freesurfer_home)
 
@@ -901,7 +901,7 @@ process anat_cortparc_aparc_a2009s {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), val(hemi), path(cortex_label), path(sphere_reg_surf), path(smoothwm_surf), path(aseg_presurf_mgz))
+    tuple(val(subject_id), val(hemi), val(cortex_label), val(sphere_reg_surf), val(smoothwm_surf), val(aseg_presurf_mgz))
     // smoothwm_surf is hidden needed
     val(freesurfer_home)
 
@@ -925,7 +925,7 @@ process anat_pial_surface {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), val(hemi), path(orig_surf), path(white_surf), path(autodet_gwstats), path(cortex_hipamyg_label), path(cortex_label), path(aparc_annot), path(aseg_presurf_mgz), path(wm_mgz), path(brain_finalsurfs_mgz))
+    tuple(val(subject_id), val(hemi), val(orig_surf), val(white_surf), val(autodet_gwstats), val(cortex_hipamyg_label), val(cortex_label), val(aparc_annot), val(aseg_presurf_mgz), val(wm_mgz), val(brain_finalsurfs_mgz))
 
     output:
     tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/surf/${hemi}.pial")) // emit: pial_surf
@@ -965,7 +965,7 @@ process anat_pctsurfcon {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), val(hemi), path(cortex_label), path(white_surf), path(thickness_surf), path(rawavg_mgz), path(orig_mgz))
+    tuple(val(subject_id), val(hemi), val(cortex_label), val(white_surf), val(thickness_surf), val(rawavg_mgz), val(orig_mgz))
 
     output:
     tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/surf/${hemi}.w-g.pct.mgh")) // emit: w_g_pct_mgh
@@ -989,7 +989,7 @@ process anat_parcstats {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), path(lh_white_surf), path(lh_cortex_label), path(lh_pial_surf), path(lh_aparc_annot), path(rh_white_surf), path(rh_cortex_label), path(rh_pial_surf), path(rh_aparc_annot), path(wm_mgz))
+    tuple(val(subject_id), val(lh_white_surf), val(lh_cortex_label), val(lh_pial_surf), val(lh_aparc_annot), val(rh_white_surf), val(rh_cortex_label), val(rh_pial_surf), val(rh_aparc_annot), val(wm_mgz))
 
     output:
     tuple(val(subject_id), val("${subjects_dir}/${subject_id}/stats/lh.aparc.pial.stats")) // emit: aparc_pial_stats
@@ -1018,7 +1018,7 @@ process anat_parcstats2 {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), path(lh_white_surf), path(lh_cortex_label), path(lh_pial_surf), path(lh_aparc_annot), path(rh_white_surf), path(rh_cortex_label), path(rh_pial_surf), path(rh_aparc_annot), path(wm_mgz))
+    tuple(val(subject_id), val(lh_white_surf), val(lh_cortex_label), val(lh_pial_surf), val(lh_aparc_annot), val(rh_white_surf), val(rh_cortex_label), val(rh_pial_surf), val(rh_aparc_annot), val(wm_mgz))
 
     output:
     tuple(val(subject_id), val("${subjects_dir}/${subject_id}/stats/lh.aparc.a2009s.pial.stats")) // emit: aparc_pial_stats
@@ -1046,7 +1046,7 @@ process lh_anat_ribbon_inputs {
     memory '1 GB'
 
     input:
-    tuple(val(subject_id), path(aseg_presurf_mgz))
+    tuple(val(subject_id), val(aseg_presurf_mgz))
     output:
     tuple(val(subject_id), val('lh'))
     script:
@@ -1060,7 +1060,7 @@ process rh_anat_ribbon_inputs {
     cpus 1
 
     input:
-    tuple(val(subject_id), path(aseg_presurf_mgz))
+    tuple(val(subject_id), val(aseg_presurf_mgz))
     output:
     tuple(val(subject_id), val('rh'))
     script:
@@ -1077,7 +1077,7 @@ process anat_ribbon {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), path(aseg_presurf_mgz), path(lh_white_surf), path(lh_pial_surf), path(rh_white_surf), path(rh_pial_surf))
+    tuple(val(subject_id), val(aseg_presurf_mgz), val(lh_white_surf), val(lh_pial_surf), val(rh_white_surf), val(rh_pial_surf))
 
     output:
     tuple(val(subject_id), val("${subjects_dir}/${subject_id}/mri/ribbon.mgz")) // emit: ribbon_mgz
@@ -1098,7 +1098,7 @@ process anat_apas2aseg {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), path(aseg_presurf_hypos_mgz), path(ribbon_mgz), path(lh_white_surf), path(lh_pial_surf), path(lh_cortex_label), path(rh_white_surf), path(rh_pial_surf), path(rh_cortex_label))
+    tuple(val(subject_id), val(aseg_presurf_hypos_mgz), val(ribbon_mgz), val(lh_white_surf), val(lh_pial_surf), val(lh_cortex_label), val(rh_white_surf), val(rh_pial_surf), val(rh_cortex_label))
     val(fsthreads)
 
     output:
@@ -1110,8 +1110,8 @@ process anat_apas2aseg {
     SUBJECTS_DIR=${subjects_dir} mri_surf2volseg --o ${subjects_dir}/${subject_id}/mri/aseg.mgz --i ${aseg_presurf_hypos_mgz} \
     --fix-presurf-with-ribbon ${ribbon_mgz} \
     --threads ${fsthreads} \
-    --lh-cortex-mask lh.cortex.label --lh-white lh.white --lh-pial lh.pial \
-    --rh-cortex-mask rh.cortex.label --rh-white rh.white --rh-pial rh.pial
+    --lh-cortex-mask ${lh_cortex_label} --lh-white ${lh_white_surf} --lh-pial ${lh_pial_surf} \
+    --rh-cortex-mask ${rh_cortex_label} --rh-white ${rh_white_surf} --rh-pial ${rh_pial_surf}
 
     SUBJECTS_DIR=${subjects_dir} mri_brainvol_stats ${subject_id}
     """
@@ -1126,7 +1126,7 @@ process anat_aparc2aseg {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), path(aseg_mgz), path(ribbon_mgz), path(lh_white_surf), path(lh_pial_surf), path(lh_cortex_label), path(lh_aparc_annot), path(rh_white_surf), path(rh_pial_surf), path(rh_cortex_label), path(rh_aparc_annot))
+    tuple(val(subject_id), val(aseg_mgz), val(ribbon_mgz), val(lh_white_surf), val(lh_pial_surf), val(lh_cortex_label), val(lh_aparc_annot), val(rh_white_surf), val(rh_pial_surf), val(rh_cortex_label), val(rh_aparc_annot))
     val(fsthreads)
 
     output:
@@ -1136,12 +1136,12 @@ process anat_aparc2aseg {
     """
     SUBJECTS_DIR=${subjects_dir} mri_surf2volseg --o ${subjects_dir}/${subject_id}/mri/aparc+aseg.mgz --label-cortex --i ${aseg_mgz} \
     --threads ${fsthreads} \
-    --lh-annot lh.aparc.annot 1000 \
-    --lh-cortex-mask lh.cortex.label --lh-white lh.white \
-    --lh-pial lh.pial \
-    --rh-annot rh.aparc.annot 2000 \
-    --rh-cortex-mask rh.cortex.label --rh-white rh.white \
-    --rh-pial rh.pial
+    --lh-annot ${lh_aparc_annot} 1000 \
+    --lh-cortex-mask ${lh_cortex_label} --lh-white ${lh_white_surf} \
+    --lh-pial ${lh_pial_surf} \
+    --rh-annot ${rh_aparc_annot} 2000 \
+    --rh-cortex-mask ${rh_cortex_label} --rh-white ${rh_white_surf} \
+    --rh-pial ${rh_pial_surf}
     """
 }
 
@@ -1154,7 +1154,7 @@ process anat_aparc_a2009s2aseg {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), path(aseg_mgz), path(ribbon_mgz), path(lh_white_surf), path(lh_pial_surf), path(lh_cortex_label), path(lh_aparc_annot), path(rh_white_surf), path(rh_pial_surf), path(rh_cortex_label), path(rh_aparc_annot))
+    tuple(val(subject_id), val(aseg_mgz), val(ribbon_mgz), val(lh_white_surf), val(lh_pial_surf), val(lh_cortex_label), val(lh_aparc_annot), val(rh_white_surf), val(rh_pial_surf), val(rh_cortex_label), val(rh_aparc_annot))
     val(fsthreads)
 
     output:
@@ -1182,8 +1182,8 @@ process anat_balabels_lh {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), val(hemi), path(sphere_reg_surf), path(white_surf))
-    each path(label)
+    tuple(val(subject_id), val(hemi), val(sphere_reg_surf), val(white_surf))
+    each val(label)
 
     output:
     tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/label/${label}")) // emit: balabel
@@ -1202,8 +1202,8 @@ process anat_balabels_rh {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), val(hemi), path(sphere_reg_surf), path(white_surf))
-    each path(label)
+    tuple(val(subject_id), val(hemi), val(sphere_reg_surf), val(white_surf))
+    each val(label)
 
     output:
     tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/label/${label}")) // emit: balabel
@@ -1314,14 +1314,14 @@ process bold_pre_process {
     val(work_dir)
     val(task_id)
     val(bold_spaces)
-    tuple(val(subject_id), val(bold_id), val(bold_fieldmap_done), val(t1_nii), val(mask_nii), val(wm_dseg_nii), val(fsnative2T1w_xfm), val(lh_pial_surf), val(lh_pial_surf), path(subject_boldfile_txt))
+    tuple(val(subject_id), val(bold_id), val(bold_fieldmap_done), val(t1_nii), val(mask_nii), val(wm_dseg_nii), val(fsnative2T1w_xfm), val(lh_pial_surf), val(lh_pial_surf), val(subject_boldfile_txt))
     val(fs_license_file)
     val(bold_sdc)
     val(templateflow_home)
     val(qc_result_path)
 
     output:
-    tuple(val(subject_id), val(bold_id), path(subject_boldfile_txt))
+    tuple(val(subject_id), val(bold_id), val(subject_boldfile_txt))
 
     script:
     script_py = "bold_preprocess.py"
@@ -1410,7 +1410,7 @@ process bold_T1_to_2mm {
     input:
     val(subjects_dir)
     val(bold_preprocess_path)
-    tuple(val(subject_id), path(t1_mgz), path(norm_mgz))
+    tuple(val(subject_id), val(t1_mgz), val(norm_mgz))
     output:
     tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/anat/${subject_id}_space-T1w_res-2mm_desc-skull_T1w.nii.gz")) //emit: t1_native2mm
     tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/anat/${subject_id}_space-T1w_res-2mm_desc-noskull_T1w.nii.gz")) //emit: norm_native2mm
@@ -1480,7 +1480,7 @@ process bold_skip_reorient {
     input:
     val(bold_preprocess_path)
     val(qc_result_path)
-    each path(subject_boldfile_txt)
+    each val(subject_boldfile_txt)
     val(reorient)
     val(skip_frame)
     val(sdc)
@@ -1511,7 +1511,7 @@ process bold_stc_mc {
 
     input:
     val(bold_preprocess_path)
-    tuple(val(subject_id), val(bold_id), path(reorient))
+    tuple(val(subject_id), val(bold_id), val(reorient))
     output:
     tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-mc_bold.nii.gz")) // emit: mc
     tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_from-stc_to-mc_xfm.mcdat")) // emit: mcdat
@@ -1562,10 +1562,10 @@ process bold_add_subject_id_to_bold_file {
     cpus 1
 
     input:
-    each path(bold_file_txt)
+    each val(bold_file_txt)
 
     output:
-    tuple(val(subject_id), path(bold_file_txt))
+    tuple(val(subject_id), val(bold_file_txt))
 
     script:
     bold_id = bold_file_txt.name
@@ -1579,7 +1579,7 @@ process split_bold_bbregister_from_anat_input {
     cpus 1
 
     input:
-    each path(bold_file_txt)
+    each val(bold_file_txt)
     val(params)
 
     output:
@@ -1601,7 +1601,7 @@ process bold_bbregister {
     input:
     val(subjects_dir)
     val(bold_preprocess_path)
-    tuple(val(subject_id), val(bold_id), path(aparc_aseg_mgz), path(mc))
+    tuple(val(subject_id), val(bold_id), val(aparc_aseg_mgz), val(mc))
     output:
     tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_from-mc_to-T1w_desc-rigid_xfm.dat")) // emit: bbregister_dat
     script:
@@ -1628,7 +1628,7 @@ process bold_bbregister_to_native {
     input:
     val(subjects_dir)
     val(bold_preprocess_path)
-    tuple(val(subject_id), val(bold_id), path(boldref), path(mc), path(t1_native2mm), path(bbregister_dat))
+    tuple(val(subject_id), val(bold_id), val(boldref), val(mc), val(t1_native2mm), val(bbregister_dat))
     val(freesurfer_home)
     output:
     tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-T1w_res-2mm_desc-rigid_bold.nii.gz")) // emit: bbregister_native_2mm
@@ -1710,7 +1710,7 @@ process synthmorph_affine {
     val(subjects_dir)
     val(bold_preprocess_path)
     val(synthmorph_home)
-    tuple(val(subject_id), path(t1_native2mm), val(schedule_control), val(schedule), path(schedule_control)) // schedule_control for running this process in right time
+    tuple(val(subject_id), val(t1_native2mm), val(schedule_control), val(schedule), val(schedule_control)) // schedule_control for running this process in right time
     val(synth_model_path)
     val(template_space)
     val(device)
@@ -1749,7 +1749,7 @@ process synthmorph_norigid {
     val(subjects_dir)
     val(bold_preprocess_path)
     val(synthmorph_home)
-    tuple(val(subject_id), path(t1_native2mm), path(norm_native2mm), path(affine_trans))
+    tuple(val(subject_id), val(t1_native2mm), val(norm_native2mm), val(affine_trans))
     val(synth_model_path)
     val(template_space)
     val(device)
@@ -1791,7 +1791,7 @@ process bold_upsampled {
     val(subjects_dir)
     val(bold_preprocess_path)
     val(work_dir)
-    tuple(val(subject_id), val(bold_id), path(t1_native2mm), path(subject_boldfile_txt_bold))
+    tuple(val(subject_id), val(bold_id), val(t1_native2mm), val(subject_boldfile_txt_bold))
 
     output:
     tuple(val(subject_id), val(bold_id), val(upsampled_dir))
@@ -1827,7 +1827,7 @@ process synthmorph_norigid_apply {
     val(bold_preprocess_path)
     val(synthmorph_home)
     val(work_dir)
-    tuple(val(subject_id), val(bold_id), path(t1_native2mm), path(subject_boldfile_txt_bold), path(transvoxel), val(upsampled_dir))
+    tuple(val(subject_id), val(bold_id), val(t1_native2mm), val(subject_boldfile_txt_bold), val(transvoxel), val(upsampled_dir))
     val(template_space)
     val(template_resolution)
     val(device)
@@ -1871,7 +1871,7 @@ process bold_concat {
     val(bold_preprocess_path)
     val(template_space)
     val(template_resolution)
-    tuple(val(subject_id), val(bold_id), val(transform_dir), path(subject_boldfile_txt_bold)) //emit: {bild_id}_space-{template_space}_res-{template_resolution}_desc-preproc_bold.nii.gz
+    tuple(val(subject_id), val(bold_id), val(transform_dir), val(subject_boldfile_txt_bold)) //emit: {bild_id}_space-{template_space}_res-{template_resolution}_desc-preproc_bold.nii.gz
 
     output:
     tuple(val(subject_id), val(bold_id), val(template_space))
@@ -1900,7 +1900,7 @@ process bold_mkbrainmask {
     input:
     val(subjects_dir)
     val(bold_preprocess_path)
-    tuple(val(subject_id), val(bold_id), path(aparc_aseg), path(mc), path(bbregister_dat))
+    tuple(val(subject_id), val(bold_id), val(aparc_aseg), val(mc), val(bbregister_dat))
     output:
     tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${name}_desc-wm_mask.nii.gz")) // emit: anat_wm
     tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${name}_desc-csf_mask.nii.gz")) // emit: anat_csf
@@ -1933,7 +1933,7 @@ process bold_confounds {
     val(bids_dir)
     val(bold_preprocess_path)
     val(work_dir)
-    tuple(val(subject_id), val(bold_id), path(aseg_mgz), path(mask_mgz), path(subject_boldfile_txt))
+    tuple(val(subject_id), val(bold_id), val(aseg_mgz), val(mask_mgz), val(subject_boldfile_txt))
 
     output:
     tuple(val(subject_id), val(bold_id), val("${bold_id}_desc-confounds_timeseries.txt")) // emit: bold_confounds_view
@@ -1962,7 +1962,7 @@ process qc_plot_tsnr {
 
     input:
     val(bids_dir)
-    tuple(val(subject_id), val(bold_id), path(bold_file_txt))
+    tuple(val(subject_id), val(bold_id), val(bold_file_txt))
     val(bold_preprocess_path)
     val(qc_result_path)
     val(qc_utils_path)
@@ -1999,7 +1999,7 @@ process qc_plot_carpet {
 
     input:
     val(bids_dir)
-    tuple(val(subject_id), val(bold_id), path(aparc_aseg_mgz), path(mask_mgz), path(subject_boldfile_txt))
+    tuple(val(subject_id), val(bold_id), val(aparc_aseg_mgz), val(mask_mgz), val(subject_boldfile_txt))
     val(bold_preprocess_path)
     val(qc_result_path)
     val(work_dir)
@@ -2031,7 +2031,7 @@ process qc_plot_aparc_aseg {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), path(norm_mgz), path(aparc_aseg))
+    tuple(val(subject_id), val(norm_mgz), val(aparc_aseg))
 
     val(qc_utils_path)
     val(qc_result_path)
@@ -2067,7 +2067,7 @@ process qc_plot_volsurf {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), path(lh_white_surf), path(lh_pial_surf), path(rh_white_surf), path(rh_pial_surf), path(t1_mgz))
+    tuple(val(subject_id), val(lh_white_surf), val(lh_pial_surf), val(rh_white_surf), val(rh_pial_surf), val(t1_mgz))
 
     val(qc_utils_path)
     val(qc_result_path)
@@ -2104,7 +2104,7 @@ process qc_plot_surfparc {
 
     input:
     val(subjects_dir)
-    tuple(val(subject_id), path(lh_aparc_annot), path(lh_white_surf), path(lh_pial_surf), path(rh_aparc_annot),path(rh_white_surf), path(rh_pial_surf))
+    tuple(val(subject_id), val(lh_aparc_annot), val(lh_white_surf), val(lh_pial_surf), val(rh_aparc_annot),val(rh_white_surf), val(rh_pial_surf))
 
     val(qc_utils_path)
     val(qc_result_path)
@@ -2140,7 +2140,7 @@ process qc_plot_norm_to_mni152 {
     cpus 1
 
     input:
-    tuple(val(subject_id), path(norm_to_mni152_nii))
+    tuple(val(subject_id), val(norm_to_mni152_nii))
     val(bold_preprocess_path)
     val(qc_utils_path)
     val(qc_result_path)
@@ -2175,7 +2175,7 @@ process qc_plot_bold_to_space {
     memory '1.5 GB'
 
     input:
-    tuple(val(subject_id), val(bold_id), path(subject_boldfile_txt), val(synth_apply_template))
+    tuple(val(subject_id), val(bold_id), val(subject_boldfile_txt), val(synth_apply_template))
     val(bids_dir)
     val(bold_preprocess_path)
     val(work_dir)
