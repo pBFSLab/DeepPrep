@@ -35,7 +35,7 @@ def get_seg_file(aseg_mgz, wm_dseg_nii, wm_probseg_nii, gm_probseg_nii, csf_prob
 def get_fsnative2T1w_xfm(fsnative2T1w_xfm):
     lines = ['#Insight Transform File V1.0',
              '#Transform 0',
-             'Transform: MatrixOffsetTransformBase_double_3_3',
+             'Transform: AffineTransform_float_3_3',
              'Parameters: 1 0 0 0 1 0 0 0 1 0 0 0',
              'FixedParameters: 0 0 0']
     with open(fsnative2T1w_xfm, 'w') as f:
