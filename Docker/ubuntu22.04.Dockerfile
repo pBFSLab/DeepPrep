@@ -95,13 +95,18 @@ RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2
 
 ## Install FreeSurfer
 RUN wget --content-disposition -P /opt/ http://30.30.30.204/DeepPrep_new/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz && tar -C /opt -xzvf /opt/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz && rm /opt/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz
-#RUN wget --content-disposition -P /opt/ http://30.30.30.141:8080/f/4863e1ddb58d416bb6d3/?dl=1 && tar -C /opt -xzvf /opt/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz && rm /opt/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz
 ENV FREESURFER_HOME=/opt/freesurfer
 RUN echo "source ${FREESURFER_HOME}/SetUpFreeSurfer.sh" >> ~/.bashrc
 
+### FSL 6.0.5.1
+RUN apt-get update && apt-get --no-install-recommends -y install libopenblas-dev && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN wget --content-disposition -P /opt/ http://30.30.30.204/DeepPrep_new/FSL_6.0.5.1.tar.gz && tar -C /opt -xzvf /opt/FSL_6.0.5.1.tar.gz && rm /opt/FSL_6.0.5.1.tar.gz
+ENV FSLDIR="/opt/fsl"
+ENV FSLOUTPUTTYPE="NIFTI_GZ"
+ENV PATH="${FSLDIR}/bin:${PATH}"
+
 ## Install workbench
 RUN wget -P /opt/ http://30.30.30.204/workbench-linux64-v1.5.0.zip && unzip /opt/workbench-linux64-v1.5.0.zip -d /opt && rm /opt/workbench-linux64-v1.5.0.zip
-#RUN wget --content-disposition -P /opt/ http://30.30.30.141:8080/f/edc6781c767a46d1af00/?dl=1 && unzip /opt/workbench-linux64-v1.5.0.zip -d /opt && rm /opt/workbench-linux64-v1.5.0.zip
 ENV PATH="/opt/workbench/bin_linux64:${PATH}"
 
 ### ANTs  2.3.1
@@ -113,17 +118,9 @@ ENV PATH="/opt/workbench/bin_linux64:${PATH}"
 #    cp -r install /opt/ANTs && \
 #    cd ~ && rm -r antsInstallExample
 RUN wget --content-disposition -P /opt/ http://30.30.30.204/DeepPrep_new/ANTs_linux-ubuntu22-amd64_2.3.1.tar.gz && tar -C /opt -xzvf /opt/ANTs_linux-ubuntu22-amd64_2.3.1.tar.gz && rm /opt/ANTs_linux-ubuntu22-amd64_2.3.1.tar.gz
-#RUN wget --content-disposition -P /opt/ http://30.30.30.141:8080/f/ff5d799180524fe9a7b7/?dl=1 && tar -C /opt -xzvf /opt/ANTs_linux-ubuntu22-amd64_2.3.1.tar.gz && rm /opt/ANTs_linux-ubuntu22-amd64_2.3.1.tar.gz
-ENV ANTSPATH="/opt/ANTs"
-ENV PATH="${ANTSPATH}/bin:${PATH}"
-
-### FSL 6.0.5.1
-RUN apt-get update && apt-get --no-install-recommends -y install libopenblas-dev && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-RUN wget --content-disposition -P /opt/ http://30.30.30.204/DeepPrep_new/FSL_6.0.5.1.tar.gz && tar -C /opt -xzvf /opt/FSL_6.0.5.1.tar.gz && rm /opt/FSL_6.0.5.1.tar.gz
-#RUN wget --content-disposition -P /opt/ http://30.30.30.141:8080/f/22e8940b945b49758a76/?dl=1 && tar -C /opt -xzvf /opt/FSL_6.0.5.1.tar.gz && rm /opt/FSL_6.0.5.1.tar.gz
-ENV FSLDIR="/opt/fsl"
-ENV FSLOUTPUTTYPE="NIFTI_GZ"
-ENV PATH="${FSLDIR}/bin:${PATH}"
+ENV ANTSPATH="/opt/ANTs/bin"
+ENV PATH="${ANTSPATH}:${PATH}"
+ENV ANTS_RANDOM_SEED=14193
 
 #### AFNI 23.3.14
 #RUN cd /opt && \
@@ -134,14 +131,14 @@ ENV PATH="${FSLDIR}/bin:${PATH}"
 #    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
 #    apt remove python3-matplotlib -y && apt autoremove -y && \
 #    cd ~ && mv /root/abin /opt && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-RUN wget --content-disposition -P /opt/ http://30.30.30.204/DeepPrep_new/AFNI_linux-ubuntu-16-64_23.3.14.tar.gz && tar -C /opt -xzvf /opt/AFNI_linux-ubuntu-16-64_23.3.14.tar.gz && rm /opt/AFNI_linux-ubuntu-16-64_23.3.14.tar.gz
-#RUN wget --content-disposition -P /opt/ http://30.30.30.141:8080/f/9bc695e553554cd180b6/?dl=1 && tar -C /opt -xzvf /opt/AFNI_linux-ubuntu-16-64_23.3.14.tar.gz && rm /opt/AFNI_linux-ubuntu-16-64_23.3.14.tar.gz
+RUN wget --content-disposition -P /opt/ http://30.30.30.204/DeepPrep_new/AFNI_linux-ubuntu-22-64_24.0.00.tar.gz && tar -C /opt -xzvf /opt/AFNI_linux-ubuntu-22-64_24.0.00.tar.gz && rm /opt/AFNI_linux-ubuntu-22-64_24.0.00.tar.gz
+RUN wget --content-disposition -P /opt/ http://30.30.30.204/DeepPrep_new/libxp6_1.0.2-2_amd64.deb && dpkg -i /opt/libxp6_1.0.2-2_amd64.deb && rm /opt/libxp6_1.0.2-2_amd64.deb
 ENV PATH="/opt/abin:${PATH}"
+RUN apt-get update && apt-get --no-install-recommends -y install libxpm-dev && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 ### mriqc
 #COPY --from=freesurfer/synthstrip@sha256:f19578e5f033f2c707fa66efc8b3e11440569facb46e904b45fd52f1a12beb8b /freesurfer/models/synthstrip.1.pt /opt/freesurfer/models/synthstrip.1.pt
 RUN mkdir ${FREESURFER_HOME}/models && wget --content-disposition -P ${FREESURFER_HOME}/models http://30.30.30.204/model/SynthStrip/synthstrip.1.pt  # synthstrip.1.pt
-#RUN mkdir ${FREESURFER_HOME}/models && wget --content-disposition -P ${FREESURFER_HOME}/models http://30.30.30.141:8080/f/cb60226d1e8f497b9fb5/?dl=1  # synthstrip.1.pt
 
 ### default template
 RUN python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin6Asym', desc=None, resolution=2, suffix='T1w', extension='nii.gz')"
