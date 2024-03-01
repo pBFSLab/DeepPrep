@@ -38,10 +38,9 @@ def update_config(bids_dir, bold_preprocess_dir, work_dir, fs_license_file, fs_s
 
     config.workflow.anat_only = False
     config.workflow.bold2t1w_dof = 6
-    config.workflow.bold2t1w_init = 'header'
+    config.workflow.bold2t1w_init = 'register'
     config.workflow.cifti_output = False
-    config.workflow.dummy_scans = 0
-    config.workflow.fmap_bspline = False
+    # config.workflow.dummy_scans = 0
     config.workflow.fmap_bspline = False
     config.workflow.hires = True
     config.workflow.ignore =[]
@@ -59,6 +58,12 @@ def update_config(bids_dir, bold_preprocess_dir, work_dir, fs_license_file, fs_s
     config.workflow.use_bbr = True
     config.workflow.use_syn_sdc = False
     config.workflow.me_t2s_fit_method = "curvefit"
+
+    # config.nipype.plugin = "Linear"
+
+    config.seeds.master = 41764
+    config.seeds.ants = 14193
+    config.seeds.numpy = 11239
 
 
 def get_bold_func_path(bids_orig, bids_preproc, bold_orig_file):
