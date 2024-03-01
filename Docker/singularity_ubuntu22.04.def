@@ -15,8 +15,9 @@ Stage: build
 
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/lib/python3.10/dist-packages/tensorrt_libs"
 
-    export ANTSPATH="/opt/ANTs"
-    export PATH="${ANTSPATH}/bin:${PATH}"
+    export ANTSPATH="/opt/ANTs/bin"
+    export PATH="${ANTSPATH}:${PATH}"
+    export ANTS_RANDOM_SEED=14193
 
     export FSLDIR="/opt/fsl"
     export FSLOUTPUTTYPE="NIFTI"
@@ -47,7 +48,7 @@ Stage: build
 
 %labels
     Author anning@cpl.ac.cn
-    Version $Version
+    Version 23.1.0
 
 %help
     This is a DeepPrep container used to preprocess sMRI and fMRI
