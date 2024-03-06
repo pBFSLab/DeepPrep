@@ -9,13 +9,14 @@ from gpu_manage import GPUManager, check_gpus
 
 
 if __name__ == '__main__':
-    if sys.argv[1] == 'auto':
-        gpu_manager = GPUManager()
-        gpu = gpu_manager.auto_choice()
-    elif sys.argv[1] == 'cpu':
+    if sys.argv[1].isdigit():
+        gpu = sys.argv[1]
+    elif sys.argv[1].lower() == 'cpu':
         gpu = ''
     else:
-        gpu = sys.argv[1]
+        print(f'Auto select GPU by ： {sys.argv[1]}')
+        gpu_manager = GPUManager()
+        gpu = gpu_manager.auto_choice()
 
     os.environ['CUDA_VISIBLE_DEVICES'] = gpu
     print(f'INFO: GPU: {gpu}')
