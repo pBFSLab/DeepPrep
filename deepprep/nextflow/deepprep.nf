@@ -63,6 +63,7 @@ process anat_create_subject_orig_dir {
 
 process anat_motioncor {
     tag "${subject_id}"
+    memory '1 GB'
 
     cpus 1
 
@@ -212,7 +213,7 @@ process anat_N4_bias_correct {
     tag "${subject_id}"
 
     cpus 1
-    memory '350 MB'
+    memory '700 MB'
 
     input:
     val(subjects_dir)
@@ -244,7 +245,7 @@ process anat_talairach_and_nu {
     tag "${subject_id}"
 
     cpus 1
-    memory '200 MB'
+    memory '500 MB'
 
     input:
     val(subjects_dir)
@@ -596,7 +597,7 @@ process anat_autodet_gwstats {
     tag "${subject_id}"
 
     cpus 1
-    memory '250 MB'
+    memory '500 MB'
 
     input:
     val(subjects_dir)
@@ -961,7 +962,7 @@ process anat_pctsurfcon {
     tag "${subject_id}"
 
     cpus 1
-    memory '250 MB'
+    memory '500 MB'
 
     input:
     val(subjects_dir)
@@ -1314,14 +1315,14 @@ process bold_pre_process {
     val(work_dir)
     val(task_id)
     val(bold_spaces)
-    tuple(val(subject_id), val(bold_id), val(bold_fieldmap_done), val(t1_nii), val(mask_nii), val(wm_dseg_nii), val(fsnative2T1w_xfm), val(lh_pial_surf), val(lh_pial_surf), val(subject_boldfile_txt))
+    tuple(val(subject_id), val(bold_id), val(bold_fieldmap_done), val(t1_nii), val(mask_nii), val(wm_dseg_nii), val(fsnative2T1w_xfm), val(lh_pial_surf), val(lh_pial_surf), path(subject_boldfile_txt))
     val(fs_license_file)
     val(bold_sdc)
     val(templateflow_home)
     val(qc_result_path)
 
     output:
-    tuple(val(subject_id), val(bold_id), val(subject_boldfile_txt))
+    tuple(val(subject_id), val(bold_id), path(subject_boldfile_txt))
 
     script:
     script_py = "bold_preprocess.py"
@@ -1480,7 +1481,7 @@ process bold_skip_reorient {
     input:
     val(bold_preprocess_path)
     val(qc_result_path)
-    each val(subject_boldfile_txt)
+    each path(subject_boldfile_txt)
     val(reorient)
     val(skip_frame)
     val(sdc)
@@ -1791,7 +1792,7 @@ process bold_upsampled {
     val(subjects_dir)
     val(bold_preprocess_path)
     val(work_dir)
-    tuple(val(subject_id), val(bold_id), val(t1_native2mm), val(subject_boldfile_txt_bold))
+    tuple(val(subject_id), val(bold_id), val(t1_native2mm), path(subject_boldfile_txt_bold))
 
     output:
     tuple(val(subject_id), val(bold_id), val(upsampled_dir))
@@ -1827,7 +1828,7 @@ process synthmorph_norigid_apply {
     val(bold_preprocess_path)
     val(synthmorph_home)
     val(work_dir)
-    tuple(val(subject_id), val(bold_id), val(t1_native2mm), val(subject_boldfile_txt_bold), val(transvoxel), val(upsampled_dir))
+    tuple(val(subject_id), val(bold_id), val(t1_native2mm), path(subject_boldfile_txt_bold), val(transvoxel), val(upsampled_dir))
     val(template_space)
     val(template_resolution)
     val(device)
@@ -1871,7 +1872,7 @@ process bold_concat {
     val(bold_preprocess_path)
     val(template_space)
     val(template_resolution)
-    tuple(val(subject_id), val(bold_id), val(transform_dir), val(subject_boldfile_txt_bold)) //emit: {bild_id}_space-{template_space}_res-{template_resolution}_desc-preproc_bold.nii.gz
+    tuple(val(subject_id), val(bold_id), val(transform_dir), path(subject_boldfile_txt_bold)) //emit: {bild_id}_space-{template_space}_res-{template_resolution}_desc-preproc_bold.nii.gz
 
     output:
     tuple(val(subject_id), val(bold_id), val(template_space))
@@ -1933,7 +1934,7 @@ process bold_confounds {
     val(bids_dir)
     val(bold_preprocess_path)
     val(work_dir)
-    tuple(val(subject_id), val(bold_id), val(aseg_mgz), val(mask_mgz), val(subject_boldfile_txt))
+    tuple(val(subject_id), val(bold_id), val(aseg_mgz), val(mask_mgz), path(subject_boldfile_txt))
 
     output:
     tuple(val(subject_id), val(bold_id), val("${bold_id}_desc-confounds_timeseries.txt")) // emit: bold_confounds_view
@@ -1962,7 +1963,7 @@ process qc_plot_tsnr {
 
     input:
     val(bids_dir)
-    tuple(val(subject_id), val(bold_id), val(bold_file_txt))
+    tuple(val(subject_id), val(bold_id), path(bold_file_txt))
     val(bold_preprocess_path)
     val(qc_result_path)
     val(qc_utils_path)
@@ -1999,7 +2000,7 @@ process qc_plot_carpet {
 
     input:
     val(bids_dir)
-    tuple(val(subject_id), val(bold_id), val(aparc_aseg_mgz), val(mask_mgz), val(subject_boldfile_txt))
+    tuple(val(subject_id), val(bold_id), val(aparc_aseg_mgz), val(mask_mgz), path(subject_boldfile_txt))
     val(bold_preprocess_path)
     val(qc_result_path)
     val(work_dir)
@@ -2175,7 +2176,7 @@ process qc_plot_bold_to_space {
     memory '1.5 GB'
 
     input:
-    tuple(val(subject_id), val(bold_id), val(subject_boldfile_txt), val(synth_apply_template))
+    tuple(val(subject_id), val(bold_id), path(subject_boldfile_txt), val(synth_apply_template))
     val(bids_dir)
     val(bold_preprocess_path)
     val(work_dir)
