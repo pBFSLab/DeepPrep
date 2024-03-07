@@ -760,7 +760,6 @@ p.add_argument('-mp', '--model_path', type=str, metavar='MODEL PATH')
 p.add_argument('-mc', '--mc', type=str, metavar='TR_info')
 p.add_argument('-a', '--apply', type=str, metavar='APPLY_TRANS')
 p.add_argument('-ao', '--apply_out', type=str, metavar='APPLY_TRANS_OUT')
-p.add_argument('-cc', '--compute_capability', type=str, metavar='COMPUTE CAPABILITY')
 
 if len(sys.argv) == 1 or '-h' in sys.argv or '--help' in sys.argv:
     print(rewrap(doc), end='\n\n')
@@ -786,6 +785,11 @@ gpus = tf.config.experimental.list_physical_devices(device_type='GPU')
 for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
 gpu = os.environ.get('CUDA_VISIBLE_DEVICES', '0')
+if gpu != "":
+    gpu_inf = tf.config.get_visible_devices(device_type='GPU')[0]
+    cc = tf.config.experimental.get_device_details(gpu_inf)['compute_capability']
+    compute_capability = f'{cc[0]}.{cc[1]}'
+    print('compute_capability: ', compute_capability)
 
 if arg.threads:
     tf.config.threading.set_inter_op_parallelism_threads(arg.threads)
@@ -850,9 +854,9 @@ if is_linear:
     model_output = model.get_outputs()[0].name
     trans = model.run(None, {model_input_1: inputs[0].numpy(), model_input_2: inputs[1].numpy()})
 else:
-    if gpu != "" and arg.compute_capability in available_compute_capability:
+    if gpu != "" and compute_capability in available_compute_capability:
         TRT_LOGGER = trt.Logger()
-        with open(os.path.join(arg.model_path, f'model_norigid_FP16_CC_{arg.compute_capability}.engine'), "rb") as f, trt.Runtime(TRT_LOGGER) as runtime:
+        with open(os.path.join(arg.model_path, f'model_norigid_FP16_CC_{compute_capability}.engine'), "rb") as f, trt.Runtime(TRT_LOGGER) as runtime:
             engine = runtime.deserialize_cuda_engine(f.read())
         context = engine.create_execution_context()
         context.set_binding_shape(0, (1, in_shape[0], in_shape[1], in_shape[2], 1))
@@ -872,7 +876,6 @@ if not arg.weights:
     if arg.model == 'deform':
         f = f.format(smooth=arg.smooth)
 
-    # parent_path = os.getcwd()
     model_path = arg.model_path
     arg.weights = os.path.join(model_path, f)
 
