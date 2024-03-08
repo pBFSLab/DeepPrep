@@ -11,7 +11,7 @@ RUN apt-get update && apt-get --no-install-recommends -y install wget curl vim g
 
 # Install time zone
 ENV TZ=Etc/UTC
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -y install tzdata && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends -y install tzdata && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN apt-get update && \
     # FreeSurfer
@@ -25,7 +25,7 @@ RUN apt-get update && \
     # open jdk
     openjdk-11-jdk && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-RUN add-apt-repository ppa:linuxuprising/libpng12 && apt-get update && apt-get -y install libpng12-0 && add-apt-repository -r ppa:linuxuprising/libpng12 && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN add-apt-repository ppa:linuxuprising/libpng12 && apt-get update && apt-get --no-install-recommends -y install libpng12-0 && add-apt-repository -r ppa:linuxuprising/libpng12 && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN ln -sf /usr/bin/python3 /usr/bin/python && python -m pip install --upgrade pip && pip3 cache purge && rm -rf /tmp/* /var/tmp/*
 RUN apt purge python3-blinker -y && apt autoremove -y
@@ -82,7 +82,7 @@ ENV PATH="/opt/nextflow/bin:${PATH}"
 
 ### bids-validator
 RUN curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash - && \
-    apt purge libnode-dev -y && apt autoremove -y && apt install -y nodejs  && npm install -g bids-validator && \
+    apt purge libnode-dev -y && apt autoremove -y && apt-get --no-install-recommends -y install nodejs  && npm install -g bids-validator && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && npm cache clean --force
 
 ### Install Redis
@@ -134,7 +134,7 @@ ENV ANTS_RANDOM_SEED=14193
 RUN wget --content-disposition -P /opt/ http://30.30.30.204/DeepPrep_new/AFNI_linux-ubuntu-22-64_24.0.00.tar.gz && tar -C /opt -xzvf /opt/AFNI_linux-ubuntu-22-64_24.0.00.tar.gz && rm /opt/AFNI_linux-ubuntu-22-64_24.0.00.tar.gz
 RUN wget --content-disposition -P /opt/ http://30.30.30.204/DeepPrep_new/libxp6_1.0.2-2_amd64.deb && dpkg -i /opt/libxp6_1.0.2-2_amd64.deb && rm /opt/libxp6_1.0.2-2_amd64.deb
 ENV PATH="/opt/abin:${PATH}"
-RUN apt-get update && apt-get --no-install-recommends -y install libxpm-dev && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN apt-get update && apt-get --no-install-recommends -y install libxpm-dev libxft2 && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 ### mriqc
 #COPY --from=freesurfer/synthstrip@sha256:f19578e5f033f2c707fa66efc8b3e11440569facb46e904b45fd52f1a12beb8b /freesurfer/models/synthstrip.1.pt /opt/freesurfer/models/synthstrip.1.pt
