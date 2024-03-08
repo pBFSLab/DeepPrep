@@ -1,10 +1,10 @@
 .. _Docker Installation Page: https://www.docker.com/get-started/
-.. _website: https://drive.google.com/file/d/1iqopJLSsXaFLHZnNQsQuASXnkfUT62UO/view?usp=drive_link
+.. _website: https://drive.google.com/drive/folders/13txuhCNW_nHG4NX3cl7HehlBJ1ZVB5CV?usp=drive_link
 .. _Nexflow: https://www.nextflow.io/docs/latest/getstarted.html
 .. _Java: https://www.openlogic.com/openjdk-downloads
 .. _How to install Java: https://www.java.com/en/download/help/index.html
 .. _platforms list: https://www.nextflow.io/docs/latest/executor.html
-.. _download here: https://drive.google.com/file/d/1Ddf56ohx83lZNZfIXB60A7AnoayitHsU/view?usp=drive_link
+.. _download here: https://drive.google.com/drive/folders/13txuhCNW_nHG4NX3cl7HehlBJ1ZVB5CV?usp=drive_link
 .. _BIDS Validator: http://bids-standard.github.io/bids-validator/
 .. _NiPreps portal: https://www.nipreps.org/apps/framework/
 .. _BIDS format: https://bids-specification.readthedocs.io/en/stable/index.html
