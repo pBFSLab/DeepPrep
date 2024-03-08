@@ -16,24 +16,24 @@ def check_gpus(cuda_version: float = 0.0, memory_total: int = 0):
     #     all_gpus = [x.name for x in device_lib.list_local_devices() if x.device_type == 'GPU']
     # =============================================================================
     first_gpus = os.popen('nvidia-smi --query-gpu=index --format=csv,noheader').readlines()[0].strip()
+    gpu_memory = int(os.popen('nvidia-smi --query-gpu=memory.total --format=csv,noheader').readlines()[0].split()[0])
     if not first_gpus == '0':
         info = 'This script could only be used to manage NVIDIA GPUs,but no GPU found in your device'
         print(info)
-        return False, info
+        return False, info, 0
     elif not 'NVIDIA System Management' in os.popen('nvidia-smi -h').read():
         info = "'nvidia-smi' tool not found."
         print(info)
-        return False, info
+        return False, info, 0
     elif not (float(os.popen('nvidia-smi').readlines()[2].split()[-2]) >= cuda_version):
         info = f"CUDA version < {cuda_version}"
         print(info)
-        return False, info
-    elif not (int(os.popen('nvidia-smi --query-gpu=memory.total --format=csv,noheader').readlines()[0].split()[0]) >= memory_total):
+        return False, info, 0
+    elif not (gpu_memory >= memory_total):
         info = f"GPU memory < {memory_total}"
         print(info)
-        return False, info
-    return True, "GPU available!"
-
+        return False, info, 0
+    return True, "GPU available!", gpu_memory
 
 
 def parse(line, qargs):
