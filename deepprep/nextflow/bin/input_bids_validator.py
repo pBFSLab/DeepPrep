@@ -21,7 +21,6 @@ if __name__ == '__main__':
     participant_label = args.participant_label if args.participant_label else None
     bids_dir = Path(args.bids_dir)
     if not skip_bids_validation:
-        import traceback
         import subprocess
 
         try:

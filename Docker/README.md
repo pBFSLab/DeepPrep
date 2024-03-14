@@ -8,6 +8,12 @@ docker buildx build --progress=plain -t ninganme/deepprep:${DEEPPREP_VERSION} -f
 docker save ninganme/deepprep:${DEEPPREP_VERSION} -o ${DEEPPREP_IMAGE_OUTPUT_PATH}/deepprep_${DEEPPREP_VERSION}.tar.gz
 
 ## build Singularity image
+```
+apt-cache madison docker-ce | awk '{ print $3 }'
+VERSION_STRING=5:24.0.7-1~ubuntu.20.04~focal
+sudo apt-get install docker-ce=$VERSION_STRING docker-ce-cli=$VERSION_STRING containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
 sed -i "s/\$Version/${DEEPPREP_VERSION}/g" Docker/singularity_ubuntu22.04.def
 sudo singularity build --notest ${DEEPPREP_IMAGE_OUTPUT_PATH}/deepprep_${DEEPPREP_VERSION}.sif Docker/singularity_ubuntu22.04.def
 
