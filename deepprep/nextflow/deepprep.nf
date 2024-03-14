@@ -16,6 +16,7 @@ process process_mriqc {
 
 process anat_get_t1w_file_in_bids {
     cpus 1
+    memory '100 MB'
 
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
     val(bids_dir)
@@ -45,6 +46,7 @@ process anat_create_subject_orig_dir {
 
     label "maxForks_10"
     cpus 1
+    memory '100 MB'
 
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
     val(subjects_dir)
@@ -63,9 +65,9 @@ process anat_create_subject_orig_dir {
 
 process anat_motioncor {
     tag "${subject_id}"
-    memory '1 GB'
 
     cpus 1
+    memory '1 GB'
 
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
     val(subjects_dir)
@@ -314,6 +316,7 @@ process anat_brainmask {
     tag "${subject_id}"
 
     cpus 1
+    memory '200 MB'
 
     input:
     val(subjects_dir)
@@ -395,6 +398,7 @@ process subject_id_hemi_lh {
     tag "${subject_id}"
 
     cpus 1
+    memory '20 MB'
 
     input:
     tuple(val(subject_id), val(aseg_presurf_mgz))
@@ -409,6 +413,7 @@ process subject_id_hemi_rh {
     tag "${subject_id}"
 
     cpus 1
+    memory '20 MB'
 
     input:
     tuple(val(subject_id), val(aseg_presurf_mgz))
@@ -423,6 +428,7 @@ process split_hemi_orig_mgz {
     tag "${subject_id}"
 
     cpus 1
+    memory '20 MB'
 
     input:
     each hemi
@@ -438,6 +444,7 @@ process split_hemi_rawavg_mgz {
     tag "${subject_id}"
 
     cpus 1
+    memory '20 MB'
 
     input:
     each hemi
@@ -453,6 +460,7 @@ process split_hemi_brainmask_mgz {
     tag "${subject_id}"
 
     cpus 1
+    memory '20 MB'
 
     input:
     each hemi
@@ -468,6 +476,7 @@ process split_hemi_aseg_presurf_mgz {
     tag "${subject_id}"
 
     cpus 1
+    memory '20 MB'
 
     input:
     each hemi
@@ -483,6 +492,7 @@ process split_hemi_brain_finalsurfs_mgz {
     tag "${subject_id}"
 
     cpus 1
+    memory '20 MB'
 
     input:
     each hemi
@@ -498,6 +508,7 @@ process split_hemi_wm_mgz {
     tag "${subject_id}"
 
     cpus 1
+    memory '20 MB'
 
     input:
     each hemi
@@ -513,6 +524,7 @@ process split_hemi_filled_mgz {
     tag "${subject_id}"
 
     cpus 1
+    memory '20 MB'
 
     input:
     each hemi
@@ -754,7 +766,7 @@ process anat_curv_stats {
     tag "${subject_id}"
 
     cpus 1
-    memory '200 MB'
+    memory '300 MB'
 
     input:
     val(subjects_dir)
@@ -778,7 +790,7 @@ process anat_sphere {
     tag "${subject_id}"
 
     cpus 1
-    memory '300 MB'
+    memory '500 MB'
 
     input:
     val(subjects_dir)
@@ -832,6 +844,7 @@ process anat_jacobian {
     tag "${subject_id}"
 
     cpus 1
+    memory '300 MB'
 
     input:
     val(subjects_dir)
@@ -853,6 +866,7 @@ process anat_avgcurv {
     tag "${subject_id}"
 
     cpus 1
+    memory '300 MB'
 
     input:
     val(subjects_dir)
@@ -876,6 +890,7 @@ process anat_cortparc_aparc {
     tag "${subject_id}"
 
     cpus 1
+    memory '1.2 GB'
 
     input:
     val(subjects_dir)
@@ -899,6 +914,7 @@ process anat_cortparc_aparc_a2009s {
     tag "${subject_id}"
 
     cpus 1
+    memory '1.2 GB'
 
     input:
     val(subjects_dir)
@@ -922,7 +938,7 @@ process anat_pial_surface {
     tag "${subject_id}"
 
     cpus 1
-    memory '1.5 GB'
+    memory '1.2 GB'
 
     input:
     val(subjects_dir)
@@ -986,7 +1002,7 @@ process anat_parcstats {
     tag "${subject_id}"
 
     cpus 1
-    memory '500 MB'
+    memory '600 MB'
 
     input:
     val(subjects_dir)
@@ -1044,7 +1060,7 @@ process lh_anat_ribbon_inputs {
     tag "${subject_id}"
 
     cpus 1
-    memory '1 GB'
+    memory '20 MB'
 
     input:
     tuple(val(subject_id), val(aseg_presurf_mgz))
@@ -1059,6 +1075,7 @@ process rh_anat_ribbon_inputs {
     tag "${subject_id}"
 
     cpus 1
+    memory '20 MB'
 
     input:
     tuple(val(subject_id), val(aseg_presurf_mgz))
@@ -1074,7 +1091,8 @@ process rh_anat_ribbon_inputs {
 process anat_ribbon {
     tag "${subject_id}"
 
-    cpus 1
+    cpus 2
+    memory '1.2 GB'
 
     input:
     val(subjects_dir)
@@ -1096,6 +1114,7 @@ process anat_apas2aseg {
     tag "${subject_id}"
 
     cpus 2
+    memory '1 GB'
 
     input:
     val(subjects_dir)
@@ -1200,6 +1219,7 @@ process anat_balabels_rh {
     tag "${subject_id}"
 
     cpus 1
+    memory '500 MB'
 
     input:
     val(subjects_dir)
@@ -1217,7 +1237,9 @@ process anat_balabels_rh {
 
 process bold_anat_prepare {
     tag "${subject_id}"
+
     cpus 1
+    memory '2 GB'
 
     input:
     val(bold_preprocess_path)
@@ -1264,6 +1286,7 @@ process bold_fieldmap {
     tag "${subject_id}"
 
     cpus 1
+    memory '500 MB'
 
     input:
     val(bids_dir)
@@ -1307,6 +1330,7 @@ process bold_pre_process {
     tag "${bold_id}"
 
     cpus 4
+    memory '4.5 GB'
 
     input:
     val(bids_dir)
@@ -1350,6 +1374,7 @@ process bold_pre_process {
 process bold_get_bold_file_in_bids {
 
     cpus 1
+    memory '100 MB'
 
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
     val(bids_dir)
@@ -1390,6 +1415,7 @@ process bold_merge_subject_id {
     tag "${subject_id}"
 
     cpus 1
+    memory '20 MB'
 
     input:
     tuple(val(subjects_id), val(t1_mgz))
@@ -1407,6 +1433,7 @@ process bold_T1_to_2mm {
     tag "${subject_id}"
 
     cpus 1
+    memory '100 MB'
 
     input:
     val(subjects_dir)
@@ -1456,7 +1483,9 @@ process bold_get_bold_ref_in_bids {
 
 process split_subject_boldref_file {
     tag "${subject_id}"
+
     cpus 1
+    memory '20 MB'
 
     input:
     val(bold_id)
@@ -1560,7 +1589,9 @@ process bold_sdc {
 
 process bold_add_subject_id_to_bold_file {
     tag "${subject_id}"
+
     cpus 1
+    memory '20 MB'
 
     input:
     each val(bold_file_txt)
@@ -1577,7 +1608,9 @@ process bold_add_subject_id_to_bold_file {
 }
 process split_bold_bbregister_from_anat_input {
     tag "${subject_id}"
+
     cpus 1
+    memory '20 MB'
 
     input:
     each val(bold_file_txt)
@@ -1994,7 +2027,7 @@ process qc_plot_carpet {
     tag "${bold_id}"
 
     cpus 1
-    memory '2 GB'
+    memory '4 GB'
 
     input:
     val(bids_dir)
@@ -2063,6 +2096,7 @@ process qc_plot_volsurf {
     tag "${subject_id}"
 
     cpus 5
+    memory '1.5 GB'
 
     input:
     val(subjects_dir)
@@ -2100,6 +2134,7 @@ process qc_plot_surfparc {
     tag "${subject_id}"
 
     cpus 1
+    memory '1 GB'
 
     input:
     val(subjects_dir)
@@ -2137,6 +2172,7 @@ process qc_plot_norm_to_mni152 {
     tag "${subject_id}"
 
     cpus 2
+    memory '600 MB'
 
     input:
     tuple(val(subject_id), val(norm_to_mni152_nii))
@@ -2209,6 +2245,7 @@ process qc_anat_create_report {
     tag "${subject_id}"
 
     cpus 1
+    memory '300 MB'
 
     input:
     val(bids_dir)
@@ -2245,6 +2282,7 @@ process qc_bold_create_report {
     tag "${subject_id}"
 
     cpus 1
+    memory '300 MB'
 
     input:
     tuple(val(subject_id), val(anything), val(anything), val(anything), val(synth_apply_template))
