@@ -21,4 +21,14 @@ if __name__ == '__main__':
     participant_label = args.participant_label if args.participant_label else None
     bids_dir = Path(args.bids_dir)
     if not skip_bids_validation:
-        validate_input_dir(args.exec_env, bids_dir, participant_label)
+        import traceback
+        import subprocess
+
+        try:
+            validate_input_dir(args.exec_env, bids_dir, participant_label)
+
+        except subprocess.CalledProcessError as e:
+            # traceback.print_exc()
+            error_info = "\n ERROR: This Error is from bids_validator.You can add --skip_bids_validation in command to skip it. \n"
+            print(error_info)
+            raise (ChildProcessError, "ERROR: This Error is from bids_validator.You can add --skip_bids_validation in command to skip it.")
