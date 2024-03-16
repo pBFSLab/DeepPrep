@@ -34,9 +34,11 @@ if __name__ == '__main__':
     conn = None
     try:
         conn = StrictRedis()
+        conn.lpop('lock_index')
         print('connect to StrictRedis DB')
     except Exception as why:
-        print('Cant connect to StrictRedis DB', why)
+        conn = None
+        print(f'Cant connect to StrictRedis DB: {why}')
 
     if conn:
         print(f'INFO: run_count : {run_count}')
