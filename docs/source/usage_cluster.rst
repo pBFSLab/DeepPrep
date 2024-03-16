@@ -55,7 +55,7 @@ Download the DeepPrep sif image from Google Drive
 
     $ cd <shared_storage_path>
 
-    $ gdown --id  1iqopJLSsXaFLHZnNQsQuASXnkfUT62UO
+    $ gdown --id  1SFDWjRRdF-C1w_C9XzS6KJKdMWaJc0zW
 
 Then you will get: ``<shared_storage_path>/deepprep_23.1.0.sif``
 
