@@ -122,7 +122,7 @@ ENV ANTSPATH="/opt/ANTs/bin"
 ENV PATH="${ANTSPATH}:${PATH}"
 ENV ANTS_RANDOM_SEED=14193
 
-#### AFNI 23.3.14
+#### AFNI 24.0.0
 #RUN cd /opt && \
 #    wget --content-disposition -P /opt/ http://30.30.30.141:8080/f/0c88034741084793bd56/?dl=1 && \
 #    wget --content-disposition -P /opt/ http://30.30.30.141:8080/f/413153c2166440fc9394/?dl=1 && \
@@ -141,6 +141,7 @@ RUN apt-get update && apt-get --no-install-recommends -y install libxpm-dev libx
 RUN mkdir ${FREESURFER_HOME}/models && wget --content-disposition -P ${FREESURFER_HOME}/models http://30.30.30.204/model/SynthStrip/synthstrip.1.pt  # synthstrip.1.pt
 
 ### default template
+ENV TEMPLATEFLOW_HOME=/opt/TemplateFlow
 RUN python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin6Asym', desc=None, resolution=2, suffix='T1w', extension='nii.gz')"
 RUN python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin2009cAsym', desc='brain', resolution=2, suffix='mask', extension='nii.gz')"
 RUN python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin2009cAsym', desc='fMRIPrep', resolution=2, suffix='boldref', extension='nii.gz')"
@@ -156,7 +157,7 @@ COPY deepprep/deepprep.sh /opt/DeepPrep/deepprep/deepprep.sh
 RUN chmod 755 /opt/DeepPrep/deepprep/deepprep.sh && chmod 755 /opt/DeepPrep/deepprep/nextflow/bin/*.py
 ENV PATH="/opt/DeepPrep/deepprep/nextflow/bin:${PATH}"
 
-### souce ${FREESURFER_HOME}/SetUpFreeSurfer.sh
+### source ${FREESURFER_HOME}/SetUpFreeSurfer.sh
 ENV FSLDISPLAY=/usr/bin/display
 ENV FREESURFER=${FREESURFER_HOME}
 ENV FSL_DIR="${FSLDIR}"
