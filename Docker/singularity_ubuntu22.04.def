@@ -27,6 +27,8 @@ Stage: build
 
     export PATH="/opt/DeepPrep/deepprep/nextflow/bin:${PATH}"
 
+    export TEMPLATEFLOW_HOME=/opt/TemplateFlow
+
 %post
     NOW=`date`
     echo "export NOW=\"${NOW}\"" >> $SINGULARITY_ENVIRONMENT
