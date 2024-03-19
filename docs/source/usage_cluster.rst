@@ -47,7 +47,7 @@ Download the DeepPrep sif image from Google Drive
 
 1. Download from the `website`_.
 
-2. Download via ``gdown``:
+2. Download via ``gdown`` if you are familiar with Python:
 
 .. code-block:: none
 
@@ -55,7 +55,7 @@ Download the DeepPrep sif image from Google Drive
 
     $ cd <shared_storage_path>
 
-    $ gdown --id  1SFDWjRRdF-C1w_C9XzS6KJKdMWaJc0zW
+    $ gdown <file_id_of_sif_file_in_Google_Drive>
 
 Then you will get: ``<shared_storage_path>/deepprep_23.1.0.sif``
 
