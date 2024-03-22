@@ -9,11 +9,15 @@ from gpu_manage import GPUManager, check_gpus
 
 
 if __name__ == '__main__':
+    print(f'INFO: Device: {sys.argv[1]}')
+
     if sys.argv[1].isdigit():
+        check_gpus()
         gpu = sys.argv[1]
     elif sys.argv[1].lower() == 'cpu':
         gpu = ''
     else:
+        check_gpus()
         print(f'Auto select GPU by ： {sys.argv[1]}')
         gpu_manager = GPUManager()
         gpu = gpu_manager.auto_choice()
