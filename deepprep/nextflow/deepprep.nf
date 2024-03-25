@@ -789,8 +789,8 @@ process anat_curv_stats {
 process anat_sphere {
     tag "${subject_id}"
 
-    cpus 1
-    memory '500 MB'
+    cpus 3
+    memory '900 MB'
 
     input:
     val(subjects_dir)
@@ -800,9 +800,9 @@ process anat_sphere {
     tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/surf/${hemi}.sphere")) // emit: sphere_surf
 
     script:
-    threads = 1
+    threads = 4
     """
-    mris_sphere -seed 1234 ${subjects_dir}/${subject_id}/surf/${hemi}.inflated ${subjects_dir}/${subject_id}/surf/${hemi}.sphere
+    mris_sphere -seed 1234 -threads ${threads} ${subjects_dir}/${subject_id}/surf/${hemi}.inflated ${subjects_dir}/${subject_id}/surf/${hemi}.sphere
     """
 }
 
