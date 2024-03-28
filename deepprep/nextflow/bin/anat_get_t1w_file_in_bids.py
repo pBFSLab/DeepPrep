@@ -13,7 +13,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if len(args.subject_ids) != 0:
-        subject_ids = [subject_id.split('-')[1] for subject_id in args.subject_ids]
+        subject_ids = [subject_id[4:] if subject_id.startswith('sub-') else subject_id for subject_id in args.subject_ids]
     else:
         subject_ids = args.subject_ids
     layout = bids.BIDSLayout(args.bids_dir, derivatives=False)
