@@ -1230,7 +1230,7 @@ process anat_balabels_lh {
     input:
     val(subjects_dir)
     tuple(val(subject_id), val(hemi), val(sphere_reg_surf), val(white_surf))
-    each val(label)
+    each path(label)
 
     output:
     tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/label/${label}")) // emit: balabel
@@ -1251,7 +1251,7 @@ process anat_balabels_rh {
     input:
     val(subjects_dir)
     tuple(val(subject_id), val(hemi), val(sphere_reg_surf), val(white_surf))
-    each val(label)
+    each path(label)
 
     output:
     tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/label/${label}")) // emit: balabel
