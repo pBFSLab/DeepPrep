@@ -16,7 +16,7 @@ process process_mriqc {
 
 process anat_get_t1w_file_in_bids {
     cpus 1
-    memory '100 MB'
+    memory '500 MB'
 
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
     val(bids_dir)
@@ -1401,7 +1401,7 @@ process bold_pre_process {
 process bold_get_bold_file_in_bids {
 
     cpus 1
-    memory '100 MB'
+    memory '500 MB'
 
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
     val(bids_dir)
@@ -2674,6 +2674,27 @@ workflow bold_wf {
                                                                                      c: it.name
                                                                                      b: [it.name.split('_')[0], it] }
     subject_id_boldfile_id = subject_id.merge(boldfile_id)
+
+    // filter the recon result by subject_id from BOLD file.
+    // this can suit for 'bold_only' or 'subjects to do Recon more than subjects to do BOLD preprocess'
+    (subject_id_unique, boldfile_id_unique) = subject_id_boldfile_id.groupTuple(sort: true).multiMap { tuple ->
+                                                                                                    a: tuple[0]
+                                                                                                    b: tuple[1][0] }
+    t1_mgz = subject_id_unique.join(t1_mgz)
+    mask_mgz = subject_id_unique.join(mask_mgz)
+    norm_mgz = subject_id_unique.join(norm_mgz)
+    aseg_presurf_mgz = subject_id_unique.join(aseg_presurf_mgz)
+    aseg_mgz = subject_id_unique.join(aseg_mgz)
+    lh_pial_surf = subject_id_unique.join(lh_pial_surf)
+    rh_pial_surf = subject_id_unique.join(rh_pial_surf)
+    lh_white_surf = subject_id_unique.join(lh_white_surf)
+    rh_white_surf = subject_id_unique.join(rh_white_surf)
+    lh_cortex_label = subject_id_unique.join(lh_cortex_label)
+    rh_cortex_label = subject_id_unique.join(rh_cortex_label)
+    lh_aparc_annot = subject_id_unique.join(lh_aparc_annot)
+    rh_aparc_annot = subject_id_unique.join(rh_aparc_annot)
+    aparc_aseg_mgz = subject_id_unique.join(aparc_aseg_mgz)
+    // end filter
 
     // BOLD preprocess
     pial_surf = lh_pial_surf.join(rh_pial_surf, by:[0])
