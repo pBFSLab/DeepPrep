@@ -16,7 +16,10 @@ process process_mriqc {
 
 process anat_get_t1w_file_in_bids {
     cpus 1
-    memory '500 MB'
+    memory { 500.MB * task.attempt }
+
+    errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
+    maxRetries 3
 
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
     val(bids_dir)
@@ -67,7 +70,10 @@ process anat_motioncor {
     tag "${subject_id}"
 
     cpus 1
-    memory '1 GB'
+    memory { 1.GB * task.attempt }
+
+    errorStrategy { task.exitStatus == 1 ? 'retry' : 'terminate' }
+    maxRetries 2
 
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
     val(subjects_dir)
@@ -88,8 +94,11 @@ process anat_motioncor {
 process deepprep_init {
 
     cpus 1
-    memory '200 MB'
+    memory '500 MB'
     cache false
+
+    errorStrategy { task.exitStatus == 135 ? 'retry' : 'terminate' }
+    maxRetries 3
 
     input:
     val(freesurfer_home)
@@ -1401,7 +1410,10 @@ process bold_pre_process {
 process bold_get_bold_file_in_bids {
 
     cpus 1
-    memory '500 MB'
+    memory { 500.MB * task.attempt }
+
+    errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
+    maxRetries 3
 
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
     val(bids_dir)
