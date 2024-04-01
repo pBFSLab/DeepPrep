@@ -90,7 +90,7 @@ if __name__ == '__main__':
     parser.add_argument("--bold_preprocess_dir", required=True)
     parser.add_argument("--work_dir", required=True)
     parser.add_argument("--subject_id", required=True)
-    parser.add_argument("--task_id", required=True)
+    parser.add_argument("--task_id", type=str, nargs='+', default=[], required=True)
     parser.add_argument("--bold_series", type=str, nargs='+', default=[], required=False)  # BOLD Series，not one bold file
     parser.add_argument("--bold_spaces", type=str, nargs='+', default=['individual', 'T1w', 'fsnative'], required=False)  # BOLD Series，not one bold file
     parser.add_argument("--t1w_preproc", required=False)
@@ -151,6 +151,7 @@ if __name__ == '__main__':
     config.load(config_file)
 
     output_dir = Path(config.execution.output_dir)
+    work_dir = Path(args.work_dir)
     work_dir.mkdir(parents=True, exist_ok=True)
 
     from niworkflows.utils.bids import collect_data
@@ -159,7 +160,7 @@ if __name__ == '__main__':
     subject_data = collect_data(
         config.execution.layout,
         subject_id_split,
-        task=config.execution.task_id,
+
         echo=config.execution.echo_idx,
         bids_filters=config.execution.bids_filters,
     )[0]
@@ -175,7 +176,7 @@ if __name__ == '__main__':
 
     if args.bold_sdc.upper() == 'TRUE':  # run fieldmap
         if single_subject_fieldmap_wf:
-            base_dir = Path(config.execution.work_dir) / f'{subject_id}_wf' / f'{args.task_id}_wf'
+            base_dir = Path(config.execution.work_dir) / f'{subject_id}_wf'
             base_dir.mkdir(parents=True, exist_ok=True)
             single_subject_fieldmap_wf.base_dir = base_dir
             single_subject_fieldmap_wf.run()
@@ -232,8 +233,10 @@ if __name__ == '__main__':
 
         from niworkflows.engine.workflows import LiterateWorkflow as Workflow
         workflow = Workflow(name=f'{bold_id}_wf')
-        base_dir = Path(config.execution.work_dir) / f'{subject_id}_wf' / f'{args.task_id}_wf'
 
+        fmap_base_dir = Path(config.execution.work_dir) / f'{subject_id}_wf'
+        base_dir = fmap_base_dir / f'{args.task_id[0]}_wf'
+        base_dir.mkdir(parents=True, exist_ok=True)
         workflow.connect([
             (inputnode, bold_wf, [
                 ("t1w_preproc", "inputnode.t1w_preproc"),
@@ -252,7 +255,7 @@ if __name__ == '__main__':
             if fmap_preproc_wf_dir.exists():
                 fmap_preproc_wf_dir.unlink()
             fmap_preproc_wf_dir.parent.mkdir(parents=True, exist_ok=True)
-            fmap_preproc_wf_dir.symlink_to(base_dir / single_subject_fieldmap_wf.name)
+            fmap_preproc_wf_dir.symlink_to(fmap_base_dir / single_subject_fieldmap_wf.name)
 
             all_nodes = single_subject_fieldmap_wf.list_node_names()
             all_graph_nodes = single_subject_fieldmap_wf._graph.nodes

@@ -2,7 +2,6 @@
 import os
 import argparse
 import bids
-from pathlib import Path
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -12,12 +11,12 @@ if __name__ == '__main__':
     parser.add_argument("--bids_dir", required=True, help="directory of BIDS type: /mnt/ngshare2/BIDS/MSC")
     parser.add_argument("--subjects_dir", required=True, help="directory of Recon results")
     parser.add_argument('--subject_ids', type=str, nargs='+', default=[], help='specified subject_id')
-    parser.add_argument("--task_type", required=True, type=str, help="rest or etc..")
+    parser.add_argument("--task_type", type=str, nargs='+', default=[],  help="rest or etc..")
     parser.add_argument("--bold_only", required=True, type=str, help="TRUE or FALSE")
     args = parser.parse_args()
 
     if len(args.subject_ids) != 0:
-        bold_subject_ids = [subject_id.split('-')[1] for subject_id in args.subject_ids]
+        bold_subject_ids = [subject_id[4:] if subject_id.startswith('sub-') else subject_id for subject_id in args.subject_ids]
         anat_subject_ids = bold_subject_ids
     else:
         bold_subject_ids = args.subject_ids
@@ -61,3 +60,4 @@ if __name__ == '__main__':
                 with open(f'{bold_id}', 'w') as f:
                     f.write(subject_id + '\n')
                     f.writelines(bold_file)
+
