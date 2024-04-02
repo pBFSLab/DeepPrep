@@ -68,11 +68,11 @@ The same output as before is expected. If an error message pops up (something li
 
 4. Pull the Docker image::
 
-    $ docker pull ninganme/deepprep:23.1.0
+    $ docker pull pbfslab/deepprep:23.1.0
 
 5. Run the Docker image ::
 
-    $ docker run --rm ninganme/deepprep:23.1.0
+    $ docker run --rm pbfslab/deepprep:23.1.0
 
 If the Docker image was pulled successfully, you would see the following message:
 

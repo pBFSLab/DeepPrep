@@ -72,10 +72,10 @@ Download the DeepPrep image from the DockerHub
 
 .. code-block:: none
 
-    $ docker pull ninganme/deepprep:23.1.0
+    $ docker pull pbfslab/deepprep:23.1.0
 
 
-When its done, you will find the Docker image by this command ``docker image ls``, the ``REPOSITORY`` is ``ninganme/deepprep`` with a ``TAG: 23.1.0``.
+When its done, you will find the Docker image by this command ``docker image ls``, the ``REPOSITORY`` is ``pbfslab/deepprep`` with a ``TAG: 23.1.0``.
 
 
 
