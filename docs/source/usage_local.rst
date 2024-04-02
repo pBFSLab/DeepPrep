@@ -64,7 +64,7 @@ Sample Docker Command
                  -v <bids_dir>:/input \
                  -v <output_dir>:/output \
                  -v <fs_license_file>:/fs_license.txt \
-                 ninganme/deepprep:23.1.0 \
+                 pbfslab/deepprep:23.1.0 \
                  /input \
                  /output \
                  participant \
@@ -113,7 +113,7 @@ The BIDS formatted sample contains one subject with one anatomical image and two
                  -v ~/test_sample:/input \
                  -v ~/deepprep_output:/output \
                  -v ~/license.txt:/fs_license.txt \
-                 ninganme/deepprep:23.1.0 \
+                 pbfslab/deepprep:23.1.0 \
                  /input \
                  /output \
                  participant \
@@ -136,7 +136,7 @@ The BIDS formatted sample contains one subject with one anatomical image and two
                  -v ~/test_sample:/input \
                  -v ~/deepprep_output:/output \
                  -v ~/license.txt:/fs_license.txt \
-                 ninganme/deepprep:23.1.0 \
+                 pbfslab/deepprep:23.1.0 \
                  /input \
                  /output \
                  participant \
