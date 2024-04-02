@@ -2,6 +2,12 @@
 Welcome to DeepPrep's documentation!
 ====================================
 
+Installation
+-----
+
+For instructions on installing and using DeepPrep, please refer to the documentation page.
+https://deepprep.readthedocs.io/en/latest/installation.html
+
 About
 -----
 
