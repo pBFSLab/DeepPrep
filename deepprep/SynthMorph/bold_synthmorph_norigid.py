@@ -16,7 +16,7 @@ def run_norigid_registration(subject_id, script, subj_anat_dir, T1_file, norm_2m
     os.system(cmd)
 
     transvoxel = moved.parent / moved.name.replace('.nii.gz', '_transvoxel.npz')
-    xfm = moved.parent / f'{subject_id}_from-T1w_to_{template_space}_desc-nonlinear_xfm.npz'
+    xfm = moved.parent / f'{subject_id}_from-T1w_to-{template_space}_desc-nonlinear_xfm.npz'
     cmd = f'mv {transvoxel} {xfm}'
     os.system(cmd)
 
