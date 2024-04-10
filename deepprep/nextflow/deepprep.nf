@@ -1831,7 +1831,7 @@ process bold_synthmorph_norigid {
     output:
     tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/anat/${subject_id}_space-${template_space}_res-02_desc-skull_T1w.nii.gz")) //emit: t1_norigid_nii
     tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/anat/${subject_id}_space-${template_space}_res-02_desc-noskull_T1w.nii.gz")) //emit: norm_norigid_nii
-    tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/anat/${subject_id}_from-T1w_to_${template_space}_desc-nonlinear_xfm.npz")) //emit: transvoxel
+    tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/anat/${subject_id}_from-T1w_to-${template_space}_desc-nonlinear_xfm.npz")) //emit: transvoxel
 
     script:
     gpu_script_py = "gpu_schedule_run.py"
