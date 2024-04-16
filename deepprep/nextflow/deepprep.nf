@@ -1220,7 +1220,9 @@ process bold_anat_prepare {
 
     input:
     val(bold_preprocess_path)
-    tuple(val(subject_id), val(t1_mgz), val(mask_mgz), val(aseg_mgz))
+    val(subjects_dir)
+    val(work_dir)
+    tuple(val(subject_id), val(t1_mgz), val(mask_mgz))
 
     output:
     tuple(val(subject_id), val(t1_nii))
@@ -1245,10 +1247,11 @@ process bold_anat_prepare {
     """
     ${script_py} \
     --bold_preprocess_path ${bold_preprocess_path} \
+    --subjects_dir ${subjects_dir} \
+    --work_dir ${work_dir} \
     --subject_id ${subject_id} \
     --t1_mgz ${t1_mgz} \
     --mask_mgz ${mask_mgz} \
-    --aseg_mgz ${aseg_mgz} \
     --t1_nii ${t1_nii} \
     --mask_nii ${mask_nii} \
     --wm_dseg_nii ${wm_dseg_nii} \
@@ -1953,6 +1956,36 @@ process bold_confounds {
     """
 }
 
+process bold_confounds_v2 {
+    tag "${subject_id}"
+
+    cpus 3
+    memory '7 GB'
+
+    input:
+    val(bids_dir)
+    val(bold_preprocess_path)
+    val(work_dir)
+    tuple(val(subject_id), val(bold_id), path(aseg_mgz), path(mask_mgz), path(subject_boldfile_txt))
+
+    output:
+    tuple(val(subject_id), val(bold_id), val("${bold_id}_desc-confounds_timeseries.txt")) // emit: bold_confounds_view
+
+    script:
+    script_py = "bold_confounds_v2.py"
+
+    """
+    ${script_py} \
+    --bids_dir ${bids_dir} \
+    --bold_preprocess_dir ${bold_preprocess_path} \
+    --work_dir ${work_dir}/bold_confounds \
+    --bold_id ${bold_id} \
+    --bold_file ${subject_boldfile_txt} \
+    --aseg_mgz ${aseg_mgz} \
+    --brainmask_mgz ${mask_mgz}
+    """
+}
+
 
 process qc_plot_tsnr {
     tag "${subject_id}"
@@ -2616,17 +2649,21 @@ workflow bold_wf {
     }
 
     // BOLD preprocess
-    bold_anat_prepare_input = t1_mgz.join(mask_mgz).join(aseg_mgz)
-    (t1_nii, mask_nii, wm_dseg_nii, fsnative2T1w_xfm, wm_probseg_nii, gm_probseg_nii, csf_probseg_nii) = bold_anat_prepare(bold_preprocess_path, bold_anat_prepare_input)
+    bold_anat_prepare_input = t1_mgz.join(mask_mgz)
+    (t1_nii, mask_nii, wm_dseg_nii, fsnative2T1w_xfm, wm_probseg_nii, gm_probseg_nii, csf_probseg_nii) = bold_anat_prepare(bold_preprocess_path, subjects_dir, work_dir, bold_anat_prepare_input)
     bold_fieldmap_output = bold_fieldmap(bids_dir, t1_nii, bold_preprocess_path, work_dir, bold_task_type, bold_spaces, bold_sdc, templateflow_home, qc_result_path)
     pial_surf = lh_pial_surf.join(rh_pial_surf, by:[0])
     white_surf = lh_white_surf.join(rh_white_surf, by:[0])
     bold_pre_process_input = subject_id_boldfile_id.groupTuple(sort: true).join(bold_fieldmap_output, by:[0]).join(t1_nii).join(mask_nii, by: [0]).join(wm_dseg_nii, by:[0]).join(fsnative2T1w_xfm, by:[0]).join(pial_surf, by:[0]).transpose().join(subject_boldfile_txt, by:[0])
     subject_boldfile_txt_bold_pre_process = bold_pre_process(bids_dir, subjects_dir, bold_preprocess_path, work_dir, bold_task_type, bold_spaces, bold_pre_process_input, fs_license_file, bold_sdc, templateflow_home, qc_result_path)
 
+//     if (do_bold_confounds == 'TRUE') {
+//         bold_confounds_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(aseg_mgz).join(mask_mgz, by: [0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
+//         subject_boldfile_txt_bold_confounds = bold_confounds(bids_dir, bold_preprocess_path, work_dir, bold_confounds_inputs)
+//     }
     if (do_bold_confounds == 'TRUE') {
-        bold_confounds_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(aseg_mgz).join(mask_mgz, by: [0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
-        subject_boldfile_txt_bold_confounds = bold_confounds(bids_dir, bold_preprocess_path, work_dir, bold_confounds_inputs)
+        bold_confounds_v2_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(aseg_mgz).join(mask_mgz, by: [0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
+        subject_boldfile_txt_bold_confounds = bold_confounds_v2(bids_dir, bold_preprocess_path, work_dir, bold_confounds_v2_inputs)
     }
 
     output_std_volume_spaces = 'TRUE'
