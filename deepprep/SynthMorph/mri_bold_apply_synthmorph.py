@@ -81,7 +81,8 @@ def vxm_batch_transform(vol, loc_shift,
 def batch_transform(image, trans, normalize=False):
     if isinstance(image, nib.filebasedimages.FileBasedImage):
         image = image.get_fdata(dtype=np.float32)
-
+    if len(image.shape) == 3:
+        image = tf.expand_dims(image, axis=-1)
     trans = tf.expand_dims(trans, axis=0)
     trans = tf.expand_dims(trans, axis=-2)
     sliced_im_i = tf.transpose(image, perm=(3, 0, 1, 2))
@@ -134,6 +135,40 @@ def bold_save(path, fframe_bold_path, num, data, affine, header, ori_header, dty
         nib.save(fframe_out, filename=fframe_bold_path)
 
 
+def save(path, dat, affine, dtype=None):
+    """Save image file.
+
+    Helper function for saving a spatial image using NiBabel. Removes singleton
+    dimensions and sets the data type, world matrix, and header units.
+
+    Parameters
+    ----------
+    path : str
+        File system path to write the image to.
+    dat : NiBabel image or NumPy array or TensorFlow tensor.
+        Image data to save. Except for the data type, the header information of
+        a NiBabel image object will be ignored.
+    affine : (4, 4) array-like
+        World matrix of the image, describing the voxel-to-RAS transform.
+    dtype : None or dtype, optional
+        Output data type. None means the original type of the image buffer.
+
+    """
+    # Use NiBabel's caching functionality to avoid re-reading from disk.
+    if isinstance(dat, nib.filebasedimages.FileBasedImage):
+        if dtype is None:
+            dtype = dat.dataobj.dtype
+        dat = dat.get_fdata(dtype=np.float32)
+
+    dat = np.squeeze(dat)
+    dat = np.asarray(dat, dtype)
+    # Use Nifti1Image instead of MGHImage for FP64 support. Set units to avoid
+    # warnings when reading with FreeSurfer.
+    out = nib.Nifti1Image(dat, affine)
+    out.header.set_xyzt_units(xyz='mm', t='sec')
+    nib.save(out, filename=path)
+
+
 def read_batch_nifty_file(next_datafiles):
     batch_size = next_datafiles.shape[0]
     data_array = None
@@ -155,7 +190,8 @@ p.add_argument('-tv', '--trans_vox', type=str, metavar='TRANS VOXEL')
 p.add_argument('-ob', '--orig_bold', type=str, metavar='ORIGINAL BOLD')
 p.add_argument('-up', '--upsampled_path', type=str, metavar='UPSAMPLED_BOLD PATH')
 p.add_argument('-bs', '--batch_size', type=int, metavar='BATCH SIZE')
-
+p.add_argument('-ai', '--anat_input', type=str, default=None, metavar='ANAT INPUT IN T1w SPACE')
+p.add_argument('-ao', '--anat_output', type=str, default=None, metavar='ANAT OUTPUT IN STAND SPACE')
 arg = p.parse_args()
 
 # Setup.
@@ -173,20 +209,25 @@ mov = nib.load(arg.moving)
 fix = nib.load(arg.fixed)
 assert len(mov.shape) == len(fix.shape) == 3, 'input images not single volumes'
 
-orig_bold = nib.load(arg.orig_bold)
 trans_vox = tf.convert_to_tensor(np.load(f'{arg.trans_vox}')['arr_0'])
-batch_size = arg.batch_size
-transform_save_path = Path(arg.upsampled_path).parent / 'transform'
-transform_save_path.mkdir(parents=True, exist_ok=True)
-upsamping_file_list = sorted([os.path.join(arg.upsampled_path, f) for f in os.listdir(arg.upsampled_path) if f.endswith('.nii.gz')])
-datafiles = tf.data.Dataset.from_tensor_slices(upsamping_file_list)
-dataset = datafiles.batch(batch_size)
-iterator = iter(dataset)
-iter_nums = math.ceil(len(upsamping_file_list) / batch_size)
-for i in range(iter_nums):
-    next_datafiles = iterator.get_next()
-    bold = read_batch_nifty_file(next_datafiles)
-    out_bold = batch_transform(bold, trans=trans_vox)
-    bold_out = f'{transform_save_path}/t00{i}.nii.gz'
-    bold_save(bold_out, arg.fframe_bold_out, num=i, data=out_bold, affine=fix.affine, header=fix.header, ori_header=orig_bold.header, dtype=mov.dataobj.dtype)
-assert os.path.exists(arg.fframe_bold_out), f'{arg.fframe_bold_out}'
+if arg.anat_input is not None:
+    anat_input = nib.load(arg.anat_input)
+    out_anat = batch_transform(anat_input, trans=trans_vox)
+    save(arg.anat_output, out_anat, fix.affine)
+else:
+    orig_bold = nib.load(arg.orig_bold)
+    batch_size = arg.batch_size
+    transform_save_path = Path(arg.upsampled_path).parent / 'transform'
+    transform_save_path.mkdir(parents=True, exist_ok=True)
+    upsamping_file_list = sorted([os.path.join(arg.upsampled_path, f) for f in os.listdir(arg.upsampled_path) if f.endswith('.nii.gz')])
+    datafiles = tf.data.Dataset.from_tensor_slices(upsamping_file_list)
+    dataset = datafiles.batch(batch_size)
+    iterator = iter(dataset)
+    iter_nums = math.ceil(len(upsamping_file_list) / batch_size)
+    for i in range(iter_nums):
+        next_datafiles = iterator.get_next()
+        bold = read_batch_nifty_file(next_datafiles)
+        out_bold = batch_transform(bold, trans=trans_vox)
+        bold_out = f'{transform_save_path}/t00{i}.nii.gz'
+        bold_save(bold_out, arg.fframe_bold_out, num=i, data=out_bold, affine=fix.affine, header=fix.header, ori_header=orig_bold.header, dtype=mov.dataobj.dtype)
+    assert os.path.exists(arg.fframe_bold_out), f'{arg.fframe_bold_out}'
