@@ -108,18 +108,19 @@ def create_report(subj_qc_report_path, qc_report_path, subject_id, reports_utils
 def copy_config_and_get_command(qc_result_dir: Path, nextflow_log: Path):
     cmd_index = 'DEBUG nextflow.cli.Launcher - $> '
     config_index = 'User config file: '
-    with open(nextflow_log, 'r') as f:
-        lines = f.readlines()
     command = ''
-    for line in lines:
-        if cmd_index in line:
-            command = line.strip().split(cmd_index)[1]
-            command_file = qc_result_dir / 'nextflow.run.command'
-            with open(command_file, 'w') as f:
-                f.write(command)
-        elif config_index in line:
-            config_file = line.strip().split(config_index)[1]
-            shutil.copyfile(config_file, qc_result_dir / 'nextflow.run.config')
+    if nextflow_log.exists():
+        with open(nextflow_log, 'r') as f:
+            lines = f.readlines()
+        for line in lines:
+            if cmd_index in line:
+                command = line.strip().split(cmd_index)[1]
+                command_file = qc_result_dir / 'nextflow.run.command'
+                with open(command_file, 'w') as f:
+                    f.write(command)
+            elif config_index in line:
+                config_file = line.strip().split(config_index)[1]
+                shutil.copyfile(config_file, qc_result_dir / 'nextflow.run.config')
     return command
 
 

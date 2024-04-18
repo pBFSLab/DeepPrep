@@ -17,7 +17,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if len(args.subject_ids) != 0:
-        bold_subject_ids = [subject_id.split('-')[1] for subject_id in args.subject_ids]
+        bold_subject_ids = [subject_id[4:] if subject_id.startswith('sub-') else subject_id for subject_id in args.subject_ids]
         anat_subject_ids = bold_subject_ids
     else:
         bold_subject_ids = args.subject_ids

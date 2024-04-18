@@ -7,7 +7,7 @@ reference :  https://github.com/QuantumLiu/tf_gpu_manager/blob/master/manager.py
 import os
 
 
-def check_gpus(cuda_version: float = 0.0, memory_total: int = 0):
+def check_gpus(cuda_version_min: float = 0.0, gpu_memory_min: int = 0):
     """
     GPU available check
     reference : http://feisky.xyz/machine-learning/tensorflow/gpu_list.html
@@ -15,25 +15,30 @@ def check_gpus(cuda_version: float = 0.0, memory_total: int = 0):
     # =============================================================================
     #     all_gpus = [x.name for x in device_lib.list_local_devices() if x.device_type == 'GPU']
     # =============================================================================
+    if not 'NVIDIA System Management' in os.popen('nvidia-smi -h').read():
+        info = "'nvidia-smi' tool not found."
+        print(info)
+        raise EnvironmentError('"nvidia-smi" tool did not run correctly, please check your GPU manually. \n'
+                               'If you use Docker, please add "--gpus all" in docker run command. \n'
+                               'If you use Singularity, please add "--nv" in singularity run command. \n'
+                               'If you do not have GPU, set "--device cpu" to run with CPU.')
+
     first_gpus = os.popen('nvidia-smi --query-gpu=index --format=csv,noheader').readlines()[0].strip()
+    gpu_memory = int(os.popen('nvidia-smi --query-gpu=memory.total --format=csv,noheader').readlines()[0].split()[0])
+    cuda_version = float(os.popen('nvidia-smi').readlines()[2].split()[-2])
     if not first_gpus == '0':
         info = 'This script could only be used to manage NVIDIA GPUs,but no GPU found in your device'
         print(info)
-        return False, info
-    elif not 'NVIDIA System Management' in os.popen('nvidia-smi -h').read():
-        info = "'nvidia-smi' tool not found."
+        return False, info, 0
+    elif not (cuda_version >= cuda_version_min):
+        info = f"CUDA version is {cuda_version}, not >= {cuda_version_min}"
         print(info)
-        return False, info
-    elif not (float(os.popen('nvidia-smi').readlines()[2].split()[-2]) >= cuda_version):
-        info = f"CUDA version < {cuda_version}"
+        return False, info, 0
+    elif not (gpu_memory >= gpu_memory_min):
+        info = f"GPU memory < {gpu_memory_min}"
         print(info)
-        return False, info
-    elif not (int(os.popen('nvidia-smi --query-gpu=memory.total --format=csv,noheader').readlines()[0].split()[0]) >= memory_total):
-        info = f"GPU memory < {memory_total}"
-        print(info)
-        return False, info
-    return True, "GPU available!"
-
+        return False, info, 0
+    return True, "GPU available!", gpu_memory
 
 
 def parse(line, qargs):

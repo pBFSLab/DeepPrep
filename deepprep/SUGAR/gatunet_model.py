@@ -4,8 +4,8 @@ import torch.nn.functional as F
 from torch_geometric.nn import GATv2Conv, GMMConv
 from torch import nn
 
-from .utils.rotate_matrix import apply_rotate_matrix, get_en_torch
-from .utils.pooling import IcosahedronPooling, IcosahedronUnPooling, get_network_index
+from utils.rotate_matrix import apply_rotate_matrix, get_en_torch
+from utils.pooling import IcosahedronPooling, IcosahedronUnPooling, get_network_index
 
 
 def xyz_to_lon_lat(xyz):
@@ -173,11 +173,11 @@ class GatUNet(nn.Module):
         for i, ico_level in enumerate(ico_down_levels):  # [6, 6, 5, 4, 3, 2]
             if i < len(ico_down_levels) - 1:
                 level_in = ico_down_levels[i]
-                level_out = ico_down_levels[i+1]
+                level_out = ico_down_levels[i + 1]
             else:
                 level_in = level_out = ico_down_levels[-1]
             channel_in = ico_down_channels[i]
-            channel_out = ico_down_channels[i+1]
+            channel_out = ico_down_channels[i + 1]
             self.encoding_layers.append(ResEncodingBlock(base_layer, channel_in, channel_out,
                                                          num_heads=num_heads, use_residual=use_residual,
                                                          **kwargs))
