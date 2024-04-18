@@ -287,6 +287,21 @@ if __name__ == '__main__':
         workflow.base_dir = base_dir
         result = workflow.run()
 
+        # prepare inputs for confounds_v2
+        confounds_dir_path = work_dir.parent / args.subject_id / 'confounds'
+        confounds_dir_path.mkdir(parents=True, exist_ok=True)
+        boldref_dir = base_dir / f'{bold_id}_wf' / 'bold_wf' / 'bold_native_wf' / 'boldref_bold'
+        boldresampled_file = sorted(boldref_dir.glob('sub-*resampled.nii.gz'))[0]
+        os.system(f'rsync -arv {boldresampled_file} {confounds_dir_path}/{bold_id}_boldresampled.nii.gz')
+        boldmask_dir = base_dir / f'{bold_id}_wf' / 'bold_wf' / 'bold_fit_wf' / 'enhance_and_skullstrip_bold_wf' / 'combine_masks'
+        boldmask_file = sorted(boldmask_dir.glob('sub-*mask*.nii.gz'))[0]
+        os.system(f'rsync -arv {boldmask_file} {confounds_dir_path}/{bold_id}_bold_average_corrected_brain_mask_maths.nii.gz')
+        hmc_dir = base_dir / f'{bold_id}_wf' / 'bold_wf' / 'bold_fit_wf' / 'bold_hmc_wf'
+        motion_txt = sorted(hmc_dir.glob('normalize_motion/motion_params.txt'))[0]
+        os.system(f'rsync -arv {motion_txt} {confounds_dir_path}/motion_params.txt')
+        rel_file = sorted(hmc_dir.glob('mcflirt/sub-*rel.rms'))[0]
+        os.system(f'rsync -arv {rel_file} {confounds_dir_path}/{bold_id}_bold_mcf.nii.gz_rel.rms')
+
         # get mcflirt result file
         mcflirt_node_name = ''
         for node_name in workflow.list_node_names():
