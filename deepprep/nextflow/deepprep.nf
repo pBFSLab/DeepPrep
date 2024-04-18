@@ -1227,6 +1227,7 @@ process bold_anat_prepare {
     output:
     tuple(val(subject_id), val(t1_nii))
     tuple(val(subject_id), val(mask_nii))
+    tuple(val(subject_id), val(wm_dseg_nii))
     tuple(val(subject_id), val(fsnative2T1w_xfm))
     tuple(val(subject_id), val(wm_probseg_nii))
     tuple(val(subject_id), val(gm_probseg_nii))
@@ -1237,6 +1238,7 @@ process bold_anat_prepare {
 
     t1_nii = "${bold_preprocess_path}/${subject_id}/anat/${subject_id}_desc-preproc_T1w.nii.gz"
     mask_nii = "${bold_preprocess_path}/${subject_id}/anat/${subject_id}_desc-brain_mask.nii.gz"
+    wm_dseg_nii = "${bold_preprocess_path}/${subject_id}/anat/${subject_id}_dseg.nii.gz"
     fsnative2T1w_xfm = "${bold_preprocess_path}/${subject_id}/anat/${subject_id}_from-fsnative_to-T1w_mode-image_xfm.txt"
     wm_probseg_nii = "${bold_preprocess_path}/${subject_id}/anat/${subject_id}_label-WM_probseg.nii.gz"
     gm_probseg_nii = "${bold_preprocess_path}/${subject_id}/anat/${subject_id}_label-GM_probseg.nii.gz"
@@ -1252,6 +1254,7 @@ process bold_anat_prepare {
     --mask_mgz ${mask_mgz} \
     --t1_nii ${t1_nii} \
     --mask_nii ${mask_nii} \
+    --wm_dseg_nii ${wm_dseg_nii} \
     --fsnative2T1w_xfm ${fsnative2T1w_xfm} \
     --wm_probseg_nii ${wm_probseg_nii} \
     --gm_probseg_nii ${gm_probseg_nii} \
@@ -2650,27 +2653,19 @@ workflow bold_wf {
 
     // BOLD preprocess
     bold_anat_prepare_input = t1_mgz.join(mask_mgz)
-<<<<<<< HEAD
     (t1_nii, mask_nii, wm_dseg_nii, fsnative2T1w_xfm, wm_probseg_nii, gm_probseg_nii, csf_probseg_nii) = bold_anat_prepare(bold_preprocess_path, subjects_dir, work_dir, bold_anat_prepare_input)
-=======
-    (t1_nii, mask_nii, fsnative2T1w_xfm, wm_probseg_nii, gm_probseg_nii, csf_probseg_nii) = bold_anat_prepare(bold_preprocess_path, subjects_dir, work_dir, bold_anat_prepare_input)
->>>>>>> b027f37f992d04363ab91eaac711d08621803ecc
     bold_fieldmap_output = bold_fieldmap(bids_dir, t1_nii, bold_preprocess_path, work_dir, bold_task_type, bold_spaces, bold_sdc, templateflow_home, qc_result_path)
     pial_surf = lh_pial_surf.join(rh_pial_surf, by:[0])
     white_surf = lh_white_surf.join(rh_white_surf, by:[0])
     bold_pre_process_input = subject_id_boldfile_id.groupTuple(sort: true).join(bold_fieldmap_output, by:[0]).join(t1_nii).join(mask_nii, by: [0]).join(wm_dseg_nii, by:[0]).join(fsnative2T1w_xfm, by:[0]).join(pial_surf, by:[0]).transpose().join(subject_boldfile_txt, by:[0])
-    bold_pre_process_input.view()
-    println(bold_sdc)
-    exit()
     subject_boldfile_txt_bold_pre_process = bold_pre_process(bids_dir, subjects_dir, bold_preprocess_path, work_dir, bold_task_type, bold_spaces, bold_pre_process_input, fs_license_file, bold_sdc, templateflow_home, qc_result_path)
 
 //     if (do_bold_confounds == 'TRUE') {
 //         bold_confounds_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(aseg_mgz).join(mask_mgz, by: [0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
-//         tuple(val(subject_id), val(bold_id),       path(aseg_mgz), path(mask_mgz), path(subject_boldfile_txt))
 //         subject_boldfile_txt_bold_confounds = bold_confounds(bids_dir, bold_preprocess_path, work_dir, bold_confounds_inputs)
 //     }
     if (do_bold_confounds == 'TRUE') {
-        bold_confounds_v2_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(wm_probseg_nii).join(gm_probseg_nii, by: [0]).join(csf_probseg_nii, by: [0]).join(mask_nii, by: [0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
+        bold_confounds_v2_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(wm_probseg_nii, by: [0]).join(gm_probseg_nii, by: [0]).join(csf_probseg_nii, by: [0]).join(mask_nii, by: [0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
         subject_boldfile_txt_bold_confounds = bold_confounds_v2(bids_dir, bold_preprocess_path, work_dir, bold_confounds_v2_inputs)
     }
 
