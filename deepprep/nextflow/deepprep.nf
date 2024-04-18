@@ -1966,7 +1966,7 @@ process bold_confounds_v2 {
     val(bids_dir)
     val(bold_preprocess_path)
     val(work_dir)
-    tuple(val(subject_id), val(bold_id), path(aseg_mgz), path(mask_mgz), path(subject_boldfile_txt))
+    tuple(val(subject_id), val(bold_id), val(wm_probseg_nii), val(gm_probseg_nii), val(csf_probseg_nii), val(mask_nii), val(subject_boldfile_txt))
 
     output:
     tuple(val(subject_id), val(bold_id), val("${bold_id}_desc-confounds_timeseries.txt")) // emit: bold_confounds_view
@@ -1978,11 +1978,14 @@ process bold_confounds_v2 {
     ${script_py} \
     --bids_dir ${bids_dir} \
     --bold_preprocess_dir ${bold_preprocess_path} \
-    --work_dir ${work_dir}/bold_confounds \
+    --work_dir ${work_dir} \
     --bold_id ${bold_id} \
     --bold_file ${subject_boldfile_txt} \
-    --aseg_mgz ${aseg_mgz} \
-    --brainmask_mgz ${mask_mgz}
+    --subject_id ${subject_id} \
+    --t1w_tpms_CSF ${csf_probseg_nii} \
+    --t1w_tpms_GM ${gm_probseg_nii} \
+    --t1w_tpms_WM ${wm_probseg_nii} \
+    --mask_nii ${mask_nii}
     """
 }
 
@@ -2659,10 +2662,11 @@ workflow bold_wf {
 
 //     if (do_bold_confounds == 'TRUE') {
 //         bold_confounds_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(aseg_mgz).join(mask_mgz, by: [0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
+//         tuple(val(subject_id), val(bold_id),       path(aseg_mgz), path(mask_mgz), path(subject_boldfile_txt))
 //         subject_boldfile_txt_bold_confounds = bold_confounds(bids_dir, bold_preprocess_path, work_dir, bold_confounds_inputs)
 //     }
     if (do_bold_confounds == 'TRUE') {
-        bold_confounds_v2_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(aseg_mgz).join(mask_mgz, by: [0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
+        bold_confounds_v2_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(wm_probseg_nii).join(gm_probseg_nii, by: [0]).join(csf_probseg_nii, by: [0]).join(mask_nii, by: [0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
         subject_boldfile_txt_bold_confounds = bold_confounds_v2(bids_dir, bold_preprocess_path, work_dir, bold_confounds_v2_inputs)
     }
 
