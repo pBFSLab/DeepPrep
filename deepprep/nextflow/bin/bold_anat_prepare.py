@@ -79,7 +79,6 @@ if __name__ == '__main__':
     parser.add_argument("--mask_mgz", required=True)
     parser.add_argument("--t1_nii", required=True)
     parser.add_argument("--mask_nii", required=True)
-    parser.add_argument("--wm_dseg_nii", required=True)
     parser.add_argument("--fsnative2T1w_xfm", required=True)
     parser.add_argument("--wm_probseg_nii", required=True)
     parser.add_argument("--gm_probseg_nii", required=True)
