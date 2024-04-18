@@ -54,7 +54,7 @@ SUBJECT_TEMPLATE = """\
 {tasks}
 \t\t<li>Standard output spaces: {std_spaces}</li>
 \t\t<li>Non-standard output spaces: {nstd_spaces}</li>
-\t\t<li>FreeSurfer reconstruction: {freesurfer_status}</li>
+\t\t<li>Reconstruction: {freesurfer_status}</li>
 \t</ul>
 """
 

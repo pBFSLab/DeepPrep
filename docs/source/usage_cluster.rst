@@ -47,7 +47,7 @@ Download the DeepPrep sif image from Google Drive
 
 1. Download from the `website`_.
 
-2. Download via ``gdown``:
+2. Download via ``gdown`` if you are familiar with Python:
 
 .. code-block:: none
 
@@ -55,7 +55,7 @@ Download the DeepPrep sif image from Google Drive
 
     $ cd <shared_storage_path>
 
-    $ gdown --id  1iqopJLSsXaFLHZnNQsQuASXnkfUT62UO
+    $ gdown <file_id_of_sif_file_in_Google_Drive>
 
 Then you will get: ``<shared_storage_path>/deepprep_23.1.0.sif``
 
@@ -72,10 +72,10 @@ Download the DeepPrep image from the DockerHub
 
 .. code-block:: none
 
-    $ docker pull ninganme/deepprep:23.1.0
+    $ docker pull pbfslab/deepprep:23.1.0
 
 
-When its done, you will find the Docker image by this command ``docker image ls``, the ``REPOSITORY`` is ``ninganme/deepprep`` with a ``TAG: 23.1.0``.
+When its done, you will find the Docker image by this command ``docker image ls``, the ``REPOSITORY`` is ``pbfslab/deepprep`` with a ``TAG: 23.1.0``.
 
 
 

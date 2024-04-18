@@ -27,12 +27,12 @@ DeepPrep: Deep learning empowered preprocessing workflow 23.1.0:
 .. code-block:: none
 
    usage: deepprep-docker [bids_dir] [output_dir] [{participant}] [--bold_task_type TASK_LABEL]
-                          [--fs_license_file PATH] [--participant-label PARTICIPANT_LABEL [PARTICIPANT_LABEL ...]]
+                          [--fs_license_file PATH] [--participant_label PARTICIPANT_LABEL [PARTICIPANT_LABEL ...]]
                           [--subjects_dir PATH] [--skip_bids_validation]
                           [--anat_only] [--bold_only] [--bold_sdc] [--bold_confounds]
                           [--bold_surface_spaces '[fsnative fsaverage fsaverage6 ...]']
                           [--bold_volume_space {MNI152NLin6Asym MNI152NLin2009cAsym}] [--bold_volume_res {02 03...}]
-                          [--device { {auto 0 1 2...} cpu}] [--gpu_compute_capability {8.6}]
+                          [--device { {auto 0 1 2...} cpu}]
                           [--cpus 10] [--memory 5]
                           [--ignore_error] [--resume]
 
@@ -64,7 +64,7 @@ Sample Docker Command
                  -v <bids_dir>:/input \
                  -v <output_dir>:/output \
                  -v <fs_license_file>:/fs_license.txt \
-                 ninganme/deepprep:23.1.0 \
+                 pbfslab/deepprep:23.1.0 \
                  /input \
                  /output \
                  participant \
@@ -91,7 +91,6 @@ Sample Docker Command
     + ``--bold_volume_space`` - specifies an available volumetric space from `TemplateFlow`_, default is ``MNI152NLin6Asym``.
     + ``--bold_volume_res`` - specifies the spatial resolution of the corresponding template space from `TemplateFlow`_, default is ``02``.
     + ``--device`` - specifies the device. The default is ``auto``, which automatically selects a GPU device; ``0`` specifies the first GPU device; ``cpu`` refers to CPU only.
-    + ``--gpu_compute_capability`` - refers to the GPU compute capability; you can find yours `here`_.
     + ``--cpus`` - refers to the maximum CPUs for usage, which should be integer values > 0.
     + ``--memory`` - refers to the maximum memory resources for usage, which should be integer values > 0.
     + ``--ignore_error`` - ignores the errors that occurred during processing.
@@ -114,7 +113,7 @@ The BIDS formatted sample contains one subject with one anatomical image and two
                  -v ~/test_sample:/input \
                  -v ~/deepprep_output:/output \
                  -v ~/license.txt:/fs_license.txt \
-                 ninganme/deepprep:23.1.0 \
+                 pbfslab/deepprep:23.1.0 \
                  /input \
                  /output \
                  participant \
@@ -137,7 +136,7 @@ The BIDS formatted sample contains one subject with one anatomical image and two
                  -v ~/test_sample:/input \
                  -v ~/deepprep_output:/output \
                  -v ~/license.txt:/fs_license.txt \
-                 ninganme/deepprep:23.1.0 \
+                 pbfslab/deepprep:23.1.0 \
                  /input \
                  /output \
                  participant \
