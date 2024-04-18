@@ -28,3 +28,5 @@ license.txt
 *.zip
 *.png
 *.html
+
+docs/build

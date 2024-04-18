@@ -38,10 +38,9 @@ def update_config(bids_dir, bold_preprocess_dir, work_dir, fs_license_file, fs_s
 
     config.workflow.anat_only = False
     config.workflow.bold2t1w_dof = 6
-    config.workflow.bold2t1w_init = 'header'
+    config.workflow.bold2t1w_init = 'register'
     config.workflow.cifti_output = False
-    config.workflow.dummy_scans = 0
-    config.workflow.fmap_bspline = False
+    # config.workflow.dummy_scans = 0
     config.workflow.fmap_bspline = False
     config.workflow.hires = True
     config.workflow.ignore =[]
@@ -59,6 +58,12 @@ def update_config(bids_dir, bold_preprocess_dir, work_dir, fs_license_file, fs_s
     config.workflow.use_bbr = True
     config.workflow.use_syn_sdc = False
     config.workflow.me_t2s_fit_method = "curvefit"
+
+    # config.nipype.plugin = "Linear"
+
+    config.seeds.master = 41764
+    config.seeds.ants = 14193
+    config.seeds.numpy = 11239
 
 
 def get_bold_func_path(bids_orig, bids_preproc, bold_orig_file):
@@ -283,6 +288,23 @@ if __name__ == '__main__':
             ),
             name="outputnode",
         )
+
+        # set mri_coreg ref_mask 'bold_wf.bold_fit_wf.bold_reg_wf.bbreg_wf.mri_coreg'
+        aparc_aseg_mgz = os.path.join(args.subjects_dir, subject_id, 'mri', 'aparc+aseg.mgz')
+        aparc_aseg_presurf_mgz = os.path.join(args.subjects_dir, subject_id, 'mri', 'aparc+aseg.presurf.mgz')
+        if os.path.exists(aparc_aseg_mgz):
+            ref_mask = aparc_aseg_mgz
+        elif os.path.exists(aparc_aseg_presurf_mgz):
+            ref_mask = aparc_aseg_presurf_mgz
+        else:
+            raise FileExistsError(f'ref_mask is not exists: {aparc_aseg_mgz} or {aparc_aseg_presurf_mgz}')
+        mri_coreg_node_name = ''
+        for node_name in workflow.list_node_names():
+            if 'mri_coreg' in node_name:
+                mri_coreg_node_name = node_name
+                break
+        mri_coreg_node = workflow.get_node(mri_coreg_node_name)
+        mri_coreg_node.interface.inputs.reference_mask = ref_mask
 
         workflow.base_dir = base_dir
         result = workflow.run()
