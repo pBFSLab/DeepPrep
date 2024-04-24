@@ -68,11 +68,11 @@ The same output as before is expected. If an error message pops up (something li
 
 4. Pull the Docker image::
 
-    $ docker pull ninganme/deepprep:23.1.0
+    $ docker pull pbfslab/deepprep:23.1.0
 
 5. Run the Docker image ::
 
-    $ docker run --rm ninganme/deepprep:23.1.0
+    $ docker run --rm pbfslab/deepprep:23.1.0
 
 If the Docker image was pulled successfully, you would see the following message:
 
@@ -81,7 +81,7 @@ If the Docker image was pulled successfully, you would see the following message
     INFO: args:
     DeepPrep args:
     deepprep-docker [bids_dir] [output_dir] [{participant}] [--bold_task_type TASK_LABEL]
-                    [--fs_license_file PATH] [--participant-label PARTICIPANT_LABEL [PARTICIPANT_LABEL ...]]
+                    [--fs_license_file PATH] [--participant_label PARTICIPANT_LABEL [PARTICIPANT_LABEL ...]]
                     [--subjects_dir PATH] [--skip_bids_validation]
                     [--anat_only] [--bold_only] [--bold_sdc] [--bold_confounds]
                     [--bold_surface_spaces '[fsnative fsaverage fsaverage6 ...]']

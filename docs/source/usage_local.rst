@@ -27,7 +27,7 @@ DeepPrep: Deep learning empowered preprocessing workflow 23.1.0:
 .. code-block:: none
 
    usage: deepprep-docker [bids_dir] [output_dir] [{participant}] [--bold_task_type TASK_LABEL]
-                          [--fs_license_file PATH] [--participant-label PARTICIPANT_LABEL [PARTICIPANT_LABEL ...]]
+                          [--fs_license_file PATH] [--participant_label PARTICIPANT_LABEL [PARTICIPANT_LABEL ...]]
                           [--subjects_dir PATH] [--skip_bids_validation]
                           [--anat_only] [--bold_only] [--bold_sdc] [--bold_confounds]
                           [--bold_surface_spaces '[fsnative fsaverage fsaverage6 ...]']
@@ -64,7 +64,7 @@ Sample Docker Command
                  -v <bids_dir>:/input \
                  -v <output_dir>:/output \
                  -v <fs_license_file>:/fs_license.txt \
-                 ninganme/deepprep:23.1.0 \
+                 pbfslab/deepprep:23.1.0 \
                  /input \
                  /output \
                  participant \
@@ -113,7 +113,7 @@ The BIDS formatted sample contains one subject with one anatomical image and two
                  -v ~/test_sample:/input \
                  -v ~/deepprep_output:/output \
                  -v ~/license.txt:/fs_license.txt \
-                 ninganme/deepprep:23.1.0 \
+                 pbfslab/deepprep:23.1.0 \
                  /input \
                  /output \
                  participant \
@@ -136,7 +136,7 @@ The BIDS formatted sample contains one subject with one anatomical image and two
                  -v ~/test_sample:/input \
                  -v ~/deepprep_output:/output \
                  -v ~/license.txt:/fs_license.txt \
-                 ninganme/deepprep:23.1.0 \
+                 pbfslab/deepprep:23.1.0 \
                  /input \
                  /output \
                  participant \

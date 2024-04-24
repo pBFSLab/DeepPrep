@@ -2,13 +2,19 @@
 Welcome to DeepPrep's documentation!
 ====================================
 
+Installation
+------------
+
+For instructions on installing and using DeepPrep, please refer to the documentation page.
+https://deepprep.readthedocs.io/en/latest/installation.html
+
 About
 -----
 
 Neuroimaging has entered the era of big data. However, the advancement of preprocessing pipelines falls behind the rapid expansion of data volume, causing significant computational challenges. Here, we present DeepPrep, a pipeline empowered by deep learning and workflow manager. Evaluated on over 55,000 scans, DeepPrep demonstrates a 11-fold acceleration, exceptional scalability, and robustness compared to the current state-of-the-art pipeline, providing a promising solution to meet the scalability requirements of neuroimaging.
 The following is efficient workflow of the DeepPrep pipeline:
 
-.. image:: https://github.com/NingAnMe/DeepPrep/raw/40446b5408cdf01cad7dcf44d092cda2130ffd69/docs/source/_static/fig1.svg
+.. image:: https://github.com/pBFSLab/DeepPrep/raw/40446b5408cdf01cad7dcf44d092cda2130ffd69/docs/source/_static/fig1.svg
    :align: center
 
 |
@@ -20,7 +26,7 @@ A computationally efficient and scalable neuroimaging pipeline is empowered by d
 
 Outperformance in application to large-sample and clinical datasets:
 
-.. image:: https://github.com/NingAnMe/DeepPrep/raw/40446b5408cdf01cad7dcf44d092cda2130ffd69/docs/source/_static/fig2.svg
+.. image:: https://github.com/pBFSLab/DeepPrep/raw/40446b5408cdf01cad7dcf44d092cda2130ffd69/docs/source/_static/fig2.svg
    :align: center
 
 |
@@ -38,3 +44,20 @@ Principles
 
 Citation
 --------
+
+License
+--------
+
+   Copyright 2023 The DeepPrep Developers
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
