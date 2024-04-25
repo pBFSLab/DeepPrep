@@ -1435,7 +1435,7 @@ process bold_pre_process {
     --fsnative2t1w_xfm ${fsnative2T1w_xfm} \
     --fs_license_file ${fs_license_file} \
     --templateflow_home ${templateflow_home} \
-    --qc_result_path ${qc_result_path} \
+    --qc_result_path ${qc_result_path}
     """
 }
 
@@ -1477,7 +1477,7 @@ process bold_get_bold_file_in_bids {
         --subjects_dir ${subjects_dir} \
         --subject_ids ${subjects} \
         --task_type ${bold_task_type} \
-        --bold_only ${bold_only} \
+        --bold_only ${bold_only}
         """
     }
 }
@@ -2903,7 +2903,7 @@ workflow {
         if (synthstrip_model.exists()) {
             process_mriqc(bids_dir, mriqc_result_path)
         } else {
-            println "Error22: process_mriqc : File does not exist: ${synthstrip_model}"
+            println "Error: process_mriqc : File does not exist: ${synthstrip_model}"
         }
     }
 }

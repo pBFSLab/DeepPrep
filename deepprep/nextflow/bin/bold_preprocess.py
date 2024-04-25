@@ -151,8 +151,6 @@ if __name__ == '__main__':
     config.load(config_file)
 
     output_dir = Path(config.execution.output_dir)
-    work_dir = Path(args.work_dir)
-    work_dir.mkdir(parents=True, exist_ok=True)
 
     from niworkflows.utils.bids import collect_data
     from niworkflows.utils.connections import listify
