@@ -44,6 +44,39 @@ process anat_get_t1w_file_in_bids {
 
 }
 
+process anat_create_summary {
+    tag "${subject_id}"
+
+    label "maxForks_10"
+    cpus 1
+    memory '100 MB'
+
+    input:
+    val(bids_dir)
+    val(subjects_dir)
+    val(subject_id)
+    val(qc_result_path)
+    val(work_dir)
+    val(deepprep_version)
+
+    output:
+    val(subject_id)
+
+    script:
+    script_py = "qc_create_summary.py"
+    """
+    ${script_py} \
+    --bids_dir ${bids_dir} \
+    --subjects_dir ${subjects_dir} \
+    --subject_id ${subject_id} \
+    --template_space "NONE" \
+    --qc_result_path ${qc_result_path} \
+    --deepprep_version ${deepprep_version} \
+    --nextflow_log ${work_dir}/nextflow/.nextflow.log
+    """
+
+}
+
 process anat_create_subject_orig_dir {
     tag "${subject_id}"
 
@@ -1373,7 +1406,6 @@ process bold_pre_process {
     val(subjects_dir)
     val(bold_preprocess_dir)
     val(work_dir)
-    val(task_id)
     val(bold_spaces)
     tuple(val(subject_id), val(bold_id), val(bold_fieldmap_done), val(t1_nii), val(mask_nii), val(wm_dseg_nii), val(aparc_aseg_mgz), val(fsnative2T1w_xfm), val(lh_pial_surf), val(lh_pial_surf), path(subject_boldfile_txt))
     val(fs_license_file)
@@ -1385,6 +1417,7 @@ process bold_pre_process {
     tuple(val(subject_id), val(bold_id), path(subject_boldfile_txt))
 
     script:
+    task_id = bold_id.split('task-')[1].split('_')[0]
     script_py = "bold_preprocess.py"
     """
     ${script_py} \
@@ -1402,7 +1435,7 @@ process bold_pre_process {
     --fsnative2t1w_xfm ${fsnative2T1w_xfm} \
     --fs_license_file ${fs_license_file} \
     --templateflow_home ${templateflow_home} \
-    --qc_result_path ${qc_result_path} \
+    --qc_result_path ${qc_result_path}
     """
 }
 
@@ -1449,6 +1482,41 @@ process bold_get_bold_file_in_bids {
     }
 }
 
+process bold_create_summary {
+    tag "${subject_id}"
+
+    label "maxForks_10"
+    cpus 1
+    memory '100 MB'
+
+    input:
+    val(bids_dir)
+    val(subjects_dir)
+    val(subject_id)
+    val(task_type)
+    val(template_space)
+    val(qc_result_path)
+    val(work_dir)
+    val(deepprep_version)
+
+    output:
+    val(subject_id)
+
+    script:
+    script_py = "qc_create_summary.py"
+    """
+    ${script_py} \
+    --bids_dir ${bids_dir} \
+    --subjects_dir ${subjects_dir} \
+    --subject_id ${subject_id} \
+    --task_type ${task_type} \
+    --template_space ${template_space} \
+    --qc_result_path ${qc_result_path} \
+    --deepprep_version ${deepprep_version} \
+    --nextflow_log ${work_dir}/nextflow/.nextflow.log
+    """
+
+}
 
 process bold_merge_subject_id {
     tag "${subject_id}"
@@ -2290,10 +2358,8 @@ process qc_anat_create_report {
     val(bids_dir)
     val(subjects_dir)
     val(qc_result_path)
-    val(work_dir)
     tuple(val(subject_id), val(anything))
     val(reports_utils_path)
-    val(deepprep_version)
     output:
     tuple(val(subject_id), val("${qc_result_path}/${subject_id}/${subject_id}.html")) // emit: qc_report
     script:
@@ -2307,11 +2373,7 @@ process qc_anat_create_report {
     --subject_id ${subject_id} \
     --bids_dir ${bids_dir} \
     --subjects_dir ${subjects_dir} \
-    --space_template ${space_template} \
-    --bold_task_type ${bold_task_type} \
-    --qc_result_path ${qc_result_path} \
-    --deepprep_version ${deepprep_version} \
-    --nextflow_log ${work_dir}/nextflow/.nextflow.log
+    --qc_result_path ${qc_result_path}
     """
 
 }
@@ -2329,9 +2391,6 @@ process qc_bold_create_report {
     val(bids_dir)
     val(subjects_dir)
     val(qc_result_path)
-    val(work_dir)
-    val(bold_task_type)
-    val(deepprep_version)
     output:
     tuple(val(subject_id), val("${qc_result_path}/${subject_id}/${subject_id}.html")) // emit: qc_report
     script:
@@ -2343,11 +2402,7 @@ process qc_bold_create_report {
     --subject_id ${subject_id} \
     --bids_dir ${bids_dir} \
     --subjects_dir ${subjects_dir} \
-    --space_template ${synth_apply_template} \
-    --qc_result_path ${qc_result_path} \
-    --bold_task_type ${bold_task_type} \
-    --deepprep_version ${deepprep_version} \
-    --nextflow_log ${work_dir}/nextflow/.nextflow.log
+    --qc_result_path ${qc_result_path}
     """
 
 }
@@ -2438,6 +2493,7 @@ workflow anat_wf {
     subject_t1wfile_txt = anat_get_t1w_file_in_bids(bids_dir, participant_label, gpu_lock)
     subject_id = anat_create_subject_orig_dir(subjects_dir, subject_t1wfile_txt, deepprep_version)
 
+    anat_summary = anat_create_summary(bids_dir, subjects_dir, subject_id, qc_result_path, work_dir, deepprep_version)
     // freesurfer
     (orig_mgz, rawavg_mgz) = anat_motioncor(subjects_dir, subject_id, fsthreads)
 
@@ -2564,7 +2620,7 @@ workflow anat_wf {
     qc_plot_aparc_aseg_input = norm_mgz.join(aparc_aseg_mgz)
     aparc_aseg_svg = qc_plot_aparc_aseg(subjects_dir, qc_plot_aparc_aseg_input, qc_utils_path, qc_result_path, freesurfer_home)
 
-    qc_report = qc_anat_create_report(bids_dir, subjects_dir, qc_result_path, work_dir, aparc_aseg_svg, reports_utils_path, deepprep_version)
+    qc_report = qc_anat_create_report(bids_dir, subjects_dir, qc_result_path, aparc_aseg_svg, reports_utils_path)
 
     // APP
     if (params.preprocess_others.toString().toUpperCase() == 'TRUE') {
@@ -2686,12 +2742,13 @@ workflow bold_wf {
                                                                                      c: it.name
                                                                                      b: [it.name.split('_')[0], it] }
     subject_id_boldfile_id = subject_id.merge(boldfile_id)
-
     // filter the recon result by subject_id from BOLD file.
     // this can suit for 'bold_only' or 'subjects to do Recon more than subjects to do BOLD preprocess'
     (subject_id_unique, boldfile_id_unique) = subject_id_boldfile_id.groupTuple(sort: true).multiMap { tuple ->
                                                                                                     a: tuple[0]
                                                                                                     b: tuple[1][0] }
+    bold_summary = bold_create_summary(bids_dir, subjects_dir, subject_id_unique, bold_task_type, template_space, qc_result_path, work_dir, deepprep_version)
+
     t1_mgz = subject_id_unique.join(t1_mgz)
     mask_mgz = subject_id_unique.join(mask_mgz)
     norm_mgz = subject_id_unique.join(norm_mgz)
@@ -2732,7 +2789,7 @@ workflow bold_wf {
     } else {
         bold_pre_process_input = subject_id_boldfile_id.groupTuple(sort: true).join(bold_fieldmap_output, by:[0]).join(t1_nii).join(mask_nii, by: [0]).join(wm_dseg_nii, by:[0]).join(aparc_aseg_presurf_mgz).join(fsnative2T1w_xfm, by:[0]).join(pial_surf, by:[0]).transpose().join(subject_boldfile_txt, by:[0])
     }
-    subject_boldfile_txt_bold_pre_process = bold_pre_process(bids_dir, subjects_dir, bold_preprocess_path, work_dir, bold_task_type, bold_spaces, bold_pre_process_input, fs_license_file, bold_sdc, templateflow_home, qc_result_path)
+    subject_boldfile_txt_bold_pre_process = bold_pre_process(bids_dir, subjects_dir, bold_preprocess_path, work_dir, bold_spaces, bold_pre_process_input, fs_license_file, bold_sdc, templateflow_home, qc_result_path)
 
     if (do_bold_confounds == 'TRUE') {
         bold_confounds_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(aseg_mgz).join(mask_mgz, by: [0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
@@ -2777,7 +2834,7 @@ workflow bold_wf {
         norm_to_mni152_svg = qc_plot_norm_to_mni152(norm_norigid_nii, bold_preprocess_path, qc_utils_path, qc_result_path)
 
         qc_bold_create_report_input = subject_id_boldfile_id.groupTuple(sort: true).join(norm_to_mni152_svg).transpose().join(bold_to_mni152_svg, by: [0,1]).join(transform_dir, by: [0,1])
-        qc_report = qc_bold_create_report(qc_bold_create_report_input, reports_utils_path, bids_dir, subjects_dir, qc_result_path, work_dir, bold_task_type, deepprep_version)
+        qc_report = qc_bold_create_report(qc_bold_create_report_input, reports_utils_path, bids_dir, subjects_dir, qc_result_path)
     }
 }
 
