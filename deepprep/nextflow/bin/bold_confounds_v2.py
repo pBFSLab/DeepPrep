@@ -220,6 +220,7 @@ def regressors_PCA(bpss_path, maskpath, outpath):
     nvox = float(mask.sum())
     assert nvox > 0, 'Null mask found in %s' % maskpath
 
+    # update the .tsv
     img = nib.load(bpss_path)
     data = img.get_fdata().swapaxes(0, 1)
     vol_data = data.reshape((data.shape[0] * data.shape[1] * data.shape[2], data.shape[3]), order='F')
@@ -271,7 +272,7 @@ if __name__ == '__main__':
     """
 
     # The required input confound files were generated in <process:bold_pre_process>, and copied to <confounds_dir_path>.
-    # If there's any missing files under <confounds_dir_path>, please go to <process:bold_pre_process> and double check if its original path exists.
+    # If there's any missing file under <confounds_dir_path>, please go to <process:bold_pre_process> and double check if its original path exists.
     confounds_dir_path = Path(args.work_dir) / args.subject_id / 'confounds'
     bold_file = [args.bold_file]
     boldresampled = confounds_dir_path / f'{args.bold_id}_boldresampled.nii.gz'
