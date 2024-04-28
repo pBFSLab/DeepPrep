@@ -320,7 +320,7 @@ if __name__ == '__main__':
         os.system(f'rsync -arv {boldmask_file} {confounds_dir_path}/{bold_id}_bold_average_corrected_brain_mask_maths.nii.gz')
         hmc_dir = base_dir / f'{bold_id}_wf' / 'bold_wf' / 'bold_fit_wf' / 'bold_hmc_wf'
         motion_txt = sorted(hmc_dir.glob('normalize_motion/motion_params.txt'))[0]
-        os.system(f'rsync -arv {motion_txt} {confounds_dir_path}/motion_params.txt')
+        os.system(f'rsync -arv {motion_txt} {confounds_dir_path}/{bold_id}_motion_params.txt')
         rel_file = sorted(hmc_dir.glob('mcflirt/sub-*rel.rms'))[0]
         os.system(f'rsync -arv {rel_file} {confounds_dir_path}/{bold_id}_bold_mcf.nii.gz_rel.rms')
 
