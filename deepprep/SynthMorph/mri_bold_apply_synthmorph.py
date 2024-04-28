@@ -124,8 +124,11 @@ def bold_save(path, fframe_bold_path, num, data, affine, header, ori_header, dty
         data = data.get_fdata(dtype=np.float32)
 
     data = np.squeeze(data)
-    data = np.asarray(data, int)
-    data = data.transpose((1, 2, 3, 0))
+    if len(data.shape) == 3:
+        data = np.expand_dims(data, axis=-1)
+    else:
+        data = np.asarray(data, int)
+        data = data.transpose((1, 2, 3, 0))
     # Use Nifti1Image instead of MGHImage for FP64 support. Set units to avoid
     # warnings when reading with FreeSurfer.
     out = nib.Nifti1Image(data, affine=affine, header=ori_header)
