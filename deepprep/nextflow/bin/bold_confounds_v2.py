@@ -277,7 +277,7 @@ if __name__ == '__main__':
     bold_file = [args.bold_file]
     boldresampled = confounds_dir_path / f'{args.bold_id}_boldresampled.nii.gz'
     bold_mask = confounds_dir_path / f'{args.bold_id}_bold_average_corrected_brain_mask_maths.nii.gz'
-    movpar_file = confounds_dir_path / 'motion_params.txt'
+    movpar_file = confounds_dir_path / f'{args.bold_id}_motion_params.txt'
     rmsd_file = confounds_dir_path / f'{args.bold_id}_bold_mcf.nii.gz_rel.rms'
     skip_vols = 2
     t1w_tpms = [args.t1w_tpms_CSF, args.t1w_tpms_GM, args.t1w_tpms_WM]
