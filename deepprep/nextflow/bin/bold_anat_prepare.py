@@ -11,8 +11,8 @@ def get_pve_file(subjects_dir, work_dir, subject_id, wm_probseg_nii, gm_probseg_
     split_bold_dir = Path(work_dir) / subject_id / 'fsl_fast'
     split_bold_dir.mkdir(exist_ok=True, parents=True)
 
-    brain_mgz = Path(subjects_dir) / subject_id / 'mri' / 'brain.mgz'
-    brain_nii = split_bold_dir / 'brain.nii.gz'
+    brain_mgz = Path(subjects_dir) / subject_id / 'mri' / 'norm.mgz'
+    brain_nii = split_bold_dir / 'norm.nii.gz'
     os.system(f"mri_convert {brain_mgz} {brain_nii}")
 
     fast = fsl.FAST(segments=True, no_bias=True, probability_maps=False)
@@ -71,23 +71,31 @@ if __name__ == '__main__':
         description="DeepPrep: Prepare input data for BOLD process"
     )
 
-    parser.add_argument("--bold_preprocess_path", required=True)
-    parser.add_argument("--subjects_dir", required=True)
-    parser.add_argument("--work_dir", required=True)
-    parser.add_argument("--subject_id", required=True)
-    parser.add_argument("--t1_mgz", required=True)
-    parser.add_argument("--mask_mgz", required=True)
-    parser.add_argument("--t1_nii", required=True)
-    parser.add_argument("--mask_nii", required=True)
-    parser.add_argument("--wm_dseg_nii", required=True)
-    parser.add_argument("--fsnative2T1w_xfm", required=True)
-    parser.add_argument("--wm_probseg_nii", required=True)
-    parser.add_argument("--gm_probseg_nii", required=True)
-    parser.add_argument("--csf_probseg_nii", required=True)
-    args = parser.parse_args()
+    # parser.add_argument("--bold_preprocess_path", required=True)
+    # parser.add_argument("--subjects_dir", required=True)
+    # parser.add_argument("--work_dir", required=True)
+    # parser.add_argument("--subject_id", required=True)
+    # parser.add_argument("--t1_mgz", required=True)
+    # parser.add_argument("--mask_mgz", required=True)
+    # parser.add_argument("--t1_nii", required=True)
+    # parser.add_argument("--mask_nii", required=True)
+    # parser.add_argument("--wm_dseg_nii", required=True)
+    # parser.add_argument("--fsnative2T1w_xfm", required=True)
+    # parser.add_argument("--wm_probseg_nii", required=True)
+    # parser.add_argument("--gm_probseg_nii", required=True)
+    # parser.add_argument("--csf_probseg_nii", required=True)
+    # args = parser.parse_args()
+    #
+    # out_dir = Path(args.bold_preprocess_path) / args.subject_id / 'anat'
+    # out_dir.mkdir(parents=True, exist_ok=True)
 
-    out_dir = Path(args.bold_preprocess_path) / args.subject_id / 'anat'
-    out_dir.mkdir(parents=True, exist_ok=True)
+    # cmd(args.subjects_dir, args.work_dir, args.subject_id, args.t1_mgz, args.mask_mgz, args.t1_nii, args.mask_nii,
+    #     args.wm_dseg_nii, args.fsnative2T1w_xfm, args.wm_probseg_nii, args.gm_probseg_nii, args.csf_probseg_nii)
 
-    cmd(args.subjects_dir, args.work_dir, args.subject_id, args.t1_mgz, args.mask_mgz, args.t1_nii, args.mask_nii,
-        args.wm_dseg_nii, args.fsnative2T1w_xfm, args.wm_probseg_nii, args.gm_probseg_nii, args.csf_probseg_nii)
+    subjects_dir = Path("/mnt/ngshare/DeepPrep_Docker/DeepPrep_workdir/HNU3_pbfslab2310/Recon")
+    work_dir = Path("/mnt/ngshare/DeepPrep_Docker/DeepPrep_workdir/HNU3_pbfslab2310_confoundsv2/WorkDir")
+    subject_id = 'sub-0025427'
+    wm_probseg_nii = Path("/mnt/ngshare/DeepPrep_Docker/DeepPrep_workdir/HNU3_pbfslab2310_confoundsv2/BOLD/sub-0025427/anat/sub-0025427_label-WM_probseg.nii.gz")
+    gm_probseg_nii = Path("/mnt/ngshare/DeepPrep_Docker/DeepPrep_workdir/HNU3_pbfslab2310_confoundsv2/BOLD/sub-0025427/anat/sub-0025427_label-GM_probseg.nii.gz")
+    csf_probseg_nii = Path("/mnt/ngshare/DeepPrep_Docker/DeepPrep_workdir/HNU3_pbfslab2310_confoundsv2/BOLD/sub-0025427/anat/sub-0025427_label-CSF_probseg.nii.gz")
+    get_pve_file(subjects_dir, work_dir, subject_id, wm_probseg_nii, gm_probseg_nii, csf_probseg_nii)
