@@ -91,3 +91,6 @@ if __name__ == '__main__':
 
     cmd(args.subjects_dir, args.work_dir, args.subject_id, args.t1_mgz, args.mask_mgz, args.t1_nii, args.mask_nii,
         args.wm_dseg_nii, args.fsnative2T1w_xfm, args.wm_probseg_nii, args.gm_probseg_nii, args.csf_probseg_nii)
+
+    cmd(args.subjects_dir, args.work_dir, args.subject_id, args.t1_mgz, args.mask_mgz, args.t1_nii, args.mask_nii,
+        args.wm_dseg_nii, args.fsnative2T1w_xfm, args.wm_probseg_nii, args.gm_probseg_nii, args.csf_probseg_nii)
