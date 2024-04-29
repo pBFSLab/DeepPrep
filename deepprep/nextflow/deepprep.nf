@@ -2839,7 +2839,7 @@ workflow bold_wf {
     }
 
     output_std_volume_spaces = 'TRUE'
-    if (output_std_volume_spaces == 'TRUE') {
+    if  (template_space.toString().toUpperCase() != 'NONE') {
         bold_T1_to_2mm_input = t1_mgz.join(norm_mgz)
         (t1_native2mm, norm_native2mm) = bold_T1_to_2mm(subjects_dir, bold_preprocess_path, bold_T1_to_2mm_input)
 
@@ -2870,10 +2870,15 @@ workflow bold_wf {
         qc_plot_carpet_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(aparc_aseg_mgz).join(mask_mgz, by: [0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
         bold_carpet_svg = qc_plot_carpet(bids_dir, qc_plot_carpet_inputs, bold_preprocess_path, qc_result_path, work_dir)
 
-        qc_plot_bold_to_space_inputs = subject_boldfile_txt_bold_pre_process.join(transform_dir, by: [0,1])
-        bold_to_mni152_svg = qc_plot_bold_to_space(qc_plot_bold_to_space_inputs, bids_dir, bold_preprocess_path, work_dir, qc_utils_path, qc_result_path, template_space)
-
-        norm_to_mni152_svg = qc_plot_norm_to_mni152(norm_norigid_nii, bold_preprocess_path, qc_utils_path, qc_result_path)
+        if (template_space.toString().toUpperCase() != 'NONE') {
+            qc_plot_bold_to_space_inputs = subject_boldfile_txt_bold_pre_process.join(transform_dir, by: [0,1])
+            bold_to_mni152_svg = qc_plot_bold_to_space(qc_plot_bold_to_space_inputs, bids_dir, bold_preprocess_path, work_dir, qc_utils_path, qc_result_path, template_space)
+            norm_to_mni152_svg = qc_plot_norm_to_mni152(norm_norigid_nii, bold_preprocess_path, qc_utils_path, qc_result_path)
+        } else {
+            bold_to_mni152_svg = bold_tsnr_svg
+            norm_to_mni152_svg = bold_tsnr_svg
+            transform_dir = bold_tsnr_svg
+        }
 
         qc_bold_create_report_input = subject_id_boldfile_id.groupTuple(sort: true).join(norm_to_mni152_svg).transpose().join(bold_to_mni152_svg, by: [0,1]).join(transform_dir, by: [0,1])
         qc_report = qc_bold_create_report(qc_bold_create_report_input, reports_utils_path, bids_dir, subjects_dir, qc_result_path)
