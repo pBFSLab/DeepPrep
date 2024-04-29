@@ -39,8 +39,15 @@ DeepPrep achieves over 10-fold acceleration and shows robustness in processing c
  | d) Robustness of DeepPrep is assessed in preprocessing clinical samples from Stroke, Tumor, and DoC datasets, who failed to be processed by FreeSurfer. DeepPrep successfully completed preprocessing in 100% of patients, with 75.5% of patients being correctly preprocessed. Meanwhile, fMRIprep’s success rate was 69.8% for completion and 50.9% for correct preprocessing.
  | e) Preprocessing errors are categorized into four types, including brain tissue segmentation, cortical surface reconstruction, cortical surface registration, and volumetric spatial normalization. Four representative cases with preprocessing errors are presented, illustrating obvious brain lesions or imaging noises in the original images. fMRIPrep yields an inaccurate brain mask when skull stripping, failed to reconstruct cortical surfaces, exhibited misalignment in surface parcellation in the pre- and post-central gyrus, and produced inappropriate volumetric normalization in perilesional region. In contrast, DeepPrep successfully and accurately processed these cases.
 
-Principles
-----------
+Upcoming improvements
+---------------------
+1. Spherical mapping: We are going to speeding up the most time-consuming spherical mapping process by developing deep-learning based models.
+2. Fieldmap-less susceptibility distortion correction (SDC): We'll add the fieldmap-less susceptibility distortion correction (SDC) method for cases where fieldmap information is missing.
+3. Cifti: DeepPrep will now produce outputs in cifti format.
+4. MP2RAGE: DeepPrep will be compatible with MP2RAGE.
+5. High-resolution images: We're expanding DeepPrep's support to include high-resolution images (i.e. 7T).
+6. DeepQC: DeepPrep will feature an automated quality control process called DeepQC for both sMRI and fMRI visualization.
+
 
 Citation
 --------
