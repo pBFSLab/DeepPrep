@@ -11,8 +11,8 @@ def get_pve_file(subjects_dir, work_dir, subject_id, wm_probseg_nii, gm_probseg_
     split_bold_dir = Path(work_dir) / subject_id / 'fsl_fast'
     split_bold_dir.mkdir(exist_ok=True, parents=True)
 
-    brain_mgz = Path(subjects_dir) / subject_id / 'mri' / 'brain.mgz'
-    brain_nii = split_bold_dir / 'brain.nii.gz'
+    brain_mgz = Path(subjects_dir) / subject_id / 'mri' / 'norm.mgz'
+    brain_nii = split_bold_dir / 'norm.nii.gz'
     os.system(f"mri_convert {brain_mgz} {brain_nii}")
 
     fast = fsl.FAST(segments=True, no_bias=True, probability_maps=False)
