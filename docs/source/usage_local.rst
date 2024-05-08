@@ -26,14 +26,14 @@ DeepPrep: Deep learning empowered preprocessing workflow 23.1.0:
 
 .. code-block:: none
 
-   usage: deepprep-docker [bids_dir] [output_dir] [{participant}] [--bold_task_type TASK_LABEL]
+   usage: deepprep-docker [bids_dir] [output_dir] [{participant}] [--bold_task_type 'task1 task2 task3']
                           [--fs_license_file PATH] [--participant_label PARTICIPANT_LABEL [PARTICIPANT_LABEL ...]]
                           [--subjects_dir PATH] [--skip_bids_validation]
                           [--anat_only] [--bold_only] [--bold_sdc] [--bold_confounds]
                           [--bold_surface_spaces '[fsnative fsaverage fsaverage6 ...]']
                           [--bold_volume_space {MNI152NLin6Asym MNI152NLin2009cAsym}] [--bold_volume_res {02 03...}]
                           [--device { {auto 0 1 2...} cpu}]
-                          [--cpus 10] [--memory 5]
+                          [--cpus 10] [--memory 20]
                           [--ignore_error] [--resume]
 
 
