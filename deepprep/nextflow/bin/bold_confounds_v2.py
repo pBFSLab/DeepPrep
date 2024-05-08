@@ -227,7 +227,7 @@ def regressors_PCA(bpss_path, maskpath, outpath):
     pca_data = vol_data[mask]
     pca_regressor = np.asarray(regressor_PCA_singlebold(pca_data, n))
     df = pd.read_csv(outpath, sep='\t')
-    col = [f'comp{str(i+1)}' for i in range(n)]
+    col = [f't_comp_cor_{str(i).zfill(2)}' for i in range(10)]
     df_pca = pd.DataFrame(pca_regressor, columns=col)
     df = pd.concat((df, df_pca), axis=1)
     df.to_csv(outpath, sep='\t', index=False)
