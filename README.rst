@@ -41,12 +41,10 @@ DeepPrep achieves over 10-fold acceleration and shows robustness in processing c
 
 Upcoming improvements
 ---------------------
-1. Spherical mapping: We are going to speeding up the most time-consuming spherical mapping process by developing deep-learning based models.
-2. Fieldmap-less susceptibility distortion correction (SDC): We'll add the fieldmap-less susceptibility distortion correction (SDC) method for cases where fieldmap information is missing.
-3. Cifti: DeepPrep will now produce outputs in cifti format.
-4. MP2RAGE: DeepPrep will be compatible with MP2RAGE.
-5. High-resolution images: We're expanding DeepPrep's support to include high-resolution images (i.e. 7T).
-6. DeepQC: DeepPrep will feature an automated quality control process called DeepQC for both sMRI and fMRI visualization.
+1. Cifti: DeepPrep will now produce outputs in cifti format.
+2. MP2RAGE: DeepPrep will be compatible with MP2RAGE.
+3. High-resolution images: We're expanding DeepPrep's support to include high-resolution images (i.e. 7T).
+4. DeepQC: DeepPrep will feature an automated quality control process called DeepQC for both sMRI and fMRI visualization.
 
 
 Citation
