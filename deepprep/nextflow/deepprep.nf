@@ -1922,46 +1922,6 @@ process bold_synthmorph_norigid {
 }
 
 
-process bold_synthmorph_joint {
-    // 22954
-    tag "${subject_id}"
-
-    cpus 4
-    label "with_gpu"
-    memory '19 GB'
-
-    input:
-    val(subjects_dir)
-    val(bold_preprocess_path)
-    val(synthmorph_home)
-    tuple(val(subject_id), val(t1_native2mm), val(norm_native2mm))
-    val(synth_model_path)
-    val(template_space)
-    val(device)
-    val(gpu_lock)
-
-    output:
-    tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/anat/${subject_id}_space-${template_space}_res-02_desc-skull_T1w.nii.gz")) //emit: t1_norigid_nii
-    tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/anat/${subject_id}_space-${template_space}_res-02_desc-noskull_T1w.nii.gz")) //emit: norm_norigid_nii
-    tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/anat/${subject_id}_from-T1w_to-${template_space}_desc-joint_trans.nii.gz")) //emit: transvoxel
-
-    script:
-    gpu_script_py = "gpu_schedule_run.py"
-    script_py = "${synthmorph_home}/bold_synthmorph_joint.py"
-    synth_script = "${synthmorph_home}/mri_synthmorph_joint.py"
-    """
-    ${gpu_script_py} ${device} double executor ${script_py} \
-    --bold_preprocess_dir ${bold_preprocess_path} \
-    --subject_id ${subject_id} \
-    --synth_script ${synth_script} \
-    --t1_native2mm ${t1_native2mm} \
-    --norm_native2mm ${norm_native2mm} \
-    --template_space ${template_space} \
-    --synth_model_path ${synth_model_path}
-    """
-}
-
-
 process bold_upsampled {
     tag "${bold_id}"
 
@@ -2889,42 +2849,40 @@ workflow bold_wf {
             t1_native2mm_aparc_aseg = t1_native2mm.join(aseg_presurf_mgz)
         }
 
-//         (affine_nii, affine_trans) = bold_synthmorph_affine(subjects_dir, bold_preprocess_path, synthmorph_home, t1_native2mm_aparc_aseg, synthmorph_model_path, template_space, device, gpu_lock)
-//
-//         bold_synthmorph_norigid_input = t1_native2mm.join(norm_native2mm, by: [0]).join(affine_trans, by: [0])
-//         (t1_norigid_nii, norm_norigid_nii, transvoxel) = bold_synthmorph_norigid(subjects_dir, bold_preprocess_path, synthmorph_home, bold_synthmorph_norigid_input, synthmorph_model_path, template_space, device, gpu_lock)
-        bold_synthmorph_joint_input = t1_native2mm.join(norm_native2mm, by: [0])
-        (t1_norigid_nii, norm_norigid_nii, transvoxel) = bold_synthmorph_joint(subjects_dir, bold_preprocess_path, synthmorph_home, bold_synthmorph_joint_input, synthmorph_model_path, template_space, device, gpu_lock)
-//         transvoxel_group = subject_id_boldfile_id.groupTuple(sort: true).join(transvoxel).transpose()
-//         t1_native2mm_group = subject_id_boldfile_id.groupTuple(sort: true).join(t1_native2mm).transpose()
-//         bold_upsampled_input = t1_native2mm_group.join(subject_boldfile_txt_bold_pre_process, by: [0,1])
-//         upsampled_dir = bold_upsampled(bids_dir, subjects_dir, bold_preprocess_path, work_dir, bold_upsampled_input)
-//         bold_synthmorph_norigid_apply_input = t1_native2mm_group.join(subject_boldfile_txt_bold_pre_process, by: [0,1]).join(transvoxel_group, by: [0,1]).join(upsampled_dir, by: [0,1])
-//         transform_dir = bold_synthmorph_norigid_apply(bids_dir, bold_preprocess_path, synthmorph_home, work_dir, bold_synthmorph_norigid_apply_input, template_space, template_resolution, device, gpu_lock)
-//         bold_concat_input = transform_dir.join(subject_boldfile_txt_bold_pre_process, by: [0,1])
-//         synth_apply_template = bold_concat(bids_dir, bold_preprocess_path, template_space, template_resolution, bold_concat_input)
+        (affine_nii, affine_trans) = bold_synthmorph_affine(subjects_dir, bold_preprocess_path, synthmorph_home, t1_native2mm_aparc_aseg, synthmorph_model_path, template_space, device, gpu_lock)
+
+        bold_synthmorph_norigid_input = t1_native2mm.join(norm_native2mm, by: [0]).join(affine_trans, by: [0])
+        (t1_norigid_nii, norm_norigid_nii, transvoxel) = bold_synthmorph_norigid(subjects_dir, bold_preprocess_path, synthmorph_home, bold_synthmorph_norigid_input, synthmorph_model_path, template_space, device, gpu_lock)
+        transvoxel_group = subject_id_boldfile_id.groupTuple(sort: true).join(transvoxel).transpose()
+        t1_native2mm_group = subject_id_boldfile_id.groupTuple(sort: true).join(t1_native2mm).transpose()
+        bold_upsampled_input = t1_native2mm_group.join(subject_boldfile_txt_bold_pre_process, by: [0,1])
+        upsampled_dir = bold_upsampled(bids_dir, subjects_dir, bold_preprocess_path, work_dir, bold_upsampled_input)
+        bold_synthmorph_norigid_apply_input = t1_native2mm_group.join(subject_boldfile_txt_bold_pre_process, by: [0,1]).join(transvoxel_group, by: [0,1]).join(upsampled_dir, by: [0,1])
+        transform_dir = bold_synthmorph_norigid_apply(bids_dir, bold_preprocess_path, synthmorph_home, work_dir, bold_synthmorph_norigid_apply_input, template_space, template_resolution, device, gpu_lock)
+        bold_concat_input = transform_dir.join(subject_boldfile_txt_bold_pre_process, by: [0,1])
+        synth_apply_template = bold_concat(bids_dir, bold_preprocess_path, template_space, template_resolution, bold_concat_input)
     }
 
-//     do_bold_qc = 'TRUE'
-//     if (do_bold_qc == 'TRUE') {
-//         bold_tsnr_svg = qc_plot_tsnr(bids_dir, subject_boldfile_txt_bold_pre_process, bold_preprocess_path, qc_result_path, qc_utils_path)
-//
-//         qc_plot_carpet_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(aparc_aseg_mgz).join(mask_mgz, by: [0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
-//         bold_carpet_svg = qc_plot_carpet(bids_dir, qc_plot_carpet_inputs, bold_preprocess_path, qc_result_path, work_dir)
-//
-//         if (template_space.toString().toUpperCase() != 'NONE') {
-//             qc_plot_bold_to_space_inputs = subject_boldfile_txt_bold_pre_process.join(transform_dir, by: [0,1])
-//             bold_to_mni152_svg = qc_plot_bold_to_space(qc_plot_bold_to_space_inputs, bids_dir, bold_preprocess_path, work_dir, qc_utils_path, qc_result_path, template_space)
-//             norm_to_mni152_svg = qc_plot_norm_to_mni152(norm_norigid_nii, bold_preprocess_path, qc_utils_path, qc_result_path)
-//         } else {
-//             bold_to_mni152_svg = bold_tsnr_svg
-//             norm_to_mni152_svg = bold_tsnr_svg
-//             transform_dir = bold_tsnr_svg
-//         }
-//
-//         qc_bold_create_report_input = subject_id_boldfile_id.groupTuple(sort: true).join(norm_to_mni152_svg).transpose().join(bold_to_mni152_svg, by: [0,1]).join(transform_dir, by: [0,1])
-//         qc_report = qc_bold_create_report(qc_bold_create_report_input, reports_utils_path, bids_dir, subjects_dir, qc_result_path)
-//     }
+    do_bold_qc = 'TRUE'
+    if (do_bold_qc == 'TRUE') {
+        bold_tsnr_svg = qc_plot_tsnr(bids_dir, subject_boldfile_txt_bold_pre_process, bold_preprocess_path, qc_result_path, qc_utils_path)
+
+        qc_plot_carpet_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(aparc_aseg_mgz).join(mask_mgz, by: [0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
+        bold_carpet_svg = qc_plot_carpet(bids_dir, qc_plot_carpet_inputs, bold_preprocess_path, qc_result_path, work_dir)
+
+        if (template_space.toString().toUpperCase() != 'NONE') {
+            qc_plot_bold_to_space_inputs = subject_boldfile_txt_bold_pre_process.join(transform_dir, by: [0,1])
+            bold_to_mni152_svg = qc_plot_bold_to_space(qc_plot_bold_to_space_inputs, bids_dir, bold_preprocess_path, work_dir, qc_utils_path, qc_result_path, template_space)
+            norm_to_mni152_svg = qc_plot_norm_to_mni152(norm_norigid_nii, bold_preprocess_path, qc_utils_path, qc_result_path)
+        } else {
+            bold_to_mni152_svg = bold_tsnr_svg
+            norm_to_mni152_svg = bold_tsnr_svg
+            transform_dir = bold_tsnr_svg
+        }
+
+        qc_bold_create_report_input = subject_id_boldfile_id.groupTuple(sort: true).join(norm_to_mni152_svg).transpose().join(bold_to_mni152_svg, by: [0,1]).join(transform_dir, by: [0,1])
+        qc_report = qc_bold_create_report(qc_bold_create_report_input, reports_utils_path, bids_dir, subjects_dir, qc_result_path)
+    }
 }
 
 
