@@ -1,4 +1,8 @@
+#!/usr/bin/env python3
+
 import os
+import shutil
+
 import nibabel as nib
 import numpy as np
 from pathlib import Path
@@ -59,14 +63,19 @@ def apply_hmc_pool(frame, warped_mesh_frame, matrix_frame, ras2vox_A, ras2vox_b,
     nib.save(nib.Nifti1Image(result, affine=fixed.affine, header=bold_orig_header),
          f'{transform_save_path}/t{str(frame).zfill(5)}.nii.gz')
 
-def concat_frames(transform_save_path, output_path):
-    from nipype.interfaces.freesurfer.model import Concatenate
-    concat = Concatenate()
+def concat_frames(transform_save_path, output_path, boldref_path):
+    # from nipype.interfaces.freesurfer.model import Concatenate
+    # concat = Concatenate()
     files = sorted(transform_save_path.glob('*.nii.gz'))
     in_files = [str(f) for f in files]
-    concat.inputs.in_files = in_files
-    concat.inputs.concatenated_file = output_path
-    concat.run()
+    # # concat.inputs.in_files = in_files
+    # concat.inputs.concatenated_file = output_path
+    # concat.run()
+    cmd = f'mri_concat --i {transform_save_path}/* --o {output_path}'
+    os.system(cmd)
+
+    # copy the first frame as boldref
+    shutil.copy(in_files[0], boldref_path)
 
 
 if __name__ == '__main__':
@@ -116,9 +125,10 @@ if __name__ == '__main__':
     update_entities = {'desc': 'hmc', 'suffix': 'xfm', 'extension': '.txt'}
     hmc_xfm = get_preproc_file(args.bids_dir, args.bold_preprocess_dir, bold_file, update_entities)
 
-    transform_save_path = Path(args.work_dir) / 'bold_synthmorph_norigid_apply'
+    transform_save_path = Path(args.work_dir) / 'bold_synthmorph_transform_chain' / args.bold_id
     transform_save_path.mkdir(exist_ok=True, parents=True)
     output_path = Path(coreg_xfm.parent) / f'{args.bold_id}_space-{args.template_space}_res-{args.template_resolution}_desc-preproc_bold.nii.gz'
+    boldref_path = Path(coreg_xfm.parent) / f'{args.bold_id}_space-{args.template_space}_res-{args.template_resolution}_boldref.nii.gz'
 
     # Load the fixed file
     fixed = nib.load(fixed_file)
@@ -174,5 +184,9 @@ if __name__ == '__main__':
     pool.close()
     pool.join()
 
-    concat_frames(transform_save_path, output_path)
+    concat_frames(transform_save_path, output_path, boldref_path)
+
+    # check the output file has correct number of frames
+    concat_bold = nib.load(output_path)
+    assert concat_bold.shape[-1] == bold_orig.shape[-1]
 
