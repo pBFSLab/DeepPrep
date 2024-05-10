@@ -2074,6 +2074,42 @@ process bold_concat {
 }
 
 
+process bold_transform_chain {
+    tag "${bold_id}"
+
+    cpus 10
+    memory '20 GB'
+
+    input:
+    val(bids_dir)
+    val(bold_preprocess_path)
+    val(work_dir)
+    tuple(val(subject_id), val(bold_id), val(trans), path(subject_boldfile_txt_bold))
+    val(template_space)
+    val(template_resolution)
+
+    output:
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-${template_space}_res-${template_resolution}_desc-preproc_bold.nii.gz"))
+    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-${template_space}_res-${template_resolution}_boldref.nii.gz"))
+
+    script:
+    script_py = "bold_apply_transform_chain.py"
+
+    """
+    ${script_py} \
+    --bids_dir ${bids_dir} \
+    --bold_preprocess_dir ${bold_preprocess_path} \
+    --work_dir ${work_dir} \
+    --subject_id ${subject_id} \
+    --bold_id ${bold_id} \
+    --subject_boldfile_txt_bold ${subject_boldfile_txt_bold} \
+    --template_space ${template_space} \
+    --template_resolution ${template_resolution} \
+    --nonlinear_file ${trans}
+    """
+}
+
+
 process bold_mkbrainmask {
     tag "${bold_id}"
 
@@ -2894,37 +2930,39 @@ workflow bold_wf {
 //         bold_synthmorph_norigid_input = t1_native2mm.join(norm_native2mm, by: [0]).join(affine_trans, by: [0])
 //         (t1_norigid_nii, norm_norigid_nii, transvoxel) = bold_synthmorph_norigid(subjects_dir, bold_preprocess_path, synthmorph_home, bold_synthmorph_norigid_input, synthmorph_model_path, template_space, device, gpu_lock)
         bold_synthmorph_joint_input = t1_native2mm.join(norm_native2mm, by: [0])
-        (t1_norigid_nii, norm_norigid_nii, transvoxel) = bold_synthmorph_joint(subjects_dir, bold_preprocess_path, synthmorph_home, bold_synthmorph_joint_input, synthmorph_model_path, template_space, device, gpu_lock)
-//         transvoxel_group = subject_id_boldfile_id.groupTuple(sort: true).join(transvoxel).transpose()
+        (t1_norigid_nii, norm_norigid_nii, trans) = bold_synthmorph_joint(subjects_dir, bold_preprocess_path, synthmorph_home, bold_synthmorph_joint_input, synthmorph_model_path, template_space, device, gpu_lock)
+//         trans_group = subject_id_boldfile_id.groupTuple(sort: true).join(trans).transpose()
 //         t1_native2mm_group = subject_id_boldfile_id.groupTuple(sort: true).join(t1_native2mm).transpose()
 //         bold_upsampled_input = t1_native2mm_group.join(subject_boldfile_txt_bold_pre_process, by: [0,1])
 //         upsampled_dir = bold_upsampled(bids_dir, subjects_dir, bold_preprocess_path, work_dir, bold_upsampled_input)
-//         bold_synthmorph_norigid_apply_input = t1_native2mm_group.join(subject_boldfile_txt_bold_pre_process, by: [0,1]).join(transvoxel_group, by: [0,1]).join(upsampled_dir, by: [0,1])
+//         bold_synthmorph_norigid_apply_input = t1_native2mm_group.join(subject_boldfile_txt_bold_pre_process, by: [0,1]).join(trans_group, by: [0,1]).join(upsampled_dir, by: [0,1])
 //         transform_dir = bold_synthmorph_norigid_apply(bids_dir, bold_preprocess_path, synthmorph_home, work_dir, bold_synthmorph_norigid_apply_input, template_space, template_resolution, device, gpu_lock)
 //         bold_concat_input = transform_dir.join(subject_boldfile_txt_bold_pre_process, by: [0,1])
 //         synth_apply_template = bold_concat(bids_dir, bold_preprocess_path, template_space, template_resolution, bold_concat_input)
+        bold_transform_chain_input = subject_id_boldfile_id.groupTuple(sort: true).join(trans, by:[0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
+        (preproc_bold, boldref_file) = bold_transform_chain(bids_dir, bold_preprocess_path, work_dir, bold_transform_chain_input, template_space, template_resolution)
     }
 
-//     do_bold_qc = 'TRUE'
-//     if (do_bold_qc == 'TRUE') {
-//         bold_tsnr_svg = qc_plot_tsnr(bids_dir, subject_boldfile_txt_bold_pre_process, bold_preprocess_path, qc_result_path, qc_utils_path)
-//
-//         qc_plot_carpet_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(aparc_aseg_mgz).join(mask_mgz, by: [0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
-//         bold_carpet_svg = qc_plot_carpet(bids_dir, qc_plot_carpet_inputs, bold_preprocess_path, qc_result_path, work_dir)
-//
-//         if (template_space.toString().toUpperCase() != 'NONE') {
-//             qc_plot_bold_to_space_inputs = subject_boldfile_txt_bold_pre_process.join(transform_dir, by: [0,1])
-//             bold_to_mni152_svg = qc_plot_bold_to_space(qc_plot_bold_to_space_inputs, bids_dir, bold_preprocess_path, work_dir, qc_utils_path, qc_result_path, template_space)
-//             norm_to_mni152_svg = qc_plot_norm_to_mni152(norm_norigid_nii, bold_preprocess_path, qc_utils_path, qc_result_path)
-//         } else {
-//             bold_to_mni152_svg = bold_tsnr_svg
-//             norm_to_mni152_svg = bold_tsnr_svg
-//             transform_dir = bold_tsnr_svg
-//         }
-//
-//         qc_bold_create_report_input = subject_id_boldfile_id.groupTuple(sort: true).join(norm_to_mni152_svg).transpose().join(bold_to_mni152_svg, by: [0,1]).join(transform_dir, by: [0,1])
-//         qc_report = qc_bold_create_report(qc_bold_create_report_input, reports_utils_path, bids_dir, subjects_dir, qc_result_path)
-//     }
+    do_bold_qc = 'TRUE'
+    if (do_bold_qc == 'TRUE') {
+        bold_tsnr_svg = qc_plot_tsnr(bids_dir, subject_boldfile_txt_bold_pre_process, bold_preprocess_path, qc_result_path, qc_utils_path)
+
+        qc_plot_carpet_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(aparc_aseg_mgz).join(mask_mgz, by: [0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
+        bold_carpet_svg = qc_plot_carpet(bids_dir, qc_plot_carpet_inputs, bold_preprocess_path, qc_result_path, work_dir)
+
+        if (template_space.toString().toUpperCase() != 'NONE') {
+            qc_plot_bold_to_space_inputs = subject_boldfile_txt_bold_pre_process.join(boldref_file, by: [0,1])
+            bold_to_mni152_svg = qc_plot_bold_to_space(qc_plot_bold_to_space_inputs, bids_dir, bold_preprocess_path, work_dir, qc_utils_path, qc_result_path, template_space)
+            norm_to_mni152_svg = qc_plot_norm_to_mni152(norm_norigid_nii, bold_preprocess_path, qc_utils_path, qc_result_path)
+        } else {
+            bold_to_mni152_svg = bold_tsnr_svg
+            norm_to_mni152_svg = bold_tsnr_svg
+            boldref_file = bold_tsnr_svg
+        }
+
+        qc_bold_create_report_input = subject_id_boldfile_id.groupTuple(sort: true).join(norm_to_mni152_svg).transpose().join(bold_to_mni152_svg, by: [0,1]).join(boldref_file, by: [0,1])
+        qc_report = qc_bold_create_report(qc_bold_create_report_input, reports_utils_path, bids_dir, subjects_dir, qc_result_path)
+    }
 }
 
 
