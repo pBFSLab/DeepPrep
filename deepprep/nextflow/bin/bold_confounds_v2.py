@@ -280,7 +280,7 @@ if __name__ == '__main__':
     movpar_file = confounds_dir_path / f'{args.bold_id}_motion_params.txt'
     rmsd_file = confounds_dir_path / f'{args.bold_id}_bold_mcf.nii.gz_rel.rms'
     skip_vols = 2
-    t1w_tpms = [args.t1w_tpms_CSF, args.t1w_tpms_GM, args.t1w_tpms_WM]
+    t1w_tpms = [args.t1w_tpms_GM, args.t1w_tpms_WM, args.t1w_tpms_CSF]
     t1w_mask = args.mask_nii
 
     with open(bold_file[0], 'r') as f:
@@ -305,7 +305,4 @@ if __name__ == '__main__':
     bold_confounds_v2(args.bold_preprocess_dir, boldresampled, bold_mask, movpar_file, rmsd_file, str(boldref2anat_xfm), skip_vols,
                       t1w_tpms, t1w_mask, source_file, boldref, aseg, brainmask, bpss, output_dseg, output_mask)
     assert confounds_tsv.exists()
-
-
-
 
