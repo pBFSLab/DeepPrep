@@ -2886,12 +2886,12 @@ workflow bold_wf {
     aparc_annot = lh_aparc_annot.join(rh_aparc_annot, by:[0])
 
     if (bold_only == 'TRUE') {
-        bold_anat_prepare_input = t1_mgz.join(mask_mgz).join(aseg_mgz)
+        bold_anat_prepare_input = t1_mgz.join(mask_mgz)
     } else {
         bold_aparc2aseg_presurf_input = aseg_presurf_mgz.join(pial_surf).join(white_surf).join(cortex_label).join(aparc_annot)
         aparc_aseg_presurf_mgz = bold_aparc2aseg_presurf(subjects_dir, bold_aparc2aseg_presurf_input)
 
-        bold_anat_prepare_input = t1_mgz.join(mask_mgz).join(aseg_presurf_mgz)
+        bold_anat_prepare_input = t1_mgz.join(mask_mgz)
     }
 
     (t1_nii, mask_nii, wm_dseg_nii, fsnative2T1w_xfm, wm_probseg_nii, gm_probseg_nii, csf_probseg_nii) = bold_anat_prepare(bold_preprocess_path, subjects_dir, work_dir, bold_anat_prepare_input)
@@ -2914,55 +2914,55 @@ workflow bold_wf {
         subject_boldfile_txt_bold_confounds = bold_confounds_v2(bids_dir, bold_preprocess_path, work_dir, bold_confounds_v2_inputs)
     }
 
-    output_std_volume_spaces = 'TRUE'
-    if  (template_space.toString().toUpperCase() != 'NONE') {
-        bold_T1_to_2mm_input = t1_mgz.join(norm_mgz)
-        (t1_native2mm, norm_native2mm) = bold_T1_to_2mm(subjects_dir, bold_preprocess_path, bold_T1_to_2mm_input)
-
-        if (bold_only == 'TRUE') {
-            t1_native2mm_aparc_aseg = t1_native2mm.join(aseg_mgz)
-        } else {
-            t1_native2mm_aparc_aseg = t1_native2mm.join(aseg_presurf_mgz)
-        }
-
-//         (affine_nii, affine_trans) = bold_synthmorph_affine(subjects_dir, bold_preprocess_path, synthmorph_home, t1_native2mm_aparc_aseg, synthmorph_model_path, template_space, device, gpu_lock)
+//     output_std_volume_spaces = 'TRUE'
+//     if  (template_space.toString().toUpperCase() != 'NONE') {
+//         bold_T1_to_2mm_input = t1_mgz.join(norm_mgz)
+//         (t1_native2mm, norm_native2mm) = bold_T1_to_2mm(subjects_dir, bold_preprocess_path, bold_T1_to_2mm_input)
 //
-//         bold_synthmorph_norigid_input = t1_native2mm.join(norm_native2mm, by: [0]).join(affine_trans, by: [0])
-//         (t1_norigid_nii, norm_norigid_nii, transvoxel) = bold_synthmorph_norigid(subjects_dir, bold_preprocess_path, synthmorph_home, bold_synthmorph_norigid_input, synthmorph_model_path, template_space, device, gpu_lock)
-        bold_synthmorph_joint_input = t1_native2mm.join(norm_native2mm, by: [0])
-        (t1_norigid_nii, norm_norigid_nii, trans) = bold_synthmorph_joint(subjects_dir, bold_preprocess_path, synthmorph_home, bold_synthmorph_joint_input, synthmorph_model_path, template_space, device, gpu_lock)
-//         trans_group = subject_id_boldfile_id.groupTuple(sort: true).join(trans).transpose()
-//         t1_native2mm_group = subject_id_boldfile_id.groupTuple(sort: true).join(t1_native2mm).transpose()
-//         bold_upsampled_input = t1_native2mm_group.join(subject_boldfile_txt_bold_pre_process, by: [0,1])
-//         upsampled_dir = bold_upsampled(bids_dir, subjects_dir, bold_preprocess_path, work_dir, bold_upsampled_input)
-//         bold_synthmorph_norigid_apply_input = t1_native2mm_group.join(subject_boldfile_txt_bold_pre_process, by: [0,1]).join(trans_group, by: [0,1]).join(upsampled_dir, by: [0,1])
-//         transform_dir = bold_synthmorph_norigid_apply(bids_dir, bold_preprocess_path, synthmorph_home, work_dir, bold_synthmorph_norigid_apply_input, template_space, template_resolution, device, gpu_lock)
-//         bold_concat_input = transform_dir.join(subject_boldfile_txt_bold_pre_process, by: [0,1])
-//         synth_apply_template = bold_concat(bids_dir, bold_preprocess_path, template_space, template_resolution, bold_concat_input)
-        bold_transform_chain_input = subject_id_boldfile_id.groupTuple(sort: true).join(trans, by:[0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
-        (preproc_bold, boldref_file) = bold_transform_chain(bids_dir, bold_preprocess_path, work_dir, bold_transform_chain_input, template_space, template_resolution)
-    }
-
-    do_bold_qc = 'TRUE'
-    if (do_bold_qc == 'TRUE') {
-        bold_tsnr_svg = qc_plot_tsnr(bids_dir, subject_boldfile_txt_bold_pre_process, bold_preprocess_path, qc_result_path, qc_utils_path)
-
-        qc_plot_carpet_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(aparc_aseg_mgz).join(mask_mgz, by: [0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
-        bold_carpet_svg = qc_plot_carpet(bids_dir, qc_plot_carpet_inputs, bold_preprocess_path, qc_result_path, work_dir)
-
-        if (template_space.toString().toUpperCase() != 'NONE') {
-            qc_plot_bold_to_space_inputs = subject_boldfile_txt_bold_pre_process.join(boldref_file, by: [0,1])
-            bold_to_mni152_svg = qc_plot_bold_to_space(qc_plot_bold_to_space_inputs, bids_dir, bold_preprocess_path, work_dir, qc_utils_path, qc_result_path, template_space)
-            norm_to_mni152_svg = qc_plot_norm_to_mni152(norm_norigid_nii, bold_preprocess_path, qc_utils_path, qc_result_path)
-        } else {
-            bold_to_mni152_svg = bold_tsnr_svg
-            norm_to_mni152_svg = bold_tsnr_svg
-            boldref_file = bold_tsnr_svg
-        }
-
-        qc_bold_create_report_input = subject_id_boldfile_id.groupTuple(sort: true).join(norm_to_mni152_svg).transpose().join(bold_to_mni152_svg, by: [0,1]).join(boldref_file, by: [0,1])
-        qc_report = qc_bold_create_report(qc_bold_create_report_input, reports_utils_path, bids_dir, subjects_dir, qc_result_path)
-    }
+//         if (bold_only == 'TRUE') {
+//             t1_native2mm_aparc_aseg = t1_native2mm.join(aseg_mgz)
+//         } else {
+//             t1_native2mm_aparc_aseg = t1_native2mm.join(aseg_presurf_mgz)
+//         }
+//
+// //         (affine_nii, affine_trans) = bold_synthmorph_affine(subjects_dir, bold_preprocess_path, synthmorph_home, t1_native2mm_aparc_aseg, synthmorph_model_path, template_space, device, gpu_lock)
+// //
+// //         bold_synthmorph_norigid_input = t1_native2mm.join(norm_native2mm, by: [0]).join(affine_trans, by: [0])
+// //         (t1_norigid_nii, norm_norigid_nii, transvoxel) = bold_synthmorph_norigid(subjects_dir, bold_preprocess_path, synthmorph_home, bold_synthmorph_norigid_input, synthmorph_model_path, template_space, device, gpu_lock)
+//         bold_synthmorph_joint_input = t1_native2mm.join(norm_native2mm, by: [0])
+//         (t1_norigid_nii, norm_norigid_nii, trans) = bold_synthmorph_joint(subjects_dir, bold_preprocess_path, synthmorph_home, bold_synthmorph_joint_input, synthmorph_model_path, template_space, device, gpu_lock)
+// //         trans_group = subject_id_boldfile_id.groupTuple(sort: true).join(trans).transpose()
+// //         t1_native2mm_group = subject_id_boldfile_id.groupTuple(sort: true).join(t1_native2mm).transpose()
+// //         bold_upsampled_input = t1_native2mm_group.join(subject_boldfile_txt_bold_pre_process, by: [0,1])
+// //         upsampled_dir = bold_upsampled(bids_dir, subjects_dir, bold_preprocess_path, work_dir, bold_upsampled_input)
+// //         bold_synthmorph_norigid_apply_input = t1_native2mm_group.join(subject_boldfile_txt_bold_pre_process, by: [0,1]).join(trans_group, by: [0,1]).join(upsampled_dir, by: [0,1])
+// //         transform_dir = bold_synthmorph_norigid_apply(bids_dir, bold_preprocess_path, synthmorph_home, work_dir, bold_synthmorph_norigid_apply_input, template_space, template_resolution, device, gpu_lock)
+// //         bold_concat_input = transform_dir.join(subject_boldfile_txt_bold_pre_process, by: [0,1])
+// //         synth_apply_template = bold_concat(bids_dir, bold_preprocess_path, template_space, template_resolution, bold_concat_input)
+//         bold_transform_chain_input = subject_id_boldfile_id.groupTuple(sort: true).join(trans, by:[0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
+//         (preproc_bold, boldref_file) = bold_transform_chain(bids_dir, bold_preprocess_path, work_dir, bold_transform_chain_input, template_space, template_resolution)
+//     }
+//
+//     do_bold_qc = 'TRUE'
+//     if (do_bold_qc == 'TRUE') {
+//         bold_tsnr_svg = qc_plot_tsnr(bids_dir, subject_boldfile_txt_bold_pre_process, bold_preprocess_path, qc_result_path, qc_utils_path)
+//
+//         qc_plot_carpet_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(aparc_aseg_mgz).join(mask_mgz, by: [0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
+//         bold_carpet_svg = qc_plot_carpet(bids_dir, qc_plot_carpet_inputs, bold_preprocess_path, qc_result_path, work_dir)
+//
+//         if (template_space.toString().toUpperCase() != 'NONE') {
+//             qc_plot_bold_to_space_inputs = subject_boldfile_txt_bold_pre_process.join(boldref_file, by: [0,1])
+//             bold_to_mni152_svg = qc_plot_bold_to_space(qc_plot_bold_to_space_inputs, bids_dir, bold_preprocess_path, work_dir, qc_utils_path, qc_result_path, template_space)
+//             norm_to_mni152_svg = qc_plot_norm_to_mni152(norm_norigid_nii, bold_preprocess_path, qc_utils_path, qc_result_path)
+//         } else {
+//             bold_to_mni152_svg = bold_tsnr_svg
+//             norm_to_mni152_svg = bold_tsnr_svg
+//             boldref_file = bold_tsnr_svg
+//         }
+//
+//         qc_bold_create_report_input = subject_id_boldfile_id.groupTuple(sort: true).join(norm_to_mni152_svg).transpose().join(bold_to_mni152_svg, by: [0,1]).join(boldref_file, by: [0,1])
+//         qc_report = qc_bold_create_report(qc_bold_create_report_input, reports_utils_path, bids_dir, subjects_dir, qc_result_path)
+//     }
 }
 
 
