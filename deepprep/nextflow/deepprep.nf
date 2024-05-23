@@ -16,7 +16,7 @@ process process_mriqc {
 
 process anat_get_t1w_file_in_bids {
     cpus 1
-    memory { 500.MB * task.attempt }
+    memory { 500.MB * (task.attempt ** 2) }
 
     errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
     maxRetries 3
@@ -103,10 +103,10 @@ process anat_motioncor {
     tag "${subject_id}"
 
     cpus 1
-    memory { 1.GB * task.attempt }
+    memory { 1.GB * (task.attempt ** 2) }
 
-    errorStrategy { task.exitStatus == 1 ? 'retry' : 'terminate' }
-    maxRetries 2
+    errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
+    maxRetries 3
 
     input:  // https://www.nextflow.io/docs/latest/process.html#inputs
     val(subjects_dir)
@@ -203,6 +203,7 @@ process anat_segment {
     script:
     gpu_script_py = "gpu_schedule_run.py"
     script_py = "${fastsurfer_home}/FastSurferCNN/eval.py"
+    gpu_vram = 7750  // VRAM  MB
 
     seg_deep_mgz = "${subjects_dir}/${subject_id}/mri/aparc.DKTatlas+aseg.deep.mgz"
 
@@ -210,7 +211,7 @@ process anat_segment {
     network_coronal_path = "${fastsurfer_home}/checkpoints/Coronal_Weights_FastSurferCNN/ckpts/Epoch_30_training_state.pkl"
     network_axial_path = "${fastsurfer_home}/checkpoints/Axial_Weights_FastSurferCNN/ckpts/Epoch_30_training_state.pkl"
     """
-    ${gpu_script_py} ${device} double executor ${script_py} \
+    ${gpu_script_py} ${device} ${gpu_vram} executor ${script_py} \
     --in_name ${orig_mgz} \
     --out_name ${seg_deep_mgz} \
     --conformed_name ${subjects_dir}/${subject_id}/mri/conformed.mgz \
@@ -605,9 +606,10 @@ process anat_fastcsr_levelset {
     script:
     gpu_script_py = "gpu_schedule_run.py"
     script_py = "${fastcsr_home}/fastcsr_model_infer.py"
+    gpu_vram = 3150  // VRAM  MB
 
     """
-    ${gpu_script_py} ${device} double executor ${script_py} \
+    ${gpu_script_py} ${device} ${gpu_vram} executor ${script_py} \
     --fastcsr_subjects_dir ${subjects_dir} \
     --subj ${subject_id} \
     --hemi ${hemi} \
@@ -874,9 +876,10 @@ process anat_sphere_register {
     gpu_script_py = "gpu_schedule_run.py"
     script_py = "${surfreg_home}/predict.py"
     threads = 1
+    gpu_vram = 5000  // VRAM  MB
 
     """
-    ${gpu_script_py} ${device} double executor ${script_py} --sd ${subjects_dir} --sid ${subject_id} --fsd ${freesurfer_home} \
+    ${gpu_script_py} ${device} ${gpu_vram} executor ${script_py} --sd ${subjects_dir} --sid ${subject_id} --fsd ${freesurfer_home} \
     --hemi ${hemi} --model_path ${surfreg_model_path} --device ${device}
     """
 }
@@ -1446,7 +1449,7 @@ process bold_pre_process {
 process bold_get_bold_file_in_bids {
 
     cpus 1
-    memory { 500.MB * task.attempt }
+    memory { 500.MB * (task.attempt ** 2) }
 
     errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
     maxRetries 3
@@ -1869,8 +1872,10 @@ process bold_synthmorph_affine {
     gpu_script_py = "gpu_schedule_run.py"
     script_py = "${synthmorph_home}/bold_synthmorph_affine.py"
     synth_script = "${synthmorph_home}/mri_bold_synthmorph.py"
+    gpu_vram = 17550  // VRAM  MB
+
     """
-    ${gpu_script_py} ${device} double executor ${script_py} \
+    ${gpu_script_py} ${device} ${gpu_vram} executor ${script_py} \
     --bold_preprocess_dir ${bold_preprocess_path} \
     --subject_id ${subject_id} \
     --synth_script ${synth_script} \
@@ -1908,8 +1913,9 @@ process bold_synthmorph_norigid {
     gpu_script_py = "gpu_schedule_run.py"
     script_py = "${synthmorph_home}/bold_synthmorph_norigid.py"
     synth_script = "${synthmorph_home}/mri_bold_synthmorph.py"
+    gpu_vram = 22202  // VRAM  MB
     """
-    ${gpu_script_py} ${device} double executor ${script_py} \
+    ${gpu_script_py} ${device} ${gpu_vram} executor ${script_py} \
     --bold_preprocess_dir ${bold_preprocess_path} \
     --subject_id ${subject_id} \
     --synth_script ${synth_script} \
@@ -1949,8 +1955,9 @@ process bold_synthmorph_joint {
     gpu_script_py = "gpu_schedule_run.py"
     script_py = "${synthmorph_home}/bold_synthmorph_joint.py"
     synth_script = "${synthmorph_home}/mri_synthmorph_joint.py"
+    gpu_vram = 22954  // VRAM  MB
     """
-    ${gpu_script_py} ${device} double executor ${script_py} \
+    ${gpu_script_py} ${device} ${gpu_vram} executor ${script_py} \
     --bold_preprocess_dir ${bold_preprocess_path} \
     --subject_id ${subject_id} \
     --synth_script ${synth_script} \
@@ -2025,8 +2032,9 @@ process bold_synthmorph_norigid_apply {
     script_py = "${synthmorph_home}/bold_synthmorph_apply.py"
     synth_script = "${synthmorph_home}/mri_bold_apply_synthmorph.py"
     transform_dir = "${work_dir}/bold_synthmorph_norigid_apply/${bold_id}/transform"
+    gpu_vram = 8660  // VRAM  MB
     """
-    ${gpu_script_py} ${device} double executor ${script_py} \
+    ${gpu_script_py} ${device} ${gpu_vram} executor ${script_py} \
     --bids_dir ${bids_dir} \
     --bold_preprocess_dir ${bold_preprocess_path} \
     --upsampled_dir ${upsampled_dir} \
@@ -2078,7 +2086,10 @@ process bold_transform_chain {
     tag "${bold_id}"
 
     cpus 10
-    memory '20 GB'
+    memory { 10.GB * task.attempt }
+
+    errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
+    maxRetries 3
 
     input:
     val(bids_dir)
