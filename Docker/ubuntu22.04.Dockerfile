@@ -3,19 +3,22 @@
 ## Start from this Docker image
 FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
 
+ARG DEBIAN_FRONTEND=noninteractive
+
 ## Install * in Docker image
 RUN apt-get update && apt-get upgrade -y && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Python
-RUN apt-get update && apt-get --no-install-recommends -y install wget curl vim git python3 python3-pip python3-dev python2 rsync && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN apt-get update && apt-get --no-install-recommends -y install wget curl vim git python3 python3-pip python3-dev python2 rsync build-essential && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install time zone
 ENV TZ=Etc/UTC
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends -y install tzdata && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN apt-get update && apt-get --no-install-recommends -y install tzdata && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+# FreeSurfer
+RUN apt-get update && apt-get --no-install-recommends -y install software-properties-common bc binutils libgomp1 perl psmisc sudo tar tcsh unzip uuid-dev vim-common libglu1-mesa && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 RUN apt-get update && \
-    # FreeSurfer
-    apt-get --no-install-recommends -y install software-properties-common bc binutils libgomp1 perl psmisc sudo tar tcsh unzip uuid-dev vim-common libglu1-mesa \
+    apt-get --no-install-recommends -y install \
     # wand for svg
     libmagickwand-dev \
     # tksurfer
@@ -52,15 +55,15 @@ RUN --mount=type=cache,target=/root/.cache \
     # SUGAR torch-geometric <= 2.2.0
     torch-geometric==2.2.0 \
     nnunet==1.7.1 \
-    bids==0.0 nipype==1.8.6 niworkflows==1.10.0 SimpleITK==2.3.0 nitime==0.10.1 \
+    bids==0.0 nipype==1.8.6 niworkflows==1.10.0 matplotlib==3.8.4 SimpleITK==2.3.0 nitime==0.10.1 \
     git+https://github.com/NingAnMe/fmriprep.git@deepprep smriprep==0.13.2 sdcflows scipy==1.11.4 \
     git+https://github.com/Deep-MI/LaPy.git@v1.0.1 \
-    git+https://github.com/voxelmorph/voxelmorph.git@9d5e429084c33e07bd9ab41d6cb9beab8d4be62b \
+    git+https://github.com/voxelmorph/voxelmorph.git@ca28315d0ba24cd8946ac4f6ed081e049e5264fe \
     git+https://github.com/NingAnMe/mriqc.git@deepprep \
     # CUDA
     tensorrt==8.6.1 onnxruntime==1.16.3 cuda-python==12.3.0 \
     # SynthMorph
-    git+https://github.com/adalca/neurite \
+    git+https://github.com/adalca/neurite@682f828b7b5fa652d7205c894c7fe667f1a26251 surfa==0.6.0 \
     --trusted-host 30.30.30.204 -f http://30.30.30.204/cp310_whl \
     && pip3 cache purge && rm -rf /tmp/* /var/tmp/*
 
@@ -140,6 +143,9 @@ RUN apt-get update && apt-get --no-install-recommends -y install libxpm-dev libx
 #COPY --from=freesurfer/synthstrip@sha256:f19578e5f033f2c707fa66efc8b3e11440569facb46e904b45fd52f1a12beb8b /freesurfer/models/synthstrip.1.pt /opt/freesurfer/models/synthstrip.1.pt
 RUN mkdir ${FREESURFER_HOME}/models && wget --content-disposition -P ${FREESURFER_HOME}/models http://30.30.30.204/model/SynthStrip/synthstrip.1.pt  # synthstrip.1.pt
 
+### matplotlib
+RUN pip3 install matplotlib==3.8.4  && pip3 cache purge && rm -rf /tmp/* /var/tmp/*
+
 ### default template
 ENV TEMPLATEFLOW_HOME=/opt/TemplateFlow
 RUN python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin6Asym', desc=None, resolution=2, suffix='T1w', extension='nii.gz')"
@@ -147,7 +153,9 @@ RUN python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin2009cAsym
 RUN python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin2009cAsym', desc='fMRIPrep', resolution=2, suffix='boldref', extension='nii.gz')"
 RUN python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin2009cAsym', label='brain', resolution=1, suffix='probseg', extension='nii.gz')"
 
-COPY deepprep/model /opt/DeepPrep/deepprep/model
+COPY deepprep/model/FastCSR /opt/DeepPrep/deepprep/model/FastCSR
+COPY deepprep/model/SUGAR /opt/DeepPrep/deepprep/model/SUGAR
+COPY deepprep/model/SynthMorph /opt/DeepPrep/deepprep/model/SynthMorph
 COPY deepprep/FastCSR /opt/DeepPrep/deepprep/FastCSR
 COPY deepprep/SUGAR /opt/DeepPrep/deepprep/SUGAR
 COPY deepprep/FastSurfer /opt/DeepPrep/deepprep/FastSurfer
