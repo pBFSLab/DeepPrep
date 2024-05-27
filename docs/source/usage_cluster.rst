@@ -57,7 +57,7 @@ Download the DeepPrep sif image from Google Drive
 
     $ gdown <file_id_of_sif_file_in_Google_Drive>
 
-Then you will get: ``<shared_storage_path>/deepprep_23.1.0.sif``
+Then you will get: ``<shared_storage_path>/deepprep_24.1.0.sif``
 
 
 
@@ -72,10 +72,10 @@ Download the DeepPrep image from the DockerHub
 
 .. code-block:: none
 
-    $ docker pull pbfslab/deepprep:23.1.0
+    $ docker pull pbfslab/deepprep:24.1.0
 
 
-When its done, you will find the Docker image by this command ``docker image ls``, the ``REPOSITORY`` is ``pbfslab/deepprep`` with a ``TAG: 23.1.0``.
+When its done, you will find the Docker image by this command ``docker image ls``, the ``REPOSITORY`` is ``pbfslab/deepprep`` with a ``TAG: 24.1.0``.
 
 
 
@@ -248,7 +248,7 @@ Pass *absolute paths* to avoid any mistakes.
     --deepprep_home ${TEST_DIR}/DeepPrep \
     --fs_license_file ${FS_LICENSE} \
     --executor cluster \
-    --container ${TEST_DIR}/deepprep_23.1.0.sif \
+    --container ${TEST_DIR}/deepprep_24.1.0.sif \
     --config_file ${TEST_DIR}/deepprep.slurm.gpu.config
 
 **Add the following arguments to execute on clusters**
@@ -256,7 +256,7 @@ Pass *absolute paths* to avoid any mistakes.
 .. code-block:: none
 
     --executor cluster
-    --container ${TEST_DIR}/deepprep_23.1.0.sif
+    --container ${TEST_DIR}/deepprep_24.1.0.sif
     --config_file ${TEST_DIR}/deepprep.slurm.gpu.config
 
 
@@ -324,7 +324,7 @@ Shown as below:
     --deepprep_home ${TEST_DIR}/DeepPrep \
     --fs_license_file ${FS_LICENSE} \
     --executor cluster \
-    --container ${TEST_DIR}/deepprep_23.1.0.sif \
+    --container ${TEST_DIR}/deepprep_24.1.0.sif \
     --config_file ${TEST_DIR}/deepprep.slurm.cpu.config \
     --device cpu
 
@@ -347,16 +347,16 @@ SLURM
 .. code-block:: none
 
     export TEST_DIR=<test_dir>
-    ${TEST_DIR}/DeepPrep_2310/deepprep/deepprep.sh \
+    ${TEST_DIR}/DeepPrep_2410/deepprep/deepprep.sh \
     ${TEST_DIR}/test_sample \
-    ${TEST_DIR}/test_sample_DeepPrep_2310_cpu \
+    ${TEST_DIR}/test_sample_DeepPrep_2410_cpu \
     participant \
     --bold_task_type rest \
-    --deepprep_home ${TEST_DIR}/DeepPrep_2310 \
-    --fs_license_file ${TEST_DIR}/DeepPrep_2310/license.txt \
+    --deepprep_home ${TEST_DIR}/DeepPrep_2410 \
+    --fs_license_file ${TEST_DIR}/DeepPrep_2410/license.txt \
     --executor cluster \
-    --container ${TEST_DIR}/deepprep_23.1.0.sif \
-    --config_file ${TEST_DIR}/DeepPrep_2310/deepprep.slurm.cpu.config \
+    --container ${TEST_DIR}/deepprep_24.1.0.sif \
+    --config_file ${TEST_DIR}/DeepPrep_2410/deepprep.slurm.cpu.config \
     --device cpu \
     --debug \
     --resume
@@ -396,16 +396,16 @@ SLURM
 .. code-block:: none
 
     export TEST_DIR=<test_dir>
-    ${TEST_DIR}/DeepPrep_2310/deepprep/deepprep.sh \
+    ${TEST_DIR}/DeepPrep_2410/deepprep/deepprep.sh \
     ${TEST_DIR}/test_sample \
-    ${TEST_DIR}/test_sample_DeepPrep_2310_gpu \
+    ${TEST_DIR}/test_sample_DeepPrep_2410_gpu \
     participant \
     --bold_task_type rest \
-    --deepprep_home ${TEST_DIR}/DeepPrep_2310 \
-    --fs_license_file ${TEST_DIR}/DeepPrep_2310/license.txt \
+    --deepprep_home ${TEST_DIR}/DeepPrep_2410 \
+    --fs_license_file ${TEST_DIR}/DeepPrep_2410/license.txt \
     --executor cluster \
-    --container ${TEST_DIR}/deepprep_23.1.0.sif \
-    --config_file ${TEST_DIR}/DeepPrep_2310/deepprep.slurm.gpu.config \
+    --container ${TEST_DIR}/deepprep_24.1.0.sif \
+    --config_file ${TEST_DIR}/DeepPrep_2410/deepprep.slurm.gpu.config \
     --debug \
     --resume
 
@@ -453,16 +453,16 @@ PBS
 .. code-block:: none
 
     export TEST_DIR=<test_dir>
-    ${TEST_DIR}/DeepPrep_2310/deepprep/deepprep.sh \
+    ${TEST_DIR}/DeepPrep_2410/deepprep/deepprep.sh \
     ${TEST_DIR}/test_sample \
-    ${TEST_DIR}/test_sample_DeepPrep_2310_cpu \
+    ${TEST_DIR}/test_sample_DeepPrep_2410_cpu \
     participant \
     --bold_task_type rest \
-    --deepprep_home ${TEST_DIR}/DeepPrep_2310 \
-    --fs_license_file ${TEST_DIR}/DeepPrep_2310/license.txt \
+    --deepprep_home ${TEST_DIR}/DeepPrep_2410 \
+    --fs_license_file ${TEST_DIR}/DeepPrep_2410/license.txt \
     --executor cluster \
-    --container ${TEST_DIR}/deepprep_23.1.0.sif \
-    --config_file ${TEST_DIR}/DeepPrep_2310/deepprep.pbs.cpu.config \
+    --container ${TEST_DIR}/deepprep_24.1.0.sif \
+    --config_file ${TEST_DIR}/DeepPrep_2410/deepprep.pbs.cpu.config \
     --device cpu \
     --debug \
     --resume
@@ -503,16 +503,16 @@ PBS
 .. code-block:: none
 
     export TEST_DIR=<test_dir>
-    ${TEST_DIR}/DeepPrep_2310/deepprep/deepprep.sh \
+    ${TEST_DIR}/DeepPrep_2410/deepprep/deepprep.sh \
     ${TEST_DIR}/test_sample \
-    ${TEST_DIR}/test_sample_DeepPrep_2310_gpu \
+    ${TEST_DIR}/test_sample_DeepPrep_2410_gpu \
     participant \
     --bold_task_type rest \
-    --deepprep_home ${TEST_DIR}/DeepPrep_2310 \
-    --fs_license_file ${TEST_DIR}/DeepPrep_2310/license.txt \
+    --deepprep_home ${TEST_DIR}/DeepPrep_2410 \
+    --fs_license_file ${TEST_DIR}/DeepPrep_2410/license.txt \
     --executor cluster \
-    --container ${TEST_DIR}/deepprep_23.1.0.sif \
-    --config_file ${TEST_DIR}/DeepPrep_2310/deepprep.pbs.gpu.config \
+    --container ${TEST_DIR}/deepprep_24.1.0.sif \
+    --config_file ${TEST_DIR}/DeepPrep_2410/deepprep.pbs.gpu.config \
     --device auto \
     --debug \
     --resume
