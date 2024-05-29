@@ -27,11 +27,13 @@ if __name__ == '__main__':
     print(f'INFO: sys.argv : {sys.argv}')
     run_count = 'one'
     if gpu:
-        memory_required = 11000
-        gpu_available, info, gpu_memory = check_gpus(11.8, memory_required)
+        pipeline_memory_required = 23250
+        gpu_available, info, gpu_memory = check_gpus(11.8, pipeline_memory_required)
         if not gpu_available:
             raise ImportError(info)
-        if gpu_memory > memory_required * 2:
+
+        process_memory_required = int(sys.argv[2])
+        if gpu_memory > process_memory_required * 2:
             run_count = 'two'
     assert os.path.exists(sys.argv[4]), f"{sys.argv[4]}"
 
