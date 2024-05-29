@@ -18,16 +18,16 @@ import os
 
 
 def anat2bold_t1w(aseg_mgz: str, brainmask_mgz: str, bold_space_t1w_file: str,
-                  aseg: Path, wm: Path, vent: Path, csf: Path, mask: Path, binmask: Path
+                  aseg, wm, vent, csf, brainmask, brainmask_bin
                   ):
 
     cmd = f'mri_convert -rl {bold_space_t1w_file} {aseg_mgz} {aseg}'
     os.system(cmd)
     assert os.path.exists(aseg)
 
-    cmd = f'mri_convert -rl {bold_space_t1w_file} {brainmask_mgz} {mask}'
+    cmd = f'mri_convert -rl {bold_space_t1w_file} {brainmask_mgz} {brainmask}'
     os.system(cmd)
-    assert os.path.exists(mask)
+    assert os.path.exists(brainmask)
 
     shargs = [
         '--i', aseg,
@@ -53,11 +53,11 @@ def anat2bold_t1w(aseg_mgz: str, brainmask_mgz: str, bold_space_t1w_file: str,
     assert os.path.exists(vent)
 
     shargs = [
-        '--i', mask,
-        '--o', binmask,
+        '--i', brainmask,
+        '--o', brainmask_bin,
         '--min', '0.0001']
     os.system('mri_binarize ' + ' '.join(shargs))
-    assert os.path.exists(binmask)
+    assert os.path.exists(brainmask_bin)
 
 
 def anat2bold_by_bbregister(subj_func_dir: Path, mc: Path, bbregister_dat: Path, subjects_dir: Path, subject_id: str):
