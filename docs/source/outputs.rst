@@ -115,7 +115,8 @@ The main outputs of the preprocessed data include:
 
  sub-<subject_label>/
  ├── func/
-     ├── sub-<subject_label>_task-<task_label>_run-<run_idx>_desc-confounds_timeseries.txt
+     ├── sub-<subject_label>_task-<task_label>_run-<run_idx>_desc-confounds_timeseries.json
+     ├── sub-<subject_label>_task-<task_label>_run-<run_idx>_desc-confounds_timeseries.tsv
 
 *Surface outputs*: ::
 
