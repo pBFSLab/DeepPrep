@@ -30,7 +30,7 @@ def update_config(bids_dir, bold_preprocess_dir, work_dir, fs_license_file, fs_s
     config.execution.fs_subjects_dir = fs_subjects_dir
     config.execution.output_dir = bold_preprocess_dir
     config.execution.output_spaces = spaces
-    config.execution.participant_label = [ subject_id,]
+    config.execution.participant_label = [subject_id,]
     config.execution.task_id = task_id
     config.execution.templateflow_home = templateflow_home
     config.execution.work_dir = work_dir
