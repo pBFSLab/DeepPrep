@@ -1932,9 +1932,9 @@ process bold_synthmorph_joint {
     // 22954
     tag "${subject_id}"
 
-    cpus 4
+    cpus 8
     label "with_gpu"
-    memory '19 GB'
+    memory '11.5 GB'
 
     input:
     val(subjects_dir)
@@ -1955,7 +1955,7 @@ process bold_synthmorph_joint {
     gpu_script_py = "gpu_schedule_run.py"
     script_py = "${synthmorph_home}/bold_synthmorph_joint.py"
     synth_script = "${synthmorph_home}/mri_synthmorph_joint.py"
-    gpu_vram = 22954  // VRAM  MB
+    gpu_vram = 18000  // VRAM  MB
     """
     ${gpu_script_py} ${device} ${gpu_vram} executor ${script_py} \
     --bold_preprocess_dir ${bold_preprocess_path} \
