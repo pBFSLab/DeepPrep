@@ -145,6 +145,7 @@ if __name__ == '__main__':
     parser.add_argument("--bids_dir", required=True)
     parser.add_argument("--bold_preprocess_dir", required=True)
     parser.add_argument("--work_dir", required=True)
+    parser.add_argument("--subject_id", required=True)
     parser.add_argument("--bold_id", required=True)
     parser.add_argument("--bold_file", required=True)
     parser.add_argument("--aseg_mgz", required=True)
@@ -164,9 +165,7 @@ if __name__ == '__main__':
     """
 
     tmp_path = Path(args.work_dir)
-    confounds_dir_path = tmp_path / 'confounds' / args.bold_id
     anat2bold_t1w_dir = tmp_path / 'anat2bold_t1w' / args.bold_id
-    confounds_dir_path.mkdir(parents=True, exist_ok=True)
     anat2bold_t1w_dir.mkdir(parents=True, exist_ok=True)
 
     aseg = anat2bold_t1w_dir / 'label-aseg_probseg.nii.gz'
@@ -187,9 +186,9 @@ if __name__ == '__main__':
     anat2bold_t1w(args.aseg_mgz, args.brainmask_mgz, str(boldref_space_t1w_file.path),
                   str(aseg), str(wm), str(vent), str(csf), str(brainmask), str(brainmask_bin))
 
-    output_dir = os.path.join(args.work_dir, os.path.dirname(boldref_space_t1w_file.relpath))
+    output_dir = os.path.join(args.work_dir, args.subject_id, 'confounds')
     os.makedirs(output_dir, exist_ok=True)
-    confounds_file = Path(output_dir) / args.bold_id.replace('_bold', '_desc-confounds_timeseries.tsv')
+    confounds_file = Path(output_dir, 'confounds_part1.tsv')
     compile_regressors(str(bold_space_t1w_file.path),
                        brainmask_bin, wm, vent, csf,
                        confounds_file)
