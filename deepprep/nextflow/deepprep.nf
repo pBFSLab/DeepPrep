@@ -1405,7 +1405,7 @@ process bold_pre_process {
     tag "${bold_id}"
 
     cpus 4
-    memory '4.5 GB'
+    memory '5 GB'
 
     input:
     val(bids_dir)
@@ -2086,7 +2086,7 @@ process bold_transform_chain {
     tag "${bold_id}"
 
     cpus 10
-    memory { 10.GB * task.attempt }
+    memory { 4.GB * task.attempt }
 
     errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
     maxRetries 3
@@ -2156,7 +2156,7 @@ process bold_confounds_part1 {
     tag "${bold_id}"
 
     cpus 4
-    memory '7 GB'
+    memory '5 GB'
 
     input:
     val(bids_dir)
@@ -2187,7 +2187,7 @@ process bold_confounds_part2 {
     tag "${subject_id}"
 
     cpus 3
-    memory '7 GB'
+    memory '5 GB'
 
     input:
     val(bids_dir)
