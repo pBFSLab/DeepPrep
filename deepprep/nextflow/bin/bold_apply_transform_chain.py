@@ -37,7 +37,10 @@ def itk_to_3x3(itk):
     translation = itk[:3, -1:]
     return matrix, translation
 
-def apply_hmc_pool(frame, warped_mesh_frame, matrix_frame, ras2vox_A, ras2vox_b, bold_orig_values, fixed, bold_orig_header, transform_save_path):
+def apply_hmc_pool(frame, warped_mesh_frame, matrix_frame, ras2vox_A, ras2vox_b, bold_orig, fixed, bold_orig_header, transform_save_path):
+    # bold_orig = nib.load(bold_file)
+    bold_orig_values = bold_orig.slicer[..., frame:frame+1].get_fdata()[..., 0]
+
     hmc_A, hmc_b = itk_to_3x3(matrix_frame)
     warped_mesh_frame = hmc_A @ warped_mesh_frame + hmc_b
 
@@ -171,14 +174,12 @@ if __name__ == '__main__':
 
     bold_orig = nib.load(bold_file)
     bold_orig_header = bold_orig.header.copy()
-    bold_orig_values = bold_orig.get_fdata()
     ras2vox_bold = np.linalg.inv(bold_orig.affine)
     ras2vox_A, ras2vox_b = itk_to_3x3(ras2vox_bold)
 
     args_apply_hmc = []
     for i in range(matrix.shape[0]):
-        args_apply_hmc.append([i, warped_mesh, matrix[i], ras2vox_A, ras2vox_b, bold_orig_values[..., i], fixed, bold_orig_header, transform_save_path])
-
+        args_apply_hmc.append([int(i), warped_mesh, matrix[i], ras2vox_A, ras2vox_b, bold_orig, fixed, bold_orig_header, transform_save_path])
     pool = Pool(10)
     pool.starmap(apply_hmc_pool, args_apply_hmc)
     pool.close()
@@ -189,4 +190,3 @@ if __name__ == '__main__':
     # check the output file has correct number of frames
     concat_bold = nib.load(output_path)
     assert concat_bold.shape[-1] == bold_orig.shape[-1]
-

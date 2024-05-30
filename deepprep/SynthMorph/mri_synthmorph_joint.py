@@ -12,7 +12,7 @@ import nibabel as nib
 default = {
     'model': 'joint',
     'hyper': 0.5,
-    'extent': 256,
+    'extent': 192,
     'steps': 7,
 }
 choices = {

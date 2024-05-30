@@ -1405,7 +1405,7 @@ process bold_pre_process {
     tag "${bold_id}"
 
     cpus 4
-    memory '4.5 GB'
+    memory '5 GB'
 
     input:
     val(bids_dir)
@@ -1932,9 +1932,9 @@ process bold_synthmorph_joint {
     // 22954
     tag "${subject_id}"
 
-    cpus 4
+    cpus 8
     label "with_gpu"
-    memory '19 GB'
+    memory '11.5 GB'
 
     input:
     val(subjects_dir)
@@ -1955,7 +1955,7 @@ process bold_synthmorph_joint {
     gpu_script_py = "gpu_schedule_run.py"
     script_py = "${synthmorph_home}/bold_synthmorph_joint.py"
     synth_script = "${synthmorph_home}/mri_synthmorph_joint.py"
-    gpu_vram = 22954  // VRAM  MB
+    gpu_vram = 18000  // VRAM  MB
     """
     ${gpu_script_py} ${device} ${gpu_vram} executor ${script_py} \
     --bold_preprocess_dir ${bold_preprocess_path} \
@@ -2086,7 +2086,7 @@ process bold_transform_chain {
     tag "${bold_id}"
 
     cpus 10
-    memory { 10.GB * task.attempt }
+    memory { 4.GB * task.attempt }
 
     errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
     maxRetries 3
@@ -2156,7 +2156,7 @@ process bold_confounds_part1 {
     tag "${bold_id}"
 
     cpus 4
-    memory '7 GB'
+    memory '5 GB'
 
     input:
     val(bids_dir)
@@ -2187,7 +2187,7 @@ process bold_confounds_part2 {
     tag "${subject_id}"
 
     cpus 3
-    memory '7 GB'
+    memory '5 GB'
 
     input:
     val(bids_dir)
