@@ -2152,7 +2152,7 @@ process bold_mkbrainmask {
 }
 
 
-process bold_confounds {
+process bold_confounds_part1 {
     tag "${bold_id}"
 
     cpus 4
@@ -2165,16 +2165,17 @@ process bold_confounds {
     tuple(val(subject_id), val(bold_id), val(aseg_mgz), val(mask_mgz), path(subject_boldfile_txt))
 
     output:
-    tuple(val(subject_id), val(bold_id), val("${bold_id}_desc-confounds_timeseries.txt")) // emit: bold_confounds_view
+    tuple(val(subject_id), val(bold_id), val("confounds_part1.tsv")) // emit: bold_confounds_view
 
     script:
-    script_py = "bold_confounds.py"
+    script_py = "bold_confounds_part1.py"
 
     """
     ${script_py} \
     --bids_dir ${bids_dir} \
     --bold_preprocess_dir ${bold_preprocess_path} \
-    --work_dir ${work_dir}/bold_confounds \
+    --work_dir ${work_dir} \
+    --subject_id ${subject_id} \
     --bold_id ${bold_id} \
     --bold_file ${subject_boldfile_txt} \
     --aseg_mgz ${aseg_mgz} \
@@ -2182,7 +2183,7 @@ process bold_confounds {
     """
 }
 
-process bold_confounds_v2 {
+process bold_confounds_part2 {
     tag "${subject_id}"
 
     cpus 3
@@ -2195,10 +2196,10 @@ process bold_confounds_v2 {
     tuple(val(subject_id), val(bold_id), val(wm_probseg_nii), val(gm_probseg_nii), val(csf_probseg_nii), val(mask_nii), val(aseg), val(brainmask), val(subject_boldfile_txt))
 
     output:
-    tuple(val(subject_id), val(bold_id), val("${bold_id}_desc-confounds_timeseries.txt")) // emit: bold_confounds_view
+    tuple(val(subject_id), val(bold_id), val("${bold_id}_desc-confounds_timeseries.tsv")) // emit: bold_confounds_view
 
     script:
-    script_py = "bold_confounds_v2.py"
+    script_py = "bold_confounds_part2.py"
 
     """
     ${script_py} \
@@ -2212,11 +2213,39 @@ process bold_confounds_v2 {
     --t1w_tpms_GM ${gm_probseg_nii} \
     --t1w_tpms_WM ${wm_probseg_nii} \
     --mask_nii ${mask_nii} \
-    --aseg ${aseg} \
-    --brainmask ${brainmask}
     """
 }
 
+process bold_confounds_combine {
+    tag "${bold_id}"
+
+    cpus 4
+    memory '7 GB'
+
+    input:
+    val(bids_dir)
+    val(bold_preprocess_path)
+    val(work_dir)
+    tuple(val(subject_id), val(bold_id), val(confounds_part1), val(confounds_part2), path(subject_boldfile_txt))
+
+    output:
+    tuple(val(subject_id), val(bold_id), val("${bold_id}_desc-confounds_timeseries.tsv")) // emit: bold_confounds_view
+
+    script:
+    script_py = "bold_confounds_combine.py"
+
+    """
+    ${script_py} \
+    --bids_dir ${bids_dir} \
+    --bold_preprocess_dir ${bold_preprocess_path} \
+    --work_dir ${work_dir} \
+    --subject_id ${subject_id} \
+    --bold_id ${bold_id} \
+    --bold_file ${subject_boldfile_txt} \
+    --confounds_part1 ${confounds_part1} \
+    --confounds_part2 ${confounds_part2}
+    """
+}
 
 process qc_plot_tsnr {
     tag "${bold_id}"
@@ -2916,13 +2945,13 @@ workflow bold_wf {
     }
     subject_boldfile_txt_bold_pre_process = bold_pre_process(bids_dir, subjects_dir, bold_preprocess_path, work_dir, bold_spaces, bold_pre_process_input, fs_license_file, bold_sdc, templateflow_home, qc_result_path)
 
-//     if (do_bold_confounds == 'TRUE') {
-//         bold_confounds_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(aseg_mgz).join(mask_mgz, by: [0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
-//         subject_boldfile_txt_bold_confounds = bold_confounds(bids_dir, bold_preprocess_path, work_dir, bold_confounds_inputs)
-//     }
     if (do_bold_confounds == 'TRUE') {
-        bold_confounds_v2_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(wm_probseg_nii, by: [0]).join(gm_probseg_nii, by: [0]).join(csf_probseg_nii, by: [0]).join(mask_nii, by: [0]).join(aseg_mgz, by: [0]).join(mask_mgz, by:[0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
-        subject_boldfile_txt_bold_confounds = bold_confounds_v2(bids_dir, bold_preprocess_path, work_dir, bold_confounds_v2_inputs)
+        bold_confounds_part1_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(aseg_mgz).join(mask_mgz, by: [0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
+        confounds_part1_done = bold_confounds_part1(bids_dir, bold_preprocess_path, work_dir, bold_confounds_part1_inputs)
+        bold_confounds_part2_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(wm_probseg_nii, by: [0]).join(gm_probseg_nii, by: [0]).join(csf_probseg_nii, by: [0]).join(mask_nii, by: [0]).join(aseg_mgz, by: [0]).join(mask_mgz, by:[0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
+        confounds_part2_done = bold_confounds_part2(bids_dir, bold_preprocess_path, work_dir, bold_confounds_part2_inputs)
+        bold_confounds_combine_inputs = subject_id_boldfile_id.groupTuple(sort: true).transpose().join(confounds_part1_done, by: [0,1]).join(confounds_part2_done, by: [0,1]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
+        bold_confounds_combine(bids_dir, bold_preprocess_path, work_dir, bold_confounds_combine_inputs)
     }
 
     output_std_volume_spaces = 'TRUE'
