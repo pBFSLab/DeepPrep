@@ -70,6 +70,13 @@ if __name__ == '__main__':
 
     df1 = pd.read_csv(confounds_part1, sep='\t')
     df2 = pd.read_csv(confounds_file, sep='\t')
-    df = pd.concat((df2, df1), axis=1)
+    cols_replace = ['csf', 'csf_derivative1', 'csf_wm', 'csf_wm_derivative1']
+    cols_concat = [f'e_comp_cor_{str(i).zfill(2)}' for i in range(10)]
+    for c in cols_replace:
+        if c in df1.columns:
+            df1[c] = df2[c]
+        else:
+            cols_concat = [c] + cols_concat
+    df = pd.concat((df2, df1[cols_concat]), axis=1)
     df.to_csv(confounds_file, sep='\t', index=False)
 
