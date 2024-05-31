@@ -153,15 +153,18 @@ RUN python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin2009cAsym
 RUN python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin2009cAsym', desc='fMRIPrep', resolution=2, suffix='boldref', extension='nii.gz')"
 RUN python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin2009cAsym', label='brain', resolution=1, suffix='probseg', extension='nii.gz')"
 
-COPY deepprep/model/FastCSR /opt/DeepPrep/deepprep/model/FastCSR
-COPY deepprep/model/SUGAR /opt/DeepPrep/deepprep/model/SUGAR
-COPY deepprep/model/SynthMorph /opt/DeepPrep/deepprep/model/SynthMorph
-COPY deepprep/FastCSR /opt/DeepPrep/deepprep/FastCSR
-COPY deepprep/SUGAR /opt/DeepPrep/deepprep/SUGAR
-COPY deepprep/FastSurfer /opt/DeepPrep/deepprep/FastSurfer
-COPY deepprep/SynthMorph /opt/DeepPrep/deepprep/SynthMorph
-COPY deepprep/nextflow /opt/DeepPrep/deepprep/nextflow
-COPY deepprep/deepprep.sh /opt/DeepPrep/deepprep/deepprep.sh
+COPY deepprep/model/FastCSR /opt/model/FastCSR
+COPY deepprep/model/SUGAR /opt/model/SUGAR
+COPY deepprep/model/SynthMorph /opt/model/SynthMorph
+#COPY deepprep/FastCSR /opt/DeepPrep/deepprep/FastCSR
+#COPY deepprep/SUGAR /opt/DeepPrep/deepprep/SUGAR
+#COPY deepprep/FastSurfer /opt/DeepPrep/deepprep/FastSurfer
+#COPY deepprep/SynthMorph /opt/DeepPrep/deepprep/SynthMorph
+#COPY deepprep/nextflow /opt/DeepPrep/deepprep/nextflow
+#COPY deepprep/deepprep.sh /opt/DeepPrep/deepprep/deepprep.sh
+ENV DEEPPREP_VERSION="24.1.0"
+ENV DEEPPREP_HASH="ec0f034"
+RUN git clone --recursive --single-branch -b ${DEEPPREP_VERSION} https://github.com/pBFSLab/DeepPrep.git /opt/DeepPrep && cd /opt/DeepPrep && git checkout ${DEEPPREP_HASH}
 RUN chmod 755 /opt/DeepPrep/deepprep/deepprep.sh && chmod 755 /opt/DeepPrep/deepprep/nextflow/bin/*.py
 ENV PATH="/opt/DeepPrep/deepprep/nextflow/bin:${PATH}"
 
