@@ -16,6 +16,8 @@ def cmd(subject_id: str, subj_func_dir: Path, T1_file, norm_file):
         sh.mri_convert('-ds', 2, 2, 2,
                        '-i', norm_file,
                        '-o', norm_fsnative2mm_file)
+    assert os.path.exists(T1_fsnative2mm_file), f"{T1_fsnative2mm_file}"
+    assert os.path.exists(norm_fsnative2mm_file), f"{norm_fsnative2mm_file}"
 
 
 if __name__ == '__main__':
