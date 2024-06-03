@@ -131,7 +131,7 @@ if __name__ == '__main__':
 
     # The required input confound files were generated in <process:bold_pre_process>, and copied to <confounds_dir>.
     # If there's any missing file under <confounds_dir>, please go to <process:bold_pre_process> and double check if its original path exists.
-    confounds_dir = Path(args.work_dir) / args.subject_id / 'confounds'
+    confounds_dir = Path(args.work_dir) / 'confounds' / args.subject_id
     bold_file = [args.bold_file]
     boldresampled = confounds_dir / f'{args.bold_id}_boldresampled.nii.gz'
     bold_mask = confounds_dir / f'{args.bold_id}_bold_average_corrected_brain_mask_maths.nii.gz'
