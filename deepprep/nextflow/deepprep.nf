@@ -72,7 +72,8 @@ process anat_create_summary {
     --template_space "NONE" \
     --qc_result_path ${qc_result_path} \
     --deepprep_version ${deepprep_version} \
-    --nextflow_log ${work_dir}/nextflow/.nextflow.log
+    --nextflow_log ${work_dir}/nextflow/.nextflow.log \
+    --workdir ${work_dir}/anat_create_summary
     """
 
 }
@@ -1519,7 +1520,8 @@ process bold_create_summary {
     --template_space ${template_space} \
     --qc_result_path ${qc_result_path} \
     --deepprep_version ${deepprep_version} \
-    --nextflow_log ${work_dir}/nextflow/.nextflow.log
+    --nextflow_log ${work_dir}/nextflow/.nextflow.log \
+    --workdir ${work_dir}/bold_create_summary
     """
 
 }
