@@ -66,8 +66,8 @@ if __name__ == '__main__':
     cols_replace = ['csf', 'csf_derivative1', 'csf_wm']
     cols_concat = [f'e_comp_cor_{str(i).zfill(2)}' for i in range(10)]
     for c in cols_replace:
-        if c in df1.columns:
-            df1[c] = df2[c]
+        if c in df2.columns:
+            df2[c] = df1[c]
         else:
             cols_concat = [c] + cols_concat
     df = pd.concat((df2, df1[cols_concat]), axis=1)
