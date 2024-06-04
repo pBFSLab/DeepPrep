@@ -89,10 +89,10 @@ def bold_confounds_v2(bold_preprocess_dir, bold, bold_mask, movpar_file, rmsd_fi
     workflow.connect([
         (bold_confounds_wf, ds_confounds, [
             ('outputnode.confounds_file', 'in_file'),
+            ('outputnode.confounds_metadata', 'meta_dict'),
         ]),
     ])
     workflow.run()
-
 
 
 if __name__ == '__main__':
@@ -126,6 +126,7 @@ if __name__ == '__main__':
     --mask_nii: ~/output/BOLD/sub-001/anat/sub-001_desc-brain_mask.nii.gz
     
     outputs:
+    meta_dict: ~/output/BOLD/sub-001/ses-01/func/sub-001-01_task-rest_run-01_desc-confounds_timeseries.json
     meta_dict: ~/output/BOLD/sub-001/ses-01/func/sub-001-01_task-rest_run-01_desc-confounds_timeseries.tsv
     """
 
