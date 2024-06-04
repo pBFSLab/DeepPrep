@@ -9,7 +9,9 @@ from gpu_manage import GPUManager, check_gpus
 
 
 if __name__ == '__main__':
-    print(f'INFO: Device: {sys.argv[1]}')
+    print(f'INFO: Device select strategy: {sys.argv[1]}')
+    pipeline_min_gpu_memory_required = 11000
+    cuda_version_min = 11.8
 
     if sys.argv[1].isdigit():
         check_gpus()
@@ -17,22 +19,30 @@ if __name__ == '__main__':
     elif sys.argv[1].lower() == 'cpu':
         gpu = ''
     else:
-        check_gpus()
-        print(f'Auto select GPU by ： {sys.argv[1]}')
-        gpu_manager = GPUManager()
-        gpu = gpu_manager.auto_choice()
+        print(f'INFO: Auto select device by ： {sys.argv[1]}')
+        try:
+            gpu_manager = GPUManager()
+            gpu = gpu_manager.auto_choice()
+            print(f'WARNNING: Auto select: GPU {gpu}')
+        except Exception as e:
+            print(e)
+            print(f'WARNNING: Auto select: cpu')
+            gpu = ''
 
     os.environ['CUDA_VISIBLE_DEVICES'] = gpu
     print(f'INFO: GPU: {gpu}')
     print(f'INFO: sys.argv : {sys.argv}')
     run_count = 'one'
     if gpu:
-        memory_required = 11000
-        gpu_available, info, gpu_memory = check_gpus(11.8, memory_required)
+        gpu_available, info, gpu_memory = check_gpus(cuda_version_min, pipeline_min_gpu_memory_required)
         if not gpu_available:
             raise ImportError(info)
-        if gpu_memory > memory_required * 2:
+
+        process_memory_required = int(sys.argv[2])
+        if gpu_memory > process_memory_required * 2:
             run_count = 'two'
+        elif gpu_memory < process_memory_required:
+            gpu = ''
     assert os.path.exists(sys.argv[4]), f"{sys.argv[4]}"
 
     conn = None
@@ -44,7 +54,7 @@ if __name__ == '__main__':
         conn = None
         print(f'Cant connect to StrictRedis DB: {why}')
 
-    if conn:
+    if gpu and conn:
         print(f'INFO: run_count : {run_count}')
         if run_count == 'two':
             if 'lh' in sys.argv:

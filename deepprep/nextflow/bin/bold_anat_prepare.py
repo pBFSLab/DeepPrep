@@ -8,7 +8,7 @@ import numpy as np
 
 
 def get_pve_file(subjects_dir, work_dir, subject_id, wm_probseg_nii, gm_probseg_nii, csf_probseg_nii):
-    split_bold_dir = Path(work_dir) / subject_id / 'fsl_fast'
+    split_bold_dir = Path(work_dir)/ 'bold_anat_prepare' / 'fsl_fast' / subject_id
     split_bold_dir.mkdir(exist_ok=True, parents=True)
 
     brain_mgz = Path(subjects_dir) / subject_id / 'mri' / 'norm.mgz'
