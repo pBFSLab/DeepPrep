@@ -60,8 +60,6 @@ RUN --mount=type=cache,target=/root/.cache \
     git+https://github.com/Deep-MI/LaPy.git@v1.0.1 \
     git+https://github.com/voxelmorph/voxelmorph.git@ca28315d0ba24cd8946ac4f6ed081e049e5264fe \
     git+https://github.com/NingAnMe/mriqc.git@deepprep \
-    # CUDA
-    tensorrt==8.6.1 onnxruntime==1.16.3 cuda-python==12.3.0 \
     # SynthMorph
     git+https://github.com/adalca/neurite@682f828b7b5fa652d7205c894c7fe667f1a26251 surfa==0.6.0 \
     --trusted-host 30.30.30.204 -f http://30.30.30.204/cp310_whl \
@@ -69,11 +67,6 @@ RUN --mount=type=cache,target=/root/.cache \
 
 ### mriqc
 RUN pip3 install mriqc-learn==0.0.2 --no-deps && pip3 cache purge && rm -rf /tmp/* /var/tmp/*
-
-### ONNX TensorRT
-RUN cp /usr/local/lib/python3.10/dist-packages/tensorrt_libs/libnvinfer.so.8 /usr/local/lib/python3.10/dist-packages/tensorrt_libs/libnvinfer.so.7 && \
-    cp /usr/local/lib/python3.10/dist-packages/tensorrt_libs/libnvinfer_plugin.so.8 /usr/local/lib/python3.10/dist-packages/tensorrt_libs/libnvinfer_plugin.so.7
-ENV LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/lib/python3.10/dist-packages/tensorrt_libs"
 
 ## Install openjdk
 ENV LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/lib/jvm/java-11-openjdk-amd64/lib:/usr/lib/jvm/java-11-openjdk-amd64/lib/server"
@@ -147,8 +140,8 @@ RUN mkdir ${FREESURFER_HOME}/models && wget --content-disposition -P ${FREESURFE
 RUN pip3 install matplotlib==3.8.4  && pip3 cache purge && rm -rf /tmp/* /var/tmp/*
 
 ### default template
-ENV TEMPLATEFLOW_HOME=/opt/TemplateFlow
 RUN python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin6Asym', desc=None, resolution=2, suffix='T1w', extension='nii.gz')"
+RUN python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin2009cAsym', desc=None, resolution=2, suffix='T1w', extension='nii.gz')"
 RUN python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin2009cAsym', desc='brain', resolution=2, suffix='mask', extension='nii.gz')"
 RUN python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin2009cAsym', desc='fMRIPrep', resolution=2, suffix='boldref', extension='nii.gz')"
 RUN python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin2009cAsym', label='brain', resolution=1, suffix='probseg', extension='nii.gz')"
@@ -156,15 +149,19 @@ RUN python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin2009cAsym
 COPY deepprep/model/FastCSR /opt/model/FastCSR
 COPY deepprep/model/SUGAR /opt/model/SUGAR
 COPY deepprep/model/SynthMorph /opt/model/SynthMorph
+
+# Dev
 #COPY deepprep/FastCSR /opt/DeepPrep/deepprep/FastCSR
 #COPY deepprep/SUGAR /opt/DeepPrep/deepprep/SUGAR
 #COPY deepprep/FastSurfer /opt/DeepPrep/deepprep/FastSurfer
 #COPY deepprep/SynthMorph /opt/DeepPrep/deepprep/SynthMorph
 #COPY deepprep/nextflow /opt/DeepPrep/deepprep/nextflow
 #COPY deepprep/deepprep.sh /opt/DeepPrep/deepprep/deepprep.sh
+# release
 ENV DEEPPREP_VERSION="24.1.0"
-ENV DEEPPREP_HASH="ec0f034"
+ENV DEEPPREP_HASH="ce13059"
 RUN git clone --recursive --single-branch -b ${DEEPPREP_VERSION} https://github.com/pBFSLab/DeepPrep.git /opt/DeepPrep && cd /opt/DeepPrep && git checkout ${DEEPPREP_HASH}
+
 RUN chmod 755 /opt/DeepPrep/deepprep/deepprep.sh && chmod 755 /opt/DeepPrep/deepprep/nextflow/bin/*.py
 ENV PATH="/opt/DeepPrep/deepprep/nextflow/bin:${PATH}"
 
