@@ -308,7 +308,7 @@ if __name__ == '__main__':
         result = workflow.run()
 
         # prepare inputs for confounds_v2
-        confounds_dir_path = work_dir.parent / args.subject_id / 'confounds'
+        confounds_dir_path = work_dir.parent / 'confounds' / args.subject_id
         confounds_dir_path.mkdir(parents=True, exist_ok=True)
         boldref_dir = base_dir / f'{bold_id}_wf' / 'bold_wf' / 'bold_native_wf' / 'boldref_bold'
         boldresampled_file = sorted(boldref_dir.glob('sub-*resampled.nii.gz'))[0]
