@@ -23,7 +23,7 @@ def get_output_space(output_spaces):
 
 
 def update_config(bids_dir, bold_preprocess_dir, work_dir, fs_license_file, fs_subjects_dir,
-                  subject_id, task_id, spaces, templateflow_home):
+                  subject_id, task_id, spaces):
     config.execution.bids_dir = bids_dir
     config.execution.log_dir = f'{work_dir}/log'
     config.execution.fs_license_file = fs_license_file
@@ -32,7 +32,6 @@ def update_config(bids_dir, bold_preprocess_dir, work_dir, fs_license_file, fs_s
     config.execution.output_spaces = spaces
     config.execution.participant_label = [subject_id,]
     config.execution.task_id = task_id
-    config.execution.templateflow_home = templateflow_home
     config.execution.work_dir = work_dir
     config.execution.fmriprep_dir = config.execution.output_dir
 
@@ -99,7 +98,6 @@ if __name__ == '__main__':
     parser.add_argument("--fsnative2t1w_xfm", required=False)
     parser.add_argument("--fs_license_file", required=False)
     parser.add_argument("--bold_sdc", required=False, default='False')
-    parser.add_argument("--templateflow_home", required=False, default='/home/root/.cache/templateflow')
     parser.add_argument("--qc_result_path", required=True)
     args = parser.parse_args()
     """
@@ -141,8 +139,7 @@ if __name__ == '__main__':
     bold_spaces = get_output_space(args.bold_spaces)
     spaces = ' '.join(bold_spaces)
     update_config(args.bids_dir, args.bold_preprocess_dir, args.work_dir, args.fs_license_file,
-                  args.subjects_dir, args.subject_id, args.task_id, spaces,
-                  args.templateflow_home)
+                  args.subjects_dir, args.subject_id, args.task_id, spaces)
     work_dir = Path(config.execution.work_dir)
     work_dir.mkdir(parents=True, exist_ok=True)
     config_file = work_dir / config.execution.run_uuid / 'config.toml'
