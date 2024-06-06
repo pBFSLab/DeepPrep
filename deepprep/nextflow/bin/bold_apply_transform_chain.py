@@ -13,7 +13,6 @@ from nitransforms.io import get_linear_factory
 import templateflow.api as tflow
 from multiprocessing import Pool
 from bids import BIDSLayout
-# from natsort import natsorted
 
 
 def get_preproc_file(bids_orig, bids_preproc, bold_orig_file, update_entities):
@@ -32,7 +31,7 @@ def get_preproc_file(bids_orig, bids_preproc, bold_orig_file, update_entities):
     return Path(bold_t1w_file)
 
 
-def itk_to_3x3(itk):
+def affine_to_3x3(itk):
     matrix = itk[:3, :3]
     translation = itk[:3, -1:]
     return matrix, translation
@@ -41,7 +40,7 @@ def apply_hmc_pool(frame, warped_mesh_frame, matrix_frame, ras2vox_A, ras2vox_b,
     # bold_orig = nib.load(bold_file)
     bold_orig_values = bold_orig.slicer[..., frame:frame+1].get_fdata()[..., 0]
 
-    hmc_A, hmc_b = itk_to_3x3(matrix_frame)
+    hmc_A, hmc_b = affine_to_3x3(matrix_frame)
     warped_mesh_frame = hmc_A @ warped_mesh_frame + hmc_b
 
     warped_mesh_frame = ras2vox_A @ warped_mesh_frame + ras2vox_b
@@ -66,19 +65,19 @@ def apply_hmc_pool(frame, warped_mesh_frame, matrix_frame, ras2vox_A, ras2vox_b,
     nib.save(nib.Nifti1Image(result, affine=fixed.affine, header=bold_orig_header),
          f'{transform_save_path}/t{str(frame).zfill(5)}.nii.gz')
 
-def concat_frames(transform_save_path, output_path, boldref_path):
-    # from nipype.interfaces.freesurfer.model import Concatenate
-    # concat = Concatenate()
+def concat_frames(transform_save_path, output_path, boldref_path, t1_json):
+    # concat frames
     files = sorted(transform_save_path.glob('*.nii.gz'))
     in_files = [str(f) for f in files]
-    # # concat.inputs.in_files = in_files
-    # concat.inputs.concatenated_file = output_path
-    # concat.run()
     cmd = f'mri_concat --i {transform_save_path}/* --o {output_path}'
     os.system(cmd)
 
     # copy the first frame as boldref
     shutil.copy(in_files[0], boldref_path)
+
+    # generate .json, it is consistent with T1w.json
+    boldref_json_path = str(output_path).replace('.nii.gz', '.json')
+    shutil.copy(t1_json, boldref_json_path)
 
 
 if __name__ == '__main__':
@@ -128,6 +127,10 @@ if __name__ == '__main__':
     update_entities = {'desc': 'hmc', 'suffix': 'xfm', 'extension': '.txt'}
     hmc_xfm = get_preproc_file(args.bids_dir, args.bold_preprocess_dir, bold_file, update_entities)
 
+    # get the T1w.json
+    update_entities = {'desc': 'preproc', 'suffix': 'bold', 'extension': '.json'}
+    t1_json = get_preproc_file(args.bids_dir, args.bold_preprocess_dir, bold_file, update_entities)
+
     transform_save_path = Path(args.work_dir) / 'bold_synthmorph_transform_chain' / args.bold_id
     transform_save_path.mkdir(exist_ok=True, parents=True)
     output_path = Path(coreg_xfm.parent) / f'{args.bold_id}_space-{args.template_space}_res-{args.template_resolution}_desc-preproc_bold.nii.gz'
@@ -136,7 +139,7 @@ if __name__ == '__main__':
     # Load the fixed file
     fixed = nib.load(fixed_file)
     vox2ras = fixed.affine
-    fixed_vox2ras_rot, fixed_vox2ras_trans = itk_to_3x3(vox2ras)
+    fixed_vox2ras_rot, fixed_vox2ras_trans = affine_to_3x3(vox2ras)
     # generate meshgrid
     i = np.linspace(0, fixed.shape[0] - 1, fixed.shape[0])
     j = np.linspace(0, fixed.shape[1] - 1, fixed.shape[1])
@@ -162,7 +165,7 @@ if __name__ == '__main__':
         is_array=True
     ).from_filename(coreg_xfm)
     matrix = struct.to_ras(reference=args.reference, moving=args.moving).squeeze()
-    A, b = itk_to_3x3(matrix)
+    A, b = affine_to_3x3(matrix)
     warped_mesh = A @ warped_mesh + b
 
     # load hmc
@@ -175,7 +178,7 @@ if __name__ == '__main__':
     bold_orig = nib.load(bold_file)
     bold_orig_header = bold_orig.header.copy()
     ras2vox_bold = np.linalg.inv(bold_orig.affine)
-    ras2vox_A, ras2vox_b = itk_to_3x3(ras2vox_bold)
+    ras2vox_A, ras2vox_b = affine_to_3x3(ras2vox_bold)
 
     args_apply_hmc = []
     for i in range(matrix.shape[0]):
@@ -185,7 +188,7 @@ if __name__ == '__main__':
     pool.close()
     pool.join()
 
-    concat_frames(transform_save_path, output_path, boldref_path)
+    concat_frames(transform_save_path, output_path, boldref_path, t1_json)
 
     # check the output file has correct number of frames
     concat_bold = nib.load(output_path)
