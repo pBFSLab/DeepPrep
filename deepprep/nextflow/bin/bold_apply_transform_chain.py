@@ -66,19 +66,19 @@ def apply_hmc_pool(frame, warped_mesh_frame, matrix_frame, ras2vox_A, ras2vox_b,
     nib.save(nib.Nifti1Image(result, affine=fixed.affine, header=bold_orig_header),
          f'{transform_save_path}/t{str(frame).zfill(5)}.nii.gz')
 
-def concat_frames(transform_save_path, output_path, boldref_path):
-    # from nipype.interfaces.freesurfer.model import Concatenate
-    # concat = Concatenate()
+def concat_frames(transform_save_path, output_path, boldref_path, t1_json):
+    # concat frames
     files = sorted(transform_save_path.glob('*.nii.gz'))
     in_files = [str(f) for f in files]
-    # # concat.inputs.in_files = in_files
-    # concat.inputs.concatenated_file = output_path
-    # concat.run()
     cmd = f'mri_concat --i {transform_save_path}/* --o {output_path}'
     os.system(cmd)
 
     # copy the first frame as boldref
     shutil.copy(in_files[0], boldref_path)
+
+    # generate .json, it is consistent with T1w.json
+    boldref_json_path = str(output_path).replace('.nii.gz', '.json')
+    shutil.copy(t1_json, boldref_json_path)
 
 
 if __name__ == '__main__':
@@ -128,6 +128,10 @@ if __name__ == '__main__':
     update_entities = {'desc': 'hmc', 'suffix': 'xfm', 'extension': '.txt'}
     hmc_xfm = get_preproc_file(args.bids_dir, args.bold_preprocess_dir, bold_file, update_entities)
 
+    # get the T1w.json
+    update_entities = {'desc': 'preproc', 'suffix': 'bold', 'extension': '.json'}
+    t1_json = get_preproc_file(args.bids_dir, args.bold_preprocess_dir, bold_file, update_entities)
+
     transform_save_path = Path(args.work_dir) / 'bold_synthmorph_transform_chain' / args.bold_id
     transform_save_path.mkdir(exist_ok=True, parents=True)
     output_path = Path(coreg_xfm.parent) / f'{args.bold_id}_space-{args.template_space}_res-{args.template_resolution}_desc-preproc_bold.nii.gz'
@@ -156,36 +160,7 @@ if __name__ == '__main__':
     warped_mesh = np.asarray(warped_mesh, dtype=np.float32)
     warped_mesh = warped_mesh.reshape(3, -1)
 
-    # load the coreg
-    struct = get_linear_factory(
-        'itk',
-        is_array=True
-    ).from_filename(coreg_xfm)
-    matrix = struct.to_ras(reference=args.reference, moving=args.moving).squeeze()
-    A, b = itk_to_3x3(matrix)
-    warped_mesh = A @ warped_mesh + b
-
-    # load hmc
-    struct = get_linear_factory(
-        'itk',
-        is_array=True
-    ).from_filename(hmc_xfm)
-    matrix = struct.to_ras(reference=args.reference, moving=args.moving)
-
-    bold_orig = nib.load(bold_file)
-    bold_orig_header = bold_orig.header.copy()
-    ras2vox_bold = np.linalg.inv(bold_orig.affine)
-    ras2vox_A, ras2vox_b = itk_to_3x3(ras2vox_bold)
-
-    args_apply_hmc = []
-    for i in range(matrix.shape[0]):
-        args_apply_hmc.append([int(i), warped_mesh, matrix[i], ras2vox_A, ras2vox_b, bold_orig, fixed, bold_orig_header, transform_save_path])
-    pool = Pool(10)
-    pool.starmap(apply_hmc_pool, args_apply_hmc)
-    pool.close()
-    pool.join()
-
-    concat_frames(transform_save_path, output_path, boldref_path)
+    concat_frames(transform_save_path, output_path, boldref_path, t1_json)
 
     # check the output file has correct number of frames
     concat_bold = nib.load(output_path)
