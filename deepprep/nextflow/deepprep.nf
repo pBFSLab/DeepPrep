@@ -2217,8 +2217,8 @@ process bold_confounds_part2 {
 process bold_confounds_combine {
     tag "${bold_id}"
 
-    cpus 4
-    memory '7 GB'
+    cpus 3
+    memory '200 MB'
 
     input:
     val(bids_dir)
