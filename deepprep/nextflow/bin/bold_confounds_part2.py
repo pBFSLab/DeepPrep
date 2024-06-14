@@ -130,9 +130,9 @@ if __name__ == '__main__':
     meta_dict: ~/output/BOLD/sub-001/ses-01/func/sub-001-01_task-rest_run-01_desc-confounds_timeseries.tsv
     """
 
-    # The required input confound files were generated in <process:bold_pre_process>, and copied to <confounds_dir>.
+    # The required input confound files were generated in <process:bold_pre_process>, and linked to <confounds_dir>.
     # If there's any missing file under <confounds_dir>, please go to <process:bold_pre_process> and double check if its original path exists.
-    confounds_dir = Path(args.work_dir) / 'confounds' / args.subject_id
+    confounds_dir = Path(args.work_dir) / 'confounds' / args.subject_id / args.bold_id
     bold_file = [args.bold_file]
     boldresampled = confounds_dir / f'{args.bold_id}_boldresampled.nii.gz'
     bold_mask = confounds_dir / f'{args.bold_id}_bold_average_corrected_brain_mask_maths.nii.gz'
