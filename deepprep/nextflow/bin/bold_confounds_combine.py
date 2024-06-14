@@ -50,7 +50,7 @@ if __name__ == '__main__':
     confounds_file
     """
 
-    confounds_dir = Path(args.work_dir) / 'confounds' / args.subject_id
+    confounds_dir = Path(args.work_dir) / 'confounds' / args.subject_id / args.bold_id
 
     confounds_part1 = confounds_dir / 'confounds_part1.tsv'
 

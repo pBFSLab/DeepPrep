@@ -89,10 +89,10 @@ def bold_confounds_v2(bold_preprocess_dir, bold, bold_mask, movpar_file, rmsd_fi
     workflow.connect([
         (bold_confounds_wf, ds_confounds, [
             ('outputnode.confounds_file', 'in_file'),
+            ('outputnode.confounds_metadata', 'meta_dict'),
         ]),
     ])
     workflow.run()
-
 
 
 if __name__ == '__main__':
@@ -126,12 +126,13 @@ if __name__ == '__main__':
     --mask_nii: ~/output/BOLD/sub-001/anat/sub-001_desc-brain_mask.nii.gz
     
     outputs:
+    meta_dict: ~/output/BOLD/sub-001/ses-01/func/sub-001-01_task-rest_run-01_desc-confounds_timeseries.json
     meta_dict: ~/output/BOLD/sub-001/ses-01/func/sub-001-01_task-rest_run-01_desc-confounds_timeseries.tsv
     """
 
-    # The required input confound files were generated in <process:bold_pre_process>, and copied to <confounds_dir>.
+    # The required input confound files were generated in <process:bold_pre_process>, and linked to <confounds_dir>.
     # If there's any missing file under <confounds_dir>, please go to <process:bold_pre_process> and double check if its original path exists.
-    confounds_dir = Path(args.work_dir) / 'confounds' / args.subject_id
+    confounds_dir = Path(args.work_dir) / 'confounds' / args.subject_id / args.bold_id
     bold_file = [args.bold_file]
     boldresampled = confounds_dir / f'{args.bold_id}_boldresampled.nii.gz'
     bold_mask = confounds_dir / f'{args.bold_id}_bold_average_corrected_brain_mask_maths.nii.gz'
