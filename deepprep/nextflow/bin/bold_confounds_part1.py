@@ -186,7 +186,7 @@ if __name__ == '__main__':
     anat2bold_t1w(args.aseg_mgz, args.brainmask_mgz, str(boldref_space_t1w_file.path),
                   str(aseg), str(wm), str(vent), str(csf), str(brainmask), str(brainmask_bin))
 
-    output_dir = os.path.join(args.work_dir, 'confounds', args.subject_id)
+    output_dir = os.path.join(args.work_dir, 'confounds', args.subject_id, args.bold_id)
     os.makedirs(output_dir, exist_ok=True)
     confounds_file = Path(output_dir, 'confounds_part1.tsv')
     compile_regressors(str(bold_space_t1w_file.path),
