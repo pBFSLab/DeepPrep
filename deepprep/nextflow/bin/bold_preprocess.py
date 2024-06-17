@@ -65,11 +65,12 @@ def update_config(bids_dir, bold_preprocess_dir, work_dir, fs_license_file, fs_s
     config.seeds.numpy = 11239
 
 
-def get_bold_func_path(bids_orig, bids_preproc, bold_orig_file):
+def get_bold_func_path(subject_id, bids_preproc, bold_orig_file):
     from bids import BIDSLayout
-    layout_orig = BIDSLayout(bids_orig, validate=False)
-    layout_preproc = BIDSLayout(bids_preproc, validate=False)
-    info = layout_orig.parse_file_entities(bold_orig_file)
+    assert subject_id.startswith('sub-')
+    layout_preproc = BIDSLayout(str(os.path.join(bids_preproc, subject_id)),
+                                config=['bids', 'derivatives'], validate=False)
+    info = layout_preproc.parse_file_entities(bold_orig_file)
 
     boldref_t1w_info = info.copy()
     boldref_t1w_info['space'] = 'T1w'
@@ -338,7 +339,7 @@ if __name__ == '__main__':
                 break
         mcflirt_node_path = base_dir / workflow.name / mcflirt_node_name.replace('.', '/')
         list(mcflirt_node_path.glob(f'{bold_id}*mcf*'))
-        func_path = get_bold_func_path(args.bids_dir, args.bold_preprocess_dir, bold_file)
+        func_path = get_bold_func_path(args.subject_id, args.bold_preprocess_dir, bold_file)
         for mcflirt_file in mcflirt_node_path.glob(f'{bold_id}*mcf*'):
             if mcflirt_file.is_file():
                 shutil.copyfile(mcflirt_file, func_path / mcflirt_file.name)
