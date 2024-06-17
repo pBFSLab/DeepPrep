@@ -89,11 +89,13 @@ def combine_bar(output_tsnr_savepath, color_bar_png):
     image1.close()
     image2.close()
 
-def get_space_t1w_bold(bids_orig, bids_preproc, bold_orig_file):
+
+def get_space_t1w_bold(subject_id, bids_preproc, bold_orig_file):
     from bids import BIDSLayout
-    layout_orig = BIDSLayout(bids_orig, validate=False)
-    layout_preproc = BIDSLayout(bids_preproc, validate=False)
-    info = layout_orig.parse_file_entities(bold_orig_file)
+    assert subject_id.startswith('sub-')
+    layout_preproc = BIDSLayout(str(os.path.join(bids_preproc, subject_id)),
+                                config=['bids', 'derivatives'], validate=False)
+    info = layout_preproc.parse_file_entities(bold_orig_file)
 
     bold_t1w_info = info.copy()
     bold_t1w_info['space'] = 'T1w'
@@ -124,7 +126,7 @@ if __name__ == '__main__':
     bold_file = data[1]
     bold_name = os.path.basename(bold_file).split('.')[0]
 
-    bids_bold, brainmask = get_space_t1w_bold(args.bids_dir, args.bold_preprocess_path, bold_file)
+    bids_bold, brainmask = get_space_t1w_bold(args.subject_id, args.bold_preprocess_path, bold_file)
 
     qc_result_path = args.qc_result_path
     scene_file = args.scene_file
