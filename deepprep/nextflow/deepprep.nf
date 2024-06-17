@@ -1993,6 +1993,7 @@ process bold_upsampled {
     --bids_dir ${bids_dir} \
     --bold_preprocess_dir ${bold_preprocess_path} \
     --work_dir ${work_dir}/bold_synthmorph_norigid_apply \
+    --subject_id ${subject_id} \
     --bold_id ${bold_id} \
     --T1_file ${t1_native2mm} \
     --subject_boldfile_txt_bold ${subject_boldfile_txt_bold} \
@@ -2069,6 +2070,7 @@ process bold_concat {
 
     """
     ${script_py} \
+    --subject_id ${subject_id} \
     --bids_dir ${bids_dir} \
     --bold_preprocess_dir ${bold_preprocess_path} \
     --bold_id ${bold_id} \
