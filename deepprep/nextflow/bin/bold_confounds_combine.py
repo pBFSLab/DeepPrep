@@ -1,14 +1,16 @@
 #! /usr/bin/env python3
+import os
 import argparse
 from pathlib import Path
 import pandas as pd
 
 
-def get_confounds_file(bids_orig, bids_preproc, bold_orig_file, update_entities):
+def get_confounds_file(subject_id, bids_preproc, bold_orig_file, update_entities):
     from bids import BIDSLayout
-    layout_orig = BIDSLayout(bids_orig, validate=False)
-    layout_preproc = BIDSLayout(bids_preproc, validate=False)
-    info = layout_orig.parse_file_entities(bold_orig_file)
+    assert subject_id.startswith('sub-')
+    layout_preproc = BIDSLayout(str(os.path.join(bids_preproc, subject_id)),
+                                config=['bids', 'derivatives'], validate=False)
+    info = layout_preproc.parse_file_entities(bold_orig_file)
 
     confounds_info = info.copy()
     if update_entities:
@@ -59,7 +61,7 @@ if __name__ == '__main__':
     data = [i.strip() for i in data]
     bold_orig_file = data[1]
     update_entities = {'desc': 'confounds', 'suffix': 'timeseries', 'extension': '.tsv'}
-    confounds_file = get_confounds_file(args.bids_dir, args.bold_preprocess_dir, bold_orig_file, update_entities)
+    confounds_file = get_confounds_file(args.subject_id, args.bold_preprocess_dir, bold_orig_file, update_entities)
 
     df1 = pd.read_csv(confounds_part1, sep='\t')
     df2 = pd.read_csv(confounds_file, sep='\t')

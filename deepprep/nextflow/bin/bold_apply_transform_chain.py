@@ -15,10 +15,11 @@ from multiprocessing import Pool
 from bids import BIDSLayout
 
 
-def get_preproc_file(bids_orig, bids_preproc, bold_orig_file, update_entities):
-    layout_orig = BIDSLayout(bids_orig, validate=False)
-    layout_preproc = BIDSLayout(bids_preproc, validate=False)
-    info = layout_orig.parse_file_entities(bold_orig_file)
+def get_preproc_file(subject_id, bids_preproc, bold_orig_file, update_entities):
+    assert subject_id.startswith('sub-')
+    layout_preproc = BIDSLayout(str(os.path.join(bids_preproc, subject_id)),
+                                config=['bids', 'derivatives'], validate=False)
+    info = layout_preproc.parse_file_entities(bold_orig_file)
 
     bold_t1w_info = info.copy()
     if update_entities:
@@ -121,15 +122,15 @@ if __name__ == '__main__':
 
     # get the coreg.xfm
     update_entities = {'desc': 'coreg', 'suffix': 'xfm', 'extension': '.txt'}
-    coreg_xfm = get_preproc_file(args.bids_dir, args.bold_preprocess_dir, bold_file, update_entities)
+    coreg_xfm = get_preproc_file(args.subject_id, args.bold_preprocess_dir, bold_file, update_entities)
 
     # get the hmc.xfm
     update_entities = {'desc': 'hmc', 'suffix': 'xfm', 'extension': '.txt'}
-    hmc_xfm = get_preproc_file(args.bids_dir, args.bold_preprocess_dir, bold_file, update_entities)
+    hmc_xfm = get_preproc_file(args.subject_id, args.bold_preprocess_dir, bold_file, update_entities)
 
     # get the T1w.json
     update_entities = {'desc': 'preproc', 'suffix': 'bold', 'extension': '.json'}
-    t1_json = get_preproc_file(args.bids_dir, args.bold_preprocess_dir, bold_file, update_entities)
+    t1_json = get_preproc_file(args.subject_id, args.bold_preprocess_dir, bold_file, update_entities)
 
     transform_save_path = Path(args.work_dir) / 'bold_synthmorph_transform_chain' / args.bold_id
     transform_save_path.mkdir(exist_ok=True, parents=True)
