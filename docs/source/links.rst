@@ -10,3 +10,4 @@
 .. _BIDS format: https://bids-specification.readthedocs.io/en/stable/index.html
 .. _TemplateFlow: https://www.templateflow.org/browse/
 .. _here: https://developer.nvidia.com/cuda-gpus
+.. _Hoffmann et al.,: https://arxiv.org/abs/2301.11329
