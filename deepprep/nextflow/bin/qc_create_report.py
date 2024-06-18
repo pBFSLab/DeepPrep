@@ -15,6 +15,8 @@ def create_report(subj_qc_report_path, qc_report_path, subject_id, reports_utils
     if not log_dir.exists():
         cmd = f'cp -r {boilerplate_dir} {log_dir}'
         os.system(cmd)
+
+    subject_id = subject_id.split('sub-')[-1]
     run_reports(subj_qc_report_path, subject_id, run_uuid,
                 config=reports_spec, packagename='deepprep',
                 reportlets_dir=qc_report_path)
