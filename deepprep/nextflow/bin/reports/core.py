@@ -30,7 +30,7 @@ class Report(_Report):
 
 def run_reports(
     out_dir,
-    subject_label,
+    subject_id,
     run_uuid,
     config=None,
     reportlets_dir=None,
@@ -41,7 +41,7 @@ def run_reports(
         out_dir,
         run_uuid,
         config=config,
-        subject_id=subject_label,
+        subject_id=subject_id,
         packagename=packagename,
         reportlets_dir=reportlets_dir,
     ).generate_report()
@@ -57,13 +57,13 @@ def generate_reports(
     report_errors = [
         run_reports(
             output_dir,
-            subject_label,
+            subject_id,
             run_uuid,
             config=config,
             packagename=packagename,
             reportlets_dir=reportlets_dir,
         )
-        for subject_label in subject_list
+        for subject_id in subject_list
     ]
 
     errno = sum(report_errors)
