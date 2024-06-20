@@ -32,7 +32,7 @@ Platform and Login Nodes
 
 
 =============================================
-Download the Singularity image (Google Drive)
+Download the Singularity image
 =============================================
 The Singularity image is typically used on HPC since users do not have permission to access the root directory.
 Meanwhile, the Docker image is commonly used on cloud platforms.
@@ -42,28 +42,21 @@ Meanwhile, the Docker image is commonly used on cloud platforms.
 
 
 
-Download the DeepPrep sif image from Google Drive
+Download the DeepPrep sif image
 -------------------------------------------------
-
-Download from the `website`_ or download via ``gdown`` if you are familiar with Python:
 
 .. code-block:: none
 
-    $ pip install gdown
-
-    $ cd <shared_storage_path>
-
-    $ gdown <file_id_of_sif_file_in_Google_Drive>
+    $ curl -C - -O https://download.anning.info/ninganme-public/DeepPrep/SingularityImage/deepprep_24.1.0.sif
 
 Then you will get: ``<shared_storage_path>/deepprep_24.1.0.sif``
-
-
 
 
 
 =====================================
 Download the Docker image (DockerHub)
 =====================================
+The Singularity image is typically used on AWS etc.
 
 Download the DeepPrep image from the DockerHub
 ----------------------------------------------
@@ -235,7 +228,7 @@ Run DeepPrep with GPU
 ::
 
     $ cd ${TEST_DIR}
-    $ git clone https://github.com/pBFSLab/DeepPrep.git
+    $ git clone https://github.com/pBFSLab/DeepPrep.git && cd DeepPrep && git checkout 24.1.0
 
 3. Run DeepPrep.
 

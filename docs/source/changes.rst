@@ -63,14 +63,14 @@ More importantly, it is less likely to introduce "real" brain activity from the 
 
 DeepPrep CSF mask sample
 
-.. image:: _static/dp_csf.png
+.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/_static/changes/dp_csf.png
    :align: center
 
 |
 
 fMRIPrep CSF mask sample
 
-.. image:: _static/fp_csf.png
+.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/_static/changes/fp_csf.png
    :align: center
 
 |
