@@ -32,7 +32,7 @@ Platform and Login Nodes
 
 
 =============================================
-Download the Singularity image (Google Drive)
+Download the Singularity image
 =============================================
 The Singularity image is typically used on HPC since users do not have permission to access the root directory.
 Meanwhile, the Docker image is commonly used on cloud platforms.
@@ -42,40 +42,31 @@ Meanwhile, the Docker image is commonly used on cloud platforms.
 
 
 
-Download the DeepPrep sif image from Google Drive
+Download the DeepPrep sif image
 -------------------------------------------------
-
-1. Download from the `website`_.
-
-2. Download via ``gdown`` if you are familiar with Python:
 
 .. code-block:: none
 
-    $ pip install gdown
+    $ curl -C - -O https://download.anning.info/ninganme-public/DeepPrep/SingularityImage/deepprep_24.1.0.sif
 
-    $ cd <shared_storage_path>
-
-    $ gdown <file_id_of_sif_file_in_Google_Drive>
-
-Then you will get: ``<shared_storage_path>/deepprep_23.1.0.sif``
-
-
+Then you will get: ``<shared_storage_path>/deepprep_24.1.0.sif``
 
 
 
 =====================================
 Download the Docker image (DockerHub)
 =====================================
+The Singularity image is typically used on AWS etc.
 
 Download the DeepPrep image from the DockerHub
 ----------------------------------------------
 
 .. code-block:: none
 
-    $ docker pull pbfslab/deepprep:23.1.0
+    $ docker pull pbfslab/deepprep:24.1.0
 
 
-When its done, you will find the Docker image by this command ``docker image ls``, the ``REPOSITORY`` is ``pbfslab/deepprep`` with a ``TAG: 23.1.0``.
+When its done, you will find the Docker image by this command ``docker image ls``, the ``REPOSITORY`` is ``pbfslab/deepprep`` with a ``TAG: 24.1.0``.
 
 
 
@@ -167,6 +158,7 @@ This is the configuration file used on SLURM with GPU Driver:
     --env TMPDIR=${output_dir}/WorkDir/tmp \
     -B ${bids_dir} \
     -B ${output_dir} \
+    -B ${subjects_dir} \
     -B ${fs_license_file}:/opt/freesurfer/license.txt \
     '
 
@@ -181,10 +173,19 @@ This is the configuration file used on SLURM with GPU Driver:
 
         container = "${container}"
 
-         withLabel: with_gpu {
-             queue = 'gpu1,gpu2'
-             clusterOptions = { " --gres=gpu:1" }
-             singularity.runOptions = '-e --nv -B ${fs_license_file}:/opt/freesurfer/license.txt'
+        withLabel: with_gpu {
+            queue = 'gpu2'
+            clusterOptions = { " --chdir=${nextflow_work_dir} --gres=gpu:1" }
+            singularity.runOptions = '-e --nv \
+                --home ${output_dir}/WorkDir/home \
+                --env TEMP=${output_dir}/WorkDir/tmp \
+                --env TMP=${output_dir}/WorkDir/tmp \
+                --env TMPDIR=${output_dir}/WorkDir/tmp \
+                -B ${bids_dir} \
+                -B ${output_dir} \
+                -B ${subjects_dir} \
+                -B ${fs_license_file}:/opt/freesurfer/license.txt \
+                '
          }
     }
 
@@ -210,7 +211,7 @@ This is the configuration file used on SLURM with GPU Driver:
 .. note::
     Personalize the ``queue`` settings ONLY should work well for all the SLURM-based HPC platforms.
 
-Save the configuration file as ``<shared_storage_path>/deepprep.slurm.gpu.config``.
+The configuration file is ``DeepPrep/deepprep/nextflow/cluster/deepprep.slurm.gpu.config``.
 
 
 Run DeepPrep with GPU
@@ -227,7 +228,7 @@ Run DeepPrep with GPU
 ::
 
     $ cd ${TEST_DIR}
-    $ git clone https://github.com/IndiLab/DeepPrep.git
+    $ git clone https://github.com/pBFSLab/DeepPrep.git && cd DeepPrep && git checkout 24.1.0
 
 3. Run DeepPrep.
 
@@ -248,16 +249,16 @@ Pass *absolute paths* to avoid any mistakes.
     --deepprep_home ${TEST_DIR}/DeepPrep \
     --fs_license_file ${FS_LICENSE} \
     --executor cluster \
-    --container ${TEST_DIR}/deepprep_23.1.0.sif \
-    --config_file ${TEST_DIR}/deepprep.slurm.gpu.config
+    --container ${TEST_DIR}/deepprep_24.1.0.sif \
+    --config_file ${TEST_DIR}/DeepPrep/deepprep/nextflow/cluster/deepprep.slurm.gpu.config
 
 **Add the following arguments to execute on clusters**
 
 .. code-block:: none
 
     --executor cluster
-    --container ${TEST_DIR}/deepprep_23.1.0.sif
-    --config_file ${TEST_DIR}/deepprep.slurm.gpu.config
+    --container ${TEST_DIR}/deepprep_24.1.0.sif
+    --config_file ${TEST_DIR}/DeepPrep/deepprep/nextflow/cluster/deepprep.slurm.gpu.config
 
 
 
@@ -276,13 +277,14 @@ Shown as below:
     singularity.enabled = true
     singularity.autoMounts = false
     singularity.runOptions = '-e \
-    --home ${output_dir}/WorkDir/home \
-    --env TEMP=${output_dir}/WorkDir/tmp \
-    --env TMP=${output_dir}/WorkDir/tmp \
-    --env TMPDIR=${output_dir}/WorkDir/tmp \
-    -B ${bids_dir} \
-    -B ${output_dir} \
-    -B ${fs_license_file}:/opt/freesurfer/license.txt \
+        --home ${output_dir}/WorkDir/home \
+        --env TEMP=${output_dir}/WorkDir/tmp \
+        --env TMP=${output_dir}/WorkDir/tmp \
+        --env TMPDIR=${output_dir}/WorkDir/tmp \
+        -B ${bids_dir} \
+        -B ${output_dir} \
+        -B ${subjects_dir} \
+        -B ${fs_license_file}:/opt/freesurfer/license.txt \
     '
 
     process {
@@ -297,7 +299,9 @@ Shown as below:
         container = "${container}"
     }
 
-save to ``<shared_storage_path>/deepprep.slurm.cpu.config``
+
+
+The configuration file is ``DeepPrep/deepprep/nextflow/cluster/deepprep.slurm.cpu.config``.
 
 
 Run DeepPrep with CPU only
@@ -324,8 +328,8 @@ Shown as below:
     --deepprep_home ${TEST_DIR}/DeepPrep \
     --fs_license_file ${FS_LICENSE} \
     --executor cluster \
-    --container ${TEST_DIR}/deepprep_23.1.0.sif \
-    --config_file ${TEST_DIR}/deepprep.slurm.cpu.config \
+    --container ${TEST_DIR}/deepprep_24.1.0.sif \
+    --config_file ${TEST_DIR}/DeepPrep/deepprep/nextflow/cluster/deepprep.slurm.cpu.config \
     --device cpu
 
 
@@ -347,16 +351,16 @@ SLURM
 .. code-block:: none
 
     export TEST_DIR=<test_dir>
-    ${TEST_DIR}/DeepPrep_2310/deepprep/deepprep.sh \
+    ${TEST_DIR}/DeepPrep/deepprep/deepprep.sh \
     ${TEST_DIR}/test_sample \
-    ${TEST_DIR}/test_sample_DeepPrep_2310_cpu \
+    ${TEST_DIR}/test_sample_DeepPrep_cpu \
     participant \
     --bold_task_type rest \
-    --deepprep_home ${TEST_DIR}/DeepPrep_2310 \
-    --fs_license_file ${TEST_DIR}/DeepPrep_2310/license.txt \
+    --deepprep_home ${TEST_DIR}/DeepPrep \
+    --fs_license_file ${TEST_DIR}/DeepPrep/license.txt \
     --executor cluster \
-    --container ${TEST_DIR}/deepprep_23.1.0.sif \
-    --config_file ${TEST_DIR}/DeepPrep_2310/deepprep.slurm.cpu.config \
+    --container ${TEST_DIR}/deepprep_24.1.0.sif \
+    --config_file ${TEST_DIR}/DeepPrep/deepprep/nextflow/cluster/deepprep.slurm.cpu.config \
     --device cpu \
     --debug \
     --resume
@@ -369,13 +373,14 @@ SLURM
     singularity.enabled = true
     singularity.autoMounts = false
     singularity.runOptions = '-e \
-    --home ${output_dir}/WorkDir/home \
-    --env TEMP=${output_dir}/WorkDir/tmp \
-    --env TMP=${output_dir}/WorkDir/tmp \
-    --env TMPDIR=${output_dir}/WorkDir/tmp \
-    -B ${bids_dir} \
-    -B ${output_dir} \
-    -B ${fs_license_file}:/opt/freesurfer/license.txt \
+        --home ${output_dir}/WorkDir/home \
+        --env TEMP=${output_dir}/WorkDir/tmp \
+        --env TMP=${output_dir}/WorkDir/tmp \
+        --env TMPDIR=${output_dir}/WorkDir/tmp \
+        -B ${bids_dir} \
+        -B ${output_dir} \
+        -B ${subjects_dir} \
+        -B ${fs_license_file}:/opt/freesurfer/license.txt \
     '
 
     process {
@@ -396,16 +401,16 @@ SLURM
 .. code-block:: none
 
     export TEST_DIR=<test_dir>
-    ${TEST_DIR}/DeepPrep_2310/deepprep/deepprep.sh \
+    ${TEST_DIR}/DeepPrep/deepprep/deepprep.sh \
     ${TEST_DIR}/test_sample \
-    ${TEST_DIR}/test_sample_DeepPrep_2310_gpu \
+    ${TEST_DIR}/test_sample_DeepPrep_gpu \
     participant \
     --bold_task_type rest \
-    --deepprep_home ${TEST_DIR}/DeepPrep_2310 \
-    --fs_license_file ${TEST_DIR}/DeepPrep_2310/license.txt \
+    --deepprep_home ${TEST_DIR}/DeepPrep \
+    --fs_license_file ${TEST_DIR}/DeepPrep/license.txt \
     --executor cluster \
-    --container ${TEST_DIR}/deepprep_23.1.0.sif \
-    --config_file ${TEST_DIR}/DeepPrep_2310/deepprep.slurm.gpu.config \
+    --container ${TEST_DIR}/deepprep_24.1.0.sif \
+    --config_file ${TEST_DIR}/DeepPrep/deepprep/nextflow/cluster/deepprep.slurm.gpu.config \
     --debug \
     --resume
 
@@ -422,6 +427,7 @@ SLURM
     --env TMPDIR=${output_dir}/WorkDir/tmp \
     -B ${bids_dir} \
     -B ${output_dir} \
+    -B ${subjects_dir} \
     -B ${fs_license_file}:/opt/freesurfer/license.txt \
     '
 
@@ -436,10 +442,19 @@ SLURM
 
         container = "${container}"
 
-         withLabel: with_gpu {
-             queue = 'gpu2'
-             clusterOptions = { " --gres=gpu:1" }
-             singularity.runOptions = '-e --nv -B ${fs_license_file}:/opt/freesurfer/license.txt'
+        withLabel: with_gpu {
+            queue = 'gpu2'
+            clusterOptions = { " --chdir=${nextflow_work_dir} --gres=gpu:1" }
+            singularity.runOptions = '-e --nv \
+                --home ${output_dir}/WorkDir/home \
+                --env TEMP=${output_dir}/WorkDir/tmp \
+                --env TMP=${output_dir}/WorkDir/tmp \
+                --env TMPDIR=${output_dir}/WorkDir/tmp \
+                -B ${bids_dir} \
+                -B ${output_dir} \
+                -B ${subjects_dir} \
+                -B ${fs_license_file}:/opt/freesurfer/license.txt \
+                '
          }
     }
 
@@ -453,16 +468,16 @@ PBS
 .. code-block:: none
 
     export TEST_DIR=<test_dir>
-    ${TEST_DIR}/DeepPrep_2310/deepprep/deepprep.sh \
+    ${TEST_DIR}/DeepPrep/deepprep/deepprep.sh \
     ${TEST_DIR}/test_sample \
-    ${TEST_DIR}/test_sample_DeepPrep_2310_cpu \
+    ${TEST_DIR}/test_sample_DeepPrep_cpu \
     participant \
     --bold_task_type rest \
-    --deepprep_home ${TEST_DIR}/DeepPrep_2310 \
-    --fs_license_file ${TEST_DIR}/DeepPrep_2310/license.txt \
+    --deepprep_home ${TEST_DIR}/DeepPrep \
+    --fs_license_file ${TEST_DIR}/DeepPrep/license.txt \
     --executor cluster \
-    --container ${TEST_DIR}/deepprep_23.1.0.sif \
-    --config_file ${TEST_DIR}/DeepPrep_2310/deepprep.pbs.cpu.config \
+    --container ${TEST_DIR}/deepprep_24.1.0.sif \
+    --config_file ${TEST_DIR}/DeepPrep/deepprep/nextflow/cluster/deepprep.pbfs.cpu.config \
     --device cpu \
     --debug \
     --resume
@@ -475,13 +490,14 @@ PBS
     singularity.enabled = true
     singularity.autoMounts = false
     singularity.runOptions = '-e \
-    --home ${output_dir}/WorkDir/home \
-    --env TEMP=${output_dir}/WorkDir/tmp \
-    --env TMP=${output_dir}/WorkDir/tmp \
-    --env TMPDIR=${output_dir}/WorkDir/tmp \
-    -B ${bids_dir} \
-    -B ${output_dir} \
-    -B ${fs_license_file}:/opt/freesurfer/license.txt \
+        --home ${output_dir}/WorkDir/home \
+        --env TEMP=${output_dir}/WorkDir/tmp \
+        --env TMP=${output_dir}/WorkDir/tmp \
+        --env TMPDIR=${output_dir}/WorkDir/tmp \
+        -B ${bids_dir} \
+        -B ${output_dir} \
+        -B ${subjects_dir} \
+        -B ${fs_license_file}:/opt/freesurfer/license.txt \
     '
 
     process {
@@ -503,16 +519,16 @@ PBS
 .. code-block:: none
 
     export TEST_DIR=<test_dir>
-    ${TEST_DIR}/DeepPrep_2310/deepprep/deepprep.sh \
+    ${TEST_DIR}/DeepPrep/deepprep/deepprep.sh \
     ${TEST_DIR}/test_sample \
-    ${TEST_DIR}/test_sample_DeepPrep_2310_gpu \
+    ${TEST_DIR}/test_sample_DeepPrep_gpu \
     participant \
     --bold_task_type rest \
-    --deepprep_home ${TEST_DIR}/DeepPrep_2310 \
-    --fs_license_file ${TEST_DIR}/DeepPrep_2310/license.txt \
+    --deepprep_home ${TEST_DIR}/DeepPrep \
+    --fs_license_file ${TEST_DIR}/DeepPrep/license.txt \
     --executor cluster \
-    --container ${TEST_DIR}/deepprep_23.1.0.sif \
-    --config_file ${TEST_DIR}/DeepPrep_2310/deepprep.pbs.gpu.config \
+    --container ${TEST_DIR}/deepprep_24.1.0.sif \
+    --config_file ${TEST_DIR}/DeepPrep/deepprep/nextflow/cluster/deepprep.pbfs.gpu.config \
     --device auto \
     --debug \
     --resume
@@ -525,13 +541,14 @@ PBS
     singularity.enabled = true
     singularity.autoMounts = false
     singularity.runOptions = '-e \
-    --home ${output_dir}/WorkDir/home \
-    --env TEMP=${output_dir}/WorkDir/tmp \
-    --env TMP=${output_dir}/WorkDir/tmp \
-    --env TMPDIR=${output_dir}/WorkDir/tmp \
-    -B ${bids_dir} \
-    -B ${output_dir} \
-    -B ${fs_license_file}:/opt/freesurfer/license.txt \
+        --home ${output_dir}/WorkDir/home \
+        --env TEMP=${output_dir}/WorkDir/tmp \
+        --env TMP=${output_dir}/WorkDir/tmp \
+        --env TMPDIR=${output_dir}/WorkDir/tmp \
+        -B ${bids_dir} \
+        -B ${output_dir} \
+        -B ${subjects_dir} \
+        -B ${fs_license_file}:/opt/freesurfer/license.txt \
     '
 
     process {
@@ -550,7 +567,16 @@ PBS
             module = 'cuda/11.8.0-gcc/9.5.0'
             queue = 'gpu_k240'
             clusterOptions = { ' -l select=1:ncpus=8:mem=20gb:ngpus=1:gpu_model=p100,walltime=00:20:0' }
-            singularity.runOptions = '--nv --home ${output_dir}/WorkDir/home --env TEMP=${output_dir}/WorkDir/tmp --env TMP=${output_dir}/WorkDir/tmp --env TMPDIR=${output_dir}/WorkDir/tmp -e  -B ${bids_dir} -B ${output_dir} -B ${fs_license_file}:/opt/freesurfer/license.txt'
+            singularity.runOptions = '-e --nv \
+                --home ${output_dir}/WorkDir/home \
+                --env TEMP=${output_dir}/WorkDir/tmp \
+                --env TMP=${output_dir}/WorkDir/tmp \
+                --env TMPDIR=${output_dir}/WorkDir/tmp \
+                -B ${bids_dir} \
+                -B ${output_dir} \
+                -B ${subjects_dir} \
+                -B ${fs_license_file}:/opt/freesurfer/license.txt \
+            '
         }
     }
 

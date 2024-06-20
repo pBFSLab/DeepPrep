@@ -66,17 +66,21 @@ def SubjectSummary_run(subject_id, t1w_files, bold_files, subjects_dir, qc_repor
                     subj_QC_figures_dir / f'{subject_id}_desc-subjectsummary_report.html')
 
 
-def TemplateDimensions_run(subject_id, t1w_files, qc_report_path):
+def TemplateDimensions_run(subject_id, t1w_files, qc_report_path, sub_workdir):
     # 这个步骤需要每个subject执行一次，将T1w作为输入
 
-    node_name = 'T1w_Reports_run_node'
+    node_name = f'{subject_id}_T1w_Reports_run_node'
     TemplateDimensions_node = Node(TemplateDimensions(), node_name)
     TemplateDimensions_node.inputs.t1w_list = t1w_files
 
-    TemplateDimensions_node.base_dir = Path().cwd()
+    TemplateDimensions_node.base_dir = Path(sub_workdir)
     TemplateDimensions_node.run()
-    shutil.copyfile(Path(node_name) / 'report.html',
-                    Path(qc_report_path) / subject_id / 'figures' / f'{subject_id}_desc-templatedimensions_report.html')
+    report_path = Path(sub_workdir) / node_name / 'report.html'
+    print(report_path)
+    sub_qc_report_path = Path(qc_report_path) / subject_id / 'figures'
+    sub_qc_report_path.mkdir(exist_ok=True, parents=True)
+    shutil.copyfile(Path(sub_workdir) / node_name / 'report.html',
+                    Path(sub_qc_report_path) / f'{subject_id}_desc-templatedimensions_report.html')
 
 
 def copy_config_and_get_command(qc_result_dir: Path, nextflow_log: Path):
@@ -124,6 +128,7 @@ if __name__ == '__main__':
     parser.add_argument("--qc_result_path", help="save qc report path", required=True)
     parser.add_argument("--deepprep_version", help="DeepPrep version", required=True)
     parser.add_argument("--nextflow_log", help="nextflow run log", required=True)
+    parser.add_argument("--workdir", help="work dir", required=True)
     args = parser.parse_args()
 
     qc_result_path = Path(args.qc_result_path)
@@ -137,5 +142,6 @@ if __name__ == '__main__':
         t1w_files = get_t1w(args.bids_dir, args.subject_id)
     command = copy_config_and_get_command(qc_result_path, Path(args.nextflow_log))
     if len(t1w_files) > 0:
-        TemplateDimensions_run(args.subject_id, t1w_files, qc_result_path)
+        sub_workdir = Path(args.workdir) / args.subject_id
+        TemplateDimensions_run(args.subject_id, t1w_files, qc_result_path, sub_workdir)
     AboutSummary_run(args.subject_id, qc_result_path, command, args.deepprep_version)

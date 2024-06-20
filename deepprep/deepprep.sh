@@ -8,20 +8,21 @@ cpus=""
 memory=""
 freesurfer_home="/opt/freesurfer"
 fs_license_file=""
+subjects_dir=""
 deepprep_home="/opt/DeepPrep"
 container=""
 ignore_error=""
 debug=""
 
 help="DeepPrep args:
-deepprep-docker [bids_dir] [output_dir] [{participant}] [--bold_task_type TASK_LABEL]
-                [--fs_license_file PATH] [--participant_label PARTICIPANT_LABEL [PARTICIPANT_LABEL ...]]
+deepprep-docker [bids_dir] [output_dir] [{participant}] [--bold_task_type '[task1 task2 task3 ...]']
+                [--fs_license_file PATH] [--participant_label '[001 002 003 ...]']
                 [--subjects_dir PATH] [--skip_bids_validation]
                 [--anat_only] [--bold_only] [--bold_sdc] [--bold_confounds]
-                [--bold_surface_spaces '[fsnative fsaverage fsaverage6 ...]']
-                [--bold_volume_space {MNI152NLin6Asym MNI152NLin2009cAsym}] [--bold_volume_res {02 03...}]
+                [--bold_surface_spaces '[None fsnative fsaverage fsaverage6 ...]']
+                [--bold_volume_space {None MNI152NLin6Asym MNI152NLin2009cAsym}] [--bold_volume_res {02 03...}]
                 [--device { {auto 0 1 2...} cpu}]
-                [--cpus 10] [--memory 5]
+                [--cpus 10] [--memory 20]
                 [--ignore_error] [--resume]
 "
 
@@ -60,6 +61,11 @@ while [[ $# -gt 0 ]]; do
     --fs_license_file)
       fs_license_file="$2"
       echo "Input --fs_license_file : ${fs_license_file}"
+      shift
+      ;;
+    --subjects_dir)
+      subjects_dir="$2"
+      echo "Input --subjects_dir : ${subjects_dir}"
       shift
       ;;
     --config_file)
@@ -208,10 +214,14 @@ else
         exit 1
     fi
   fi
+  if [ -z "${subjects_dir}" ]; then
+    subjects_dir="${output_dir}/Recon"
+  fi
   sed -i "s@\${nextflow_work_dir}@${nextflow_work_dir}@g" "${run_config}"
   sed -i "s@\${container}@${container}@g" "${run_config}"
   sed -i "s@\${bids_dir}@${bids_dir}@g" "${run_config}"
   sed -i "s@\${output_dir}@${output_dir}@g" "${run_config}"
+  sed -i "s@\${subjects_dir}@${subjects_dir}@g" "${run_config}"
 fi
 
 cd "${nextflow_work_dir}" && \
