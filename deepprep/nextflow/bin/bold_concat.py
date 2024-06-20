@@ -10,11 +10,12 @@ def concat_bold(transformed_dir, concat_bold_file):
     os.system(cmd)
 
 
-def get_space_t1w_bold(bids_orig, bids_preproc, bold_orig_file):
+def get_space_t1w_bold(subject_id, bids_preproc, bold_orig_file):
     from bids import BIDSLayout
-    layout_orig = BIDSLayout(bids_orig, validate=False)
-    layout_preproc = BIDSLayout(bids_preproc, validate=False)
-    info = layout_orig.parse_file_entities(bold_orig_file)
+    assert subject_id.startswith('sub-')
+    layout_preproc = BIDSLayout(str(os.path.join(bids_preproc, subject_id)),
+                                config=['bids', 'derivatives'], validate=False)
+    info = layout_preproc.parse_file_entities(bold_orig_file)
     bold_t1w_info = info.copy()
     bold_t1w_info['space'] = 'T1w'
     bold_t1w_info['suffix'] = 'bold'
@@ -30,6 +31,7 @@ if __name__ == '__main__':
     )
     parser.add_argument("--bids_dir", required=True)
     parser.add_argument("--bold_preprocess_dir", required=True)
+    parser.add_argument("--subject_id", required=True)
     parser.add_argument("--bold_id", required=True)
     parser.add_argument("--subject_boldfile_txt_bold", required=True)
     parser.add_argument("--template_space", required=True)
@@ -41,7 +43,7 @@ if __name__ == '__main__':
         data = f.readlines()
     data = [i.strip() for i in data]
     bold_file = data[1]
-    bold_t1w_file = get_space_t1w_bold(args.bids_dir, args.bold_preprocess_dir, bold_file)
+    bold_t1w_file = get_space_t1w_bold(args.subject_id, args.bold_preprocess_dir, bold_file)
 
     bold_output = Path(bold_t1w_file.dirname) / f'{args.bold_id}_space-{args.template_space}_res-{args.template_resolution}_desc-preproc_bold.nii.gz'
     concat_bold(args.transform_dir, bold_output)
