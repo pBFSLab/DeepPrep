@@ -13,21 +13,19 @@ Stage: build
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/lib/jvm/java-11-openjdk-amd64/lib:/usr/lib/jvm/java-11-openjdk-amd64/lib/server"
     export JAVA_HOME="/usr/lib/jvm/java-11-openjdk-amd64"
 
-    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/lib/python3.10/dist-packages/tensorrt_libs"
-
     export ANTSPATH="/opt/ANTs/bin"
     export PATH="${ANTSPATH}:${PATH}"
     export ANTS_RANDOM_SEED=14193
 
     export FSLDIR="/opt/fsl"
-    export FSLOUTPUTTYPE="NIFTI"
+    export FSLOUTPUTTYPE="NIFTI_GZ"
     export PATH="${FSLDIR}/bin:${PATH}"
+
+    export PATH="/opt/workbench/bin_linux64:${PATH}"
 
     export PATH="/opt/abin:${PATH}"
 
     export PATH="/opt/DeepPrep/deepprep/nextflow/bin:${PATH}"
-
-    export TEMPLATEFLOW_HOME=/opt/TemplateFlow
 
 %post
     NOW=`date`
