@@ -1,5 +1,5 @@
 Bootstrap: docker-daemon
-From: ninganme/deepprep:$Version
+From: pbfslab/deepprep:$Version
 Stage: build
 
 %files
