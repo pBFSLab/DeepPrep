@@ -16,7 +16,7 @@ The anatomical preprocessing workflow in DeepPrep closely follows the FreeSurfer
 
 **Segmentations.** The whole brain is segmented into 95 cortical and subcortical regions using FastSurferCNN. Specifically, the segmentation model utilized is FastSurferCNN, which is optimized for accurate and rapid anatomical segmentations.
 
-.. image:: _static/sub-001_desc-volparc_T1w.svg
+.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/_static/processing/sub-001_desc-volparc_T1w.svg
    :align: center
 
 |
@@ -26,14 +26,14 @@ The anatomical preprocessing workflow in DeepPrep closely follows the FreeSurfer
 .. raw:: html
 
    <div style="text-align: center;">
-    <object type="image/svg+xml" data="_static/rawavg_brainmask_combined.svg"></object>
+    <object type="image/svg+xml" data="https://download.anning.info/ninganme-public/DeepPrep/docs/source/_static/processing/rawavg_brainmask_combined.svg"></object>
    </div>
 
 |
 
 **Cortical surface reconstruction.** The white-matter and pial cortical surfaces are reconstructed based on the anatomical segmentation derived from the FastSurferCNN. This process utilizes FastCSR, a deep-learning-based model designed to accelerate cortical surface reconstruction. FastCSR leverages an implicit representation of the cortical surface through the level-set representation, and uses a topology-preserving surface extraction method to yield white and pial surfaces represented by triangulated meshes. The reconstructed surface is inflated to a sphere with minimal distortion using the FreeSurfer command ``mris_sphere``.
 
-.. image:: _static/sub-001_desc-volsurf_T1w.svg
+.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/_static/processing/sub-001_desc-volsurf_T1w.svg
    :align: center
 
 |
@@ -45,7 +45,7 @@ The reconstructed surface is inflated to a sphere with minimal distortion using 
 The cortical surface parcellation is generated based on the cortical surface registration using the FreeSurfer command ``recon-all -cortparc``. Subsequently, the cortical parcellation is projected to the volumetric segmentation by assigning voxels their closest cortical labels via the command ``mri_surf2volseg``, thereby replacing the cortical parcellation derived from FastSurferCNN.
 The parcellations were created based on the registration result generated from SUGAR, which aligns participants' surfaces with fsavreage template surfaces:
 
-.. image:: _static/surfparc.png
+.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/_static/processing/surfparc.png
    :align: center
 
 |
@@ -68,7 +68,7 @@ A rigid registration is performed using FreeSurfer’s boundary-based registrati
 .. raw:: html
 
    <div style="text-align: center;">
-       <object type="image/svg+xml" data="_static/sub-001_ses-01_task-rest_desc-reg2native_bold.svg"></object>
+       <object type="image/svg+xml" data="https://download.anning.info/ninganme-public/DeepPrep/docs/source/_static/processing/sub-001_ses-01_task-rest_desc-reg2native_bold.svg"></object>
    </div>
 
 **Spatial normalization.**
@@ -78,7 +78,7 @@ The spatial normalization step aims to normalize individual brain images to a st
 .. raw:: html
 
  <div style="text-align: center;">
-  <object type="image/svg+xml" data="_static/sub-001_ses-01_task-rest_desc-reg2MNI152_bold.svg"></object>
+  <object type="image/svg+xml" data="https://download.anning.info/ninganme-public/DeepPrep/docs/source/_static/processing/sub-001_ses-01_task-rest_desc-reg2MNI152_bold.svg"></object>
  </div>
 
 ==========
