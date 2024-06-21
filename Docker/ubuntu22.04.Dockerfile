@@ -159,8 +159,9 @@ COPY deepprep/model/SynthMorph /opt/model/SynthMorph
 #COPY deepprep/deepprep.sh /opt/DeepPrep/deepprep/deepprep.sh
 # release
 ENV DEEPPREP_VERSION="24.1.0"
-ENV DEEPPREP_HASH="ce13059"
-RUN git clone --recursive --single-branch -b ${DEEPPREP_VERSION} https://github.com/pBFSLab/DeepPrep.git /opt/DeepPrep && cd /opt/DeepPrep && git checkout ${DEEPPREP_HASH}
+ENV DEEPPREP_HASH="a3f8f03"
+RUN git clone --recursive --single-branch -b ${DEEPPREP_VERSION} https://github.com/pBFSLab/DeepPrep.git /opt/DeepPrep \
+    && cd /opt/DeepPrep && git checkout ${DEEPPREP_HASH} && rm -r /opt/DeepPrep/.git
 
 RUN chmod 755 /opt/DeepPrep/deepprep/deepprep.sh && chmod 755 /opt/DeepPrep/deepprep/nextflow/bin/*.py
 ENV PATH="/opt/DeepPrep/deepprep/nextflow/bin:${PATH}"
