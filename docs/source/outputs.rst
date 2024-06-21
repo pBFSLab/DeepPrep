@@ -162,7 +162,7 @@ DeepPrep outputs summary reports, written to ``<output dir>/QC``. These reports 
      ├── report.html
      └── timeline.html
 
-DeepPrep automatically generates a descriptive HTML report for each participant and session. `View a sample report <_static/qc_report/sub-01.html>`_.
+DeepPrep automatically generates a descriptive HTML report for each participant and session. `View a sample report <https://download.anning.info/ninganme-public/DeepPrep/docs/source/_static/qc_report/sub-01.html>`_.
 The report commences with a concise summary of key imaging parameters extracted from the BIDS meta information.
 Subsequently, the report provides an overview of the overall CPU and GPU processing times for the data preprocessing.
 Key processing steps and results for structural images are visually presented, including segmentation, parcellation,
@@ -172,13 +172,13 @@ along with a temporal signal-to-noise ratio (tSNR) map. Finally, the report conc
 offering a clear and consistent description of all preprocessing steps employed, accompanied by appropriate citations. Some examples are shown below:
 
 
-.. image:: _static/report_timeline.png
+.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/_static/outputs/report_timeline.png
    :align: center
 
 The visual reports provide several sections per task and run to aid designing a denoising strategy for subsequent analysis.
 Some of the estimated confounds are plotted with a "carpet" visualization of the BOLD time series. An example is shown below:
 
-.. image:: _static/desc-carpet_bold.svg
+.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/_static/outputs/desc-carpet_bold.svg
    :align: center
 
 
