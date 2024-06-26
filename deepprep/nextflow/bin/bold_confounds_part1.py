@@ -116,11 +116,12 @@ def compile_regressors(bold_path: Path,
     return output_file
 
 
-def get_space_t1w_bold(bids_orig, bids_preproc, bold_orig_file):
+def get_space_t1w_bold(subject_id, bids_preproc, bold_orig_file):
     from bids import BIDSLayout
-    layout_orig = BIDSLayout(bids_orig, validate=False)
-    layout_preproc = BIDSLayout(bids_preproc, validate=False)
-    info = layout_orig.parse_file_entities(bold_orig_file)
+    assert subject_id.startswith('sub-')
+    layout_preproc = BIDSLayout(str(os.path.join(bids_preproc, subject_id)),
+                                config=['bids', 'derivatives'], validate=False)
+    info = layout_preproc.parse_file_entities(bold_orig_file)
 
     boldref_t1w_info = info.copy()
     boldref_t1w_info['space'] = 'T1w'
@@ -181,12 +182,12 @@ if __name__ == '__main__':
     data = [i.strip() for i in data]
     bold_orig_file = data[1]
 
-    bold_space_t1w_file, boldref_space_t1w_file = get_space_t1w_bold(bids_orig=args.bids_dir, bids_preproc=args.bold_preprocess_dir, bold_orig_file=bold_orig_file)
+    bold_space_t1w_file, boldref_space_t1w_file = get_space_t1w_bold(subject_id=args.subject_id, bids_preproc=args.bold_preprocess_dir, bold_orig_file=bold_orig_file)
 
     anat2bold_t1w(args.aseg_mgz, args.brainmask_mgz, str(boldref_space_t1w_file.path),
                   str(aseg), str(wm), str(vent), str(csf), str(brainmask), str(brainmask_bin))
 
-    output_dir = os.path.join(args.work_dir, 'confounds', args.subject_id)
+    output_dir = os.path.join(args.work_dir, 'confounds', args.subject_id, args.bold_id)
     os.makedirs(output_dir, exist_ok=True)
     confounds_file = Path(output_dir, 'confounds_part1.tsv')
     compile_regressors(str(bold_space_t1w_file.path),

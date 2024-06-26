@@ -23,7 +23,7 @@ def get_output_space(output_spaces):
 
 
 def update_config(bids_dir, bold_preprocess_dir, work_dir, fs_license_file, fs_subjects_dir,
-                  subject_id, task_id, spaces, templateflow_home):
+                  subject_id, task_id, spaces):
     config.execution.bids_dir = bids_dir
     config.execution.log_dir = f'{work_dir}/log'
     config.execution.fs_license_file = fs_license_file
@@ -32,7 +32,6 @@ def update_config(bids_dir, bold_preprocess_dir, work_dir, fs_license_file, fs_s
     config.execution.output_spaces = spaces
     config.execution.participant_label = [subject_id,]
     config.execution.task_id = task_id
-    config.execution.templateflow_home = templateflow_home
     config.execution.work_dir = work_dir
     config.execution.fmriprep_dir = config.execution.output_dir
 
@@ -66,11 +65,12 @@ def update_config(bids_dir, bold_preprocess_dir, work_dir, fs_license_file, fs_s
     config.seeds.numpy = 11239
 
 
-def get_bold_func_path(bids_orig, bids_preproc, bold_orig_file):
+def get_bold_func_path(subject_id, bids_preproc, bold_orig_file):
     from bids import BIDSLayout
-    layout_orig = BIDSLayout(bids_orig, validate=False)
-    layout_preproc = BIDSLayout(bids_preproc, validate=False)
-    info = layout_orig.parse_file_entities(bold_orig_file)
+    assert subject_id.startswith('sub-')
+    layout_preproc = BIDSLayout(str(os.path.join(bids_preproc, subject_id)),
+                                config=['bids', 'derivatives'], validate=False)
+    info = layout_preproc.parse_file_entities(bold_orig_file)
 
     boldref_t1w_info = info.copy()
     boldref_t1w_info['space'] = 'T1w'
@@ -99,7 +99,6 @@ if __name__ == '__main__':
     parser.add_argument("--fsnative2t1w_xfm", required=False)
     parser.add_argument("--fs_license_file", required=False)
     parser.add_argument("--bold_sdc", required=False, default='False')
-    parser.add_argument("--templateflow_home", required=False, default='/home/root/.cache/templateflow')
     parser.add_argument("--qc_result_path", required=True)
     args = parser.parse_args()
     """
@@ -141,8 +140,7 @@ if __name__ == '__main__':
     bold_spaces = get_output_space(args.bold_spaces)
     spaces = ' '.join(bold_spaces)
     update_config(args.bids_dir, args.bold_preprocess_dir, args.work_dir, args.fs_license_file,
-                  args.subjects_dir, args.subject_id, args.task_id, spaces,
-                  args.templateflow_home)
+                  args.subjects_dir, args.subject_id, args.task_id, spaces)
     work_dir = Path(config.execution.work_dir)
     work_dir.mkdir(parents=True, exist_ok=True)
     config_file = work_dir / config.execution.run_uuid / 'config.toml'
@@ -311,19 +309,27 @@ if __name__ == '__main__':
         result = workflow.run()
 
         # prepare inputs for confounds_v2
-        confounds_dir_path = work_dir.parent / args.subject_id / 'confounds'
+        confounds_dir_path = work_dir.parent / 'confounds' / args.subject_id / bold_id
         confounds_dir_path.mkdir(parents=True, exist_ok=True)
         boldref_dir = base_dir / f'{bold_id}_wf' / 'bold_wf' / 'bold_native_wf' / 'boldref_bold'
         boldresampled_file = sorted(boldref_dir.glob('sub-*resampled.nii.gz'))[0]
-        os.system(f'rsync -arv {boldresampled_file} {confounds_dir_path}/{bold_id}_boldresampled.nii.gz')
+        if (confounds_dir_path / f'{bold_id}_boldresampled.nii.gz').exists():
+            (confounds_dir_path / f'{bold_id}_boldresampled.nii.gz').unlink()
+        (confounds_dir_path / f'{bold_id}_boldresampled.nii.gz').symlink_to(boldresampled_file)
         boldmask_dir = base_dir / f'{bold_id}_wf' / 'bold_wf' / 'bold_fit_wf' / 'enhance_and_skullstrip_bold_wf' / 'combine_masks'
         boldmask_file = sorted(boldmask_dir.glob('sub-*mask*.nii.gz'))[0]
-        os.system(f'rsync -arv {boldmask_file} {confounds_dir_path}/{bold_id}_bold_average_corrected_brain_mask_maths.nii.gz')
+        if (confounds_dir_path / f'{bold_id}_bold_average_corrected_brain_mask_maths.nii.gz').exists():
+            (confounds_dir_path / f'{bold_id}_bold_average_corrected_brain_mask_maths.nii.gz').unlink()
+        (confounds_dir_path / f'{bold_id}_bold_average_corrected_brain_mask_maths.nii.gz').symlink_to(boldmask_file)
         hmc_dir = base_dir / f'{bold_id}_wf' / 'bold_wf' / 'bold_fit_wf' / 'bold_hmc_wf'
         motion_txt = sorted(hmc_dir.glob('normalize_motion/motion_params.txt'))[0]
-        os.system(f'rsync -arv {motion_txt} {confounds_dir_path}/{bold_id}_motion_params.txt')
+        if (confounds_dir_path / f'{bold_id}_motion_params.txt').exists():
+            (confounds_dir_path / f'{bold_id}_motion_params.txt').unlink()
+        (confounds_dir_path / f'{bold_id}_motion_params.txt').symlink_to(motion_txt)
         rel_file = sorted(hmc_dir.glob('mcflirt/sub-*rel.rms'))[0]
-        os.system(f'rsync -arv {rel_file} {confounds_dir_path}/{bold_id}_bold_mcf.nii.gz_rel.rms')
+        if (confounds_dir_path / f'{bold_id}_bold_mcf.nii.gz_rel.rms').exists():
+            (confounds_dir_path / f'{bold_id}_bold_mcf.nii.gz_rel.rms').unlink()
+        (confounds_dir_path / f'{bold_id}_bold_mcf.nii.gz_rel.rms').symlink_to(rel_file)
 
         # get mcflirt result file
         mcflirt_node_name = ''
@@ -333,7 +339,7 @@ if __name__ == '__main__':
                 break
         mcflirt_node_path = base_dir / workflow.name / mcflirt_node_name.replace('.', '/')
         list(mcflirt_node_path.glob(f'{bold_id}*mcf*'))
-        func_path = get_bold_func_path(args.bids_dir, args.bold_preprocess_dir, bold_file)
+        func_path = get_bold_func_path(args.subject_id, args.bold_preprocess_dir, bold_file)
         for mcflirt_file in mcflirt_node_path.glob(f'{bold_id}*mcf*'):
             if mcflirt_file.is_file():
                 shutil.copyfile(mcflirt_file, func_path / mcflirt_file.name)

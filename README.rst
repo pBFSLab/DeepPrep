@@ -14,7 +14,7 @@ About
 Neuroimaging has entered the era of big data. However, the advancement of preprocessing pipelines falls behind the rapid expansion of data volume, causing significant computational challenges. Here, we present DeepPrep, a pipeline empowered by deep learning and workflow manager. Evaluated on over 55,000 scans, DeepPrep demonstrates a 11-fold acceleration, exceptional scalability, and robustness compared to the current state-of-the-art pipeline, providing a promising solution to meet the scalability requirements of neuroimaging.
 The following is efficient workflow of the DeepPrep pipeline:
 
-.. image:: https://github.com/pBFSLab/DeepPrep/raw/40446b5408cdf01cad7dcf44d092cda2130ffd69/docs/source/_static/fig1.svg
+.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/_static/readme/fig1.svg
    :align: center
 
 |
@@ -26,7 +26,7 @@ A computationally efficient and scalable neuroimaging pipeline is empowered by d
 
 Outperformance in application to large-sample and clinical datasets:
 
-.. image:: https://github.com/pBFSLab/DeepPrep/raw/40446b5408cdf01cad7dcf44d092cda2130ffd69/docs/source/_static/fig2.svg
+.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/_static/readme/fig2.svg
    :align: center
 
 |
@@ -41,7 +41,7 @@ DeepPrep achieves over 10-fold acceleration and shows robustness in processing c
 
 Upcoming improvements
 ---------------------
-1. Cifti: DeepPrep will now produce outputs in cifti format.
+1. Cifti: DeepPrep will produce outputs in cifti format.
 2. MP2RAGE: DeepPrep will be compatible with MP2RAGE.
 3. High-resolution images: We're expanding DeepPrep's support to include high-resolution images (i.e. 7T).
 4. DeepQC: DeepPrep will feature an automated quality control process called DeepQC for both sMRI and fMRI visualization.
@@ -49,6 +49,7 @@ Upcoming improvements
 
 Citation
 --------
+Ren, J., An, N., Lin, C., Zhang, Y., Sun, Z., Zhang, W., Li, S., Guo, N., Cui, W., Hu, Q. and Wang, W., 2024. DeepPrep: An accelerated, scalable, and robust pipeline for neuroimaging preprocessing empowered by deep learning. bioRxiv, pp.2024-03.
 
 License
 --------

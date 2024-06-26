@@ -19,7 +19,7 @@
 #
 #     https://www.nipreps.org/community/licensing/
 #
-
+import os
 import argparse
 from pathlib import Path
 from bids import BIDSLayout
@@ -30,10 +30,11 @@ from fmriprep.interfaces import DerivativesDataSink
 
 
 
-def get_preproc_file(bids_orig, bids_preproc, bold_orig_file, update_entities):
-    layout_orig = BIDSLayout(bids_orig, validate=False)
-    layout_preproc = BIDSLayout(bids_preproc, validate=False)
-    info = layout_orig.parse_file_entities(bold_orig_file)
+def get_preproc_file(subject_id, bids_preproc, bold_orig_file, update_entities):
+    assert subject_id.startswith('sub-')
+    layout_preproc = BIDSLayout(str(os.path.join(bids_preproc, subject_id)),
+                                config=['bids', 'derivatives'], validate=False)
+    info = layout_preproc.parse_file_entities(bold_orig_file)
 
     bold_t1w_info = info.copy()
     if update_entities:
@@ -89,10 +90,10 @@ def bold_confounds_v2(bold_preprocess_dir, bold, bold_mask, movpar_file, rmsd_fi
     workflow.connect([
         (bold_confounds_wf, ds_confounds, [
             ('outputnode.confounds_file', 'in_file'),
+            ('outputnode.confounds_metadata', 'meta_dict'),
         ]),
     ])
     workflow.run()
-
 
 
 if __name__ == '__main__':
@@ -126,12 +127,13 @@ if __name__ == '__main__':
     --mask_nii: ~/output/BOLD/sub-001/anat/sub-001_desc-brain_mask.nii.gz
     
     outputs:
+    meta_dict: ~/output/BOLD/sub-001/ses-01/func/sub-001-01_task-rest_run-01_desc-confounds_timeseries.json
     meta_dict: ~/output/BOLD/sub-001/ses-01/func/sub-001-01_task-rest_run-01_desc-confounds_timeseries.tsv
     """
 
-    # The required input confound files were generated in <process:bold_pre_process>, and copied to <confounds_dir>.
+    # The required input confound files were generated in <process:bold_pre_process>, and linked to <confounds_dir>.
     # If there's any missing file under <confounds_dir>, please go to <process:bold_pre_process> and double check if its original path exists.
-    confounds_dir = Path(args.work_dir) / 'confounds' / args.subject_id
+    confounds_dir = Path(args.work_dir) / 'confounds' / args.subject_id / args.bold_id
     bold_file = [args.bold_file]
     boldresampled = confounds_dir / f'{args.bold_id}_boldresampled.nii.gz'
     bold_mask = confounds_dir / f'{args.bold_id}_bold_average_corrected_brain_mask_maths.nii.gz'
@@ -147,7 +149,7 @@ if __name__ == '__main__':
     source_file = data[1]
 
     update_entities = {'desc': 'coreg', 'suffix': 'xfm', 'extension': '.txt'}
-    boldref2anat_xfm = get_preproc_file(args.bids_dir, args.bold_preprocess_dir, source_file, update_entities)
+    boldref2anat_xfm = get_preproc_file(args.subject_id, args.bold_preprocess_dir, source_file, update_entities)
 
     confounds_tsv = boldref2anat_xfm.parent / f'{args.bold_id}_desc-confounds_timeseries.tsv'
     bold_confounds_v2(args.bold_preprocess_dir, boldresampled, bold_mask, movpar_file, rmsd_file, str(boldref2anat_xfm), skip_vols,

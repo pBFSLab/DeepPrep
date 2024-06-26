@@ -1372,7 +1372,6 @@ process bold_fieldmap {
     val(task_id)
     val(bold_spaces)
     val(bold_sdc)
-    val(templateflow_home)
     val(qc_result_path)
 
     output:
@@ -1390,7 +1389,6 @@ process bold_fieldmap {
         --task_id ${task_id} \
         --bold_spaces ${bold_spaces} \
         --bold_sdc ${bold_sdc} \
-        --templateflow_home ${templateflow_home} \
         --qc_result_path ${qc_result_path}
         """
     }
@@ -1417,7 +1415,6 @@ process bold_pre_process {
     tuple(val(subject_id), val(bold_id), val(bold_fieldmap_done), val(t1_nii), val(mask_nii), val(wm_dseg_nii), val(aparc_aseg_mgz), val(fsnative2T1w_xfm), val(lh_pial_surf), val(lh_pial_surf), path(subject_boldfile_txt))
     val(fs_license_file)
     val(bold_sdc)
-    val(templateflow_home)
     val(qc_result_path)
 
     output:
@@ -1441,7 +1438,6 @@ process bold_pre_process {
     --t1w_dseg ${wm_dseg_nii} \
     --fsnative2t1w_xfm ${fsnative2T1w_xfm} \
     --fs_license_file ${fs_license_file} \
-    --templateflow_home ${templateflow_home} \
     --qc_result_path ${qc_result_path}
     """
 }
@@ -1997,6 +1993,7 @@ process bold_upsampled {
     --bids_dir ${bids_dir} \
     --bold_preprocess_dir ${bold_preprocess_path} \
     --work_dir ${work_dir}/bold_synthmorph_norigid_apply \
+    --subject_id ${subject_id} \
     --bold_id ${bold_id} \
     --T1_file ${t1_native2mm} \
     --subject_boldfile_txt_bold ${subject_boldfile_txt_bold} \
@@ -2073,6 +2070,7 @@ process bold_concat {
 
     """
     ${script_py} \
+    --subject_id ${subject_id} \
     --bids_dir ${bids_dir} \
     --bold_preprocess_dir ${bold_preprocess_path} \
     --bold_id ${bold_id} \
@@ -2221,8 +2219,8 @@ process bold_confounds_part2 {
 process bold_confounds_combine {
     tag "${bold_id}"
 
-    cpus 4
-    memory '7 GB'
+    cpus 3
+    memory '200 MB'
 
     input:
     val(bids_dir)
@@ -2884,7 +2882,6 @@ workflow bold_wf {
     synthmorph_model_path = params.synthmorph_model_path
     template_space = params.bold_volume_space  // templateflow
     template_resolution = params.bold_volume_res  // templateflow
-    templateflow_home = params.templateflow_home  // templateflow
 
     qc_utils_path = params.qc_utils_path
     reports_utils_path = params.reports_utils_path
@@ -2938,14 +2935,14 @@ workflow bold_wf {
 
     (t1_nii, mask_nii, wm_dseg_nii, fsnative2T1w_xfm, wm_probseg_nii, gm_probseg_nii, csf_probseg_nii) = bold_anat_prepare(bold_preprocess_path, subjects_dir, work_dir, bold_anat_prepare_input)
 
-    bold_fieldmap_output = bold_fieldmap(bids_dir, t1_nii, bold_preprocess_path, work_dir, bold_task_type, bold_spaces, bold_sdc, templateflow_home, qc_result_path)
+    bold_fieldmap_output = bold_fieldmap(bids_dir, t1_nii, bold_preprocess_path, work_dir, bold_task_type, bold_spaces, bold_sdc, qc_result_path)
 
     if (bold_only == 'TRUE') {
         bold_pre_process_input = subject_id_boldfile_id.groupTuple(sort: true).join(bold_fieldmap_output, by:[0]).join(t1_nii).join(mask_nii, by: [0]).join(wm_dseg_nii, by:[0]).join(aparc_aseg_mgz).join(fsnative2T1w_xfm, by:[0]).join(pial_surf, by:[0]).transpose().join(subject_boldfile_txt, by:[0])
     } else {
         bold_pre_process_input = subject_id_boldfile_id.groupTuple(sort: true).join(bold_fieldmap_output, by:[0]).join(t1_nii).join(mask_nii, by: [0]).join(wm_dseg_nii, by:[0]).join(aparc_aseg_presurf_mgz).join(fsnative2T1w_xfm, by:[0]).join(pial_surf, by:[0]).transpose().join(subject_boldfile_txt, by:[0])
     }
-    subject_boldfile_txt_bold_pre_process = bold_pre_process(bids_dir, subjects_dir, bold_preprocess_path, work_dir, bold_spaces, bold_pre_process_input, fs_license_file, bold_sdc, templateflow_home, qc_result_path)
+    subject_boldfile_txt_bold_pre_process = bold_pre_process(bids_dir, subjects_dir, bold_preprocess_path, work_dir, bold_spaces, bold_pre_process_input, fs_license_file, bold_sdc, qc_result_path)
 
     if (do_bold_confounds == 'TRUE') {
         bold_confounds_part1_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(aseg_mgz).join(mask_mgz, by: [0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])

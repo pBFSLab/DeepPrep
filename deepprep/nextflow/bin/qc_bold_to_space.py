@@ -56,11 +56,12 @@ def encode_png(png_img):
     return pngdata
 
 
-def get_space_t1w_bold(bids_orig, bids_preproc, bold_orig_file, space_template):
+def get_space_t1w_bold(subject_id, bids_preproc, bold_orig_file, space_template):
     from bids import BIDSLayout
-    layout_orig = BIDSLayout(bids_orig, validate=False)
-    layout_preproc = BIDSLayout(bids_preproc, validate=False)
-    info = layout_orig.parse_file_entities(bold_orig_file)
+    assert subject_id.startswith('sub-')
+    layout_preproc = BIDSLayout(str(os.path.join(bids_preproc, subject_id)),
+                                config=['bids', 'derivatives'], validate=False)
+    info = layout_preproc.parse_file_entities(bold_orig_file)
 
     space_template_t1w_info = info.copy()
     space_template_t1w_info['suffix'] = 'boldref'
@@ -124,7 +125,7 @@ if __name__ == '__main__':
         data = [i.strip() for i in data]
         bold_orig_file = data[1]
 
-        bold_space_template_file = get_space_t1w_bold(args.bids_dir, args.bold_preprocess_path, bold_orig_file,
+        bold_space_template_file = get_space_t1w_bold(args.subject_id, args.bold_preprocess_path, bold_orig_file,
                                                       space_template)
 
         bold2mni152_trg = subject_bold2mni152_workdir / f'bold2MNI152_tmp_bold.nii.gz'
