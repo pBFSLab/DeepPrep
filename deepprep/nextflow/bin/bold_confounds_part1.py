@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
 import argparse
 import os
-import json
 from pathlib import Path
 import pandas as pd
 import numpy as np
@@ -9,9 +8,10 @@ import nibabel as nib
 from sklearn.decomposition import PCA
 
 from bold_mkbrainmask import anat2bold_t1w
+from filters.filters import bandpass_nifti
 
 
-def qnt_nifti(bold_path, maskpaths):
+def qnt_nifti(data, maskpaths):
     '''
 
     bold_path - path. Path of bold after bpass process.
@@ -39,8 +39,6 @@ def qnt_nifti(bold_path, maskpaths):
     p = 0
     result = []
 
-    img = nib.load(bold_path)
-    data = img.get_fdata()
     for iframe in range(data.shape[-1]):
         frame = data[:, :, :, iframe].flatten()
         total = frame[mask].sum()
@@ -61,7 +59,7 @@ def regressor_PCA_singlebold(pca_data, n):
     return pca_regressor
 
 
-def regressors_PCA(bold_path, maskpath):
+def regressors_PCA(data, maskpath):
     '''
     Generate PCA regressor from outer points of brain.
         bold_path - path. Path of bold.
@@ -74,12 +72,11 @@ def regressors_PCA(bold_path, maskpath):
     # Open mask.
     mask_img = nib.load(maskpath)
     mask = mask_img.get_fdata().swapaxes(0, 1)
-    mask = mask.flatten(order='F') > 0
+    mask = mask.flatten(order='F') == 0
     nvox = float(mask.sum())
     assert nvox > 0, 'Null mask found in %s' % maskpath
 
-    img = nib.load(bold_path)
-    data = img.get_fdata().swapaxes(0, 1)
+    data = data.swapaxes(0, 1)
     vol_data = data.reshape((data.shape[0] * data.shape[1] * data.shape[2], data.shape[3]), order='F')
     pca_data = vol_data[mask]
     pca_regressor = regressor_PCA_singlebold(pca_data, n)
@@ -87,19 +84,24 @@ def regressors_PCA(bold_path, maskpath):
     return pca_regressor
 
 
-def compile_regressors(bold_path: Path,
-                       aseg_brainmask_bin, aseg_wm, aseg_ventricles, aseg_csf,
+def compile_regressors(bold_path,
+                       aseg_brainmask_bin, aseg_wm, aseg_ventricles, aseg_csf, tr,
                        output_file):
-    whole_brain = qnt_nifti(bold_path, str(aseg_brainmask_bin))
 
-    csf = qnt_nifti(bold_path, [str(aseg_ventricles), str(aseg_csf)])
+    img = nib.load(bold_path)
+    data = img.get_fdata()
+    data_bandpass = bandpass_nifti(data, nskip=0, order=2, band=[0.01, 0.08], tr=tr)
 
-    white_matter = qnt_nifti(bold_path, str(aseg_wm))
+    whole_brain = qnt_nifti(data_bandpass, str(aseg_brainmask_bin))
 
-    csf_wm = qnt_nifti(bold_path, [str(aseg_ventricles), str(aseg_csf), str(aseg_wm)])
+    csf = qnt_nifti(data_bandpass, [str(aseg_ventricles), str(aseg_csf)])
+
+    white_matter = qnt_nifti(data_bandpass, str(aseg_wm))
+
+    csf_wm = qnt_nifti(data_bandpass, [str(aseg_ventricles), str(aseg_csf), str(aseg_wm)])
 
     # Generate PCA regressors of bpss nifti.
-    e_comp_cor = regressors_PCA(bold_path, str(aseg_brainmask_bin))
+    e_comp_cor = regressors_PCA(data_bandpass, str(aseg_brainmask_bin))
 
 
     # Prepare regressors datas for download
@@ -134,7 +136,9 @@ def get_space_t1w_bold(subject_id, bids_preproc, bold_orig_file):
     bold_t1w_info['suffix'] = 'bold'
     bold_t1w_file = layout_preproc.get(**bold_t1w_info)[0]
 
-    return bold_t1w_file, boldref_t1w_file
+    TR = layout_preproc.get_metadata(bold_t1w_file.path)['RepetitionTime']
+
+    return bold_t1w_file, boldref_t1w_file, TR
 
 
 if __name__ == '__main__':
@@ -182,7 +186,7 @@ if __name__ == '__main__':
     data = [i.strip() for i in data]
     bold_orig_file = data[1]
 
-    bold_space_t1w_file, boldref_space_t1w_file = get_space_t1w_bold(subject_id=args.subject_id, bids_preproc=args.bold_preprocess_dir, bold_orig_file=bold_orig_file)
+    bold_space_t1w_file, boldref_space_t1w_file, TR = get_space_t1w_bold(subject_id=args.subject_id, bids_preproc=args.bold_preprocess_dir, bold_orig_file=bold_orig_file)
 
     anat2bold_t1w(args.aseg_mgz, args.brainmask_mgz, str(boldref_space_t1w_file.path),
                   str(aseg), str(wm), str(vent), str(csf), str(brainmask), str(brainmask_bin))
@@ -191,6 +195,6 @@ if __name__ == '__main__':
     os.makedirs(output_dir, exist_ok=True)
     confounds_file = Path(output_dir, 'confounds_part1.tsv')
     compile_regressors(str(bold_space_t1w_file.path),
-                       brainmask_bin, wm, vent, csf,
+                       brainmask_bin, wm, vent, csf, TR,
                        confounds_file)
     assert confounds_file.exists()
