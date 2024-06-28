@@ -14,7 +14,7 @@ DeepPrep provides a Docker image as the recommended way to get started.
         + Ubuntu:  >= 20.04
         + RAM + Swap space: >= 16GB
         + Disk: >= 20G
-        + Graphics Driver VRAM: >= 23GB (optional GPU device)
+        + Graphics Driver VRAM: >= 10GB (optional GPU device)
         + NVIDIA Driver Version: >= 520.61.05 (optional GPU device)
         + CUDA Version: >= 11.8 (optional GPU device)
 
