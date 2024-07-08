@@ -276,7 +276,7 @@ process anat_N4_bias_correct {
     orig_nu_mgz = "${subjects_dir}/${subject_id}/mri/orig_nu.mgz"
 
     script_py = "${fastsurfer_home}/recon_surf/N4_bias_correct.py"
-    fsthreads = 2
+    fsthreads = 8
     """
     python3 ${script_py} \
     --in ${orig_mgz} \
@@ -702,7 +702,7 @@ process anat_white_surface {
 
     """
     mris_place_surface --adgws-in ${autodet_gwstats} --wm ${wm_mgz} \
-    --threads ${threads} --invol ${brain_finalsurfs_mgz} --${hemi} --i ${orig_surf} \
+    --nthreads ${threads} --invol ${brain_finalsurfs_mgz} --${hemi} --i ${orig_surf} \
     --o ${subjects_dir}/${subject_id}/surf/${hemi}.white.preaparc \
     --white --seg ${aseg_presurf_mgz} --nsmooth 5
 
@@ -834,7 +834,7 @@ process anat_curv_stats {
 process anat_sphere {
     tag "${subject_id}"
 
-    cpus 3
+    cpus 5
     memory '900 MB'
 
     input:
@@ -845,7 +845,7 @@ process anat_sphere {
     tuple(val(subject_id), val(hemi), val("${subjects_dir}/${subject_id}/surf/${hemi}.sphere")) // emit: sphere_surf
 
     script:
-    threads = 4
+    threads = 8
     """
     mris_sphere -seed 1234 -threads ${threads} ${subjects_dir}/${subject_id}/surf/${hemi}.inflated ${subjects_dir}/${subject_id}/surf/${hemi}.sphere
     """
@@ -1000,7 +1000,7 @@ process anat_pial_surface {
     script:
     threads = 4
     """
-    mris_place_surface --adgws-in ${autodet_gwstats} --seg ${aseg_presurf_mgz} --threads ${threads} --wm ${wm_mgz} \
+    mris_place_surface --adgws-in ${autodet_gwstats} --seg ${aseg_presurf_mgz} --nthreads ${threads} --wm ${wm_mgz} \
     --invol ${brain_finalsurfs_mgz} --${hemi} --i ${white_surf} --o ${subjects_dir}/${subject_id}/surf/${hemi}.pial.T1 \
     --pial --nsmooth 0 --rip-label ${subjects_dir}/${subject_id}/label/${hemi}.cortex+hipamyg.label --pin-medial-wall ${cortex_label} --aparc ${aparc_annot} --repulse-surf ${white_surf} --white-surf ${white_surf}
     cp -f ${subjects_dir}/${subject_id}/surf/${hemi}.pial.T1 ${subjects_dir}/${subject_id}/surf/${hemi}.pial
@@ -1159,7 +1159,7 @@ process anat_ribbon {
 process anat_apas2aseg {
     tag "${subject_id}"
 
-    cpus 2
+    cpus 4
     memory '1 GB'
 
     input:
@@ -1175,7 +1175,7 @@ process anat_apas2aseg {
     """
     SUBJECTS_DIR=${subjects_dir} mri_surf2volseg --o ${subjects_dir}/${subject_id}/mri/aseg.mgz --i ${aseg_presurf_hypos_mgz} \
     --fix-presurf-with-ribbon ${ribbon_mgz} \
-    --threads ${fsthreads} \
+    --nthreads 8 \
     --lh-cortex-mask ${lh_cortex_label} --lh-white ${lh_white_surf} --lh-pial ${lh_pial_surf} \
     --rh-cortex-mask ${rh_cortex_label} --rh-white ${rh_white_surf} --rh-pial ${rh_pial_surf}
 
@@ -1187,7 +1187,7 @@ process anat_apas2aseg {
 process anat_aparc2aseg {
     tag "${subject_id}"
 
-    cpus 2
+    cpus 4
     memory '1 GB'
 
     input:
@@ -1201,7 +1201,7 @@ process anat_aparc2aseg {
     script:
     """
     SUBJECTS_DIR=${subjects_dir} mri_surf2volseg --o ${subjects_dir}/${subject_id}/mri/aparc+aseg.mgz --label-cortex --i ${aseg_mgz} \
-    --threads ${fsthreads} \
+    --nthreads ${fsthreads} \
     --lh-annot ${lh_aparc_annot} 1000 \
     --lh-cortex-mask ${lh_cortex_label} --lh-white ${lh_white_surf} \
     --lh-pial ${lh_pial_surf} \
@@ -1214,7 +1214,7 @@ process anat_aparc2aseg {
 process bold_aparc2aseg_presurf {
     tag "${subject_id}"
 
-    cpus 2
+    cpus 4
     memory '1 GB'
 
     input:
@@ -1225,10 +1225,10 @@ process bold_aparc2aseg_presurf {
     tuple(val(subject_id), val("${subjects_dir}/${subject_id}/mri/aparc+aseg.presurf.mgz")) // emit: parcstats
 
     script:
-    fsthreads = 2
+    fsthreads = 8
     """
     SUBJECTS_DIR=${subjects_dir} mri_surf2volseg --o ${subjects_dir}/${subject_id}/mri/aparc+aseg.presurf.mgz --label-cortex --i ${aseg_presurf_mgz} \
-    --threads ${fsthreads} \
+    --nthreads ${fsthreads} \
     --lh-annot ${lh_aparc_annot} 1000 \
     --lh-cortex-mask ${lh_cortex_label} --lh-white ${lh_white_surf} \
     --lh-pial ${lh_pial_surf} \
@@ -1242,7 +1242,7 @@ process bold_aparc2aseg_presurf {
 process anat_aparc_a2009s2aseg {
     tag "${subject_id}"
 
-    cpus 1
+    cpus 4
     memory '1 GB'
 
     input:
@@ -1256,7 +1256,7 @@ process anat_aparc_a2009s2aseg {
     script:
     """
     SUBJECTS_DIR=${subjects_dir} mri_surf2volseg --o ${subjects_dir}/${subject_id}/mri/aparc.a2009s+aseg.mgz --label-cortex --i ${aseg_mgz} \
-    --threads ${fsthreads} \
+    --nthreads ${fsthreads} \
     --lh-annot lh.aparc.a2009s.annot 11100 \
     --lh-cortex-mask lh.cortex.label --lh-white lh.white \
     --lh-pial lh.pial \
