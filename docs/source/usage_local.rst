@@ -173,7 +173,7 @@ The Singularity can be executed in a manner similar to the Docker command, as sh
 Sample Singularity Command
 ==========================
 
-1. Here's a sample command only relies on CPU. Make sure you have <output_dir> created before executing the Singularity.
+1. Here's a sample command only relies on CPU. Make sure you have ``<output_dir>`` created before executing the Singularity.
 
 .. code-block:: none
     :linenos:
