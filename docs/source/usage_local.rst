@@ -5,6 +5,7 @@
 Usage Notes (Local)
 -------------------
 
+
 ===============
 The BIDS Format
 ===============
@@ -19,6 +20,26 @@ For more information about BIDS and BIDS-Apps, please check the `NiPreps portal`
 
 
 ======================
+The FreeSurfer License
+======================
+DeepPrep uses FreeSurfer tools and thus requires a valid license.
+
+    To obtain a FreeSurfer license, simply register for free at
+    https://surfer.nmr.mgh.harvard.edu/registration.html.
+
+Please make sure that a valid license file is passed into DeepPrep.
+For example, if the license is stored in the ``$HOME/freesurfer/license.txt`` file on
+the host system, the ``<fs_license_file>`` in command ``-v <fs_license_file>:/fs_license.txt`` should be replaced with the valid path: ::
+
+    $ -v $HOME/freesurfer/license.txt:/fs_license.txt
+
+
+
+=================
+Docker User Guide
+=================
+
+
 Command-Line Arguments
 ======================
 
@@ -37,26 +58,9 @@ DeepPrep: Deep learning empowered preprocessing workflow 24.1.0:
                           [--ignore_error] [--resume]
 
 
-
-
-======================
-The FreeSurfer License
-======================
-DeepPrep uses FreeSurfer tools and thus requires a valid license.
-
-    To obtain a FreeSurfer license, simply register for free at
-    https://surfer.nmr.mgh.harvard.edu/registration.html.
-
-Please make sure that a valid license file is passed into DeepPrep.
-For example, if the license is stored in the ``$HOME/freesurfer/license.txt`` file on
-the host system, the ``<fs_license_file>`` in command ``-v <fs_license_file>:/fs_license.txt`` should be replaced with the valid path: ::
-
-    $ -v $HOME/freesurfer/license.txt:/fs_license.txt
-
-
-=====================
 Sample Docker Command
-=====================
+======================
+
 .. code-block:: none
     :linenos:
 
@@ -148,7 +152,63 @@ The BIDS formatted sample contains one subject with one anatomical image and two
     + ``--device cpu`` - refers to CPU only.
 
 
+
+
+
+======================
+Singularity User Guide
+======================
+
+Download the Singularity
+========================
+
+.. code-block:: none
+
+    $ curl -C - -O https://download.anning.info/ninganme-public/DeepPrep/SingularityImage/deepprep_24.1.0.sif
+
+Then you will get: ``<saved_path>/deepprep_24.1.0.sif``
+
+The Singularity can be executed in a manner similar to the Docker command, as shown below:
+
+Sample Singularity Command
+==========================
+
+1. Here's a sample command only relies on CPU. Make sure you have <output_dir> created before executing the Singularity.
+
+.. code-block:: none
+    :linenos:
+
+    $ singularity run --cleanenv \
+                 -B <bids_dir>:/input \
+                 -B <output_dir>:/output \
+                 -B <fs_license_file>:/fs_license.txt \
+                 <saved_path>/deepprep_24.1.0.sif \
+                 /input \
+                 /output \
+                 participant \
+                 --bold_task_type rest \
+                 --fs_license_file /fs_license.txt \
+                 --device cpu
+
+2. If you wish to use GPU as well, add the ``--nv`` and ``--device all`` like:
+
+.. code-block:: none
+    :linenos:
+
+    $ singularity run --cleanenv --nv \
+                 -B <bids_dir>:/input \
+                 -B <output_dir>:/output \
+                 -B <fs_license_file>:/fs_license.txt \
+                 <saved_path>/deepprep_24.1.0.sif \
+                 /input \
+                 /output \
+                 participant \
+                 --bold_task_type rest \
+                 --fs_license_file /fs_license.txt \
+                 --device all
+
+
+
 .. container:: congratulation
 
    **Congratulations! You are all set!**
-
