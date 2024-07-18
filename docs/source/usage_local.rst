@@ -153,14 +153,14 @@ The BIDS formatted sample contains one subject with one anatomical image and two
 
 
 
-
-
 ======================
 Singularity User Guide
 ======================
 
-Download the Singularity
+Before You Start
 ========================
+
+1. Download the Singularity
 
 .. code-block:: none
 
@@ -168,12 +168,19 @@ Download the Singularity
 
 Then you will get: ``<saved_path>/deepprep_24.1.0.sif``
 
-The Singularity can be executed in a manner similar to the Docker command, as shown below:
+The Singularity can be executed in a manner similar to the Docker command.
+
+
+2. Follow the `warning message`_ to set up your environment.
+
+
+3.  Make sure you have ``<output_dir>`` created before executing the Singularity.
+
 
 Sample Singularity Command
 ==========================
 
-1. Here's a sample command only relies on CPU. Make sure you have ``<output_dir>`` created before executing the Singularity.
+1. Here's a sample command only relies on CPU.
 
 .. code-block:: none
     :linenos:
