@@ -217,6 +217,12 @@ else
   if [ -z "${subjects_dir}" ]; then
     subjects_dir="${output_dir}/Recon"
   fi
+  if [ ! -d "${subjects_dir}" ]; then
+    mkdir -p "${subjects_dir}"
+    echo "INFO: create  nextflow WorkDir: ${subjects_dir}"
+  else
+    echo "INFO: existed nextflow WorkDir: ${subjects_dir}"
+  fi
   sed -i "s@\${nextflow_work_dir}@${nextflow_work_dir}@g" "${run_config}"
   sed -i "s@\${container}@${container}@g" "${run_config}"
   sed -i "s@\${bids_dir}@${bids_dir}@g" "${run_config}"
