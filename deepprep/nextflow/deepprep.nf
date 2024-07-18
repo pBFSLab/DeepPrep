@@ -834,7 +834,7 @@ process anat_curv_stats {
 process anat_sphere {
     tag "${subject_id}"
 
-    cpus 5
+    cpus 4
     memory '900 MB'
 
     input:
@@ -1930,7 +1930,7 @@ process bold_synthmorph_joint {
     // 22954
     tag "${subject_id}"
 
-    cpus 8
+    cpus 4
     label "with_gpu"
     memory '11.5 GB'
 
@@ -2006,7 +2006,7 @@ process bold_synthmorph_norigid_apply {
     // 8660
     tag "${bold_id}"
 
-    cpus 8
+    cpus 4
     label "with_gpu"
     memory '15 GB'
 
@@ -2085,7 +2085,7 @@ process bold_concat {
 process bold_transform_chain {
     tag "${bold_id}"
 
-    cpus 10
+    cpus 4
     memory { 4.GB * task.attempt }
 
     errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
@@ -2319,7 +2319,7 @@ process qc_plot_carpet {
 process qc_plot_aparc_aseg {
     tag "${subject_id}"
 
-    cpus 5
+    cpus 4
     memory '1 GB'
 
     input:
@@ -2356,7 +2356,7 @@ process qc_plot_aparc_aseg {
 process qc_plot_volsurf {
     tag "${subject_id}"
 
-    cpus 5
+    cpus 4
     memory '1.5 GB'
 
     input:
@@ -2467,7 +2467,7 @@ process qc_plot_norm_to_mni152 {
 process qc_plot_bold_to_space {
     tag "${bold_id}"
 
-    cpus 5
+    cpus 4
     memory '1.5 GB'
 
     input:
