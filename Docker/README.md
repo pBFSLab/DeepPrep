@@ -1,6 +1,6 @@
 # Docker
 export DEEPPREP_IMAGE_OUTPUT_PATH=/mnt/ngshare/SeaFile/Seafile/DeepPrep_Docker_Singularity
-export DEEPPREP_VERSION='24.1.0'
+export DEEPPREP_VERSION='24.1.1'
 
 ## build Docker image
 cd /mnt/ngshare/SeaFile/Seafile/DeepPrep && sudo python3 -m http.server 80
