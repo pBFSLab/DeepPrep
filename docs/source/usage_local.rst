@@ -22,7 +22,7 @@ For more information about BIDS and BIDS-Apps, please check the `NiPreps portal`
 Command-Line Arguments
 ======================
 
-DeepPrep: Deep learning empowered preprocessing workflow 24.1.0:
+DeepPrep: Deep learning empowered preprocessing workflow 24.1.1:
 
 .. code-block:: none
 
@@ -64,7 +64,7 @@ Sample Docker Command
                  -v <bids_dir>:/input \
                  -v <output_dir>:/output \
                  -v <fs_license_file>:/fs_license.txt \
-                 pbfslab/deepprep:24.1.0 \
+                 pbfslab/deepprep:24.1.1 \
                  /input \
                  /output \
                  participant \
@@ -75,7 +75,7 @@ Sample Docker Command
     + ``<bids_dir>`` - refers to the directory of the input dataset, which should be in `BIDS format`_.
     + ``<output_dir>`` - refers to the directory for the outputs of DeepPrep.
     + ``<fs_license_file>`` - the directory of a valid FreeSurfer License.
-    + ``deepprep:24.1.0`` - the latest version of the Docker image. You can specify the version by ``deepprep:<version>``.
+    + ``deepprep:24.1.1`` - the latest version of the Docker image. You can specify the version by ``deepprep:<version>``.
     + ``participant`` - refers to the analysis level.
     + ``--bold_task_type`` - the task label of BOLD images (i.e. ``rest``, ``motor``).
 
@@ -113,7 +113,7 @@ The BIDS formatted sample contains one subject with one anatomical image and two
                  -v ~/test_sample:/input \
                  -v ~/deepprep_output:/output \
                  -v ~/license.txt:/fs_license.txt \
-                 pbfslab/deepprep:24.1.0 \
+                 pbfslab/deepprep:24.1.1 \
                  /input \
                  /output \
                  participant \
@@ -136,7 +136,7 @@ The BIDS formatted sample contains one subject with one anatomical image and two
                  -v ~/test_sample:/input \
                  -v ~/deepprep_output:/output \
                  -v ~/license.txt:/fs_license.txt \
-                 pbfslab/deepprep:24.1.0 \
+                 pbfslab/deepprep:24.1.1 \
                  /input \
                  /output \
                  participant \
