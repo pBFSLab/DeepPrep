@@ -47,9 +47,9 @@ Download the DeepPrep sif image
 
 .. code-block:: none
 
-    $ curl -C - -O https://download.anning.info/ninganme-public/DeepPrep/SingularityImage/deepprep_24.1.0.sif
+    $ curl -C - -O https://download.anning.info/ninganme-public/DeepPrep/SingularityImage/deepprep_24.1.1.sif
 
-Then you will get: ``<shared_storage_path>/deepprep_24.1.0.sif``
+Then you will get: ``<shared_storage_path>/deepprep_24.1.1.sif``
 
 
 
@@ -63,10 +63,10 @@ Download the DeepPrep image from the DockerHub
 
 .. code-block:: none
 
-    $ docker pull pbfslab/deepprep:24.1.0
+    $ docker pull pbfslab/deepprep:24.1.1
 
 
-When its done, you will find the Docker image by this command ``docker image ls``, the ``REPOSITORY`` is ``pbfslab/deepprep`` with a ``TAG: 24.1.0``.
+When its done, you will find the Docker image by this command ``docker image ls``, the ``REPOSITORY`` is ``pbfslab/deepprep`` with a ``TAG: 24.1.1``.
 
 
 
@@ -228,7 +228,7 @@ Run DeepPrep with GPU
 ::
 
     $ cd ${TEST_DIR}
-    $ git clone https://github.com/pBFSLab/DeepPrep.git && cd DeepPrep && git checkout 24.1.0
+    $ git clone https://github.com/pBFSLab/DeepPrep.git && cd DeepPrep && git checkout 24.1.1
 
 3. Run DeepPrep.
 
@@ -249,7 +249,7 @@ Pass *absolute paths* to avoid any mistakes.
     --deepprep_home ${TEST_DIR}/DeepPrep \
     --fs_license_file ${FS_LICENSE} \
     --executor cluster \
-    --container ${TEST_DIR}/deepprep_24.1.0.sif \
+    --container ${TEST_DIR}/deepprep_24.1.1.sif \
     --config_file ${TEST_DIR}/DeepPrep/deepprep/nextflow/cluster/deepprep.slurm.gpu.config
 
 **Add the following arguments to execute on clusters**
@@ -257,7 +257,7 @@ Pass *absolute paths* to avoid any mistakes.
 .. code-block:: none
 
     --executor cluster
-    --container ${TEST_DIR}/deepprep_24.1.0.sif
+    --container ${TEST_DIR}/deepprep_24.1.1.sif
     --config_file ${TEST_DIR}/DeepPrep/deepprep/nextflow/cluster/deepprep.slurm.gpu.config
 
 
@@ -328,7 +328,7 @@ Shown as below:
     --deepprep_home ${TEST_DIR}/DeepPrep \
     --fs_license_file ${FS_LICENSE} \
     --executor cluster \
-    --container ${TEST_DIR}/deepprep_24.1.0.sif \
+    --container ${TEST_DIR}/deepprep_24.1.1.sif \
     --config_file ${TEST_DIR}/DeepPrep/deepprep/nextflow/cluster/deepprep.slurm.cpu.config \
     --device cpu
 
@@ -359,7 +359,7 @@ SLURM
     --deepprep_home ${TEST_DIR}/DeepPrep \
     --fs_license_file ${TEST_DIR}/DeepPrep/license.txt \
     --executor cluster \
-    --container ${TEST_DIR}/deepprep_24.1.0.sif \
+    --container ${TEST_DIR}/deepprep_24.1.1.sif \
     --config_file ${TEST_DIR}/DeepPrep/deepprep/nextflow/cluster/deepprep.slurm.cpu.config \
     --device cpu \
     --debug \
@@ -409,7 +409,7 @@ SLURM
     --deepprep_home ${TEST_DIR}/DeepPrep \
     --fs_license_file ${TEST_DIR}/DeepPrep/license.txt \
     --executor cluster \
-    --container ${TEST_DIR}/deepprep_24.1.0.sif \
+    --container ${TEST_DIR}/deepprep_24.1.1.sif \
     --config_file ${TEST_DIR}/DeepPrep/deepprep/nextflow/cluster/deepprep.slurm.gpu.config \
     --debug \
     --resume
@@ -476,7 +476,7 @@ PBS
     --deepprep_home ${TEST_DIR}/DeepPrep \
     --fs_license_file ${TEST_DIR}/DeepPrep/license.txt \
     --executor cluster \
-    --container ${TEST_DIR}/deepprep_24.1.0.sif \
+    --container ${TEST_DIR}/deepprep_24.1.1.sif \
     --config_file ${TEST_DIR}/DeepPrep/deepprep/nextflow/cluster/deepprep.pbfs.cpu.config \
     --device cpu \
     --debug \
@@ -527,7 +527,7 @@ PBS
     --deepprep_home ${TEST_DIR}/DeepPrep \
     --fs_license_file ${TEST_DIR}/DeepPrep/license.txt \
     --executor cluster \
-    --container ${TEST_DIR}/deepprep_24.1.0.sif \
+    --container ${TEST_DIR}/deepprep_24.1.1.sif \
     --config_file ${TEST_DIR}/DeepPrep/deepprep/nextflow/cluster/deepprep.pbfs.gpu.config \
     --device auto \
     --debug \
