@@ -188,3 +188,16 @@ were calculated with their corresponding masks. The standardized DVARS, framewis
 and relative head motion (RHM) were calculated. A carpet plot shows time series for all voxels within the brain mask,
 including cortical gray matter (Ctx GM), deep (subcortical) gray matter (dGM), white-matter and CSF (WM+CSF),
 and the rest of the brain (The rest).
+
+
+
+=========
+Confounds
+=========
+
+The output confounds include:
+    + **24HMP**: 3 translations and 3 rotation (6HMP), their temporal derivatives (12HMP), and their quadratic terms (24HMP).
+    + **12 Global signals**: csf, white_matter, global_signal their temporal derivatives, and their quadratic terms.
+    + **Outlier detection**:  framewise_displacement, rmsd, dvars, std_dvars, non_steadv_state_outlier, motion_outlier.
+    + **Discrete cosine-basis regressors**: cosine
+    + **CompCor confounds**:  PCA regressors, saves top 10 components for e_comp_cor and saves 50% of explained variance of the rest, i.e. anatomical CompCor (a_comp_cor), temporal CompCor (t_comp_cor), outside brainmask CompCor (e_comp_cor). CompCor estimates from WM, CSF, and their union region is a_comp_cor, CompCor estimates from each of WM, csf are w_comp_cor, and c_comp_cor. eCompCor is a complementary extension of aCompCor and tCompCor. Its noise mask is assigned as the background of the field of view. Regressing out these components improves test-retest reliability. We will publish a paper to elucidate the method and its performance.
