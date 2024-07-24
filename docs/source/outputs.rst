@@ -107,9 +107,7 @@ The main outputs of the preprocessed data include:
 
  sub-<subject_label>/
  ├── anat/
-     ├── sub-<subject_label>_from-T1w_to-<space_label>_desc-affine_xfm.txt
-     ├── sub-<subject_label>_from-T1w_to-<space_label>_desc-nonlinear_xfm.npz
-     ├── sub-<subject_label>_space-<space_label>_res-<resolution>_desc-affine_T1w.txt
+     ├── sub-<subject_label>_from-T1w_to-<space_label>_desc-joint_trans.nii.gz
 
 *Time series confounds*: ::
 
@@ -162,7 +160,7 @@ DeepPrep outputs summary reports, written to ``<output dir>/QC``. These reports 
      ├── report.html
      └── timeline.html
 
-DeepPrep automatically generates a descriptive HTML report for each participant and session. `View a sample report <https://download.anning.info/ninganme-public/DeepPrep/docs/source/_static/qc_report/sub-01.html>`_.
+DeepPrep automatically generates a descriptive HTML report for each participant and session. `View a sample report <https://download.anning.info/ninganme-public/DeepPrep/docs/source/24.1.1/_static/qc_report/sub-01.html>`_.
 The report commences with a concise summary of key imaging parameters extracted from the BIDS meta information.
 Subsequently, the report provides an overview of the overall CPU and GPU processing times for the data preprocessing.
 Key processing steps and results for structural images are visually presented, including segmentation, parcellation,
@@ -172,13 +170,13 @@ along with a temporal signal-to-noise ratio (tSNR) map. Finally, the report conc
 offering a clear and consistent description of all preprocessing steps employed, accompanied by appropriate citations. Some examples are shown below:
 
 
-.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/_static/outputs/report_timeline.png
+.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/24.1.1/_static/outputs/report_timeline.png
    :align: center
 
 The visual reports provide several sections per task and run to aid designing a denoising strategy for subsequent analysis.
 Some of the estimated confounds are plotted with a "carpet" visualization of the BOLD time series. An example is shown below:
 
-.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/_static/outputs/desc-carpet_bold.svg
+.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/24.1.1/_static/outputs/desc-carpet_bold.svg
    :align: center
 
 
@@ -190,6 +188,7 @@ including cortical gray matter (Ctx GM), deep (subcortical) gray matter (dGM), w
 and the rest of the brain (The rest).
 
 
+.. _outputs-confounds:
 
 =========
 Confounds
