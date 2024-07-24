@@ -7,7 +7,7 @@ DeepPrep adapts its pipeline depending on what data and metadata are available a
 
 
 ===============================
-Preprocessing of structural MRI
+sMRI preprocessing
 ===============================
 
 The anatomical preprocessing workflow in DeepPrep closely follows the FreeSurfer pipeline while efficiently replacing several of the most time-consuming steps with deep learning algorithms. Specifically, the volumetric anatomical segmentation, cortical surface reconstruction, and cortical surface registration are accomplished using FastSurferCNN, FastCSR, SUGAR, respectively. The remaining steps in the workflow remain consistent with FreeSurfer v7.2, including the surface spherization, morphometric estimation, and statistics. These steps ensure the continued reliability and accuracy of the overall preprocessing process while harnessing the benefits of deep learning algorithms to enhance computational efficiency. The preprocessing workflow consists of several essential steps as follows:
@@ -51,7 +51,7 @@ The parcellations were created based on the registration result generated from S
 |
 
 ==================
-BOLD preprocessing
+fMRI preprocessing
 ==================
 
 The functional preprocessing workflow in DeepPrep incorporates advanced registration methods, SynthMorph, to replace the most time-consuming step, the spatial normalization. The workflow is also complemented by existing tools, including AFNI or FSL, to form a comprehensive functional image preprocessing method. The fMRI preprocessing workflow consists of several essential steps as follows:
@@ -81,9 +81,37 @@ The spatial normalization step aims to normalize individual brain images to a st
   <object type="image/svg+xml" data="https://download.anning.info/ninganme-public/DeepPrep/docs/source/_static/processing/sub-001_ses-01_task-rest_desc-reg2MNI152_bold.svg"></object>
  </div>
 
-==========
-In summary
-==========
-This preprocessing workflow utilizes a combination of conventional methods and advanced deep learning algorithms to efficiently and accurately preprocess structural and functional images for neuroimaging analysis.
 
 
+
+
+
+======================================
+Deep Learning models training datasets
+======================================
+
++----------------------+-------------------------------------------+----------------------------+
+|                      | Training set                              | Reference                  |
++======================+===========================================+============================+
+| FastSurferCNN        | - ABIDE II                                |                            |
+|                      | - ADNI                                    |                            |
+|                      | - LA5c                                    |                            |
+|                      | - OASIS-1                                 |                            |
+|                      | - OASIS-2                                 | Henschel et al., 2020 [1]_ |
++----------------------+-------------------------------------------+----------------------------+
+| FastCSR              | - CoRR (w/o CoRR-HNU)                     |                            |
+|                      | - SALD                                    |  Ren et al., 2022 [2]_     |
++----------------------+-------------------------------------------+----------------------------+
+| SUGAR                | - CoRR (w/o CoRR-HNU)                     |                            |
+|                      | - SALD                                    |  Ren et al., 2024 [3]_     |
++----------------------+-------------------------------------------+----------------------------+
+| SynthMorph           | - FSM                                     |                            |
+|                      | - OASIS                                   |  Ren et al., 2024 [4]_     |
+|                      | - ABCD                                    |                            |
+|                      | - Infants from Boston Children's Hospital |                            |
++----------------------+-------------------------------------------+----------------------------+
+
+.. [1] Henschel, L. et al. FastSurfer - A fast and accurate deep learning based neuroimaging  571 pipeline. Neuroimage 219, 117012 (2020).  572 https://doi.org:10.1016/j.neuroimage.2020.117012
+.. [2] Ren, J. et al. Fast cortical surface reconstruction from MRI using deep learning. Brain  574 Inform 9, 6 (2022). https://doi.org:10.1186/s40708-022-00155-7
+.. [3] Ren, J. et al. SUGAR: Spherical ultrafast graph attention framework for cortical surface  579 registration. Med Image Anal 94, 103122 (2024).  580 https://doi.org:10.1016/j.media.2024.103122
+.. [4] Hoffman et al. Anatomy-aware and acquisition-agnostic joint registration with SynthMorph. Imaging Neuroscience 2 (2023) 1-33. https://doi.org/10.1162/imag_a_00197
