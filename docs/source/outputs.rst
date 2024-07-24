@@ -107,9 +107,7 @@ The main outputs of the preprocessed data include:
 
  sub-<subject_label>/
  ├── anat/
-     ├── sub-<subject_label>_from-T1w_to-<space_label>_desc-affine_xfm.txt
-     ├── sub-<subject_label>_from-T1w_to-<space_label>_desc-nonlinear_xfm.npz
-     ├── sub-<subject_label>_space-<space_label>_res-<resolution>_desc-affine_T1w.txt
+     ├── sub-<subject_label>_from-T1w_to-<space_label>_desc-joint_trans.nii.gz
 
 *Time series confounds*: ::
 
