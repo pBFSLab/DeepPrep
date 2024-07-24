@@ -5,6 +5,7 @@
 Usage Notes (Local)
 -------------------
 
+
 ===============
 The BIDS Format
 ===============
@@ -16,27 +17,6 @@ that is to be processed as the input, which is required to be in the valid BIDS 
 It is highly recommended that you validate your dataset with this free, online `BIDS Validator`_.
 
 For more information about BIDS and BIDS-Apps, please check the `NiPreps portal`_.
-
-
-======================
-Command-Line Arguments
-======================
-
-DeepPrep: Deep learning empowered preprocessing workflow 24.1.0:
-
-.. code-block:: none
-
-   usage: deepprep-docker [bids_dir] [output_dir] [{participant}] [--bold_task_type '[task1 task2 task3 ...]']
-                          [--fs_license_file PATH] [--participant_label '[001 002 003 ...]']
-                          [--subjects_dir PATH] [--skip_bids_validation]
-                          [--anat_only] [--bold_only] [--bold_sdc] [--bold_confounds]
-                          [--bold_surface_spaces '[None fsnative fsaverage fsaverage6 ...]']
-                          [--bold_volume_space {None MNI152NLin6Asym MNI152NLin2009cAsym}] [--bold_volume_res {02 03...}]
-                          [--device { {auto 0 1 2...} cpu}]
-                          [--cpus 10] [--memory 20]
-                          [--ignore_error] [--resume]
-
-
 
 
 ======================
@@ -54,9 +34,33 @@ the host system, the ``<fs_license_file>`` in command ``-v <fs_license_file>:/fs
     $ -v $HOME/freesurfer/license.txt:/fs_license.txt
 
 
-=====================
+
+=================
+Docker User Guide
+=================
+
+
+Command-Line Arguments
+======================
+
+DeepPrep: Deep learning empowered preprocessing workflow 24.1.1:
+
+.. code-block:: none
+
+   usage: deepprep-docker [bids_dir] [output_dir] [{participant}] [--bold_task_type '[task1 task2 task3 ...]']
+                          [--fs_license_file PATH] [--participant_label '[001 002 003 ...]']
+                          [--subjects_dir PATH] [--skip_bids_validation]
+                          [--anat_only] [--bold_only] [--bold_sdc] [--bold_confounds]
+                          [--bold_surface_spaces '[None fsnative fsaverage fsaverage6 ...]']
+                          [--bold_volume_space {None MNI152NLin6Asym MNI152NLin2009cAsym}] [--bold_volume_res {02 03...}]
+                          [--device { {auto 0 1 2...} cpu}]
+                          [--cpus 10] [--memory 20]
+                          [--ignore_error] [--resume]
+
+
 Sample Docker Command
-=====================
+======================
+
 .. code-block:: none
     :linenos:
 
@@ -64,7 +68,7 @@ Sample Docker Command
                  -v <bids_dir>:/input \
                  -v <output_dir>:/output \
                  -v <fs_license_file>:/fs_license.txt \
-                 pbfslab/deepprep:24.1.0 \
+                 pbfslab/deepprep:24.1.1 \
                  /input \
                  /output \
                  participant \
@@ -75,7 +79,7 @@ Sample Docker Command
     + ``<bids_dir>`` - refers to the directory of the input dataset, which should be in `BIDS format`_.
     + ``<output_dir>`` - refers to the directory for the outputs of DeepPrep.
     + ``<fs_license_file>`` - the directory of a valid FreeSurfer License.
-    + ``deepprep:24.1.0`` - the latest version of the Docker image. You can specify the version by ``deepprep:<version>``.
+    + ``deepprep:24.1.1`` - the latest version of the Docker image. You can specify the version by ``deepprep:<version>``.
     + ``participant`` - refers to the analysis level.
     + ``--bold_task_type`` - the task label of BOLD images (i.e. ``rest``, ``motor``).
 
@@ -113,7 +117,7 @@ The BIDS formatted sample contains one subject with one anatomical image and two
                  -v ~/test_sample:/input \
                  -v ~/deepprep_output:/output \
                  -v ~/license.txt:/fs_license.txt \
-                 pbfslab/deepprep:24.1.0 \
+                 pbfslab/deepprep:24.1.1 \
                  /input \
                  /output \
                  participant \
@@ -136,7 +140,7 @@ The BIDS formatted sample contains one subject with one anatomical image and two
                  -v ~/test_sample:/input \
                  -v ~/deepprep_output:/output \
                  -v ~/license.txt:/fs_license.txt \
-                 pbfslab/deepprep:24.1.0 \
+                 pbfslab/deepprep:24.1.1 \
                  /input \
                  /output \
                  participant \
@@ -148,7 +152,71 @@ The BIDS formatted sample contains one subject with one anatomical image and two
     + ``--device cpu`` - refers to CPU only.
 
 
+.. _singularity-guide:
+
+======================
+Singularity User Guide
+======================
+
+Before You Start
+========================
+
+1. Download the Singularity
+
+.. code-block:: none
+
+    $ curl -C - -O https://download.anning.info/ninganme-public/DeepPrep/SingularityImage/deepprep_24.1.0.sif
+
+Then you will get: ``<saved_path>/deepprep_24.1.0.sif``
+
+The Singularity can be executed in a manner similar to the Docker command.
+
+
+2. Follow the **warning message** in :doc:`installation` to set up your environment.
+
+
+3.  Make sure you have ``<output_dir>`` created before executing the Singularity.
+
+
+Sample Singularity Command
+==========================
+
+1. Here's a sample command only relies on CPU.
+
+.. code-block:: none
+    :linenos:
+
+    $ singularity run --cleanenv \
+                 -B <bids_dir>:/input \
+                 -B <output_dir>:/output \
+                 -B <fs_license_file>:/fs_license.txt \
+                 <saved_path>/deepprep_24.1.0.sif \
+                 /input \
+                 /output \
+                 participant \
+                 --bold_task_type rest \
+                 --fs_license_file /fs_license.txt \
+                 --device cpu
+
+2. If you wish to use GPU as well, add the ``--nv`` and ``--device all`` like:
+
+.. code-block:: none
+    :linenos:
+
+    $ singularity run --cleanenv --nv \
+                 -B <bids_dir>:/input \
+                 -B <output_dir>:/output \
+                 -B <fs_license_file>:/fs_license.txt \
+                 <saved_path>/deepprep_24.1.0.sif \
+                 /input \
+                 /output \
+                 participant \
+                 --bold_task_type rest \
+                 --fs_license_file /fs_license.txt \
+                 --device all
+
+
+
 .. container:: congratulation
 
    **Congratulations! You are all set!**
-
