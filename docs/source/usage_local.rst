@@ -33,7 +33,9 @@ the host system, the ``<fs_license_file>`` in command ``-v <fs_license_file>:/fs
 
     $ -v $HOME/freesurfer/license.txt:/fs_license.txt
 
+.
 
+.. _docker-guide:
 
 =================
 Docker User Guide
