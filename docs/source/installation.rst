@@ -4,6 +4,18 @@
 Installation
 ============
 
+Docker and Singularity
+---------------------------------
+
++---------------+--------------------+-----------------------------------------------------------------------------------------------------------+--------------------------+
+| Image         | version            | download command                                                                                          | user guide               |
++===============+====================+===========================================================================================================+==========================+
+| Docker        | 24.1.1 (latest)    | docker pull pbfslab/deepprep:24.1.1                                                                       | :ref:`docker-guide`      |
++---------------+--------------------+-----------------------------------------------------------------------------------------------------------+--------------------------+
+| Singularity   | 24.1.1 (latest)    | $ curl -C - -O https://download.anning.info/ninganme-public/DeepPrep/SingularityImage/deepprep_24.1.1.sif | :ref:`singularity-guide` |
++---------------+--------------------+-----------------------------------------------------------------------------------------------------------+--------------------------+
+
+
 Run with Docker (step-by-step)
 ---------------------------------
 
@@ -14,14 +26,12 @@ DeepPrep provides a Docker image as the recommended way to get started.
 .. warning::
     **Required Environment**
         + Ubuntu:  >= 20.04
-        + logical CPU core: >= 4
         + RAM + Swap space: >= 12GB
         + Disk: >= 20G
-        + Graphics Driver VRAM: >= 8GB (optional GPU device)
+        + Minimum logical CPU core: 4
+        + Graphics Driver VRAM: >= 10GB (optional GPU device)
         + NVIDIA Driver Version: >= 520.61.05 (optional GPU device)
         + CUDA Version: >= 11.8 (optional GPU device)
-
-
 
 
 1. Install Docker if you don't have one (`Docker Installation Page`_).
