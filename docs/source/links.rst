@@ -11,4 +11,3 @@
 .. _TemplateFlow: https://www.templateflow.org/browse/
 .. _here: https://developer.nvidia.com/cuda-gpus
 .. _Hoffmann et al.,: https://arxiv.org/abs/2301.11329
-.. _What's New: https://deepprep.readthedocs.io/en/latest/changes.html#may-27-2024

@@ -4,8 +4,23 @@
 What's new
 ----------
 
+.. _latest-note:
+
+24.1.1 (July 19, 2024)
+-------------------------
+
+1. **Update:** The minimum logical CPU core is 4, and the minimum RAM requirement is 12GB.
+2. **Update:** Speed up, by optimizing several processes in DeepPrep to be multiprocessing.
+3. **Doc:** Add step-by-step Singularity user guide in :ref:`singularity-guide`.
+4. **Doc:** List all the training datasets used in Deep Learning models (FastSurfer, FastCSR, SUGAR, SynthMorph) in :ref:`DL-trainingsets`.
+5. **Doc:** Add confounds descriptions in :ref:`outputs-confounds`.
+
+
+
+
+
 24.1.0 (May 27, 2024)
----------------------
+-----------------------
 
 The released ``pbfslab/deepprep:24.1.0`` improves the overall volumetric registration quality,
 reduces the BOLD-to-template registration smoothness, and provides users with more confounds.
@@ -46,11 +61,8 @@ the smoothness was reduced from *6.42 ± 0.24 mm* to FWHM *4.27 ± 0.15 mm*, whi
     + 12 Global signals: csf, white_matter, global_signal their temporal derivatives, and their quadratic terms.
     + Outlier detection:  framewise_displacement, rmsd, dvars, std_dvars, non_steadv_state_outlier, motion_outlier.
     + Discrete cosine-basis regressors: cosine
-    + CompCor confounds:  PCA regressors, saves top 10 components for e_comp_cor and saves 50% of explained variance of the rest,
-i.e. anatomical CompCor (a_comp_cor), temporal CompCor (t_comp_cor), outside brainmask CompCor (e_comp_cor).
-CompCor estimates from WM, CSF, and their union region is a_comp_cor, CompCor estimates from each of WM, csf are w_comp_cor, and c_comp_cor.
-eCompCor is a complementary extension of aCompCor and tCompCor. Its noise mask is assigned as the background of the field of view.
-Regressing out these components improves test-retest reliability. We will publish a paper to elucidate the method and its performance.
+    + CompCor confounds:  PCA regressors, saves top 10 components for e_comp_cor and saves 50% of explained variance of the rest, i.e. anatomical CompCor (a_comp_cor), temporal CompCor (t_comp_cor), outside brainmask CompCor (e_comp_cor). CompCor estimates from WM, CSF, and their union region is a_comp_cor, CompCor estimates from each of WM, csf are w_comp_cor, and c_comp_cor. eCompCor is a complementary extension of aCompCor and tCompCor. Its noise mask is assigned as the background of the field of view. Regressing out these components improves test-retest reliability. We will publish a paper to elucidate the method and its performance.
+
 
 
 *Of Note:*
@@ -63,14 +75,14 @@ More importantly, it is less likely to introduce "real" brain activity from the 
 
 DeepPrep CSF mask sample
 
-.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/_static/changes/dp_csf.png
+.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/24.1.1/_static/changes/dp_csf.png
    :align: center
 
 |
 
 fMRIPrep CSF mask sample
 
-.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/_static/changes/fp_csf.png
+.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/24.1.1/_static/changes/fp_csf.png
    :align: center
 
 |

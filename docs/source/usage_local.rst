@@ -33,7 +33,9 @@ the host system, the ``<fs_license_file>`` in command ``-v <fs_license_file>:/fs
 
     $ -v $HOME/freesurfer/license.txt:/fs_license.txt
 
+.
 
+.. _docker-guide:
 
 =================
 Docker User Guide
@@ -152,6 +154,7 @@ The BIDS formatted sample contains one subject with one anatomical image and two
     + ``--device cpu`` - refers to CPU only.
 
 
+.. _singularity-guide:
 
 ======================
 Singularity User Guide

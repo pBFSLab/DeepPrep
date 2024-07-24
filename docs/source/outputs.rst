@@ -160,7 +160,7 @@ DeepPrep outputs summary reports, written to ``<output dir>/QC``. These reports 
      ├── report.html
      └── timeline.html
 
-DeepPrep automatically generates a descriptive HTML report for each participant and session. `View a sample report <https://download.anning.info/ninganme-public/DeepPrep/docs/source/_static/qc_report/sub-01.html>`_.
+DeepPrep automatically generates a descriptive HTML report for each participant and session. `View a sample report <https://download.anning.info/ninganme-public/DeepPrep/docs/source/24.1.1/_static/qc_report/sub-01.html>`_.
 The report commences with a concise summary of key imaging parameters extracted from the BIDS meta information.
 Subsequently, the report provides an overview of the overall CPU and GPU processing times for the data preprocessing.
 Key processing steps and results for structural images are visually presented, including segmentation, parcellation,
@@ -170,13 +170,13 @@ along with a temporal signal-to-noise ratio (tSNR) map. Finally, the report conc
 offering a clear and consistent description of all preprocessing steps employed, accompanied by appropriate citations. Some examples are shown below:
 
 
-.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/_static/outputs/report_timeline.png
+.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/24.1.1/_static/outputs/report_timeline.png
    :align: center
 
 The visual reports provide several sections per task and run to aid designing a denoising strategy for subsequent analysis.
 Some of the estimated confounds are plotted with a "carpet" visualization of the BOLD time series. An example is shown below:
 
-.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/_static/outputs/desc-carpet_bold.svg
+.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/24.1.1/_static/outputs/desc-carpet_bold.svg
    :align: center
 
 
@@ -186,3 +186,17 @@ were calculated with their corresponding masks. The standardized DVARS, framewis
 and relative head motion (RHM) were calculated. A carpet plot shows time series for all voxels within the brain mask,
 including cortical gray matter (Ctx GM), deep (subcortical) gray matter (dGM), white-matter and CSF (WM+CSF),
 and the rest of the brain (The rest).
+
+
+.. _outputs-confounds:
+
+=========
+Confounds
+=========
+
+The output confounds include:
+    + **24HMP**: 3 translations and 3 rotation (6HMP), their temporal derivatives (12HMP), and their quadratic terms (24HMP).
+    + **12 Global signals**: csf, white_matter, global_signal their temporal derivatives, and their quadratic terms.
+    + **Outlier detection**:  framewise_displacement, rmsd, dvars, std_dvars, non_steadv_state_outlier, motion_outlier.
+    + **Discrete cosine-basis regressors**: cosine
+    + **CompCor confounds**:  PCA regressors, saves top 10 components for e_comp_cor and saves 50% of explained variance of the rest, i.e. anatomical CompCor (a_comp_cor), temporal CompCor (t_comp_cor), outside brainmask CompCor (e_comp_cor). CompCor estimates from WM, CSF, and their union region is a_comp_cor, CompCor estimates from each of WM, csf are w_comp_cor, and c_comp_cor. eCompCor is a complementary extension of aCompCor and tCompCor. Its noise mask is assigned as the background of the field of view. Regressing out these components improves test-retest reliability. We will publish a paper to elucidate the method and its performance.
