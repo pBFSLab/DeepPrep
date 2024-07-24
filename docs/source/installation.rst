@@ -10,9 +10,9 @@ Docker and Singularity
 +---------------+--------------------+-----------------------------------------------------------------------------------------------------------+
 | Image         | version            | download command                                                                                          |
 +===============+====================+===========================================================================================================+
-| Docker        | 24.1.0 (latest)    | docker pull pbfslab/deepprep:24.1.0                                                                       |
+| Docker        | 24.1.1 (latest)    | docker pull pbfslab/deepprep:24.1.1                                                                       |
 +---------------+--------------------+-----------------------------------------------------------------------------------------------------------+
-| Singularity   | 24.1.0 (latest)    | $ curl -C - -O https://download.anning.info/ninganme-public/DeepPrep/SingularityImage/deepprep_24.1.0.sif |
+| Singularity   | 24.1.1 (latest)    | $ curl -C - -O https://download.anning.info/ninganme-public/DeepPrep/SingularityImage/deepprep_24.1.1.sif |
 +---------------+--------------------+-----------------------------------------------------------------------------------------------------------+
 
 
