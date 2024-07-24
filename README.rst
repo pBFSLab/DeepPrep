@@ -5,7 +5,8 @@ Welcome to DeepPrep's documentation!
 
 .. note::
 
-    DeepPrep has just released the newest version **pbfslab/deepprep:24.1.1**. Check out the details in the ``What's New`` section! :ref:`latest-note`.
+    DeepPrep has just released the newest version **pbfslab/deepprep:24.1.1**. Check out the details in the ``What's New`` section!
+    https://deepprep.readthedocs.io/en/latest/changes.html#id1
 
 
 Installation
