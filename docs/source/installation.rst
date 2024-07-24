@@ -33,6 +33,7 @@ DeepPrep provides a Docker image as the recommended way to get started.
         + NVIDIA Driver Version: >= 520.61.05 (optional GPU device)
         + CUDA Version: >= 11.8 (optional GPU device)
 
+
 1. Install Docker if you don't have one (`Docker Installation Page`_).
 
 
@@ -83,11 +84,11 @@ The same output as before is expected. If an error message pops up (something li
 
 4. Pull the Docker image::
 
-    $ docker pull pbfslab/deepprep:24.1.0
+    $ docker pull pbfslab/deepprep:24.1.1
 
 5. Run the Docker image ::
 
-    $ docker run --rm pbfslab/deepprep:24.1.0
+    $ docker run --rm pbfslab/deepprep:24.1.1
 
 If the Docker image was pulled successfully, you would see the following message:
 
