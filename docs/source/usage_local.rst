@@ -167,9 +167,9 @@ Before You Start
 
 .. code-block:: none
 
-    $ curl -C - -O https://download.anning.info/ninganme-public/DeepPrep/SingularityImage/deepprep_24.1.0.sif
+    $ curl -C - -O https://download.anning.info/ninganme-public/DeepPrep/SingularityImage/deepprep_24.1.1.sif
 
-Then you will get: ``<saved_path>/deepprep_24.1.0.sif``
+Then you will get: ``<saved_path>/deepprep_24.1.1.sif``
 
 The Singularity can be executed in a manner similar to the Docker command.
 
@@ -183,6 +183,15 @@ The Singularity can be executed in a manner similar to the Docker command.
 Sample Singularity Command
 ==========================
 
+0. Firstly run nextflow at the online environment. This command will download deps of nextflow into the $HOME/.nextflow dir.
+
+.. code-block:: none
+    :linenos:
+
+    $ singularity exec --cleanenv \
+                 <saved_path>/deepprep_24.1.1.sif \
+                 nextflow
+
 1. Here's a sample command only relies on CPU.
 
 .. code-block:: none
@@ -192,7 +201,7 @@ Sample Singularity Command
                  -B <bids_dir>:/input \
                  -B <output_dir>:/output \
                  -B <fs_license_file>:/fs_license.txt \
-                 <saved_path>/deepprep_24.1.0.sif \
+                 <saved_path>/deepprep_24.1.1.sif \
                  /input \
                  /output \
                  participant \
@@ -209,7 +218,7 @@ Sample Singularity Command
                  -B <bids_dir>:/input \
                  -B <output_dir>:/output \
                  -B <fs_license_file>:/fs_license.txt \
-                 <saved_path>/deepprep_24.1.0.sif \
+                 <saved_path>/deepprep_24.1.1.sif \
                  /input \
                  /output \
                  participant \
