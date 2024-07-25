@@ -60,9 +60,17 @@ if __name__ == '__main__':
     config['face'] = faces
     ico_level = 'fsaverage6'
 
-    config["device"] = args.device
-    if config['device'] != 'cpu':
-        config['device'] = 'cuda'
+    if args.device.lower() in ['cuda', 'cpu']:
+        device = args.device.lower()
+    else:
+        # 检查 CUDA 是否可用
+        if torch.cuda.is_available():
+            print("CUDA is available! You can use the GPU.")
+            device = 'cuda'  # 使用 GPU
+        else:
+            print("CUDA is not available. Using CPU instead.")
+            device = 'cpu'  # 使用 CPU
+    config["device"] = device
     config['validation'] = True
     config['rd_sample'] = False
     config['is_da'] = True
