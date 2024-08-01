@@ -40,11 +40,11 @@ Outperformance in application to large-sample and clinical datasets:
 
 DeepPrep achieves over 10-fold acceleration and shows robustness in processing clinical samples.
 
- | a) DeepPrep successfully processed 1189 participants’ scans from the UKB dataset on a workstation over one week, a remarkable 11-fold increase compared to fMRIPrep’s processing of 107 participants.
- | b) Average processing time per participant is 8.48 minutes for DeepPrep and 92.60 minutes for fMRIprep.
- | c) In the HPC context, preprocessing time of fMRIPrep can be reduced by allocating additional computational resources, yet with higher costs associated with CPU hours. DeepPrep offers flexibility in resource allocation, tailoring computational resources to the specific requirements of each task process, resulting in reliable costs and efficient processing time for individual participants. The cost of DeepPrep is at least 20 times lower than that of fMRIprep.
- | d) Robustness of DeepPrep is assessed in preprocessing clinical samples from Stroke, Tumor, and DoC datasets, who failed to be processed by FreeSurfer. DeepPrep successfully completed preprocessing in 100% of patients, with 75.5% of patients being correctly preprocessed. Meanwhile, fMRIprep’s success rate was 69.8% for completion and 50.9% for correct preprocessing.
- | e) Preprocessing errors are categorized into four types, including brain tissue segmentation, cortical surface reconstruction, cortical surface registration, and volumetric spatial normalization. Four representative cases with preprocessing errors are presented, illustrating obvious brain lesions or imaging noises in the original images. fMRIPrep yields an inaccurate brain mask when skull stripping, failed to reconstruct cortical surfaces, exhibited misalignment in surface parcellation in the pre- and post-central gyrus, and produced inappropriate volumetric normalization in perilesional region. In contrast, DeepPrep successfully and accurately processed these cases.
+ | a) DeepPrep achieves 10.1 times faster than fMRIPrep in processesing a single subject sequentially on a local workstation. Error bars represent standard deviations.
+ | b) DeepPrep (blue bars) processed 1146 subjects in batches, which is 10.4 times more efficient than fMRIPrep (gray bars).
+ | c) In the HPC processing, fMRIPrep shows a trade-off curve between preprocessing time and hardware expense associated with CPU hours (the gray line). DeepPrep provides reliable costs and efficient processing time for individual subjects (the blue dot), with expense at least 5.8 times lower than fMRIPrep
+ | d) The robustness of DeepPrep was evaluated by preprocessing 53 intractable clinical samples. DeepPrep successfully completed preprocessing in 100% of patients, with 58.5% of patients being accurately preprocessed, significantly higher than fMRIPrep’s rates of 69.8% and 30.2%, respectively.
+ | e) Preprocessing errors are categorized into three types, with three representative clinical samples shown. fMRIPrep yields an inaccurate brain mask when skull stripping, failed to reconstruct cortical surfaces, and exhibited misalignment in surface parcellation in the pre- and post-central gyrus. In contrast, DeepPrep successfully and accurately processed these cases.
 
 Upcoming improvements
 ---------------------
