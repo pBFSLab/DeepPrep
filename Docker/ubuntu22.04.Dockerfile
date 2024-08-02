@@ -207,6 +207,7 @@ ENV SUBJECTS_DIR=${FREESURFER_HOME}/subjects \
     MNI_DATAPATH=${FREESURFER_HOME}/mni/data
 ENV PERL5LIB=${FREESURFER_HOME}/mni/share/perl5 \
     MNI_PERL5LIB=${FREESURFER_HOME}/mni/share/perl5
+ENV PATH="${FREESURFER_HOME}/tktools:${FREESURFER_HOME}/bin:${FREESURFER_HOME}/fsfast/bin:${FREESURFER_HOME}/mni/bin:${PATH}"
 
 ## MRIQC
 ##COPY --from=freesurfer/synthstrip@sha256:f19578e5f033f2c707fa66efc8b3e11440569facb46e904b45fd52f1a12beb8b /freesurfer/models/synthstrip.1.pt /opt/freesurfer/models/synthstrip.1.pt
@@ -257,7 +258,7 @@ ENV HOME="/home/deepprep"
 
 ## Install nextflow
 COPY --from=nextflow /opt/nextflow /opt/nextflow
-COPY --from=nextflow /root/.nextflow $HOME/.nextflow
+RUN /opt/nextflow/bin/nextflow
 RUN find $HOME/.nextflow -type d -exec chmod go=u {} + && \
     find $HOME/.nextflow -type f -exec chmod go=u {} +
 ENV PATH="/opt/nextflow/bin:${PATH}" \
@@ -301,7 +302,8 @@ ENV DEEPPREP_VERSION="24.1.1"
 RUN chmod 755 /opt/DeepPrep/deepprep/deepprep.sh && chmod 755 /opt/DeepPrep/deepprep/nextflow/bin/*.py
 ENV PATH="/opt/DeepPrep/deepprep/nextflow/bin:${PATH}"
 
-ENV PATH="${FREESURFER_HOME}/bin:${FREESURFER_HOME}/fsfast/bin:${FREESURFER_HOME}/tktools:${FSLDIR}/bin:${FREESURFER_HOME}/mni/bin:${PATH}"
+RUN find $HOME -type d -exec chmod go=u {} + && \
+    find $HOME -type f -exec chmod go=u {} +
 
 ## CMD
 ENTRYPOINT ["/opt/DeepPrep/deepprep/deepprep.sh"]
