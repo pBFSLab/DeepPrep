@@ -163,13 +163,19 @@ Singularity User Guide
 Before You Start
 ========================
 
-1. Download the Singularity
+1. Build the Singularity image
 
 .. code-block:: none
 
-    $ curl -C - -O https://download.anning.info/ninganme-public/DeepPrep/SingularityImage/deepprep_24.1.0.sif
+    $ sudo singularity build <saved_path>/deepprep_24.1.1.sif docker://pbfslab/deepprep:24.1.1
 
-Then you will get: ``<saved_path>/deepprep_24.1.0.sif``
+or download the Singularity image
+
+.. code-block:: none
+
+    $ curl -C - -O https://download.anning.info/ninganme-public/DeepPrep/SingularityImage/deepprep_24.1.1.sif
+
+Then you will get: ``<saved_path>/deepprep_24.1.1.sif``
 
 The Singularity can be executed in a manner similar to the Docker command.
 
@@ -183,6 +189,15 @@ The Singularity can be executed in a manner similar to the Docker command.
 Sample Singularity Command
 ==========================
 
+0. Firstly run nextflow at the online environment. This command will download deps of nextflow into the $HOME/.nextflow dir.
+
+.. code-block:: none
+    :linenos:
+
+    $ singularity exec --cleanenv \
+                 <saved_path>/deepprep_24.1.1.sif \
+                 nextflow
+
 1. Here's a sample command only relies on CPU.
 
 .. code-block:: none
@@ -192,7 +207,7 @@ Sample Singularity Command
                  -B <bids_dir>:/input \
                  -B <output_dir>:/output \
                  -B <fs_license_file>:/fs_license.txt \
-                 <saved_path>/deepprep_24.1.0.sif \
+                 <saved_path>/deepprep_24.1.1.sif \
                  /input \
                  /output \
                  participant \
@@ -200,7 +215,7 @@ Sample Singularity Command
                  --fs_license_file /fs_license.txt \
                  --device cpu
 
-2. If you wish to use GPU as well, add the ``--nv`` and ``--device all`` like:
+2. If you wish to use GPU as well, add the ``--nv`` and ``--device gpu`` like:
 
 .. code-block:: none
     :linenos:
@@ -209,15 +224,13 @@ Sample Singularity Command
                  -B <bids_dir>:/input \
                  -B <output_dir>:/output \
                  -B <fs_license_file>:/fs_license.txt \
-                 <saved_path>/deepprep_24.1.0.sif \
+                 <saved_path>/deepprep_24.1.1.sif \
                  /input \
                  /output \
                  participant \
                  --bold_task_type rest \
                  --fs_license_file /fs_license.txt \
-                 --device all
-
-
+                 --device gpu
 
 .. container:: congratulation
 

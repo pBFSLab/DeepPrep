@@ -1257,12 +1257,12 @@ process anat_aparc_a2009s2aseg {
     """
     SUBJECTS_DIR=${subjects_dir} mri_surf2volseg --o ${subjects_dir}/${subject_id}/mri/aparc.a2009s+aseg.mgz --label-cortex --i ${aseg_mgz} \
     --nthreads ${fsthreads} \
-    --lh-annot lh.aparc.a2009s.annot 11100 \
-    --lh-cortex-mask lh.cortex.label --lh-white lh.white \
-    --lh-pial lh.pial \
-    --rh-annot rh.aparc.a2009s.annot 12100 \
-    --rh-cortex-mask rh.cortex.label --rh-white rh.white \
-    --rh-pial rh.pial
+    --lh-annot ${lh_aparc_annot} 11100 \
+    --lh-cortex-mask ${lh_cortex_label} --lh-white ${lh_white_surf} \
+    --lh-pial ${lh_pial_surf} \
+    --rh-annot ${rh_aparc_annot} 12100 \
+    --rh-cortex-mask ${rh_cortex_label} --rh-white ${rh_white_surf} \
+    --rh-pial ${rh_pial_surf}
     """
 }
 
