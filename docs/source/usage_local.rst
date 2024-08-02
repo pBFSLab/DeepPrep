@@ -163,7 +163,13 @@ Singularity User Guide
 Before You Start
 ========================
 
-1. Download the Singularity
+1. Build the Singularity image
+
+.. code-block:: none
+
+    $ sudo singularity build <saved_path>/deepprep_24.1.1.sif docker://pbfslab/deepprep:24.1.1
+
+or download the Singularity image
 
 .. code-block:: none
 
@@ -209,7 +215,7 @@ Sample Singularity Command
                  --fs_license_file /fs_license.txt \
                  --device cpu
 
-2. If you wish to use GPU as well, add the ``--nv`` and ``--device all`` like:
+2. If you wish to use GPU as well, add the ``--nv`` and ``--device gpu`` like:
 
 .. code-block:: none
     :linenos:
@@ -224,9 +230,7 @@ Sample Singularity Command
                  participant \
                  --bold_task_type rest \
                  --fs_license_file /fs_license.txt \
-                 --device all
-
-
+                 --device gpu
 
 .. container:: congratulation
 
