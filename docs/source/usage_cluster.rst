@@ -32,18 +32,24 @@ Platform and Login Nodes
 
 
 =============================================
-Download the Singularity image
+Build the Singularity image
 =============================================
 The Singularity image is typically used on HPC since users do not have permission to access the root directory.
 Meanwhile, the Docker image is commonly used on cloud platforms.
 
 .. warning::
-    The Singularity image should be downloaded to a **shared directory** ``<shared_storage_path>``.
+    The Singularity image should be build to a **shared directory** ``<shared_storage_path>``.
 
 
 
-Download the DeepPrep sif image
+Build the DeepPrep sif image
 -------------------------------------------------
+
+.. code-block:: none
+
+    $ sudo singularity build <saved_path>/deepprep_24.1.1.sif docker://pbfslab/deepprep:24.1.1
+
+or download the Singularity image
 
 .. code-block:: none
 
@@ -56,7 +62,7 @@ Then you will get: ``<shared_storage_path>/deepprep_24.1.1.sif``
 =====================================
 Download the Docker image (DockerHub)
 =====================================
-The Singularity image is typically used on AWS etc.
+The Docker image is typically used on AWS etc.
 
 Download the DeepPrep image from the DockerHub
 ----------------------------------------------
