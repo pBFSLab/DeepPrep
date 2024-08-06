@@ -106,7 +106,11 @@ Sample Docker Command
 Quick Start
 -----------
 
-Get started with a ``test_sample``, `download here`_.
+Get started with a ``test_sample``, using curl to download test sample file.
+
+.. code-block:: none
+
+    $ curl -C - -O https://download.anning.info/ninganme-public/DeepPrep/TestDataset/test_sample.zip
 
 The BIDS formatted sample contains one subject with one anatomical image and two functional images.
 
@@ -116,9 +120,9 @@ The BIDS formatted sample contains one subject with one anatomical image and two
     :linenos:
 
     $ docker run -it --rm --gpus all \
-                 -v ~/test_sample:/input \
-                 -v ~/deepprep_output:/output \
-                 -v ~/license.txt:/fs_license.txt \
+                 -v <test_sample_path>:/input \
+                 -v <output_dir>:/output \
+                 -v <fs_license_file>:/fs_license.txt \
                  pbfslab/deepprep:24.1.1 \
                  /input \
                  /output \
@@ -139,9 +143,9 @@ The BIDS formatted sample contains one subject with one anatomical image and two
     :linenos:
 
     $ docker run -it --rm \
-                 -v ~/test_sample:/input \
-                 -v ~/deepprep_output:/output \
-                 -v ~/license.txt:/fs_license.txt \
+                 -v <test_sample_path>:/input \
+                 -v <output_dir>:/output \
+                 -v <fs_license_file>:/fs_license.txt \
                  pbfslab/deepprep:24.1.1 \
                  /input \
                  /output \
@@ -169,7 +173,7 @@ Before You Start
 
     $ sudo singularity build <saved_path>/deepprep_24.1.1.sif docker://pbfslab/deepprep:24.1.1
 
-or download the Singularity image
+or download the Singularity image (optional)
 
 .. code-block:: none
 
