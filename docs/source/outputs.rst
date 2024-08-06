@@ -16,13 +16,13 @@ FreeSurfer carries out preprocessed anatomical derivatives store in ``<output_di
 
  <output_dir>/
  ├── Recon/
- ├── fsaverage/
- ├── sub-<subject_label>/
- ├── sub-<subject_label>/
-     ├── label/
-     ├── mri/
-     ├── scripts/
-     └── ...
+     ├── fsaverage/
+     ├── fsaverage6/
+     ├── sub-<subject_label>/
+         ├── label/
+         ├── mri/
+         ├── scripts/
+         └── ...
  └── ...
 
 The preprocessed structural MRI data are organized to align with the results of FreeSurfer, encompassing the normalized
@@ -36,21 +36,20 @@ The preprocessed functional derivatives are stored under the ``<output_dir>/BOLD
 
  <output_dir>/
  ├── BOLD/
- ├── sub-<subject_label>/
- ├── sub-<subject_label>/
-     ├── anat/
-         ├── sub-<subject_label>_space-<space_label>_res-<resolution>_desc-noskull_T1w.nii.gz
-         ├── sub-<subject_label>_space-<space_label>_res-<resolution>_desc-noskull_T1w.nii.gz
-         └── ...
-     ├── figures/
-         ├── sub-<subject_label>_task-<task_label>_run-<run_idx>_desc-summary_bold.html
-         └── ...
-     └── func/
-         ├── sub-<subject_label>_task-<task_label>_run-<run_idx>_from-orig_to-boldref_mode-image_desc-hmc_xfm.txt
-         ├── sub-<subject_label>_task-<task_label>_run-<run_idx>_space-<space_label>_res-<resolution>_desc-preproc_bold.nii.gz
-         └── ...
- ├── ...
- └── dataset_description.json
+     ├── sub-<subject_label>/
+         ├── anat/
+             ├── sub-<subject_label>_space-<space_label>_res-<resolution>_desc-skull_T1w.nii.gz
+             ├── sub-<subject_label>_space-<space_label>_res-<resolution>_desc-noskull_T1w.nii.gz
+             └── ...
+         ├── figures/
+             ├── sub-<subject_label>_task-<task_label>_run-<run_idx>_desc-summary_bold.html
+             └── ...
+         └── func/
+             ├── sub-<subject_label>_task-<task_label>_run-<run_idx>_from-orig_to-boldref_mode-image_desc-hmc_xfm.txt
+             ├── sub-<subject_label>_task-<task_label>_run-<run_idx>_space-<space_label>_res-<resolution>_desc-preproc_bold.nii.gz
+             └── ...
+     ├── ...
+     └── dataset_description.json
 
 The default output spaces for the preprocessed functional MRI consist of three options: 1. the native BOLD fMRI space, 2. the MNI152NLin6Asym space, and 3. the fsaverage6 surfaces space.
 However, users have the flexibility to specify other output spaces, including the native T1w space and various volumetric and surface templates available on TemplateFlow.
