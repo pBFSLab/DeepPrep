@@ -33,7 +33,7 @@ A computationally efficient and scalable neuroimaging pipeline is empowered by d
 
 Outperformance in application to large-sample and clinical datasets:
 
-.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/24.1.1/_static/readme/fig2.svg
+.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/24.1.1/_static/readme/fig2.png
    :align: center
 
 |
