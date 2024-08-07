@@ -21,7 +21,7 @@ About
 Neuroimaging has entered the era of big data. However, the advancement of preprocessing pipelines falls behind the rapid expansion of data volume, causing significant computational challenges. Here, we present DeepPrep, a pipeline empowered by deep learning and workflow manager. Evaluated on over 55,000 scans, DeepPrep demonstrates a 11-fold acceleration, exceptional scalability, and robustness compared to the current state-of-the-art pipeline, providing a promising solution to meet the scalability requirements of neuroimaging.
 The following is efficient workflow of the DeepPrep pipeline:
 
-.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/24.1.1/_static/readme/fig1.png
+.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/24.1.1/_static/readme/fig1.svg
    :align: center
 
 |
