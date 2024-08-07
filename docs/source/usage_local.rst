@@ -193,14 +193,14 @@ The Singularity can be executed in a manner similar to the Docker command.
 Sample Singularity Command
 ==========================
 
-0. Firstly run nextflow at the online environment. This command will download deps of nextflow into the $HOME/.nextflow dir.
+0. Firstly get deps of nextflow. This command will sync deps of nextflow into the $HOME/.nextflow dir.
 
 .. code-block:: none
     :linenos:
 
     $ singularity exec --cleanenv \
                  <saved_path>/deepprep_24.1.1.sif \
-                 nextflow
+                 rsync -arv /home/deepprep/.nextflow/ $HOME/.nextflow/
 
 1. Here's a sample command only relies on CPU.
 
