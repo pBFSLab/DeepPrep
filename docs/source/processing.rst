@@ -95,9 +95,9 @@ Deep Learning models training datasets
 +======================+===========================================+============================+
 | FastSurferCNN        | - ABIDE II                                |                            |
 |                      | - ADNI                                    |                            |
-|                      | - LA5c                                    |                            |
+|                      | - LA5c                                    | Henschel et al., 2020 [1]_ |
 |                      | - OASIS-1                                 |                            |
-|                      | - OASIS-2                                 | Henschel et al., 2020 [1]_ |
+|                      | - OASIS-2                                 |                            |
 +----------------------+-------------------------------------------+----------------------------+
 | FastCSR              | - CoRR (w/o CoRR-HNU)                     |                            |
 |                      | - SALD                                    |  Ren et al., 2022 [2]_     |
@@ -106,8 +106,8 @@ Deep Learning models training datasets
 |                      | - SALD                                    |  Ren et al., 2024 [3]_     |
 +----------------------+-------------------------------------------+----------------------------+
 | SynthMorph           | - FSM                                     |                            |
-|                      | - OASIS                                   |  Ren et al., 2024 [4]_     |
-|                      | - ABCD                                    |                            |
+|                      | - OASIS                                   |                            |
+|                      | - ABCD                                    | Hoffman et al., 2023 [4]_  |
 |                      | - Infants from Boston Children's Hospital |                            |
 +----------------------+-------------------------------------------+----------------------------+
 
