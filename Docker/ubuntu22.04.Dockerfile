@@ -125,7 +125,7 @@ RUN pip3 install mriqc-learn==0.0.2 --no-deps && pip3 cache purge && rm -rf /tmp
 RUN pip3 install python-redis-lock==4.0.0  && pip3 cache purge && rm -rf /tmp/* /var/tmp/*
 
 # Start from this Docker image
-FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04 as deepprep
+FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
 
 ENV DEBIAN_FRONTEND="noninteractive" \
     LANG="C.UTF-8" \
