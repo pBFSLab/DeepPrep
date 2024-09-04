@@ -1,5 +1,5 @@
 # Docker
-export DEEPPREP_VERSION='24.1.1'
+export DEEPPREP_VERSION='24.1.x'
 
 ## build Docker image
 cd /mnt/ngshare/SeaFile/Seafile/DeepPrep && sudo python3 -m http.server 80

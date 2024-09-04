@@ -65,7 +65,11 @@ if __name__ == '__main__':
 
     df1 = pd.read_csv(confounds_part1, sep='\t')
     df2 = pd.read_csv(confounds_file, sep='\t')
-    cols_replace = ['csf', 'csf_derivative1', 'csf_wm']
+    cols_replace = ['global_signal', 'global_signal_derivative1', 'csf', 'csf_derivative1',
+                    'white_matter', 'white_matter_derivative1', 'csf_wm', 'csf_wm_derivative1']
+    cols_copy = cols_replace.copy()
+    for i in cols_copy:
+        cols_replace.append(f'{i}_power2')
     cols_concat = [f'e_comp_cor_{str(i).zfill(2)}' for i in range(10)]
     for c in cols_replace:
         if c in df2.columns:

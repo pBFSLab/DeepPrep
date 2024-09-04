@@ -112,6 +112,7 @@ if __name__ == '__main__':
     parser.add_argument("--t1w_tpms_GM", required=True)
     parser.add_argument("--t1w_tpms_WM", required=True)
     parser.add_argument("--mask_nii", required=True)
+    parser.add_argument("--skip_frame", required=True)
     args = parser.parse_args()
     """
     inputs:
@@ -139,7 +140,7 @@ if __name__ == '__main__':
     bold_mask = confounds_dir / f'{args.bold_id}_bold_average_corrected_brain_mask_maths.nii.gz'
     movpar_file = confounds_dir / f'{args.bold_id}_motion_params.txt'
     rmsd_file = confounds_dir / f'{args.bold_id}_bold_mcf.nii.gz_rel.rms'
-    skip_vols = 2
+    skip_vols = int(args.skip_frame)
     t1w_tpms = [args.t1w_tpms_GM, args.t1w_tpms_WM, args.t1w_tpms_CSF]
     t1w_mask = args.mask_nii
 
