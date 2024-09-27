@@ -124,6 +124,8 @@ RUN pip3 install mriqc-learn==0.0.2 --no-deps && pip3 cache purge && rm -rf /tmp
 # python-redis-lock
 RUN pip3 install python-redis-lock==4.0.0  && pip3 cache purge && rm -rf /tmp/* /var/tmp/*
 
+RUN pip3 install streamlit==1.38.0 protobuf==3.20  && pip3 cache purge && rm -rf /tmp/* /var/tmp/*
+
 # Start from this Docker image
 FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
 
@@ -295,6 +297,7 @@ COPY deepprep/SUGAR /opt/DeepPrep/deepprep/SUGAR
 COPY deepprep/FastSurfer /opt/DeepPrep/deepprep/FastSurfer
 COPY deepprep/SynthMorph /opt/DeepPrep/deepprep/SynthMorph
 COPY deepprep/nextflow /opt/DeepPrep/deepprep/nextflow
+COPY deepprep/web /opt/DeepPrep/deepprep/web
 COPY deepprep/deepprep.sh /opt/DeepPrep/deepprep/deepprep.sh
 # release
 ENV DEEPPREP_VERSION="24.1.1"
@@ -305,5 +308,7 @@ ENV PATH="/opt/DeepPrep/deepprep/nextflow/bin:${PATH}"
 RUN find $HOME -type d -exec chmod go=u {} + && \
     find $HOME -type f -exec chmod go=u {} +
 
+#RUN /opt/conda/envs/deepprep/bin/pip3 install streamlit==1.38.0 protobuf==3.20  && pip3 cache purge && rm -rf /tmp/* /var/tmp/*
+EXPOSE 8501
 ## CMD
 ENTRYPOINT ["/opt/DeepPrep/deepprep/deepprep.sh"]
