@@ -134,6 +134,11 @@ with col5:
         deepprep_cmd += ' --bold_confounds'
 
 
+if selected_option == "BOLD only":
+    deepprep_cmd += ' --bold_only'
+elif selected_option == "Recon only":
+    deepprep_cmd += ' --anat_only'
+
 def run_command(cmd):
     process = subprocess.Popen(
         cmd,

@@ -1,9 +1,4 @@
 import streamlit as st
-import subprocess
-import os
-
-
-import streamlit as st
 
 st.write("# Welcome to DeepPrep! 👋")
 
