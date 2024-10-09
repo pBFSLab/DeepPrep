@@ -26,10 +26,16 @@ deepprep-docker [bids_dir] [output_dir] [{participant}] [--bold_task_type '[task
                 [--ignore_error] [--resume]
 "
 
-if [ $# -le 1 ]; then
+if [ $# -eq 0 ]; then
+  cd /opt/DeepPrep/deepprep/web && streamlit run DeepPrep.py
+  exit 0
+fi
+
+if [ $# -eq 1 ]; then
   echo "${help}"
   exit 0
 fi
+
 if [ $# -gt 1 ] && [ $# -lt 5 ]; then
   echo "ERROR: args less than required."
   echo "${help}"
