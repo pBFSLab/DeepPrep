@@ -132,6 +132,7 @@ if __name__ == '__main__':
     t1w_tpms = []
     fsnative2t1w_xfm = args.fsnative2t1w_xfm
 
+    print("bold_sdc : ", args.bold_sdc)
     print("t1w_preproc :", t1w_preproc)
     print("t1w_mask :", t1w_mask)
     print("t1w_dseg :", t1w_dseg)
