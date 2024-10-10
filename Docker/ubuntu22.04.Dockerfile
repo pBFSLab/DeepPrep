@@ -292,6 +292,7 @@ COPY deepprep/model/SUGAR /opt/model/SUGAR
 COPY deepprep/model/SynthMorph /opt/model/SynthMorph
 
 # Dev
+COPY deepprep/FreeSurfer /opt/freesurfer
 COPY deepprep/FastCSR /opt/DeepPrep/deepprep/FastCSR
 COPY deepprep/SUGAR /opt/DeepPrep/deepprep/SUGAR
 COPY deepprep/FastSurfer /opt/DeepPrep/deepprep/FastSurfer
