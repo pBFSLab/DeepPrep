@@ -16,13 +16,30 @@ st.markdown(
 """
 )
 
-st.page_link("pages/1_🚀Preprocessing of T1 & BOLD.py",
-    label="🚀Preprocessing of T1 & BOLD"
+st.page_link("pages/1_🚀Preprocessing of T1w & BOLD.py",
+    label="👉Preprocessing of T1w & BOLD🔗"
+)
+
+st.page_link("pages/2_⚙️Postprocessing of BOLD.py",
+    label="👉Postprocessing of BOLD🔗"
+)
+
+st.page_link("pages/3_📝Quick QC.py",
+    label="👉Quick QC of T1w & BOLD🔗"
 )
 
 st.markdown(
     """
     -----------------
+"""
+)
+
+st.markdown(
+    """
+    #### Version
+
+    24.1.1 [What’s new](https://deepprep.readthedocs.io/en/latest/changes.html)
+
 """
 )
 
@@ -39,7 +56,7 @@ st.markdown(
 st.markdown(
     """
     #### Citation  
-    Ren, J., An, N., Lin, C., Zhang, Y., Sun, Z., Zhang, W., Li, S., Guo, N., Cui, W., Hu, Q. and Wang, W., 2024. *DeepPrep: An accelerated, scalable, and robust pipeline for neuroimaging preprocessing empowered by deep learning*. bioRxiv, pp.2024-03.  
+    Ren, J.\*, An, N.\*, Lin, C., Zhang, Y., Sun, Z., Zhang, W., Li, S., Guo, N., Cui, W., Hu, Q. and Wang, W., 2024. *DeepPrep: An accelerated, scalable, and robust pipeline for neuroimaging preprocessing empowered by deep learning*. bioRxiv, pp.2024-03.  
     
 """
 )

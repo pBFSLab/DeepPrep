@@ -2,16 +2,17 @@ import streamlit as st
 import subprocess
 import os
 
-st.markdown(f'# 🚀Preprocessing of T1 & BOLD')
+st.markdown(f'# 🚀Preprocessing of T1w & BOLD')
 st.write(
     """
     DeepPrep is able to end-to-end preprocess anatomical and functional MRI data for different data size ranging from a single participant to a HUGE dataset. It is also flexible to run the anatomical part or functional part that requires a complete Recon folder to be specified. The DeepPrep workflow takes the directory of the dataset that is to be processed as the input, which is required to be in the valid BIDS format.
 """
 )
 
-selected_option = st.radio("请选择一个选项:", ("All", "Recon only", "BOLD only"), horizontal=True)
+selected_option = st.radio("select a process: ", ("All", "T1w only", "BOLD only"), horizontal=True, help="'All' preprocess T1w data and BOLD data, 'T1w only' preprocess T1w data, 'BOLD only' preprocess BOLD data")
+device = st.radio("select a device: ", ("auto", "GPU", "CPU"), horizontal=True, help="specifies the device. The default is auto, which automatically selects a device")
 
-st.write("您选择的是:", selected_option)
+st.write(f"preprocess '{selected_option}'", f"on the '{device}' device.")
 
 deepprep_cmd = ''
 docker_cmd = 'docker run -it --rm'
@@ -19,15 +20,15 @@ commond_error = False
 
 bids_dir = st.text_input("BIDS Path:", help="refers to the directory of the input dataset, which should be in BIDS format.")
 if not bids_dir:
-    st.error("必须输入 BIDS Path!")
+    st.error("The BIDS Path must be input!")
     deepprep_cmd += ' {bids_dir}'
     commond_error = True
 elif not bids_dir.startswith('/'):
-    st.error("必须输入以 '/' 开头的绝对路径!")
+    st.error("It must be an absolute path that starts with '/'.")
     deepprep_cmd += ' {bids_dir}'
     commond_error = True
 elif not os.path.exists(bids_dir):
-    st.error("BIDS Path 路径不存在!")
+    st.error("The BIDS Path does not exist!")
     deepprep_cmd += ' {bids_dir}'
     commond_error = True
 else:
@@ -35,11 +36,11 @@ else:
 
 output_dir = st.text_input("output Path:", help="refers to the directory for the outputs of DeepPrep.")
 if not output_dir:
-    st.error("必须输入 output Path!")
+    st.error("The output Path must be input!")
     deepprep_cmd += ' {output_dir}'
     commond_error = True
 elif not output_dir.startswith('/'):
-    st.error("必须输入以 '/' 开头的绝对路径!")
+    st.error("It must be an absolute path that starts with '/'.")
     deepprep_cmd += ' {output_dir}'
     commond_error = True
 else:
@@ -48,47 +49,60 @@ deepprep_cmd += f' participant'
 
 if selected_option == "BOLD only":
     subjects_dir = st.text_input("Recon result Path",
-                                 help=" the output directory of Recon files, default is <output_dir>/Recon.")
+                                 help=" the directory of Recon files.")
     if not subjects_dir:
-        st.error("必须输入已存在的 Recon result Path!")
+        st.error("The Recon result Path must be input!")
+        commond_error = True
+    elif not os.path.exists(subjects_dir):
+        st.error("The Recon result Path does not exist!")
         commond_error = True
 else:
     subjects_dir = st.text_input("Recon result Path (optional)", help=" the output directory of Recon files, default is <output_dir>/Recon.")
 
 if subjects_dir:
     if not subjects_dir.startswith('/'):
-        st.error("必须输入以 '/' 开头的绝对路径!")
+        st.error("It must be an absolute path that starts with '/'.")
         commond_error = True
     elif not os.path.exists(subjects_dir):
-        st.error("Recon result Path 路径不存在!")
+        st.error("The Recon result Path does not exist!")
         commond_error = True
     else:
         deepprep_cmd += f' --subjects_dir {subjects_dir}'
 
-freesurfer_license_file = st.text_input("FreeSurfer license file path", value='/opt/freesurfer/license.txt', help="the file of a valid FreeSurfer License.")
-deepprep_cmd += f' --fs_license_file {freesurfer_license_file}'
+freesurfer_license_file = st.text_input("FreeSurfer license file path", value='/opt/freesurfer/license.txt', help="FreeSurfer license file path.You should replace license.txt path with your own FreeSurfer license! You can get your license file for free from https://surfer.nmr.mgh.harvard.edu/registration.html")
+if not freesurfer_license_file.startswith('/'):
+    st.error("It must be an absolute path that starts with '/'.")
+    commond_error = True
+elif not os.path.exists(freesurfer_license_file):
+    st.error("The FreeSurfer license file Path does not exist!")
+    commond_error = True
+else:
+    deepprep_cmd += f' --fs_license_file {freesurfer_license_file}'
 
-if selected_option != "Recon only":
-    bold_task_type = st.text_input("BOLD task type", value='rest', help="the task label of BOLD images (i.e. rest, motor).")
+if selected_option != "T1w only":
+    bold_task_type = st.text_input("BOLD task type", value='rest', help="the task label of BOLD images (i.e. rest, motor, 'rest motor').")
     if not bold_task_type:
-        st.error("必须输入 BOLD task type!")
+        st.error("The BOLD task type must be input!")
         commond_error = True
     else:
-        deepprep_cmd += f' --bold_task_type {bold_task_type}'
+        bold_task_type.replace("'", "")
+        bold_task_type.replace('"', "")
+        deepprep_cmd += f"--bold_task_type '{bold_task_type}'"
 
-    bold_surface_spaces = st.text_input("BOLD surface spaces", value="fsaverage6", help="specifies surface template spaces, i.e. 'fsnative fsaverage fsaverage[3-6]', default is 'fsaverage6'.")
-    if not bold_surface_spaces:
-        deepprep_cmd += f" --bold_surface_spaces 'fsaverage6'"
-    else:
-        deepprep_cmd += f" --bold_surface_spaces '{bold_surface_spaces}'"
+    surface_spaces = st.multiselect("select the surface spaces: (optional)",
+        ["fsnative", "fsaverage6", "fsaverage5", "fsaverage4"],
+        ["fsaverage6"],
+        help="select the surface spaces from FreeSurfer"
+    )
+    if surface_spaces:
+        surface_spaces = ' '.join(surface_spaces)
+        deepprep_cmd += f" --bold_surface_spaces '{surface_spaces}'"
 
-    bold_volume_space = st.text_input("BOLD volume space", value="MNI152NLin6Asym", help="specifies an available volumetric space from TemplateFlow, default is MNI152NLin6Asym.")
-    if not bold_volume_space:
-        deepprep_cmd += f' --bold_volume_space MNI152NLin6Asym'
-    else:
-        deepprep_cmd += f' --bold_volume_space {bold_volume_space}'
+    bold_volume_space = st.selectbox("select a normalized volume space: (optional)", ("MNI152NLin6Asym", "MNI152NLin2009cAsym", "None"), help="select a volumetric space from TemplateFlow")
+    deepprep_cmd += f' --bold_volume_space {bold_volume_space}'
 
-    bold_volume_res = st.text_input("BOLD volume space resolution", value="02", help="specifies the spatial resolution of the corresponding template space from TemplateFlow, default is 02.")
+    # bold_volume_res = st.text_input("BOLD volume space resolution", value="02", help="specifies the spatial resolution of the corresponding template space from TemplateFlow, default is 02.")
+    bold_volume_res = False
     if not bold_volume_res:
         deepprep_cmd += f' --bold_volume_res 02'
     else:
@@ -97,9 +111,10 @@ if selected_option != "Recon only":
 participant_label = st.text_input("the subject IDs (optional)",
                                   help="the subject ID you want to process, i.e. 'sub-001 sub-002'.")
 if participant_label:
+    participant_label.replace("'", "")
+    participant_label.replace('"', "")
     deepprep_cmd += f" --participant_label '{participant_label}'"
 
-device = st.radio("select a device:", ("auto", "GPU", "CPU"), horizontal=True, help="specifies the device. The default is auto, which automatically selects a GPU")
 if device == "GPU":
     deepprep_cmd += f' --device GPU'
     docker_cmd += ' --gpus all'
@@ -111,32 +126,31 @@ else:
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    skip_bids_validation = st.checkbox("skip_bids_validation", value=True, help="Skip bids validation")
+    skip_bids_validation = st.checkbox("skip_bids_validation", value=True, help="with this flag, the BIDS format validation step of the input dataset will be skipped.")
     if skip_bids_validation:
         deepprep_cmd += ' --skip_bids_validation'
 with col2:
-    ignore_error = st.checkbox("ignore_error")
+    ignore_error = st.checkbox("ignore_error", help="ignores the errors that occurred during processing.")
     if ignore_error:
         deepprep_cmd += ' --ignore_error'
 with col3:
-    resume = st.checkbox("resume", value=True)
+    resume = st.checkbox("resume", value=True, help="allows the DeepPrep pipeline to start from the last exit point.")
     if resume:
         deepprep_cmd += ' --resume'
 
 col4, col5 = st.columns(2)
 with col4:
-    bold_sdc = st.checkbox("bold_sdc", value=True)
+    bold_sdc = st.checkbox("bold_sdc", value=True, help="applies susceptibility distortion correction (SDC), default is True.")
     if bold_sdc:
         deepprep_cmd += ' --bold_sdc'
 with col5:
-    bold_confounds = st.checkbox("bold_confounds", value=True)
+    bold_confounds = st.checkbox("bold_confounds", value=True, help="generates confounds derived from BOLD fMRI, such as head motion variables and global signals; the default is True.")
     if bold_confounds:
         deepprep_cmd += ' --bold_confounds'
 
-
 if selected_option == "BOLD only":
     deepprep_cmd += ' --bold_only'
-elif selected_option == "Recon only":
+elif selected_option == "T1w only":
     deepprep_cmd += ' --anat_only'
 
 def run_command(cmd):
