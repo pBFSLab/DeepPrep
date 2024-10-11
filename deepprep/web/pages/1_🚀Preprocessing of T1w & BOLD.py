@@ -99,14 +99,25 @@ if selected_option != "T1w only":
         deepprep_cmd += f" --bold_surface_spaces '{surface_spaces}'"
 
     bold_volume_space = st.selectbox("select a normalized volume space: (optional)", ("MNI152NLin6Asym", "MNI152NLin2009cAsym", "None"), help="select a volumetric space from TemplateFlow")
-    deepprep_cmd += f' --bold_volume_space {bold_volume_space}'
+    deepprep_cmd += f' --bold_volume_space {bold_volume_space} --bold_volume_res 02'
 
-    # bold_volume_res = st.text_input("BOLD volume space resolution", value="02", help="specifies the spatial resolution of the corresponding template space from TemplateFlow, default is 02.")
-    bold_volume_res = False
-    if not bold_volume_res:
-        deepprep_cmd += f' --bold_volume_res 02'
+    bold_skip_frame = st.text_input("skip n frames of BOLD data", value="2", help="skip n frames of BOLD fMRI; the default is `2`.")
+    if not bold_skip_frame:
+        deepprep_cmd += f' --bold_skip_frame 2'
     else:
-        deepprep_cmd += f' --bold_volume_res {bold_volume_res}'
+        deepprep_cmd += f' --bold_skip_frame {bold_skip_frame}'
+
+    col4, col5, col6 = st.columns(3)
+    with col4:
+        bold_sdc = st.checkbox("bold_sdc", value=True,
+                               help="applies susceptibility distortion correction (SDC), default is True.")
+        if bold_sdc:
+            deepprep_cmd += ' --bold_sdc'
+    with col5:
+        bold_confounds = st.checkbox("bold_confounds", value=True,
+                                     help="generates confounds derived from BOLD fMRI, such as head motion variables and global signals; the default is True.")
+        if bold_confounds:
+            deepprep_cmd += ' --bold_confounds'
 
 participant_label = st.text_input("the subject IDs (optional)",
                                   help="the subject ID you want to process, i.e. 'sub-001 sub-002'.")
@@ -137,16 +148,6 @@ with col3:
     resume = st.checkbox("resume", value=True, help="allows the DeepPrep pipeline to start from the last exit point.")
     if resume:
         deepprep_cmd += ' --resume'
-
-col4, col5 = st.columns(2)
-with col4:
-    bold_sdc = st.checkbox("bold_sdc", value=True, help="applies susceptibility distortion correction (SDC), default is True.")
-    if bold_sdc:
-        deepprep_cmd += ' --bold_sdc'
-with col5:
-    bold_confounds = st.checkbox("bold_confounds", value=True, help="generates confounds derived from BOLD fMRI, such as head motion variables and global signals; the default is True.")
-    if bold_confounds:
-        deepprep_cmd += ' --bold_confounds'
 
 if selected_option == "BOLD only":
     deepprep_cmd += ' --bold_only'
