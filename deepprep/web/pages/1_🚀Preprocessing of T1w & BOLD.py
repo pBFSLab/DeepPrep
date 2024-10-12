@@ -6,6 +6,8 @@ st.markdown(f'# 🚀Preprocessing of T1w & BOLD')
 st.write(
     """
     DeepPrep is able to end-to-end preprocess anatomical and functional MRI data for different data size ranging from a single participant to a HUGE dataset. It is also flexible to run the anatomical part or functional part that requires a complete Recon folder to be specified. The DeepPrep workflow takes the directory of the dataset that is to be processed as the input, which is required to be in the valid BIDS format.
+    
+-----------------
 """
 )
 
