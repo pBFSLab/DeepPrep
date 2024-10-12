@@ -56,7 +56,7 @@ Upcoming improvements
 
 Citation
 --------
-Ren, J., An, N., Lin, C., Zhang, Y., Sun, Z., Zhang, W., Li, S., Guo, N., Cui, W., Hu, Q. and Wang, W., 2024. DeepPrep: An accelerated, scalable, and robust pipeline for neuroimaging preprocessing empowered by deep learning. bioRxiv, pp.2024-03.
+Ren, J.\*, An, N.\*, Lin, C., Zhang, Y., Sun, Z., Zhang, W., Li, S., Guo, N., Cui, W., Hu, Q. and Wang, W., 2024. DeepPrep: An accelerated, scalable, and robust pipeline for neuroimaging preprocessing empowered by deep learning. bioRxiv, pp.2024-03.
 
 License
 --------

@@ -16,9 +16,6 @@ What's new
 5. **Doc:** Add confounds descriptions in :ref:`outputs-confounds`.
 
 
-
-
-
 24.1.0 (May 27, 2024)
 -----------------------
 

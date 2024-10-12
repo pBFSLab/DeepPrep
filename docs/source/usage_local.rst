@@ -52,7 +52,7 @@ DeepPrep: Deep learning empowered preprocessing workflow 24.1.1:
    usage: deepprep-docker [bids_dir] [output_dir] [{participant}] [--bold_task_type '[task1 task2 task3 ...]']
                           [--fs_license_file PATH] [--participant_label '[001 002 003 ...]']
                           [--subjects_dir PATH] [--skip_bids_validation]
-                          [--anat_only] [--bold_only] [--bold_sdc] [--bold_confounds]
+                          [--anat_only] [--bold_only] [--bold_sdc] [--bold_confounds] [--bold_skip_frame 0]
                           [--bold_surface_spaces '[None fsnative fsaverage fsaverage6 ...]']
                           [--bold_volume_space {None MNI152NLin6Asym MNI152NLin2009cAsym}] [--bold_volume_res {02 03...}]
                           [--device { {auto 0 1 2...} cpu}]
@@ -93,6 +93,7 @@ Sample Docker Command
     + ``--bold_only`` - with this flag, only the *functional* images will be processed, where *Recon* files are pre-requested.
     + ``--bold_sdc`` - applies susceptibility distortion correction (SDC), default is ``True``.
     + ``--bold_confounds`` - generates confounds derived from BOLD fMRI, such as head motion variables and global signals; the default is ``True``.
+    + ``--bold_skip_frame`` - skip n frames of BOLD fMRI; the default is ``0``.
     + ``--bold_surface_spaces`` - specifies surface template spaces, i.e. ``'fsnative fsaverage fsaverage[3-6]'``, default is ``'fsaverage6'``. (*Note:* the space names must be quoted using single quotation marks)
     + ``--bold_volume_space`` - specifies an available volumetric space from `TemplateFlow`_, default is ``MNI152NLin6Asym``.
     + ``--bold_volume_res`` - specifies the spatial resolution of the corresponding template space from `TemplateFlow`_, default is ``02``.

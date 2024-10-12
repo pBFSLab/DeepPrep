@@ -1373,6 +1373,7 @@ process bold_fieldmap {
     val(bold_spaces)
     val(bold_sdc)
     val(qc_result_path)
+    val(bold_skip_frame)
 
     output:
     tuple(val(subject_id), val("TRUE"))
@@ -1389,7 +1390,8 @@ process bold_fieldmap {
         --task_id ${task_id} \
         --bold_spaces ${bold_spaces} \
         --bold_sdc ${bold_sdc} \
-        --qc_result_path ${qc_result_path}
+        --qc_result_path ${qc_result_path} \
+        --skip_frame ${bold_skip_frame}
         """
     }
     else {
@@ -1416,6 +1418,7 @@ process bold_pre_process {
     val(fs_license_file)
     val(bold_sdc)
     val(qc_result_path)
+    val(bold_skip_frame)
 
     output:
     tuple(val(subject_id), val(bold_id), path(subject_boldfile_txt))
@@ -1438,7 +1441,8 @@ process bold_pre_process {
     --t1w_dseg ${wm_dseg_nii} \
     --fsnative2t1w_xfm ${fsnative2T1w_xfm} \
     --fs_license_file ${fs_license_file} \
-    --qc_result_path ${qc_result_path}
+    --qc_result_path ${qc_result_path} \
+    --skip_frame ${bold_skip_frame}
     """
 }
 
@@ -2163,6 +2167,7 @@ process bold_confounds_part1 {
     val(bold_preprocess_path)
     val(work_dir)
     tuple(val(subject_id), val(bold_id), val(aseg_mgz), val(mask_mgz), path(subject_boldfile_txt))
+    val(bold_skip_frame)
 
     output:
     tuple(val(subject_id), val(bold_id), val("confounds_part1.tsv")) // emit: bold_confounds_view
@@ -2179,7 +2184,8 @@ process bold_confounds_part1 {
     --bold_id ${bold_id} \
     --bold_file ${subject_boldfile_txt} \
     --aseg_mgz ${aseg_mgz} \
-    --brainmask_mgz ${mask_mgz}
+    --brainmask_mgz ${mask_mgz} \
+    --skip_frame ${bold_skip_frame}
     """
 }
 
@@ -2194,6 +2200,7 @@ process bold_confounds_part2 {
     val(bold_preprocess_path)
     val(work_dir)
     tuple(val(subject_id), val(bold_id), val(wm_probseg_nii), val(gm_probseg_nii), val(csf_probseg_nii), val(mask_nii), val(aseg), val(brainmask), val(subject_boldfile_txt))
+    val(bold_skip_frame)
 
     output:
     tuple(val(subject_id), val(bold_id), val("${bold_id}_desc-confounds_timeseries.tsv")) // emit: bold_confounds_view
@@ -2213,6 +2220,7 @@ process bold_confounds_part2 {
     --t1w_tpms_GM ${gm_probseg_nii} \
     --t1w_tpms_WM ${wm_probseg_nii} \
     --mask_nii ${mask_nii} \
+    --skip_frame ${bold_skip_frame}
     """
 }
 
@@ -2935,20 +2943,20 @@ workflow bold_wf {
 
     (t1_nii, mask_nii, wm_dseg_nii, fsnative2T1w_xfm, wm_probseg_nii, gm_probseg_nii, csf_probseg_nii) = bold_anat_prepare(bold_preprocess_path, subjects_dir, work_dir, bold_anat_prepare_input)
 
-    bold_fieldmap_output = bold_fieldmap(bids_dir, t1_nii, bold_preprocess_path, work_dir, bold_task_type, bold_spaces, bold_sdc, qc_result_path)
+    bold_fieldmap_output = bold_fieldmap(bids_dir, t1_nii, bold_preprocess_path, work_dir, bold_task_type, bold_spaces, bold_sdc, qc_result_path, bold_skip_frame)
 
     if (bold_only == 'TRUE') {
         bold_pre_process_input = subject_id_boldfile_id.groupTuple(sort: true).join(bold_fieldmap_output, by:[0]).join(t1_nii).join(mask_nii, by: [0]).join(wm_dseg_nii, by:[0]).join(aparc_aseg_mgz).join(fsnative2T1w_xfm, by:[0]).join(pial_surf, by:[0]).transpose().join(subject_boldfile_txt, by:[0])
     } else {
         bold_pre_process_input = subject_id_boldfile_id.groupTuple(sort: true).join(bold_fieldmap_output, by:[0]).join(t1_nii).join(mask_nii, by: [0]).join(wm_dseg_nii, by:[0]).join(aparc_aseg_presurf_mgz).join(fsnative2T1w_xfm, by:[0]).join(pial_surf, by:[0]).transpose().join(subject_boldfile_txt, by:[0])
     }
-    subject_boldfile_txt_bold_pre_process = bold_pre_process(bids_dir, subjects_dir, bold_preprocess_path, work_dir, bold_spaces, bold_pre_process_input, fs_license_file, bold_sdc, qc_result_path)
+    subject_boldfile_txt_bold_pre_process = bold_pre_process(bids_dir, subjects_dir, bold_preprocess_path, work_dir, bold_spaces, bold_pre_process_input, fs_license_file, bold_sdc, qc_result_path, bold_skip_frame)
 
     if (do_bold_confounds == 'TRUE') {
         bold_confounds_part1_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(aseg_mgz).join(mask_mgz, by: [0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
-        confounds_part1_done = bold_confounds_part1(bids_dir, bold_preprocess_path, work_dir, bold_confounds_part1_inputs)
+        confounds_part1_done = bold_confounds_part1(bids_dir, bold_preprocess_path, work_dir, bold_confounds_part1_inputs, bold_skip_frame)
         bold_confounds_part2_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(wm_probseg_nii, by: [0]).join(gm_probseg_nii, by: [0]).join(csf_probseg_nii, by: [0]).join(mask_nii, by: [0]).join(aseg_mgz, by: [0]).join(mask_mgz, by:[0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
-        confounds_part2_done = bold_confounds_part2(bids_dir, bold_preprocess_path, work_dir, bold_confounds_part2_inputs)
+        confounds_part2_done = bold_confounds_part2(bids_dir, bold_preprocess_path, work_dir, bold_confounds_part2_inputs, bold_skip_frame)
         bold_confounds_combine_inputs = subject_id_boldfile_id.groupTuple(sort: true).transpose().join(confounds_part1_done, by: [0,1]).join(confounds_part2_done, by: [0,1]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
         bold_confounds_combine(bids_dir, bold_preprocess_path, work_dir, bold_confounds_combine_inputs)
     }
