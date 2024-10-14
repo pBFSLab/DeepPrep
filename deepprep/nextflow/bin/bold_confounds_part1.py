@@ -86,11 +86,11 @@ def regressors_PCA(data, maskpath):
 
 def compile_regressors(bold_path,
                        aseg_brainmask_bin, aseg_wm, aseg_ventricles, aseg_csf, tr,
-                       output_file, nskip):
+                       output_file, nskip, band):
 
     img = nib.load(bold_path)
     data = img.get_fdata()
-    data_bandpass = bandpass_nifti(data, nskip=nskip, order=2, band=[0.01, 0.08], tr=tr)
+    data_bandpass = bandpass_nifti(data, nskip=nskip, order=2, band=band, tr=tr)
 
     whole_brain = qnt_nifti(data_bandpass, str(aseg_brainmask_bin))
 
@@ -159,6 +159,7 @@ if __name__ == '__main__':
     parser.add_argument("--aseg_mgz", required=True)
     parser.add_argument("--brainmask_mgz", required=True)
     parser.add_argument("--skip_frame", required=True)
+    parser.add_argument("--bandpass", required=True)
     args = parser.parse_args()
     """
     input:
@@ -170,9 +171,16 @@ if __name__ == '__main__':
     --aseg_mgz /mnt/ngshare2/DeepPrep_Test/test_BoldOnly/Recon/sub-1021440/mri/aseg.mgz
     --brainmask_mgz /mnt/ngshare2/DeepPrep_Test/test_BoldOnly/Recon/sub-1021440/mri/brainmask.mgz
     --skip_frame 0
+    --bandpass 0.01-0.08
     output:
     confounds_file
     """
+
+    bandpass_low, bandpass_high = args.bandpass.split('-')
+    bandpass_low = float(bandpass_low)
+    bandpass_high = float(bandpass_high)
+    assert bandpass_low > 0
+    assert bandpass_high > 0
 
     tmp_path = Path(args.work_dir)
     anat2bold_t1w_dir = tmp_path / 'anat2bold_t1w' / args.bold_id
@@ -201,5 +209,5 @@ if __name__ == '__main__':
     confounds_file = Path(output_dir, 'confounds_part1.tsv')
     compile_regressors(str(bold_space_t1w_file.path),
                        brainmask_bin, wm, vent, csf, TR,
-                       confounds_file, int(args.skip_frame))
+                       confounds_file, int(args.skip_frame), [bandpass_low, bandpass_high])
     assert confounds_file.exists()

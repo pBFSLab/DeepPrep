@@ -2168,6 +2168,7 @@ process bold_confounds_part1 {
     val(work_dir)
     tuple(val(subject_id), val(bold_id), val(aseg_mgz), val(mask_mgz), path(subject_boldfile_txt))
     val(bold_skip_frame)
+    val(bold_bandpass)
 
     output:
     tuple(val(subject_id), val(bold_id), val("confounds_part1.tsv")) // emit: bold_confounds_view
@@ -2185,7 +2186,8 @@ process bold_confounds_part1 {
     --bold_file ${subject_boldfile_txt} \
     --aseg_mgz ${aseg_mgz} \
     --brainmask_mgz ${mask_mgz} \
-    --skip_frame ${bold_skip_frame}
+    --skip_frame ${bold_skip_frame} \
+    --bandpass ${bold_bandpass}
     """
 }
 
@@ -2876,6 +2878,7 @@ workflow bold_wf {
     // set bold processing config
     bold_task_type = params.bold_task_type
     bold_skip_frame = params.bold_skip_frame
+    bold_bandpass = params.bold_bandpass
 
     bold_sdc = params.bold_sdc.toString().toUpperCase()
     bold_spaces = params.bold_surface_spaces
@@ -2954,7 +2957,7 @@ workflow bold_wf {
 
     if (do_bold_confounds == 'TRUE') {
         bold_confounds_part1_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(aseg_mgz).join(mask_mgz, by: [0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
-        confounds_part1_done = bold_confounds_part1(bids_dir, bold_preprocess_path, work_dir, bold_confounds_part1_inputs, bold_skip_frame)
+        confounds_part1_done = bold_confounds_part1(bids_dir, bold_preprocess_path, work_dir, bold_confounds_part1_inputs, bold_skip_frame, bold_bandpass)
         bold_confounds_part2_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(wm_probseg_nii, by: [0]).join(gm_probseg_nii, by: [0]).join(csf_probseg_nii, by: [0]).join(mask_nii, by: [0]).join(aseg_mgz, by: [0]).join(mask_mgz, by:[0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
         confounds_part2_done = bold_confounds_part2(bids_dir, bold_preprocess_path, work_dir, bold_confounds_part2_inputs, bold_skip_frame)
         bold_confounds_combine_inputs = subject_id_boldfile_id.groupTuple(sort: true).transpose().join(confounds_part1_done, by: [0,1]).join(confounds_part2_done, by: [0,1]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])

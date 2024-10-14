@@ -1,3 +1,12 @@
+#! /usr/bin/env python3
+# -*- coding: utf-8 -*-
+# -------------------------------
+# @Author : Ning An        @Email : Ning An <ninganme0317@gmail.com>
+
+"""
+docker run -it --rm --user $(id -u):$(id -g) --gpus all -p 8501:8501 -v /mnt:/mnt pbfslab/deepprep:24.1.x
+"""
+
 import streamlit as st
 
 st.write("# Welcome to DeepPrep! 👋")

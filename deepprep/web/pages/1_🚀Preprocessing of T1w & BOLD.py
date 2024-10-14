@@ -1,3 +1,8 @@
+#! /usr/bin/env python3
+# -*- coding: utf-8 -*-
+# -------------------------------
+# @Author : Ning An        @Email : Ning An <ninganme0317@gmail.com>
+
 import streamlit as st
 import subprocess
 import os
@@ -89,7 +94,7 @@ if selected_option != "T1w only":
     else:
         bold_task_type.replace("'", "")
         bold_task_type.replace('"', "")
-        deepprep_cmd += f"--bold_task_type '{bold_task_type}'"
+        deepprep_cmd += f" --bold_task_type '{bold_task_type}'"
 
     surface_spaces = st.multiselect("select the surface spaces: (optional)",
         ["fsnative", "fsaverage6", "fsaverage5", "fsaverage4"],
@@ -108,6 +113,13 @@ if selected_option != "T1w only":
         deepprep_cmd += f' --bold_skip_frame 2'
     else:
         deepprep_cmd += f' --bold_skip_frame {bold_skip_frame}'
+
+    bold_bandpass = st.text_input("BOLD bandpass range for confounds", value="0.01-0.08", help="the default is `0.01-0.08`.")
+    if not bold_bandpass:
+        deepprep_cmd += f' --bold_bandpass 0.01-0.08'
+    else:
+        assert len(bold_bandpass.split('-')) == 2
+        deepprep_cmd += f' --bold_bandpass {bold_bandpass}'
 
     col4, col5, col6 = st.columns(3)
     with col4:
@@ -181,9 +193,20 @@ st.write(f'{docker_cmd} pbfslab/deepprep {deepprep_cmd}')
 if st.button("Run", disabled=commond_error):
     with st.spinner('Wait for it...'):
         command = [f"../deepprep.sh {deepprep_cmd}"]
-        run_command(command)
         with st.expander("------------ running log ------------"):
             st.write_stream(run_command(command))
         import time
         time.sleep(2)
     st.success("Done!")
+
+# st.write(f'-----------  ------------')
+# st.write(f'{docker_cmd} pbfslab/deepprep {deepprep_cmd}')
+# if st.button("Run", disabled=commond_error):
+#     with st.spinner('Wait for it...'):
+#         command = [f"../deepprep.sh {deepprep_cmd}"]
+#         # with st.expander("------------ running log ------------"):
+#         from streamlit_ttyd import terminal
+#         ttydprocess, port = terminal(cmd=f"../deepprep.sh {deepprep_cmd}", port=8600)
+#         import time
+#         time.sleep(2)
+#     st.success("Done!")
