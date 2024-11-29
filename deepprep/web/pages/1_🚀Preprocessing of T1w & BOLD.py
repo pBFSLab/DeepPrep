@@ -87,7 +87,7 @@ else:
     deepprep_cmd += f' --fs_license_file {freesurfer_license_file}'
 
 if selected_option != "T1w only":
-    bold_task_type = st.text_input("BOLD task type", value='rest', help="the task label of BOLD images (i.e. rest, motor, 'rest motor').")
+    bold_task_type = st.text_input("BOLD task type", placeholder="i.e. rest, motor, 'rest motor'", help="the task label of BOLD images (i.e. rest, motor, 'rest motor').")
     if not bold_task_type:
         st.error("The BOLD task type must be input!")
         commond_error = True
@@ -97,7 +97,7 @@ if selected_option != "T1w only":
         deepprep_cmd += f" --bold_task_type '{bold_task_type}'"
 
     surface_spaces = st.multiselect("select the surface spaces: (optional)",
-        ["fsnative", "fsaverage6", "fsaverage5", "fsaverage4"],
+        ["fsnative", "fsaverage6", "fsaverage5", "fsaverage4", "fsaverage3"],
         ["fsaverage6"],
         help="select the surface spaces from FreeSurfer"
     )

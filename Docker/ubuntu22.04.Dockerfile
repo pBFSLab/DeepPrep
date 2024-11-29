@@ -162,12 +162,16 @@ RUN apt-get update && \
     openjdk-11-jdk && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+##
+COPY Docker/source.list /etc/apt/sources.list
+
 ## Install openjdk
 ENV LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/lib/jvm/java-11-openjdk-amd64/lib:/usr/lib/jvm/java-11-openjdk-amd64/lib/server" \
     JAVA_HOME="/usr/lib/jvm/java-11-openjdk-amd64"
 
 #### Install Redis
 RUN sed -i '147c\supervised systemd' /etc/redis/redis.conf
+RUN sed -i.bak '/^save / s/^/#/' /etc/redis/redis.conf
 
 #### bids-validator /usr/bin/bids-validator
 RUN curl -sL https://deb.nodesource.com/setup_20.x | bash -
@@ -299,11 +303,13 @@ COPY deepprep/FastSurfer /opt/DeepPrep/deepprep/FastSurfer
 COPY deepprep/SynthMorph /opt/DeepPrep/deepprep/SynthMorph
 COPY deepprep/nextflow /opt/DeepPrep/deepprep/nextflow
 COPY deepprep/web /opt/DeepPrep/deepprep/web
+COPY deepprep/rest/denoise /opt/DeepPrep/deepprep/rest/denoise
 COPY deepprep/deepprep.sh /opt/DeepPrep/deepprep/deepprep.sh
 # release
 ENV DEEPPREP_VERSION="24.1.1"
 
 RUN chmod 755 /opt/DeepPrep/deepprep/deepprep.sh && chmod 755 /opt/DeepPrep/deepprep/nextflow/bin/*.py
+RUN chmod 755 /opt/DeepPrep/deepprep/web/pages/*.sh && chmod 755 /opt/DeepPrep/deepprep/rest/denoise/bin/*.py
 ENV PATH="/opt/DeepPrep/deepprep/nextflow/bin:${PATH}"
 
 RUN find $HOME -type d -exec chmod go=u {} + && \
