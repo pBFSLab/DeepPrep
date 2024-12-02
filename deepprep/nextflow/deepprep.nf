@@ -2102,12 +2102,14 @@ process bold_transform_chain {
     tuple(val(subject_id), val(bold_id), val(trans), path(subject_boldfile_txt_bold))
     val(template_space)
     val(template_resolution)
+    val(bold_sdc)
 
     output:
     tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-${template_space}_res-${template_resolution}_desc-preproc_bold.nii.gz"))
     tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-${template_space}_res-${template_resolution}_boldref.nii.gz"))
 
     script:
+    task_id = bold_id.split('task-')[1].split('_')[0]
     script_py = "bold_apply_transform_chain.py"
 
     """
@@ -2120,7 +2122,9 @@ process bold_transform_chain {
     --subject_boldfile_txt_bold ${subject_boldfile_txt_bold} \
     --template_space ${template_space} \
     --template_resolution ${template_resolution} \
-    --nonlinear_file ${trans}
+    --nonlinear_file ${trans} \
+    --bold_sdc ${bold_sdc} \
+    --task_id ${task_id}
     """
 }
 
@@ -2976,7 +2980,7 @@ workflow bold_wf {
         (t1_norigid_nii, norm_norigid_nii, trans) = bold_synthmorph_joint(subjects_dir, bold_preprocess_path, synthmorph_home, bold_synthmorph_joint_input, synthmorph_model_path, template_space, device, gpu_lock)
 
         bold_transform_chain_input = subject_id_boldfile_id.groupTuple(sort: true).join(trans, by:[0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
-        (preproc_bold, boldref_file) = bold_transform_chain(bids_dir, bold_preprocess_path, work_dir, bold_transform_chain_input, template_space, template_resolution)
+        (preproc_bold, boldref_file) = bold_transform_chain(bids_dir, bold_preprocess_path, work_dir, bold_transform_chain_input, template_space, template_resolution, bold_sdc)
     }
 
     do_bold_qc = 'TRUE'

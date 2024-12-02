@@ -3,6 +3,7 @@ import argparse
 import os
 import shutil
 from pathlib import Path
+import json
 
 from fmriprep.workflows.fieldmap import init_single_subject_fieldmap_wf
 from fmriprep.workflows.bold.base import init_bold_wf
@@ -235,6 +236,10 @@ if __name__ == '__main__':
         fmap_base_dir = Path(config.execution.work_dir) / f'{subject_id}_wf'
         base_dir = fmap_base_dir / f'{args.task_id[0]}_wf'
         base_dir.mkdir(parents=True, exist_ok=True)
+        # save fieldmap id
+        fieldmap_id_txt = base_dir / 'fieldmap_id.txt'
+        with open(fieldmap_id_txt, 'w') as f:
+            json.dump(estimator_map, f)
         workflow.connect([
             (inputnode, bold_wf, [
                 ("t1w_preproc", "inputnode.t1w_preproc"),
