@@ -1,6 +1,10 @@
 # syntax = docker/dockerfile:1.5
 
 FROM ubuntu:jammy-20240627.1 as baseimage
+
+ARG DEPENDENCE_URL="http://localhost"
+#ARG DEPENDENCE_URL="https://download.anning.info/ninganme-public"
+
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -10,30 +14,30 @@ RUN apt-get update && \
 
 # FreeSurfer 7.2.0
 FROM baseimage as freesurfer
-RUN wget --content-disposition -P /opt/ http://30.30.30.204/DeepPrep_new/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz && tar -C /opt -xzvf /opt/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz && rm /opt/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz
-RUN mkdir /opt/freesurfer/models && wget --content-disposition -P /opt/freesurfer/models http://30.30.30.204/model/SynthStrip/synthstrip.1.pt
+RUN wget --content-disposition -P /opt/ ${DEPENDENCE_URL}/DeepPrep/deps/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz && tar -C /opt -xzvf /opt/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz && rm /opt/freesurfer-linux-ubuntu18_amd64-7.2.0.tar.gz
+COPY --from=freesurfer/synthstrip@sha256:f19578e5f033f2c707fa66efc8b3e11440569facb46e904b45fd52f1a12beb8b /freesurfer/models/synthstrip.1.pt /opt/freesurfer/models/synthstrip.1.pt
 
 # FSL 6.0.5.1
 FROM baseimage as fsl
-RUN wget --content-disposition -P /opt/ http://30.30.30.204/DeepPrep_new/FSL_6.0.5.1.tar.gz && tar -C /opt -xzvf /opt/FSL_6.0.5.1.tar.gz && rm /opt/FSL_6.0.5.1.tar.gz
+RUN wget --content-disposition -P /opt/ ${DEPENDENCE_URL}/DeepPrep/deps/FSL_6.0.5.1.tar.gz && tar -C /opt -xzvf /opt/FSL_6.0.5.1.tar.gz && rm /opt/FSL_6.0.5.1.tar.gz
 
 # Workbench 1.5.0
 FROM baseimage as workbench
 RUN apt-get update && apt-get install -y --no-install-recommends unzip
-RUN wget -P /opt/ http://30.30.30.204/workbench-linux64-v1.5.0.zip && unzip /opt/workbench-linux64-v1.5.0.zip -d /opt && rm /opt/workbench-linux64-v1.5.0.zip
+RUN wget -P /opt/ ${DEPENDENCE_URL}/DeepPrep/deps/workbench-linux64-v1.5.0.zip && unzip /opt/workbench-linux64-v1.5.0.zip -d /opt && rm /opt/workbench-linux64-v1.5.0.zip
 
 # AFNI 24.0.0
 ##RUN cd /opt && \
-##    wget --content-disposition -P /opt/ http://30.30.30.141:8080/f/0c88034741084793bd56/?dl=1 && \
-##    wget --content-disposition -P /opt/ http://30.30.30.141:8080/f/413153c2166440fc9394/?dl=1 && \
+##    wget --content-disposition -P /opt/ ${DEPENDENCE_URL}/DeepPrep/deps/f/0c88034741084793bd56/?dl=1 && \
+##    wget --content-disposition -P /opt/ ${DEPENDENCE_URL}/DeepPrep/deps/f/413153c2166440fc9394/?dl=1 && \
 ##    bash /opt/OS_notes.linux_ubuntu_22_64_a_admin.txt 2>&1 | tee o.ubuntu_22_a.txt && \
 ##    tcsh /opt/OS_notes.linux_ubuntu_22_64_b_user.tcsh 2>&1 | tee o.ubuntu_22_b.txt && \
 ##    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
 ##    apt remove python3-matplotlib -y && apt autoremove -y && \
 ##    cd ~ && mv /root/abin /opt && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 FROM baseimage as afni
-RUN wget --content-disposition -P /opt/ http://30.30.30.204/DeepPrep_new/AFNI_linux-ubuntu-22-64_24.0.00.tar.gz && tar -C /opt -xzvf /opt/AFNI_linux-ubuntu-22-64_24.0.00.tar.gz && rm /opt/AFNI_linux-ubuntu-22-64_24.0.00.tar.gz
-RUN wget --content-disposition -P /opt/ http://30.30.30.204/DeepPrep_new/libxp6_1.0.2-2_amd64.deb
+RUN wget --content-disposition -P /opt/ ${DEPENDENCE_URL}/DeepPrep/deps/AFNI_linux-ubuntu-22-64_24.0.00.tar.gz && tar -C /opt -xzvf /opt/AFNI_linux-ubuntu-22-64_24.0.00.tar.gz && rm /opt/AFNI_linux-ubuntu-22-64_24.0.00.tar.gz
+RUN wget --content-disposition -P /opt/ ${DEPENDENCE_URL}/DeepPrep/deps/libxp6_1.0.2-2_amd64.deb
 
 # ANTs 2.3.1
 ##RUN apt-get update && apt-get install -y --no-install-recommends build-essential && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -44,7 +48,7 @@ RUN wget --content-disposition -P /opt/ http://30.30.30.204/DeepPrep_new/libxp6_
 ##    cp -r install /opt/ANTs && \
 ##    cd ~ && rm -r antsInstallExample
 FROM baseimage as ants
-RUN wget --content-disposition -P /opt/ http://30.30.30.204/DeepPrep_new/ANTs_linux-ubuntu22-amd64_2.3.1.tar.gz && tar -C /opt -xzvf /opt/ANTs_linux-ubuntu22-amd64_2.3.1.tar.gz && rm /opt/ANTs_linux-ubuntu22-amd64_2.3.1.tar.gz
+RUN wget --content-disposition -P /opt/ ${DEPENDENCE_URL}/DeepPrep/deps/ANTs_linux-ubuntu22-amd64_2.3.1.tar.gz && tar -C /opt -xzvf /opt/ANTs_linux-ubuntu22-amd64_2.3.1.tar.gz && rm /opt/ANTs_linux-ubuntu22-amd64_2.3.1.tar.gz
 
 # Nextflow
 FROM baseimage as nextflow
@@ -110,7 +114,7 @@ RUN pip3 install \
     git+https://github.com/Deep-MI/LaPy.git@v1.0.1 \
     git+https://github.com/voxelmorph/voxelmorph.git@ca28315d0ba24cd8946ac4f6ed081e049e5264fe \
     git+https://github.com/NingAnMe/mriqc.git@deepprep \
-    --trusted-host 30.30.30.204 -f http://30.30.30.204/cp310_whl \
+    --trusted-host localhost -f http://localhost/DeepPrep/deps/cp310_whl \
     && pip3 cache purge && rm -rf /tmp/* /var/tmp/*
 
 # SynthMorph
@@ -125,6 +129,8 @@ RUN pip3 install mriqc-learn==0.0.2 --no-deps && pip3 cache purge && rm -rf /tmp
 RUN pip3 install python-redis-lock==4.0.0  && pip3 cache purge && rm -rf /tmp/* /var/tmp/*
 
 RUN pip3 install streamlit==1.38.0 protobuf==3.20  && pip3 cache purge && rm -rf /tmp/* /var/tmp/*
+
+RUN pip3 install git+https://github.com/netneurolab/neuromaps.git@ae3c88a60746c0137dc81b15130a12a25946252b && pip3 cache purge && rm -rf /tmp/* /var/tmp/*
 
 # Start from this Docker image
 FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
@@ -217,7 +223,7 @@ ENV PATH="${FREESURFER_HOME}/tktools:${FREESURFER_HOME}/bin:${FREESURFER_HOME}/f
 
 ## MRIQC
 ##COPY --from=freesurfer/synthstrip@sha256:f19578e5f033f2c707fa66efc8b3e11440569facb46e904b45fd52f1a12beb8b /freesurfer/models/synthstrip.1.pt /opt/freesurfer/models/synthstrip.1.pt
-##RUN mkdir ${FREESURFER_HOME}/models && wget --content-disposition -P ${FREESURFER_HOME}/models http://30.30.30.204/model/SynthStrip/synthstrip.1.pt  # synthstrip.1.pt
+##RUN mkdir ${FREESURFER_HOME}/models && wget --content-disposition -P ${FREESURFER_HOME}/models ${DEPENDENCE_URL}/DeepPrep/deps/model/SynthStrip/synthstrip.1.pt  # synthstrip.1.pt
 
 ## FSL 6.0.5.1
 COPY --from=fsl /opt/fsl /opt/fsl
@@ -248,7 +254,7 @@ ENV PATH="${ANTSPATH}:${PATH}"
 
 ##### AFNI 24.0.0
 COPY --from=afni /opt/abin /opt/abin
-##RUN wget --content-disposition -P /opt/ http://30.30.30.204/DeepPrep_new/libxp6_1.0.2-2_amd64.deb && dpkg -i /opt/libxp6_1.0.2-2_amd64.deb && rm /opt/libxp6_1.0.2-2_amd64.deb
+##RUN wget --content-disposition -P /opt/ ${DEPENDENCE_URL}/DeepPrep/deps/libxp6_1.0.2-2_amd64.deb && dpkg -i /opt/libxp6_1.0.2-2_amd64.deb && rm /opt/libxp6_1.0.2-2_amd64.deb
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libxpm-dev \
     libpng12-0 \
@@ -288,6 +294,15 @@ RUN python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin6Asym', d
     python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin2009cAsym', desc='brain', resolution=2, suffix='mask', extension='nii.gz')" && \
     python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin2009cAsym', desc='fMRIPrep', resolution=2, suffix='boldref', extension='nii.gz')" && \
     python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin2009cAsym', label='brain', resolution=1, suffix='probseg', extension='nii.gz')"
+
+#### default template for CIFTI
+RUN python3 -c "from neuromaps.datasets import fetch_fsaverage; fetch_fsaverage(density='41k')" && \
+    python3 -c "from neuromaps.datasets import fetch_fslr; fetch_fslr(density='32k')"
+RUN python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin6Asym', resolution='02', suffix='dseg', atlas='HCP', raise_empty=True)" && \
+    python3 -c "import templateflow.api as tflow; tflow.get('fsaverage', density='41k', suffix='sphere', raise_empty=True)" && \
+    python3 -c "import templateflow.api as tflow; tflow.get('fsLR', density='32k', suffix='midthickness', raise_empty=True)" && \
+    python3 -c "import templateflow.api as tflow; tflow.get('fsLR', density='32k', suffix='dparc', desc='nomedialwall', raise_empty=True)"
+
 RUN find $HOME/.cache/templateflow -type d -exec chmod go=u {} + && \
     find $HOME/.cache/templateflow -type f -exec chmod go=u {} +
 

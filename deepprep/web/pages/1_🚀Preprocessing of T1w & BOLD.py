@@ -96,17 +96,22 @@ if selected_option != "T1w only":
         bold_task_type.replace('"', "")
         deepprep_cmd += f" --bold_task_type '{bold_task_type}'"
 
-    surface_spaces = st.multiselect("select the surface spaces: (optional)",
-        ["fsnative", "fsaverage6", "fsaverage5", "fsaverage4", "fsaverage3"],
-        ["fsaverage6"],
-        help="select the surface spaces from FreeSurfer"
-    )
-    if surface_spaces:
-        surface_spaces = ' '.join(surface_spaces)
-        deepprep_cmd += f" --bold_surface_spaces '{surface_spaces}'"
+    cifti = st.checkbox("cifti", value=False, help="whether to output cifti format files.")
+    # if cifti: do not support to select the spaces
+    if cifti:
+        deepprep_cmd += ' --cifti'
+    else:
+        surface_spaces = st.multiselect("select the surface spaces: (optional)",
+            ["fsnative", "fsaverage6", "fsaverage5", "fsaverage4", "fsaverage3"],
+            ["fsaverage6"],
+            help="select the surface spaces from FreeSurfer"
+        )
+        if surface_spaces:
+            surface_spaces = ' '.join(surface_spaces)
+            deepprep_cmd += f" --bold_surface_spaces '{surface_spaces}'"
 
-    bold_volume_space = st.selectbox("select a normalized volume space: (optional)", ("MNI152NLin6Asym", "MNI152NLin2009cAsym", "None"), help="select a volumetric space from TemplateFlow")
-    deepprep_cmd += f' --bold_volume_space {bold_volume_space} --bold_volume_res 02'
+        bold_volume_space = st.selectbox("select a normalized volume space: (optional)", ("MNI152NLin6Asym", "MNI152NLin2009cAsym", "None"), help="select a volumetric space from TemplateFlow")
+        deepprep_cmd += f' --bold_volume_space {bold_volume_space} --bold_volume_res 02'
 
     bold_skip_frame = st.text_input("skip n frames of BOLD data", value="2", help="skip n frames of BOLD fMRI; the default is `2`.")
     if not bold_skip_frame:

@@ -78,7 +78,10 @@ def concat_frames(transform_save_path, output_path, boldref_path, t1_json):
 
     # generate .json, it is consistent with T1w.json
     boldref_json_path = str(output_path).replace('.nii.gz', '.json')
-    shutil.copy(t1_json, boldref_json_path)
+    try:
+        shutil.copy(t1_json, boldref_json_path)
+    except shutil.SameFileError:
+        pass
 
 
 if __name__ == '__main__':

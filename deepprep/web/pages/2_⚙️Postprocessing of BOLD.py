@@ -143,6 +143,7 @@ with col3:
     if resume:
         deepprep_cmd += ' --resume'
 
+
 def run_command(cmd):
     process = subprocess.Popen(
         cmd,
