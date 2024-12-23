@@ -38,7 +38,7 @@ export CUDA_VISIBLE_DEVICES
 orig_mgz="${subjects_dir}"/"${participant_label}"/mri/orig.mgz
 filled_mgz="${subjects_dir}"/"${participant_label}"/mri/filled.mgz
 brainmask_mgz="${subjects_dir}"/"${participant_label}"/mri/brainmask.mgz
-aseg_presurf_mgz="${subjects_dir}"/"${participant_label}"/mri/brainmask.mgz
+aseg_presurf_mgz="${subjects_dir}"/"${participant_label}"/mri/aseg.presurf.mgz
 
 [ -e "${orig_mgz}" ] && echo "orig file: ${orig_mgz} exists!" || { echo "orig file: ${orig_mgz} does not exist, please check!" ; exit 1; }
 [ -e "${filled_mgz}" ] && echo "filled file: ${filled_mgz} exists!" || { echo "filled file: ${filled_mgz} does not exist, please check!" ; exit 1; }
