@@ -2965,7 +2965,7 @@ workflow bold_wf {
     bold_only = params.bold_only.toString().toUpperCase()
     deepprep_version = params.deepprep_version
 
-    if (params.cifti.toString().toUpperCase() == 'TRUE') {
+    if (params.bold_cifti.toString().toUpperCase() == 'TRUE') {
         template_space = "MNI152NLin6Asym"
         template_resolution = "02"
         bold_surface_spaces = "fsaverage6"
@@ -3053,7 +3053,7 @@ workflow bold_wf {
         (preproc_bold, boldref_file) = bold_transform_chain(bids_dir, bold_preprocess_path, work_dir, bold_transform_chain_input, template_space, template_resolution)
 
         // CIFTI
-        if (params.cifti.toString().toUpperCase() == 'TRUE') {
+        if (params.bold_cifti.toString().toUpperCase() == 'TRUE') {
             bold_anat_cifti_inputs = t1_mgz.join(aparc_aseg_mgz)
             bold_anat_cifti_done = bold_anat_cifti(bold_preprocess_path, subjects_dir, work_dir, bold_anat_cifti_inputs)
             bold_bold_cifti_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(aparc_aseg_mgz).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1]).join(preproc_bold, by: [0, 1])

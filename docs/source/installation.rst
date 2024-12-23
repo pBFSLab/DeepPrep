@@ -100,7 +100,7 @@ If the Docker image was pulled successfully, you would see the following message
                     [--fs_license_file PATH] [--participant_label '[001 002 003 ...]']
                     [--subjects_dir PATH] [--skip_bids_validation]
                     [--anat_only] [--bold_only] [--bold_sdc] [--bold_confounds] [--bold_skip_frame 0]
-                    [--bold_surface_spaces '[None fsnative fsaverage fsaverage6 ...]']
+                    [--bold_cifti] [--bold_surface_spaces '[None fsnative fsaverage fsaverage6 ...]']
                     [--bold_volume_space {None MNI152NLin6Asym MNI152NLin2009cAsym}] [--bold_volume_res {02 03...}]
                     [--device { {auto 0 1 2...} cpu}]
                     [--cpus 10] [--memory 20]

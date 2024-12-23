@@ -321,7 +321,7 @@ COPY deepprep/web /opt/DeepPrep/deepprep/web
 COPY deepprep/rest/denoise /opt/DeepPrep/deepprep/rest/denoise
 COPY deepprep/deepprep.sh /opt/DeepPrep/deepprep/deepprep.sh
 # release
-ENV DEEPPREP_VERSION="24.1.1"
+ENV DEEPPREP_VERSION="24.1.2"
 
 RUN chmod 755 /opt/DeepPrep/deepprep/deepprep.sh && chmod 755 /opt/DeepPrep/deepprep/nextflow/bin/*.py
 RUN chmod 755 /opt/DeepPrep/deepprep/web/pages/*.sh && chmod 755 /opt/DeepPrep/deepprep/rest/denoise/bin/*.py

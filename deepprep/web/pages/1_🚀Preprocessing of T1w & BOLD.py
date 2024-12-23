@@ -96,10 +96,10 @@ if selected_option != "T1w only":
         bold_task_type.replace('"', "")
         deepprep_cmd += f" --bold_task_type '{bold_task_type}'"
 
-    cifti = st.checkbox("cifti", value=False, help="whether to output cifti format files.")
+    bold_cifti = st.checkbox("BOLD CIFTI", value=False, help="whether to output cifti format files.")
     # if cifti: do not support to select the spaces
-    if cifti:
-        deepprep_cmd += ' --cifti'
+    if bold_cifti:
+        deepprep_cmd += ' --bold_cifti'
     else:
         surface_spaces = st.multiselect("select the surface spaces: (optional)",
             ["fsnative", "fsaverage6", "fsaverage5", "fsaverage4", "fsaverage3"],
