@@ -1,3 +1,8 @@
+#! /usr/bin/env python3
+# -*- coding: utf-8 -*-
+# -------------------------------
+# @Author : Ning An        @Email : Ning An <ninganme0317@gmail.com>
+
 import streamlit as st
 import subprocess
 import os
@@ -82,32 +87,44 @@ else:
     deepprep_cmd += f' --fs_license_file {freesurfer_license_file}'
 
 if selected_option != "T1w only":
-    bold_task_type = st.text_input("BOLD task type", value='rest', help="the task label of BOLD images (i.e. rest, motor, 'rest motor').")
+    bold_task_type = st.text_input("BOLD task type", placeholder="i.e. rest, motor, 'rest motor'", help="the task label of BOLD images (i.e. rest, motor, 'rest motor').")
     if not bold_task_type:
         st.error("The BOLD task type must be input!")
         commond_error = True
     else:
         bold_task_type.replace("'", "")
         bold_task_type.replace('"', "")
-        deepprep_cmd += f"--bold_task_type '{bold_task_type}'"
+        deepprep_cmd += f" --bold_task_type '{bold_task_type}'"
 
-    surface_spaces = st.multiselect("select the surface spaces: (optional)",
-        ["fsnative", "fsaverage6", "fsaverage5", "fsaverage4"],
-        ["fsaverage6"],
-        help="select the surface spaces from FreeSurfer"
-    )
-    if surface_spaces:
-        surface_spaces = ' '.join(surface_spaces)
-        deepprep_cmd += f" --bold_surface_spaces '{surface_spaces}'"
+    bold_cifti = st.checkbox("BOLD CIFTI", value=False, help="whether to output cifti format files.")
+    # if cifti: do not support to select the spaces
+    if bold_cifti:
+        deepprep_cmd += ' --bold_cifti'
+    else:
+        surface_spaces = st.multiselect("select the surface spaces: (optional)",
+            ["fsnative", "fsaverage6", "fsaverage5", "fsaverage4", "fsaverage3"],
+            ["fsaverage6"],
+            help="select the surface spaces from FreeSurfer"
+        )
+        if surface_spaces:
+            surface_spaces = ' '.join(surface_spaces)
+            deepprep_cmd += f" --bold_surface_spaces '{surface_spaces}'"
 
-    bold_volume_space = st.selectbox("select a normalized volume space: (optional)", ("MNI152NLin6Asym", "MNI152NLin2009cAsym", "None"), help="select a volumetric space from TemplateFlow")
-    deepprep_cmd += f' --bold_volume_space {bold_volume_space} --bold_volume_res 02'
+        bold_volume_space = st.selectbox("select a normalized volume space: (optional)", ("MNI152NLin6Asym", "MNI152NLin2009cAsym", "None"), help="select a volumetric space from TemplateFlow")
+        deepprep_cmd += f' --bold_volume_space {bold_volume_space} --bold_volume_res 02'
 
     bold_skip_frame = st.text_input("skip n frames of BOLD data", value="2", help="skip n frames of BOLD fMRI; the default is `2`.")
     if not bold_skip_frame:
         deepprep_cmd += f' --bold_skip_frame 2'
     else:
         deepprep_cmd += f' --bold_skip_frame {bold_skip_frame}'
+
+    bold_bandpass = st.text_input("BOLD bandpass range for confounds", value="0.01-0.08", help="the default is `0.01-0.08`.")
+    if not bold_bandpass:
+        deepprep_cmd += f' --bold_bandpass 0.01-0.08'
+    else:
+        assert len(bold_bandpass.split('-')) == 2
+        deepprep_cmd += f' --bold_bandpass {bold_bandpass}'
 
     col4, col5, col6 = st.columns(3)
     with col4:
@@ -156,6 +173,7 @@ if selected_option == "BOLD only":
 elif selected_option == "T1w only":
     deepprep_cmd += ' --anat_only'
 
+
 def run_command(cmd):
     process = subprocess.Popen(
         cmd,
@@ -179,9 +197,8 @@ def run_command(cmd):
 st.write(f'-----------  ------------')
 st.write(f'{docker_cmd} pbfslab/deepprep {deepprep_cmd}')
 if st.button("Run", disabled=commond_error):
-    with st.spinner('Wait for it...'):
+    with st.spinner('Waiting for it to finish, please do not leave this page...'):
         command = [f"../deepprep.sh {deepprep_cmd}"]
-        run_command(command)
         with st.expander("------------ running log ------------"):
             st.write_stream(run_command(command))
         import time

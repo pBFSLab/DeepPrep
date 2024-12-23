@@ -1,3 +1,8 @@
+#! /usr/bin/env python3
+# -*- coding: utf-8 -*-
+# -------------------------------
+# @Author : Ning An        @Email : Ning An <ninganme0317@gmail.com>
+
 import streamlit as st
 import subprocess
 import os
@@ -5,6 +10,10 @@ import os
 st.markdown(f'# ⚙️Postprocessing of BOLD')
 st.write(
     """
+At present, this program is designed to process resting-state functional magnetic resonance imaging (rs-fMRI) data. The processed data can be utilized for calculating functional connectivity (FC) maps, individualized brain functional parcellation, or other relevant analyses.
+
+For task-based functional magnetic resonance imaging (task-fMRI) data, it is recommended to employ alternative tools for subsequent analysis, such as Statistical Parametric Mapping (SPM).
+
 #### processing steps
 Surface space： bandpass -> regression -> smooth(optional)
 
@@ -46,8 +55,6 @@ else:
     deepprep_cmd += f' {output_dir}'
 deepprep_cmd += f' participant'
 
-
-
 freesurfer_license_file = st.text_input("FreeSurfer license file path", value='/opt/freesurfer/license.txt', help="FreeSurfer license file path.You should replace license.txt path with your own FreeSurfer license! You can get your license file for free from https://surfer.nmr.mgh.harvard.edu/registration.html")
 if not freesurfer_license_file.startswith('/'):
     st.error("It must be an absolute path that starts with '/'.")
@@ -58,19 +65,29 @@ elif not os.path.exists(freesurfer_license_file):
 else:
     deepprep_cmd += f' --fs_license_file {freesurfer_license_file}'
 
-bold_task_type = st.text_input("BOLD task type", value='rest', help="the task label of BOLD images (i.e. rest, motor, 'rest motor').")
+confounds_file = st.text_input("the confounds file path", value='/opt/DeepPrep/deepprep/rest/denoise/12motion_6param_10eCompCor.txt', help="confound name file path. The confounds to use for regression.")
+if not confounds_file.startswith('/'):
+    st.error("It must be an absolute path that starts with '/'.")
+    commond_error = True
+elif not os.path.exists(confounds_file):
+    st.error("The confounds file Path does not exist!")
+    commond_error = True
+else:
+    deepprep_cmd += f' --confounds_index_file {confounds_file}'
+
+bold_task_type = st.text_input("BOLD task type", placeholder="i.e. rest, motor, 'rest motor'", help="the task label of BOLD images (i.e. rest, motor, 'rest motor').")
 if not bold_task_type:
     st.error("The BOLD task type must be input!")
     commond_error = True
 else:
     bold_task_type.replace("'", "")
     bold_task_type.replace('"', "")
-    deepprep_cmd += f"--bold_task_type '{bold_task_type}'"
+    deepprep_cmd += f" --task_id '{bold_task_type}'"
 
-bold_volume_space = st.selectbox("select a space", ("MNI152NLin6Asym", "MNI152NLin2009cAsym", "fsnative", "fsaverage6", "fsaverage5", "fsaverage4"), help="select a space")
-deepprep_cmd += f' --bold_volume_space {bold_volume_space} --bold_volume_res 02'
+spaces = st.selectbox("select a space", ("MNI152NLin6Asym", "MNI152NLin2009cAsym", "fsnative", "fsaverage6", "fsaverage5", "fsaverage4"), help="select a space")
+deepprep_cmd += f' --space {spaces}'
 
-if bold_volume_space == "fanative":
+if spaces == "fanative":
     subjects_dir = st.text_input("Recon result Path",
                                  help=" the directory of Recon files.")
     if not subjects_dir:
@@ -87,16 +104,29 @@ if bold_volume_space == "fanative":
 
 bold_skip_frame = st.text_input("skip n frames of BOLD data", value="2", help="skip n frames of BOLD fMRI; the default is `2`.")
 if not bold_skip_frame:
-    deepprep_cmd += f' --bold_skip_frame 2'
+    deepprep_cmd += f' --skip_frame 2'
 else:
-    deepprep_cmd += f' --bold_skip_frame {bold_skip_frame}'
+    deepprep_cmd += f' --skip_frame {bold_skip_frame}'
+
+bold_fwhm = st.text_input("fwhm", value="6", help="smooth BY fwhm; the default is `6`.")
+if not bold_skip_frame:
+    deepprep_cmd += f' --surface_fwhm 6 --volume_fwhm 6'
+else:
+    deepprep_cmd += f' --surface_fwhm {bold_fwhm} --volume_fwhm {bold_fwhm}'
+
+bold_bandpass = st.text_input("BOLD bandpass range for confounds", value="0.01-0.08", help="the default is `0.01-0.08`.")
+if not bold_bandpass:
+    deepprep_cmd += f' --bandpass 0.01-0.08'
+else:
+    assert len(bold_bandpass.split('-')) == 2
+    deepprep_cmd += f' --bandpass {bold_bandpass}'
 
 participant_label = st.text_input("the subject IDs (optional)",
                                   help="the subject ID you want to process, i.e. 'sub-001 sub-002'.")
 if participant_label:
     participant_label.replace("'", "")
     participant_label.replace('"', "")
-    deepprep_cmd += f" --participant_label '{participant_label}'"
+    deepprep_cmd += f" --subject_id '{participant_label}'"
 
 col1, col2, col3 = st.columns(3)
 
@@ -112,6 +142,7 @@ with col3:
     resume = st.checkbox("resume", value=True, help="allows the DeepPrep pipeline to start from the last exit point.")
     if resume:
         deepprep_cmd += ' --resume'
+
 
 def run_command(cmd):
     process = subprocess.Popen(
@@ -134,11 +165,10 @@ def run_command(cmd):
 
 
 st.write(f'-----------  ------------')
-# st.write(f'{docker_cmd} pbfslab/deepprep {deepprep_cmd}')
+st.write(f'postprocess {deepprep_cmd}')
 if st.button("Run", disabled=commond_error):
-    with st.spinner('Wait for it...'):
-        command = [f"../deepprep.sh {deepprep_cmd}"]
-        run_command(command)
+    with st.spinner('Waiting for it to finish, please do not leave this page...'):
+        command = [f"/opt/DeepPrep/deepprep/web/pages/postprocess.sh {deepprep_cmd}"]
         with st.expander("------------ running log ------------"):
             st.write_stream(run_command(command))
         import time

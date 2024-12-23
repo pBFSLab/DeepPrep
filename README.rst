@@ -5,7 +5,7 @@ Welcome to DeepPrep's documentation!
 
 .. note::
 
-    DeepPrep has just released the newest version **pbfslab/deepprep:24.1.1**. Check out the details in the ``What's New`` section!
+    DeepPrep has just released the newest version **pbfslab/deepprep:24.1.2**. Check out the details in the ``What's New`` section!
     https://deepprep.readthedocs.io/en/latest/changes.html#id1
 
 
@@ -48,10 +48,10 @@ DeepPrep achieves over 10-fold acceleration and shows robustness in processing c
 
 Upcoming improvements
 ---------------------
-1. Cifti: DeepPrep will produce outputs in cifti format.
-2. MP2RAGE: DeepPrep will be compatible with MP2RAGE.
-3. High-resolution images: We're expanding DeepPrep's support to include high-resolution images (i.e. 7T).
-4. DeepQC: DeepPrep will feature an automated quality control process called DeepQC for both sMRI and fMRI visualization.
+- [X] CIFTI: DeepPrep will produce outputs in CIFTI format.
+- [ ] MP2RAGE: DeepPrep will be compatible with MP2RAGE.
+- [ ] High-resolution images: We're expanding DeepPrep's support to include high-resolution images (i.e. 7T).
+- [ ] DeepQC: DeepPrep will feature an automated quality control process called DeepQC for both sMRI and fMRI visualization.
 
 
 Citation

@@ -30,3 +30,4 @@ license.txt
 *.html
 
 docs/build
+/deepprep/rest/

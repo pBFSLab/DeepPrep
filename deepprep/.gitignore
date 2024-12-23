@@ -3,4 +3,4 @@
 .secrets.*
 *version*current*
 
-.rdb
+/web/dump.rdb

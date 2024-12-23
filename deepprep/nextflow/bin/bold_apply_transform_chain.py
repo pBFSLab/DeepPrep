@@ -94,7 +94,7 @@ def concat_frames(transform_save_path, output_path, boldref_path, t1_json):
         # copy the first frame as boldref
         shutil.copy(in_files[0], boldref_path)
         shutil.copy(t1_json, boldref_json_path)
-    except:
+    except shutil.SameFileError:
         pass
 
 

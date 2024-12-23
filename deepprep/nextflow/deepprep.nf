@@ -139,7 +139,7 @@ process deepprep_init {
     val(bids_dir)
     val(output_dir)
     val(subjects_dir)
-    val(bold_spaces)
+    val(bold_surface_spaces)
     val(bold_only)
     val(participant_label)
     val(exec_env)
@@ -176,7 +176,7 @@ process deepprep_init {
     --bids_dir ${bids_dir} \
     --output_dir ${output_dir} \
     --subjects_dir ${subjects_dir} \
-    --bold_spaces ${bold_spaces} \
+    --bold_spaces ${bold_surface_spaces} \
     --bold_only ${bold_only}
     """
 }
@@ -1358,6 +1358,36 @@ process bold_anat_prepare {
     """
 }
 
+process bold_anat_cifti {
+    tag "${subject_id}"
+
+    cpus 1
+    memory '600 MB'
+
+    input:
+    val(bold_preprocess_path)
+    val(subjects_dir)
+    val(work_dir)
+    tuple(val(subject_id), val(t1_mgz), val(_))
+
+    output:
+    tuple(val(subject_id), val(t1_mgz))
+
+    script:
+    script_py = "bold_anat_cifti_91k.py"
+
+    """
+    ${script_py} \
+    --bold_preprocess_path ${bold_preprocess_path} \
+    --subjects_dir ${subjects_dir} \
+    --work_dir ${work_dir} \
+    --subject_id ${subject_id} \
+    --grayordinates 91k \
+    --freesurfer_home /opt/freesurfer \
+    --workbench_home /opt/workbench
+    """
+}
+
 process bold_fieldmap {
     tag "${subject_id}"
 
@@ -1370,7 +1400,7 @@ process bold_fieldmap {
     val(bold_preprocess_dir)
     val(work_dir)
     val(task_id)
-    val(bold_spaces)
+    val(bold_surface_spaces)
     val(bold_sdc)
     val(qc_result_path)
     val(bold_skip_frame)
@@ -1388,7 +1418,7 @@ process bold_fieldmap {
         --work_dir ${work_dir}/bold_preprocess \
         --subject_id ${subject_id} \
         --task_id ${task_id} \
-        --bold_spaces ${bold_spaces} \
+        --bold_spaces ${bold_surface_spaces} \
         --bold_sdc ${bold_sdc} \
         --qc_result_path ${qc_result_path} \
         --skip_frame ${bold_skip_frame}
@@ -1413,7 +1443,7 @@ process bold_pre_process {
     val(subjects_dir)
     val(bold_preprocess_dir)
     val(work_dir)
-    val(bold_spaces)
+    val(bold_surface_spaces)
     tuple(val(subject_id), val(bold_id), val(bold_fieldmap_done), val(t1_nii), val(mask_nii), val(wm_dseg_nii), val(aparc_aseg_mgz), val(fsnative2T1w_xfm), val(lh_pial_surf), val(lh_pial_surf), path(subject_boldfile_txt))
     val(fs_license_file)
     val(bold_sdc)
@@ -1435,7 +1465,7 @@ process bold_pre_process {
     --subject_id ${subject_id} \
     --task_id ${task_id} \
     --bold_series ${subject_boldfile_txt} \
-    --bold_spaces ${bold_spaces} \
+    --bold_spaces ${bold_surface_spaces} \
     --t1w_preproc ${t1_nii} \
     --t1w_mask ${mask_nii} \
     --t1w_dseg ${wm_dseg_nii} \
@@ -2172,6 +2202,7 @@ process bold_confounds_part1 {
     val(work_dir)
     tuple(val(subject_id), val(bold_id), val(aseg_mgz), val(mask_mgz), path(subject_boldfile_txt))
     val(bold_skip_frame)
+    val(bold_bandpass)
 
     output:
     tuple(val(subject_id), val(bold_id), val("confounds_part1.tsv")) // emit: bold_confounds_view
@@ -2189,7 +2220,8 @@ process bold_confounds_part1 {
     --bold_file ${subject_boldfile_txt} \
     --aseg_mgz ${aseg_mgz} \
     --brainmask_mgz ${mask_mgz} \
-    --skip_frame ${bold_skip_frame}
+    --skip_frame ${bold_skip_frame} \
+    --bandpass ${bold_bandpass}
     """
 }
 
@@ -2256,6 +2288,41 @@ process bold_confounds_combine {
     --bold_file ${subject_boldfile_txt} \
     --confounds_part1 ${confounds_part1} \
     --confounds_part2 ${confounds_part2}
+    """
+}
+
+process bold_bold_cifti {
+    tag "${bold_id}"
+
+    cpus 4
+    memory { 2.GB * (task.attempt ** 2) }
+
+    errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
+    maxRetries 3
+
+    input:
+    val(bold_preprocess_path)
+    val(subjects_dir)
+    val(work_dir)
+    tuple(val(subject_id), val(bold_id), val(aparc_aseg_mgz), path(subject_boldfile_txt), path(bold_std_volume_space))
+
+    output:
+    tuple(val(subject_id), val(bold_id), val("bold_bold_cifti")) // emit: bold_confounds_view
+
+    script:
+    script_py = "bold_bold_cifti_91k.py"
+
+    """
+    ${script_py} \
+    --subject_id ${subject_id} \
+    --bold_id ${bold_id} \
+    --bold_file ${subject_boldfile_txt} \
+    --bold_preprocess_dir ${bold_preprocess_path} \
+    --subjects_dir ${subjects_dir} \
+    --work_dir ${work_dir} \
+    --grayordinates 91k \
+    --freesurfer_home /opt/freesurfer \
+    --workbench_home /opt/workbench
     """
 }
 
@@ -2880,9 +2947,10 @@ workflow bold_wf {
     // set bold processing config
     bold_task_type = params.bold_task_type
     bold_skip_frame = params.bold_skip_frame
+    bold_bandpass = params.bold_bandpass
 
     bold_sdc = params.bold_sdc.toString().toUpperCase()
-    bold_spaces = params.bold_surface_spaces
+    bold_surface_spaces = params.bold_surface_spaces
 
     do_bold_confounds = params.bold_confounds.toString().toUpperCase()
 
@@ -2900,6 +2968,12 @@ workflow bold_wf {
 
     bold_only = params.bold_only.toString().toUpperCase()
     deepprep_version = params.deepprep_version
+
+    if (params.bold_cifti.toString().toUpperCase() == 'TRUE') {
+        template_space = "MNI152NLin6Asym"
+        template_resolution = "02"
+        bold_surface_spaces = "fsaverage6"
+    }
 
     subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, subjects_dir, participant_label, bold_task_type, bold_only, gpu_lock)
     (subject_id, boldfile_id, subject_boldfile_txt) = subject_boldfile_txt.flatten().multiMap { it ->
@@ -2947,18 +3021,18 @@ workflow bold_wf {
 
     (t1_nii, mask_nii, wm_dseg_nii, fsnative2T1w_xfm, wm_probseg_nii, gm_probseg_nii, csf_probseg_nii) = bold_anat_prepare(bold_preprocess_path, subjects_dir, work_dir, bold_anat_prepare_input)
 
-    bold_fieldmap_output = bold_fieldmap(bids_dir, t1_nii, bold_preprocess_path, work_dir, bold_task_type, bold_spaces, bold_sdc, qc_result_path, bold_skip_frame)
+    bold_fieldmap_output = bold_fieldmap(bids_dir, t1_nii, bold_preprocess_path, work_dir, bold_task_type, bold_surface_spaces, bold_sdc, qc_result_path, bold_skip_frame)
 
     if (bold_only == 'TRUE') {
         bold_pre_process_input = subject_id_boldfile_id.groupTuple(sort: true).join(bold_fieldmap_output, by:[0]).join(t1_nii).join(mask_nii, by: [0]).join(wm_dseg_nii, by:[0]).join(aparc_aseg_mgz).join(fsnative2T1w_xfm, by:[0]).join(pial_surf, by:[0]).transpose().join(subject_boldfile_txt, by:[0])
     } else {
         bold_pre_process_input = subject_id_boldfile_id.groupTuple(sort: true).join(bold_fieldmap_output, by:[0]).join(t1_nii).join(mask_nii, by: [0]).join(wm_dseg_nii, by:[0]).join(aparc_aseg_presurf_mgz).join(fsnative2T1w_xfm, by:[0]).join(pial_surf, by:[0]).transpose().join(subject_boldfile_txt, by:[0])
     }
-    subject_boldfile_txt_bold_pre_process = bold_pre_process(bids_dir, subjects_dir, bold_preprocess_path, work_dir, bold_spaces, bold_pre_process_input, fs_license_file, bold_sdc, qc_result_path, bold_skip_frame)
+    subject_boldfile_txt_bold_pre_process = bold_pre_process(bids_dir, subjects_dir, bold_preprocess_path, work_dir, bold_surface_spaces, bold_pre_process_input, fs_license_file, bold_sdc, qc_result_path, bold_skip_frame)
 
     if (do_bold_confounds == 'TRUE') {
         bold_confounds_part1_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(aseg_mgz).join(mask_mgz, by: [0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
-        confounds_part1_done = bold_confounds_part1(bids_dir, bold_preprocess_path, work_dir, bold_confounds_part1_inputs, bold_skip_frame)
+        confounds_part1_done = bold_confounds_part1(bids_dir, bold_preprocess_path, work_dir, bold_confounds_part1_inputs, bold_skip_frame, bold_bandpass)
         bold_confounds_part2_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(wm_probseg_nii, by: [0]).join(gm_probseg_nii, by: [0]).join(csf_probseg_nii, by: [0]).join(mask_nii, by: [0]).join(aseg_mgz, by: [0]).join(mask_mgz, by:[0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
         confounds_part2_done = bold_confounds_part2(bids_dir, bold_preprocess_path, work_dir, bold_confounds_part2_inputs, bold_skip_frame)
         bold_confounds_combine_inputs = subject_id_boldfile_id.groupTuple(sort: true).transpose().join(confounds_part1_done, by: [0,1]).join(confounds_part2_done, by: [0,1]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
@@ -2981,6 +3055,14 @@ workflow bold_wf {
 
         bold_transform_chain_input = subject_id_boldfile_id.groupTuple(sort: true).join(trans, by:[0]).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1])
         (preproc_bold, boldref_file) = bold_transform_chain(bids_dir, bold_preprocess_path, work_dir, bold_transform_chain_input, template_space, template_resolution, bold_sdc)
+
+        // CIFTI
+        if (params.bold_cifti.toString().toUpperCase() == 'TRUE') {
+            bold_anat_cifti_inputs = t1_mgz.join(aparc_aseg_mgz)
+            bold_anat_cifti_done = bold_anat_cifti(bold_preprocess_path, subjects_dir, work_dir, bold_anat_cifti_inputs)
+            bold_bold_cifti_inputs = subject_id_boldfile_id.groupTuple(sort: true).join(aparc_aseg_mgz).transpose().join(subject_boldfile_txt_bold_pre_process, by: [0, 1]).join(preproc_bold, by: [0, 1])
+            bold_bold_cifti_done = bold_bold_cifti(bold_preprocess_path, subjects_dir, work_dir, bold_bold_cifti_inputs)
+        }
     }
 
     do_bold_qc = 'TRUE'
@@ -3015,7 +3097,7 @@ workflow {
     bids_dir = params.bids_dir
     output_dir = params.output_dir
     subjects_dir = params.subjects_dir
-    bold_spaces = params.bold_surface_spaces
+    bold_surface_spaces = params.bold_surface_spaces
     bold_only = params.bold_only
 
     participant_label = params.participant_label
@@ -3030,7 +3112,7 @@ workflow {
     }
     println "INFO: subjects_dir       : ${subjects_dir}"
 
-    (bold_preprocess_path, qc_result_path, work_dir, gpu_lock) = deepprep_init(freesurfer_home, bids_dir, output_dir, subjects_dir, bold_spaces, bold_only, participant_label, exec_env, skip_bids_validation)
+    (bold_preprocess_path, qc_result_path, work_dir, gpu_lock) = deepprep_init(freesurfer_home, bids_dir, output_dir, subjects_dir, bold_surface_spaces, bold_only, participant_label, exec_env, skip_bids_validation)
 
     if (params.anat_only.toString().toUpperCase() == 'TRUE') {
         println "INFO: anat preprocess ONLY"

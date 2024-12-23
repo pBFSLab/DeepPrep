@@ -1,9 +1,22 @@
 # Docker
-export DEEPPREP_VERSION='24.1.x'
+
+## local http server
+export HTTP_HOME=${HOME}/http_server
+mkdir -p ${HTTP_HOME}/DeepPrep/deps
+wget --content-disposition -P ${HTTP_HOME}/DeepPrep/deps/ https://download.anning.info/ninganme-public/DeepPrep/deps/cp310_whl.zip && unzip ${HTTP_HOME}/DeepPrep/deps/cp310_whl.zip -d ${HTTP_HOME}/DeepPrep/deps/
+cd ${HTTP_HOME} && sudo python3 -m http.server 80
+
+export HTTP_HOME=/mnt/ngshare/SeaFile/Seafile/DeepPrep
+cd ${HTTP_HOME} && sudo python3 -m http.server 80
 
 ## build Docker image
-cd /mnt/ngshare/SeaFile/Seafile/DeepPrep && sudo python3 -m http.server 80
+export DEEPPREP_HOME=${HOME}/DeepPrep
+mkdir -p ${DEEPPREP_HOME}/deepprep/model
+wget --content-disposition -P ${DEEPPREP_HOME}/deepprep/ https://download.anning.info/ninganme-public/DeepPrep/deps/model.zip && unzip ${DEEPPREP_HOME}/deepprep/model.zip -d ${DEEPPREP_HOME}/deepprep/model
+cd ${DEEPPREP_HOME}
+export DEEPPREP_VERSION='24.1.2'
 docker buildx build --progress=plain -t pbfslab/deepprep:${DEEPPREP_VERSION} -f Docker/ubuntu22.04.Dockerfile .
+
 docker save pbfslab/deepprep:${DEEPPREP_VERSION} -o ${DEEPPREP_IMAGE_OUTPUT_PATH}/deepprep_${DEEPPREP_VERSION}.tar.gz
 
 ## build Singularity image
