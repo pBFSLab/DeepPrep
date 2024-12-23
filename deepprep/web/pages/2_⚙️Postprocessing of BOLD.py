@@ -167,8 +167,8 @@ def run_command(cmd):
 st.write(f'-----------  ------------')
 st.write(f'postprocess {deepprep_cmd}')
 if st.button("Run", disabled=commond_error):
-    with st.spinner('Wait for it...'):
-        command = [f"./pages/postprocess.sh {deepprep_cmd}"]
+    with st.spinner('Waiting for it to finish, please do not leave this page...'):
+        command = [f"/opt/DeepPrep/deepprep/web/pages/postprocess.sh {deepprep_cmd}"]
         with st.expander("------------ running log ------------"):
             st.write_stream(run_command(command))
         import time

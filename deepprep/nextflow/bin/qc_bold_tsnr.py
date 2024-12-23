@@ -138,6 +138,7 @@ if __name__ == '__main__':
     subject_workdir = Path(subject_resultdir) / f'{bold_name}_mctsnr'
     subject_workdir.mkdir(parents=True, exist_ok=True)
 
+    # mc_tsnr_path = os.path.join(bids_bold.dirname, bids_bold.filename.replace('_bold.nii.gz', '_tSNR.nii.gz'))
     mc_tsnr_path = Path(args.qc_result_path) / str(subject_workdir) / 'mc_tsnr.nii.gz'
 
     TSNR_test(bids_bold, mc_tsnr_path)

@@ -173,6 +173,7 @@ if selected_option == "BOLD only":
 elif selected_option == "T1w only":
     deepprep_cmd += ' --anat_only'
 
+
 def run_command(cmd):
     process = subprocess.Popen(
         cmd,
@@ -196,22 +197,10 @@ def run_command(cmd):
 st.write(f'-----------  ------------')
 st.write(f'{docker_cmd} pbfslab/deepprep {deepprep_cmd}')
 if st.button("Run", disabled=commond_error):
-    with st.spinner('Wait for it...'):
+    with st.spinner('Waiting for it to finish, please do not leave this page...'):
         command = [f"../deepprep.sh {deepprep_cmd}"]
         with st.expander("------------ running log ------------"):
             st.write_stream(run_command(command))
         import time
         time.sleep(2)
     st.success("Done!")
-
-# st.write(f'-----------  ------------')
-# st.write(f'{docker_cmd} pbfslab/deepprep {deepprep_cmd}')
-# if st.button("Run", disabled=commond_error):
-#     with st.spinner('Wait for it...'):
-#         command = [f"../deepprep.sh {deepprep_cmd}"]
-#         # with st.expander("------------ running log ------------"):
-#         from streamlit_ttyd import terminal
-#         ttydprocess, port = terminal(cmd=f"../deepprep.sh {deepprep_cmd}", port=8600)
-#         import time
-#         time.sleep(2)
-#     st.success("Done!")

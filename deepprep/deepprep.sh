@@ -27,7 +27,7 @@ deepprep-docker [bids_dir] [output_dir] [{participant}] [--bold_task_type '[task
 "
 
 if [ $# -eq 0 ]; then
-  cd /opt/DeepPrep/deepprep/web && streamlit run DeepPrep.py
+  mkdir /tmp/web && cd /tmp/web && streamlit run /opt/DeepPrep/deepprep/web/DeepPrep.py --browser.gatherUsageStats false
   exit 0
 fi
 
