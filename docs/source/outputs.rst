@@ -138,7 +138,7 @@ The main outputs of the preprocessed data include:
      ├── sub-<subject_label>_dseg.nii.gz
      ├── sub-<subject_label>_label-<seg_label>_probseg.nii.gz
 
-*If CIFTI outputs are requested (with the --bold_cifti argument), cortical thickness, curvature, and sulcal depth maps are converted to GIFTI and CIFTI: ::
+If CIFTI outputs are requested (with the --bold_cifti argument), cortical thickness, curvature, and sulcal depth maps are converted to GIFTI and CIFTI: ::
 
  sub-<subject_label>/
  ├── anat/
@@ -149,7 +149,7 @@ The main outputs of the preprocessed data include:
      ├── sub-<subject_label>_space-fsLR_den-91k_curv.dscalar.nii
      ├── sub-<subject_label>_space-fsLR_den-91k_sulc.dscalar.nii
 
-*And the BOLD series are also saved as dtseries.nii CIFTI files: ::
+And the BOLD series are also saved as dtseries.nii CIFTI files: ::
 
  sub-<subject_label>/
  ├── func/
