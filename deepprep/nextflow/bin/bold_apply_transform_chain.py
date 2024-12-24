@@ -202,17 +202,24 @@ if __name__ == '__main__':
             fieldmap_id_info = json.load(f)
         fieldmap_id = fieldmap_id_info.get(bold_file)
 
-        coeff_dir = fmap_base_dir.parent / 'fmap_preproc_wf' / f'wf_{fieldmap_id}' / 'fix_coeff'
-        in_coeff = sorted(coeff_dir.glob("*_fieldcoef_fixed.nii.gz"))[0]
+        if not fieldmap_id:
+            print("No fieldmap found for this bold file")
+            args.bold_sdc = False
+        else:
+            try:
+                coeff_dir = fmap_base_dir.parent / 'fmap_preproc_wf' / f'wf_{fieldmap_id}' / 'fix_coeff'
+                in_coeff = sorted(coeff_dir.glob("*_fieldcoef_fixed.nii.gz"))[0]
 
+                fmap_ref_file = str(fmap_base_dir.parent / 'fmap_preproc_wf' / f'wf_{fieldmap_id}' / 'brainextraction_wf' / 'clipper_post' / 'clipped.nii.gz')
 
-        fmap_ref_file = str(fmap_base_dir.parent / 'fmap_preproc_wf' / f'wf_{fieldmap_id}' / 'brainextraction_wf' / 'clipper_post' / 'clipped.nii.gz')
-
-        # get the coreg.xfm
-        update_entities = {'mode': 'image', 'suffix': 'xfm', 'extension': '.txt'}
-        fieldmap_xfm = get_preproc_file(args.subject_id, args.bold_preprocess_dir, bold_file, update_entities)
-        transforms = [nonlinear_file, coreg_xfm, fieldmap_xfm]
-        fieldmap = apply_fieldmap2std(in_coeff, fixed_file, fmap_ref_file, transforms)
+                # get the coreg.xfm
+                update_entities = {'mode': 'image', 'suffix': 'xfm', 'extension': '.txt'}
+                fieldmap_xfm = get_preproc_file(args.subject_id, args.bold_preprocess_dir, bold_file, update_entities)
+                transforms = [nonlinear_file, coreg_xfm, fieldmap_xfm]
+                fieldmap = apply_fieldmap2std(in_coeff, fixed_file, fmap_ref_file, transforms)
+            except IndexError as why:
+                print(why)
+                args.bold_sdc = False
 
     # Load the fixed file
     fixed = nib.load(fixed_file)
