@@ -9,8 +9,9 @@ What's new
 24.1.2 (December 23, 2024)
 -------------------------
 
-1. **Update:** BOLD preprocessing results now include CIFTI format.
-2. **Update:** Dockerfile for building Docker image have been upgraded to use online resources.
+1. **Update:** BOLD preprocessing results now support CIFTI format. You can enable it using ``--bold_cifti``.
+2. **Update:** The Dockerfile for creating Docker images has been enhanced to utilize online resources.
+3. **Update:** To skip frames in BOLD data, specify the number to skip with ``--bold_skip_frame <Int>``.
 
 
 24.1.1 (July 19, 2024)

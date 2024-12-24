@@ -153,4 +153,3 @@ if __name__ == '__main__':
     mctsnr_savepath_svg = subject_resultdir / f'{bold_name}_desc-tsnr_bold.svg'
     print(f'>>> {mctsnr_savepath_svg}')
     write_single_svg(mctsnr_savepath_svg, output_tsnr_savepath, 2000, 815)
-    shutil.rmtree(subject_workdir)
