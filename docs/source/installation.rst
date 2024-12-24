@@ -10,9 +10,9 @@ Docker and Singularity
 +---------------+--------------------+-----------------------------------------------------------------------------------------------------------+--------------------------+
 | Image         | version            | download command                                                                                          | user guide               |
 +===============+====================+===========================================================================================================+==========================+
-| Docker        | 24.1.1 (latest)    | docker pull pbfslab/deepprep:24.1.1                                                                       | :ref:`docker-guide`      |
+| Docker        | 24.1.2 (latest)    | sudo docker pull pbfslab/deepprep:24.1.2                                                                  | :ref:`docker-guide`      |
 +---------------+--------------------+-----------------------------------------------------------------------------------------------------------+--------------------------+
-| Singularity   | 24.1.1 (latest)    | $ curl -C - -O https://download.anning.info/ninganme-public/DeepPrep/SingularityImage/deepprep_24.1.1.sif | :ref:`singularity-guide` |
+| Singularity   | 24.1.2 (latest)    | sudo singularity build deepprep_24.1.2.sif docker://pbfslab/deepprep:24.1.2                               | :ref:`singularity-guide` |
 +---------------+--------------------+-----------------------------------------------------------------------------------------------------------+--------------------------+
 
 
@@ -84,11 +84,11 @@ The same output as before is expected. If an error message pops up (something li
 
 4. Pull the Docker image::
 
-    $ docker pull pbfslab/deepprep:24.1.1
+    $ docker pull pbfslab/deepprep:24.1.2
 
 5. Run the Docker image ::
 
-    $ docker run --rm pbfslab/deepprep:24.1.1
+    $ docker run --rm pbfslab/deepprep:24.1.2
 
 If the Docker image was pulled successfully, you would see the following message:
 
