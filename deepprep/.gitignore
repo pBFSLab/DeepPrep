@@ -2,3 +2,5 @@
 # Ignore dynaconf secret files
 .secrets.*
 *version*current*
+
+/web/dump.rdb

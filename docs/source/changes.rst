@@ -6,6 +6,13 @@ What's new
 
 .. _latest-note:
 
+24.1.2 (December 23, 2024)
+-------------------------
+
+1. **Update:** BOLD preprocessing results now include CIFTI format.
+2. **Update:** Dockerfile for building Docker image have been upgraded to use online resources.
+
+
 24.1.1 (July 19, 2024)
 -------------------------
 
@@ -14,9 +21,6 @@ What's new
 3. **Doc:** Add step-by-step Singularity user guide in :ref:`singularity-guide`.
 4. **Doc:** List all the training datasets used in Deep Learning models (FastSurfer, FastCSR, SUGAR, SynthMorph) in :ref:`DL-trainingsets`.
 5. **Doc:** Add confounds descriptions in :ref:`outputs-confounds`.
-
-
-
 
 
 24.1.0 (May 27, 2024)

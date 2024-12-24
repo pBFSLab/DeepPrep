@@ -18,18 +18,24 @@ help="DeepPrep args:
 deepprep-docker [bids_dir] [output_dir] [{participant}] [--bold_task_type '[task1 task2 task3 ...]']
                 [--fs_license_file PATH] [--participant_label '[001 002 003 ...]']
                 [--subjects_dir PATH] [--skip_bids_validation]
-                [--anat_only] [--bold_only] [--bold_sdc] [--bold_confounds]
-                [--bold_surface_spaces '[None fsnative fsaverage fsaverage6 ...]']
+                [--anat_only] [--bold_only] [--bold_sdc] [--bold_confounds] [--bold_skip_frame 0]
+                [--bold_cifti] [--bold_surface_spaces '[None fsnative fsaverage fsaverage6 ...]']
                 [--bold_volume_space {None MNI152NLin6Asym MNI152NLin2009cAsym}] [--bold_volume_res {02 03...}]
                 [--device { {auto 0 1 2...} cpu}]
                 [--cpus 10] [--memory 20]
                 [--ignore_error] [--resume]
 "
 
-if [ $# -le 1 ]; then
+if [ $# -eq 0 ]; then
+  mkdir /tmp/web && cd /tmp/web && streamlit run /opt/DeepPrep/deepprep/web/DeepPrep.py --browser.gatherUsageStats false
+  exit 0
+fi
+
+if [ $# -eq 1 ]; then
   echo "${help}"
   exit 0
 fi
+
 if [ $# -gt 1 ] && [ $# -lt 5 ]; then
   echo "ERROR: args less than required."
   echo "${help}"

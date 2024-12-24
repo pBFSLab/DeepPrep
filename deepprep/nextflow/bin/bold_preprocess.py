@@ -3,6 +3,7 @@ import argparse
 import os
 import shutil
 from pathlib import Path
+import json
 
 from fmriprep.workflows.fieldmap import init_single_subject_fieldmap_wf
 from fmriprep.workflows.bold.base import init_bold_wf
@@ -23,7 +24,7 @@ def get_output_space(output_spaces):
 
 
 def update_config(bids_dir, bold_preprocess_dir, work_dir, fs_license_file, fs_subjects_dir,
-                  subject_id, task_id, spaces):
+                  subject_id, task_id, spaces, skip_frame):
     config.execution.bids_dir = bids_dir
     config.execution.log_dir = f'{work_dir}/log'
     config.execution.fs_license_file = fs_license_file
@@ -39,7 +40,7 @@ def update_config(bids_dir, bold_preprocess_dir, work_dir, fs_license_file, fs_s
     config.workflow.bold2t1w_dof = 6
     config.workflow.bold2t1w_init = 'register'
     config.workflow.cifti_output = False
-    # config.workflow.dummy_scans = 0
+    config.workflow.dummy_scans = int(skip_frame)
     config.workflow.fmap_bspline = False
     config.workflow.hires = True
     config.workflow.ignore =[]
@@ -99,6 +100,7 @@ if __name__ == '__main__':
     parser.add_argument("--fsnative2t1w_xfm", required=False)
     parser.add_argument("--fs_license_file", required=False)
     parser.add_argument("--bold_sdc", required=False, default='False')
+    parser.add_argument("--skip_frame", required=True)
     parser.add_argument("--qc_result_path", required=True)
     args = parser.parse_args()
     """
@@ -132,6 +134,7 @@ if __name__ == '__main__':
     t1w_tpms = []
     fsnative2t1w_xfm = args.fsnative2t1w_xfm
 
+    print("bold_sdc : ", args.bold_sdc)
     print("t1w_preproc :", t1w_preproc)
     print("t1w_mask :", t1w_mask)
     print("t1w_dseg :", t1w_dseg)
@@ -140,7 +143,7 @@ if __name__ == '__main__':
     bold_spaces = get_output_space(args.bold_spaces)
     spaces = ' '.join(bold_spaces)
     update_config(args.bids_dir, args.bold_preprocess_dir, args.work_dir, args.fs_license_file,
-                  args.subjects_dir, args.subject_id, args.task_id, spaces)
+                  args.subjects_dir, args.subject_id, args.task_id, spaces, args.skip_frame)
     work_dir = Path(config.execution.work_dir)
     work_dir.mkdir(parents=True, exist_ok=True)
     config_file = work_dir / config.execution.run_uuid / 'config.toml'
@@ -233,6 +236,10 @@ if __name__ == '__main__':
         fmap_base_dir = Path(config.execution.work_dir) / f'{subject_id}_wf'
         base_dir = fmap_base_dir / f'{args.task_id[0]}_wf'
         base_dir.mkdir(parents=True, exist_ok=True)
+        # save fieldmap id
+        fieldmap_id_txt = base_dir / 'fieldmap_id.txt'
+        with open(fieldmap_id_txt, 'w') as f:
+            json.dump(estimator_map, f)
         workflow.connect([
             (inputnode, bold_wf, [
                 ("t1w_preproc", "inputnode.t1w_preproc"),

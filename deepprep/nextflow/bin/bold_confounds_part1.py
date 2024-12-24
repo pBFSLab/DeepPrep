@@ -86,11 +86,11 @@ def regressors_PCA(data, maskpath):
 
 def compile_regressors(bold_path,
                        aseg_brainmask_bin, aseg_wm, aseg_ventricles, aseg_csf, tr,
-                       output_file):
+                       output_file, nskip, band):
 
     img = nib.load(bold_path)
     data = img.get_fdata()
-    data_bandpass = bandpass_nifti(data, nskip=0, order=2, band=[0.01, 0.08], tr=tr)
+    data_bandpass = bandpass_nifti(data, nskip=nskip, order=2, band=band, tr=tr)
 
     whole_brain = qnt_nifti(data_bandpass, str(aseg_brainmask_bin))
 
@@ -106,13 +106,16 @@ def compile_regressors(bold_path,
 
     # Prepare regressors datas for download
     output_file = Path(output_file)
-    label_header = ['whole_brain', 'whole_brain_derivative1', 'csf', 'csf_derivative1',
+    label_header = ['global_signal', 'global_signal_derivative1', 'csf', 'csf_derivative1',
                     'white_matter', 'white_matter_derivative1', 'csf_wm', 'csf_wm_derivative1',
                     'e_comp_cor_00', 'e_comp_cor_01', 'e_comp_cor_02', 'e_comp_cor_03', 'e_comp_cor_04',
                     'e_comp_cor_05', 'e_comp_cor_06', 'e_comp_cor_07', 'e_comp_cor_08', 'e_comp_cor_09']
 
     confounds_np = np.concatenate([whole_brain, csf, white_matter, csf_wm, e_comp_cor], axis=1)
     confounds = pd.DataFrame(confounds_np, columns=label_header)
+    # cal power2 of matter signal
+    for label in label_header[:8]:
+        confounds[f'{label}_power2'] = confounds[label] ** 2
     confounds.to_csv(output_file, index=False, sep='\t')
 
     return output_file
@@ -155,6 +158,8 @@ if __name__ == '__main__':
     parser.add_argument("--bold_file", required=True)
     parser.add_argument("--aseg_mgz", required=True)
     parser.add_argument("--brainmask_mgz", required=True)
+    parser.add_argument("--skip_frame", required=True)
+    parser.add_argument("--bandpass", required=True)
     args = parser.parse_args()
     """
     input:
@@ -165,9 +170,17 @@ if __name__ == '__main__':
     --bold_file /mnt/ngshare2/DeepPrep_Test/test_BoldOnly/test_BoldOnly_DP_2410_snone/BOLD/sub-1021440/ses-02/func/sub-1021440_ses-02_task-rest_run-01_space-T1w_desc-preproc_bold.nii.gz
     --aseg_mgz /mnt/ngshare2/DeepPrep_Test/test_BoldOnly/Recon/sub-1021440/mri/aseg.mgz
     --brainmask_mgz /mnt/ngshare2/DeepPrep_Test/test_BoldOnly/Recon/sub-1021440/mri/brainmask.mgz
+    --skip_frame 0
+    --bandpass 0.01-0.08
     output:
     confounds_file
     """
+
+    bandpass_low, bandpass_high = args.bandpass.split('-')
+    bandpass_low = float(bandpass_low)
+    bandpass_high = float(bandpass_high)
+    assert bandpass_low > 0
+    assert bandpass_high > 0
 
     tmp_path = Path(args.work_dir)
     anat2bold_t1w_dir = tmp_path / 'anat2bold_t1w' / args.bold_id
@@ -196,5 +209,5 @@ if __name__ == '__main__':
     confounds_file = Path(output_dir, 'confounds_part1.tsv')
     compile_regressors(str(bold_space_t1w_file.path),
                        brainmask_bin, wm, vent, csf, TR,
-                       confounds_file)
+                       confounds_file, int(args.skip_frame), [bandpass_low, bandpass_high])
     assert confounds_file.exists()
