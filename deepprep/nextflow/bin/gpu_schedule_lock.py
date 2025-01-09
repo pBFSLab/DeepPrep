@@ -1,5 +1,4 @@
 #! /usr/bin/env python3
-import sys
 import redis_lock
 from redis_lock import StrictRedis
 

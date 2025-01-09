@@ -93,10 +93,32 @@ if [ ! -d "${deepprep_home}" ]; then
   exit 1
 fi
 
+if [ -n "${freesurfer_home}" ]; then
+  export FREESURFER_HOME="${freesurfer_home}"
+  echo "FREESURFER_HOME is set to: $FREESURFER_HOME"
+fi
 if [ -z "${freesurfer_home}" ]; then
-  echo "ERROR: freesurfer_home is empty : ${freesurfer_home}"
+  echo "ERROR: freesurfer_home is empty : ${freesurfer_home}.Please provide --freesurfer_home parameter."
   exit 1
 fi
+if [ ! -d "${freesurfer_home}" ]; then
+  echo "ERROR: freesurfer_home is not exists : ${freesurfer_home}"
+  exit 1
+fi
+if [ -z "FSF_OUTPUT_FORMAT" ]; then
+    echo "source ${freesurfer_home}/SetUpFreeSurfer.sh"
+    source "${freesurfer_home}/SetUpFreeSurfer.sh"
+fi
+if [ -z "${fs_license_file}" ]; then
+  echo "WARNNING: You should replace license.txt path with your own FreeSurfer license! You can get your license file for free from https://surfer.nmr.mgh.harvard.edu/registration.html"
+  echo "WARNNING: Then add  --fs_license_file <your license file path> ."
+  fs_license_file="${deepprep_home}/deepprep/FreeSurfer/license.txt"
+fi
+if [ ! -f "${fs_license_file}" ]; then
+  echo "ERROR: fs_license_file is not exists : ${fs_license_file}"
+  exit 1
+fi
+export FS_LICENSE=${fs_license_file}
 
 nextflow_work_dir="${output_dir}/WorkDir/nextflow"  # output_dir/WorkDir/nextflow
 qc_dir="${output_dir}/QuickQC"  # output_dir/QC
@@ -149,17 +171,6 @@ fi
 if [ -n "${ignore_error}" ]; then
   sed -i "s@//errorStrategy@    errorStrategy@g" "${run_config}"
 fi
-
-if [ ! -d "${freesurfer_home}" ]; then
-  echo "ERROR: freesurfer_home is not exists : ${freesurfer_home}"
-  exit 1
-fi
-if [ -z "$FREESURFER_HOME" ]; then
-    source "${freesurfer_home}/SetUpFreeSurfer.sh"
-else
-    echo "FREESURFER_HOME is set to: $FREESURFER_HOME"
-fi
-export FS_LICENSE=${fs_license_file}
 
 cd "${nextflow_work_dir}" && \
 nextflow run "${nextflow_file}" \

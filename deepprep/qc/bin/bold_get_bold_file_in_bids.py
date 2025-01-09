@@ -20,9 +20,9 @@ def main():
     # Input path required
     parser.add_argument("--bids_dir", required=True, help="Preprocessed BIDS directory")
     # Input flags required
-    parser.add_argument("--task_id", required=True, help="Task ID")
+    parser.add_argument("--task_id", required=False, nargs='+', help="Task ID(s)")
     # Input flags optional
-    parser.add_argument("--subject_id", required=False, help="Subject ID")
+    parser.add_argument("--subject_id", required=False, nargs='+', help="Subject ID(s)")
     # Output path
     parser.add_argument("--output_dir", required=True, help="Output directory")
     parser.add_argument("--work_dir", required=True, help="Work directory")
@@ -63,6 +63,7 @@ def main():
         bold_id = bold_orig_file.filename.split(extension)[0]
         with open(bold_id + '.json', 'w') as f:
             data_json = {
+                'bids_dir': bids_dir,
                 'bold_file': bold_orig_file_path,
                 'bids_database_path': database_path
             }

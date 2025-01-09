@@ -67,8 +67,9 @@ RUN /opt/nextflow/bin/nextflow
 
 # micromamba
 FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04 as micromamba
+
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl build-essential && \
+    apt-get install -y --no-install-recommends curl build-essential wget && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 WORKDIR /
 RUN curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
@@ -80,10 +81,10 @@ RUN micromamba shell init -s bash && echo "micromamba activate deepprep" >> $HOM
 # Check if this is still necessary when updating the base image.
 ENV PATH="/opt/conda/envs/deepprep/bin:$PATH" \
     UV_USE_IO_URING=0
-RUN curl -sL https://deb.nodesource.com/setup_20.x | bash -
-RUN apt purge libnode-dev -y && apt autoremove -y && apt-get install -y --no-install-recommends nodejs
-RUN npm install -g svgo@^3.2.0 bids-validator@^1.14.0 && rm -r ~/.npm
-RUN cp /usr/bin/bids-validator /opt/conda/envs/deepprep/bin
+#ENV PATH="/opt/node-v20.18.1-linux-x64/bin:$PATH"
+#RUN wget --content-disposition -P /opt/ https://nodejs.org/dist/v20.18.1/node-v20.18.1-linux-x64.tar.xz && tar -C /opt -xvf /opt/node-v20.18.1-linux-x64.tar.xz && rm /opt/node-v20.18.1-linux-x64.tar.xz
+#RUN npm install -g svgo@^3.2.0 bids-validator@^1.14.0 && rm -r ~/.npm
+#RUN cp /usr/bin/bids-validator /opt/conda/envs/deepprep/bin
 
 ### Install Python lib
 #RUN git clone https://github.com/nighres/nighres.git --branch release-1.5.0 --single-branch && \
@@ -135,6 +136,9 @@ RUN pip3 install git+https://github.com/netneurolab/neuromaps.git@ae3c88a60746c0
 # Start from this Docker image
 FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
 
+##
+#COPY Docker/source.list /etc/apt/sources.list
+
 ENV DEBIAN_FRONTEND="noninteractive" \
     LANG="C.UTF-8" \
     LC_ALL="C.UTF-8"
@@ -168,9 +172,6 @@ RUN apt-get update && \
     openjdk-11-jdk && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-##
-COPY Docker/source.list /etc/apt/sources.list
-
 ## Install openjdk
 ENV LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/lib/jvm/java-11-openjdk-amd64/lib:/usr/lib/jvm/java-11-openjdk-amd64/lib/server" \
     JAVA_HOME="/usr/lib/jvm/java-11-openjdk-amd64"
@@ -180,8 +181,12 @@ RUN sed -i '147c\supervised systemd' /etc/redis/redis.conf
 RUN sed -i.bak '/^save / s/^/#/' /etc/redis/redis.conf
 
 #### bids-validator /usr/bin/bids-validator
-RUN curl -sL https://deb.nodesource.com/setup_20.x | bash -
-RUN apt purge libnode-dev -y && apt autoremove -y && apt-get install -y --no-install-recommends nodejs
+ENV UV_USE_IO_URING=0
+ENV PATH="/opt/node-v20.18.1-linux-x64/bin:$PATH"
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends wget xz-utils && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN wget --content-disposition -P /opt/ https://nodejs.org/dist/v20.18.1/node-v20.18.1-linux-x64.tar.xz && tar -C /opt -xvf /opt/node-v20.18.1-linux-x64.tar.xz && rm /opt/node-v20.18.1-linux-x64.tar.xz
 RUN npm install -g svgo@^3.2.0 bids-validator@^1.14.0 && rm -r ~/.npm
 
 ## aws cli
@@ -321,7 +326,7 @@ COPY deepprep/web /opt/DeepPrep/deepprep/web
 COPY deepprep/rest/denoise /opt/DeepPrep/deepprep/rest/denoise
 COPY deepprep/deepprep.sh /opt/DeepPrep/deepprep/deepprep.sh
 # release
-ENV DEEPPREP_VERSION="24.1.2"
+ENV DEEPPREP_VERSION="25.1.0"
 
 RUN chmod 755 /opt/DeepPrep/deepprep/deepprep.sh && chmod 755 /opt/DeepPrep/deepprep/nextflow/bin/*.py
 RUN chmod 755 /opt/DeepPrep/deepprep/web/pages/*.sh && chmod 755 /opt/DeepPrep/deepprep/rest/denoise/bin/*.py

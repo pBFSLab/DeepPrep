@@ -96,7 +96,7 @@ if selected_option != "T1w only":
         bold_task_type.replace('"', "")
         deepprep_cmd += f" --bold_task_type '{bold_task_type}'"
 
-    bold_cifti = st.checkbox("BOLD CIFTI", value=False, help="whether to output cifti format files.")
+    bold_cifti = st.checkbox("CIFTI format", value=False, help="whether to output cifti format files.")
     # if cifti: do not support to select the spaces
     if bold_cifti:
         deepprep_cmd += ' --bold_cifti'
@@ -198,7 +198,7 @@ st.write(f'-----------  ------------')
 st.write(f'{docker_cmd} pbfslab/deepprep {deepprep_cmd}')
 if st.button("Run", disabled=commond_error):
     with st.spinner('Waiting for it to finish, please do not leave this page...'):
-        command = [f"../deepprep.sh {deepprep_cmd}"]
+        command = [f"/opt/DeepPrep/deepprep/deepprep.sh {deepprep_cmd}"]
         with st.expander("------------ running log ------------"):
             st.write_stream(run_command(command))
         import time

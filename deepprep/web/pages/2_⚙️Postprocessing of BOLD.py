@@ -75,19 +75,23 @@ elif not os.path.exists(confounds_file):
 else:
     deepprep_cmd += f' --confounds_index_file {confounds_file}'
 
-bold_task_type = st.text_input("BOLD task type", placeholder="i.e. rest, motor, 'rest motor'", help="the task label of BOLD images (i.e. rest, motor, 'rest motor').")
-if not bold_task_type:
+bold_task_type = st.text_input("BOLD task type", placeholder="i.e. rest, motor, 'rest motor'", help="The task label of BOLD images. It can be empty. If there are multiple tasks, separate them with spaces.")
+if bold_task_type:
+    if 'task-' in bold_task_type:
+        bold_task_type = bold_task_type.replace('task-', '')
+    bold_task_type = bold_task_type.replace("'", "")
+    bold_task_type = bold_task_type.replace('"', "")
+    deepprep_cmd += f" --task_id '{bold_task_type}'"
+else:
     st.error("The BOLD task type must be input!")
     commond_error = True
-else:
-    bold_task_type.replace("'", "")
-    bold_task_type.replace('"', "")
-    deepprep_cmd += f" --task_id '{bold_task_type}'"
 
-spaces = st.selectbox("select a space", ("MNI152NLin6Asym", "MNI152NLin2009cAsym", "fsnative", "fsaverage6", "fsaverage5", "fsaverage4"), help="select a space")
-deepprep_cmd += f' --space {spaces}'
+spaces = st.multiselect("select spaces(optional)", ["T1w", "MNI152NLin6Asym", "MNI152NLin2009cAsym", "fsnative", "fsaverage6", "fsaverage5", "fsaverage4", "fsaverage3"], help="select spaces")
+if spaces:
+    spaces = ' '.join(spaces)
+    deepprep_cmd += f" --space '{spaces}'"
 
-if spaces == "fanative":
+if "fsnative" in spaces:
     subjects_dir = st.text_input("Recon result Path",
                                  help=" the directory of Recon files.")
     if not subjects_dir:
@@ -122,10 +126,12 @@ else:
     deepprep_cmd += f' --bandpass {bold_bandpass}'
 
 participant_label = st.text_input("the subject IDs (optional)",
-                                  help="the subject ID you want to process, i.e. 'sub-001 sub-002'.")
+                                  help="the subject ID you want to process, i.e. '001 002'.")
 if participant_label:
-    participant_label.replace("'", "")
-    participant_label.replace('"', "")
+    if 'sub-' in participant_label:
+        participant_label = participant_label.replace('sub-', '')
+    participant_label = participant_label.replace("'", "")
+    participant_label = participant_label.replace('"', "")
     deepprep_cmd += f" --subject_id '{participant_label}'"
 
 col1, col2, col3 = st.columns(3)

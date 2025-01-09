@@ -1,4 +1,3 @@
-
 process bold_get_bold_file_in_bids {
 
     cpus 1
@@ -7,11 +6,12 @@ process bold_get_bold_file_in_bids {
     errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
     maxRetries 3
 
-    input:  // https://www.nextflow.io/docs/latest/process.html#inputs
+    input:
     val(bids_dir)
     val(subjects_dir)
-    val(subjects)
-    val(bold_task_type)
+    val(output_dir)
+    val(subject_id)
+    val(task_id)
     val(bold_only)
 
     output:
@@ -19,62 +19,46 @@ process bold_get_bold_file_in_bids {
 
     script:
     script_py = "bold_get_bold_file_in_bids.py"
-    if (subjects.toString() == '') {
-        """
-        ${script_py} \
-        --bids_dir ${bids_dir} \
-        --subjects_dir ${subjects_dir} \
-        --task_type ${bold_task_type} \
-        --bold_only ${bold_only}
-        """
-    }
-    else {
-        """
-        ${script_py} \
-        --bids_dir ${bids_dir} \
-        --subjects_dir ${subjects_dir} \
-        --subject_ids ${subjects} \
-        --task_type ${bold_task_type} \
-        --bold_only ${bold_only}
-        """
-    }
+    """
+    ${script_py} \
+    --bids_dir ${bids_dir} \
+    ${task_id ? "--task_id ${task_id}" : ""} \
+    ${subject_id ? "--subject_id ${subject_id}" : ""} \
+    --output_dir ${output_dir} \
+    --work_dir ${output_dir}/WorkDir
+    """
 }
-
 
 process bold_head_motion {
     tag "${bold_id}"
 
     cpus 1
-    memory '8 GB'
-    label 'maxForks_10'
+    memory { 2.GB * (task.attempt ** 2) }
+
+    errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
+    maxRetries 3
 
     input:
-    tuple(val(subject_id), val(bold_id), val(bold_preproc_file))
+    tuple(val(subject_id), val(bold_id), val(bold_json))
+    val(output_dir)
+    val(work_dir)
     val(freesurfer_home)
     val(fsl_home)
 
-    val(output_dir)
-    val(work_dir)
     output:
-    tuple(val(subject_id), val(bold_id), val("anything"))
+    tuple(val(subject_id), val(bold_json)) // emit: head_motion_output
+
     script:
     script_py = "bold_head_motion.py"
-    if (freesurfer_home.toString() != '') {
-        freesurfer_home = "--freesurfer_home ${freesurfer_home}"
-    }
-    if (fsl_home.toString() != '') {
-        fsl_home = "--fsl_home ${fsl_home}"
-    }
     """
     ${script_py} \
-    --bold_preprocess_dir ${preprocess_bids_dir} \
-    ${freesurfer_home} \
-    ${fsl_home} \
+    --bold_json ${bold_json} \
     --output_dir ${output_dir} \
-    --work_dir ${work_dir}
+    --work_dir ${work_dir} \
+    ${freesurfer_home ? "--freesurfer_home ${freesurfer_home}" : ""} \
+    ${fsl_home ? "--fsl_home ${fsl_home}" : ""}
     """
 }
-
 
 workflow {
 
@@ -97,11 +81,11 @@ workflow {
     }
     println "INFO: subjects_dir       : ${subjects_dir}"
 
-    subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, subjects_dir, subject_id, task_id, bold_only)
+    subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, subjects_dir, qc_output_dir, subject_id, task_id, bold_only)
     (subject_id, boldfile_id, subject_boldfile_txt) = subject_boldfile_txt.flatten().multiMap { it ->
                                                                                  a: it.name.split('_')[0]
                                                                                  c: it.name
-                                                                                 b: [it.name.split('_')[0], it] }
+                                                                                 b: [it.name.split('_')[0], it.name.split('_bold.json')[0], it] }
 
     subject_id_boldfile_id = subject_id.merge(boldfile_id)
     // filter the recon result by subject_id from BOLD file.
@@ -110,5 +94,5 @@ workflow {
                                                                                                     a: tuple[0]
                                                                                                     b: tuple[1][0] }
 
-    bold_head_motion_output = bold_head_motion(subject_boldfile_txt, qc_output_dir, work_dir, freesurfer_home, fsl_home)
+    head_motion_output = bold_head_motion(subject_boldfile_txt, qc_output_dir, work_dir, freesurfer_home, fsl_home)
 }

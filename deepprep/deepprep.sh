@@ -13,6 +13,7 @@ deepprep_home="/opt/DeepPrep"
 container=""
 ignore_error=""
 debug=""
+python=""
 
 help="DeepPrep args:
 deepprep-docker [bids_dir] [output_dir] [{participant}] [--bold_task_type '[task1 task2 task3 ...]']
@@ -27,7 +28,8 @@ deepprep-docker [bids_dir] [output_dir] [{participant}] [--bold_task_type '[task
 "
 
 if [ $# -eq 0 ]; then
-  mkdir /tmp/web && cd /tmp/web && streamlit run /opt/DeepPrep/deepprep/web/DeepPrep.py --browser.gatherUsageStats false
+  tmp_dir=$(mktemp -d)
+  mkdir -p "${tmp_dir}" && cd "${tmp_dir}" && streamlit run ${deepprep_home}/deepprep/web/DeepPrep.py --browser.gatherUsageStats false
   exit 0
 fi
 
@@ -108,6 +110,10 @@ while [[ $# -gt 0 ]]; do
       echo "Input --resume : ${resume}"
       args+=("-resume")
       ;;
+    --python)
+      python="$2"
+      echo "Input --python : ${python}"
+      ;;
     --debug)
       debug="True"
       echo "Input --debug : ${debug}"
@@ -175,13 +181,15 @@ cat "${common_config}" > "${run_config}"
 cat "${config_file}" >> "${run_config}"
 
 if [ -z "${fs_license_file}" ]; then
-  echo "ERROR: No Input --fs_license_file : ${fs_license_file}"
-  exit 1
+  echo "WARNNING: You should replace license.txt path with your own FreeSurfer license! You can get your license file for free from https://surfer.nmr.mgh.harvard.edu/registration.html"
+  echo "WARNNING: Then add  --fs_license_file <your license file path> ."
+  fs_license_file="${deepprep_home}/deepprep/FreeSurfer/license.txt"
 fi
 if [ ! -f "${fs_license_file}" ]; then
   echo "ERROR: fs_license_file is not exists : ${fs_license_file}"
   exit 1
 fi
+export FS_LICENSE=${fs_license_file}
 sed -i "s@\${fs_license_file}@${fs_license_file}@g" "${run_config}"
 
 if [ -n "${cpus}" ]; then
@@ -209,7 +217,6 @@ if [ "${executor}" = "local" ]; then
     exit 1
   fi
   source "${freesurfer_home}/SetUpFreeSurfer.sh"
-  export FS_LICENSE=${fs_license_file}
 else
   if [ -z "${container}" ]; then
     echo "ERROR: No Input --container : ${container}"
@@ -234,6 +241,12 @@ else
   sed -i "s@\${bids_dir}@${bids_dir}@g" "${run_config}"
   sed -i "s@\${output_dir}@${output_dir}@g" "${run_config}"
   sed -i "s@\${subjects_dir}@${subjects_dir}@g" "${run_config}"
+fi
+
+# 如果python参数不为空，获取python路径的父级目录，然后添加到PATH环境变量的最前面
+if [ -n "${python}" ]; then
+  python_dir=$(dirname "${python}")
+  export PATH="${python_dir}:${PATH}"
 fi
 
 cd "${nextflow_work_dir}" && \

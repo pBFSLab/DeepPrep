@@ -1,3 +1,4 @@
+#! /usr/bin/env python3
 import os
 import subprocess
 import shutil
@@ -6,6 +7,7 @@ from nipype.algorithms.confounds import FramewiseDisplacement
 from pathlib import Path
 import argparse
 from bids import BIDSLayout
+import json
 
 
 def calculate_mcflirt_motion_parameters(input_nii_path, output_dir=None):
@@ -84,8 +86,8 @@ def calculate_framewise_displacement(par_file, output_dir=None):
         os.makedirs(output_dir, exist_ok=True)
 
     # 构建输出文件路径
-    output_fd_file = os.path.join(output_dir, os.path.basename(par_file).replace('.par', '_fd.txt'))
-    output_figure = os.path.join(output_dir, os.path.basename(par_file).replace('.par', '_fd_plot.png'))
+    output_fd_file = os.path.join(output_dir, os.path.basename(par_file).replace('bold_mcf.par', 'fd.csv'))
+    output_figure = os.path.join(output_dir, os.path.basename(par_file).replace('bold_mcf.par', 'fd.png'))
 
     # 使用Nipype计算FD
     fd_calculator = FramewiseDisplacement()
@@ -103,7 +105,7 @@ def calculate_framewise_displacement(par_file, output_dir=None):
     return output_fd_file
 
 
-def get_bids_output_dir(input_nii_path, base_output_dir):
+def get_bids_output_dir(input_nii_path, bold_dir, base_output_dir):
     """
     根据输入的 BOLD 文件路径构建 BIDS 格式的输出目录。
 
@@ -117,10 +119,7 @@ def get_bids_output_dir(input_nii_path, base_output_dir):
     # 解析输入文件的 BIDS 实体
     layout = BIDSLayout(os.path.dirname(input_nii_path), validate=False)
     bids_file = layout.get_file(input_nii_path)
-    relpath = bids_file.relpath  # 获取相对路径
-
-    # 构建 BIDS 格式的输出目录
-    output_dir = os.path.join(base_output_dir, os.path.dirname(relpath))
+    output_dir = bids_file.dirname.replace(bold_dir, base_output_dir)  # 替换 BOLD 目录为输出目录
 
     # 创建输出目录
     os.makedirs(output_dir, exist_ok=True)
@@ -133,8 +132,8 @@ def main():
                     "This script calculates head motion parameters and framewise displacement (FD) for BOLD fMRI data."
     )
 
-    parser.add_argument("--bold_series", required=True, nargs='+',
-                        help="Path to the file containing the BOLD fMRI file path.")
+    parser.add_argument("--bold_json", required=True,
+                        help="Path to the JSON file containing the BOLD fMRI file path.")
     parser.add_argument("--output_dir", required=True,
                         help="Base path to the output directory where results will be saved.")
     parser.add_argument("--work_dir", required=True,
@@ -147,23 +146,23 @@ def main():
         # FreeSurfer
         os.environ['FREESURFER_HOME'] = freesurfer_home
         os.environ['PATH'] = f'{freesurfer_home}/bin:' + f'{fsl_home}/bin:' + os.environ['PATH']
-    if args.freesurfer and args.workbench:
+    if args.freesurfer_home and args.fsl_home:
         set_environ(args.freesurfer_home, args.fsl_home)
 
-    # 从文件中读取 BOLD 文件路径
-    with open(args.bold_series[0], 'r') as f:
-        data = f.readlines()
-    data = [i.strip() for i in data]
-    input_nii_path = data[1]  # 假设 BOLD 文件路径在文件的第二行
+    # 从JSON文件中读取 BOLD 文件路径
+    with open(args.bold_json, 'r') as f:
+        data = json.load(f)
+    bold_file = data['bold_file']
+    bids_dir = data['bids_dir']
 
     # 设置工作目录
     os.makedirs(args.work_dir, exist_ok=True)
 
     # 根据输入文件构建 BIDS 格式的输出目录
-    bids_output_dir = get_bids_output_dir(input_nii_path, args.output_dir)
+    bids_output_dir = get_bids_output_dir(bold_file, bids_dir, args.output_dir)
 
     # 计算头动参数
-    motion_params_file = calculate_mcflirt_motion_parameters(input_nii_path, args.work_dir)
+    motion_params_file = calculate_mcflirt_motion_parameters(bold_file, args.work_dir)
 
     if motion_params_file:
         print(f"头动参数文件已生成: {motion_params_file}")
