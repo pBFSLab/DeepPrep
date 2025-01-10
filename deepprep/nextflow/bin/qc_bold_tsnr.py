@@ -138,8 +138,7 @@ if __name__ == '__main__':
     subject_workdir = Path(subject_resultdir) / f'{bold_name}_mctsnr'
     subject_workdir.mkdir(parents=True, exist_ok=True)
 
-    # mc_tsnr_path = os.path.join(bids_bold.dirname, bids_bold.filename.replace('_bold.nii.gz', '_tSNR.nii.gz'))
-    mc_tsnr_path = Path(args.qc_result_path) / str(subject_workdir) / 'mc_tsnr.nii.gz'
+    mc_tsnr_path = Path(subject_resultdir) / f'{bold_name}_desc-tsnr_bold.nii.gz'
 
     TSNR_test(bids_bold, mc_tsnr_path)
     rewrite_tsnr(mc_tsnr_path, brainmask)
@@ -153,3 +152,7 @@ if __name__ == '__main__':
     mctsnr_savepath_svg = subject_resultdir / f'{bold_name}_desc-tsnr_bold.svg'
     print(f'>>> {mctsnr_savepath_svg}')
     write_single_svg(mctsnr_savepath_svg, output_tsnr_savepath, 2000, 815)
+
+    # 删除subject_workdir这个目录
+    if subject_workdir.exists():
+        shutil.rmtree(subject_workdir)
