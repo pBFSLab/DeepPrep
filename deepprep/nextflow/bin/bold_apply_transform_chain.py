@@ -154,7 +154,7 @@ if __name__ == '__main__':
     parser.add_argument("--template_space", required=True)
     parser.add_argument("--template_resolution", required=True)
     parser.add_argument("--nonlinear_file", required=True)
-    parser.add_argument("--bold_sdc", required=True)
+    parser.add_argument("--bold_sdc", required=True, default='False')
     parser.add_argument("--task_id", required=True)
     parser.add_argument("--reference", required=False, default=None)
     parser.add_argument("--moving", required=False, default=None)
@@ -187,14 +187,17 @@ if __name__ == '__main__':
     output_path = Path(coreg_xfm.parent) / f'{args.bold_id}_space-{args.template_space}_res-{args.template_resolution}_desc-preproc_bold.nii.gz'
     boldref_path = Path(coreg_xfm.parent) / f'{args.bold_id}_space-{args.template_space}_res-{args.template_resolution}_boldref.nii.gz'
 
+    if args.bold_sdc.upper() == 'TRUE':
+        args.bold_sdc = True
+    else:
+        args.bold_sdc = False
+
     # load fieldmap info
     if args.bold_sdc:
         update_entities = {'suffix': 'bold', 'extension': '.json'}
         bold_json = get_preproc_file(args.subject_id, args.bids_dir, bold_file, update_entities)
         with open(str(bold_json)) as f:
             bold_info = json.load(f)
-        pe_dir = bold_info["PhaseEncodingDirection"]
-        ro_time = bold_info["TotalReadoutTime"]
 
         fmap_base_dir = Path(args.work_dir) / 'bold_preprocess' /f'{args.subject_id}_wf' / f'{args.task_id}_wf'
         fieldmap_id_txt_path = fmap_base_dir / 'fieldmap_id.txt'
@@ -269,6 +272,8 @@ if __name__ == '__main__':
     if args.bold_sdc:
         nvols = bold_orig.shape[3] if bold_orig.ndim > 3 else 1
 
+        pe_dir = bold_info["PhaseEncodingDirection"]
+        ro_time = bold_info["TotalReadoutTime"]
         if pe_dir and ro_time:
             pe_axis = "ijk".index(pe_dir[0])
             pe_flip = pe_dir.endswith("-")
