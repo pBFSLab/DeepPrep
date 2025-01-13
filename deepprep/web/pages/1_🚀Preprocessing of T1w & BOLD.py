@@ -10,28 +10,29 @@ import os
 st.markdown(f'# 🚀Preprocessing of T1w & BOLD')
 st.write(
     """
-    DeepPrep is able to end-to-end preprocess anatomical and functional MRI data for different data size ranging from a single participant to a HUGE dataset. It is also flexible to run the anatomical part or functional part that requires a complete Recon folder to be specified. The DeepPrep workflow takes the directory of the dataset that is to be processed as the input, which is required to be in the valid BIDS format.
-    
+    DeepPrep is a preprocessing pipeline that can flexibly handle anatomical and functional MRI data end-to-end, accommodating various sizes from a single participant to LARGE datasets.
+    Both the anatomical and functional parts can be run separately. However, preprocessed Recon is a mandatory prerequisite for executing the functional process.
+    The DeepPrep workflow takes the directory of the dataset to be processed as input, which is required to be in a valid BIDS format.
 -----------------
 """
 )
 
-selected_option = st.radio("select a process: ", ("All", "T1w only", "BOLD only"), horizontal=True, help="'All' preprocess T1w data and BOLD data, 'T1w only' preprocess T1w data, 'BOLD only' preprocess BOLD data")
-device = st.radio("select a device: ", ("auto", "GPU", "CPU"), horizontal=True, help="specifies the device. The default is auto, which automatically selects a device")
+selected_option = st.radio("select a process: ", ("All", "T1w only", "BOLD only"), horizontal=True, help="'All' preprocess both T1w and BOLD data, 'T1w only' preprocess T1w data, 'BOLD only' preprocess BOLD data")
+device = st.radio("select a device: ", ("auto", "GPU", "CPU"), horizontal=True, help="Specifies the device. The default is auto, which automatically selects a device.")
 
-st.write(f"preprocess '{selected_option}'", f"on the '{device}' device.")
+st.write(f"Preprocess '{selected_option}'", f"on the '{device}' device.")
 
 deepprep_cmd = ''
 docker_cmd = 'docker run -it --rm'
 commond_error = False
 
-bids_dir = st.text_input("BIDS Path:", help="refers to the directory of the input dataset, which should be in BIDS format.")
+bids_dir = st.text_input("BIDS Path:", help="refers to the directory of the input dataset, which is required to be in BIDS format.")
 if not bids_dir:
     st.error("The BIDS Path must be input!")
     deepprep_cmd += ' {bids_dir}'
     commond_error = True
 elif not bids_dir.startswith('/'):
-    st.error("It must be an absolute path that starts with '/'.")
+    st.error("The path must be an absolute path starts with '/'.")
     deepprep_cmd += ' {bids_dir}'
     commond_error = True
 elif not os.path.exists(bids_dir):
@@ -41,13 +42,13 @@ elif not os.path.exists(bids_dir):
 else:
     deepprep_cmd += f' {bids_dir}'
 
-output_dir = st.text_input("output Path:", help="refers to the directory for the outputs of DeepPrep.")
+output_dir = st.text_input("output Path:", help="refers to the directory to save the DeepPrep outputs.")
 if not output_dir:
     st.error("The output Path must be input!")
     deepprep_cmd += ' {output_dir}'
     commond_error = True
 elif not output_dir.startswith('/'):
-    st.error("It must be an absolute path that starts with '/'.")
+    st.error("The path must be an absolute path starts with '/'.")
     deepprep_cmd += ' {output_dir}'
     commond_error = True
 else:
@@ -55,30 +56,30 @@ else:
 deepprep_cmd += f' participant'
 
 if selected_option == "BOLD only":
-    subjects_dir = st.text_input("Recon result Path",
+    subjects_dir = st.text_input("Recon Result Path",
                                  help=" the directory of Recon files.")
     if not subjects_dir:
-        st.error("The Recon result Path must be input!")
+        st.error("The Recon Result Path must be input!")
         commond_error = True
     elif not os.path.exists(subjects_dir):
-        st.error("The Recon result Path does not exist!")
+        st.error("The Recon Result Path does not exist!")
         commond_error = True
 else:
-    subjects_dir = st.text_input("Recon result Path (optional)", help=" the output directory of Recon files, default is <output_dir>/Recon.")
+    subjects_dir = st.text_input("Recon Result Path (optional)", help="the output directory for the Recon files, default is <output_dir>/Recon.")
 
 if subjects_dir:
     if not subjects_dir.startswith('/'):
-        st.error("It must be an absolute path that starts with '/'.")
+        st.error("The path must be an absolute path starts with '/'.")
         commond_error = True
     elif not os.path.exists(subjects_dir):
-        st.error("The Recon result Path does not exist!")
+        st.error("The Recon Result Path does not exist!")
         commond_error = True
     else:
         deepprep_cmd += f' --subjects_dir {subjects_dir}'
 
-freesurfer_license_file = st.text_input("FreeSurfer license file path", value='/opt/freesurfer/license.txt', help="FreeSurfer license file path.You should replace license.txt path with your own FreeSurfer license! You can get your license file for free from https://surfer.nmr.mgh.harvard.edu/registration.html")
+freesurfer_license_file = st.text_input("FreeSurfer license file path", value='/opt/freesurfer/license.txt', help="FreeSurfer license file path. It is highly recommended to replace the license.txt path with your own FreeSurfer license! You can get it for free from https://surfer.nmr.mgh.harvard.edu/registration.html")
 if not freesurfer_license_file.startswith('/'):
-    st.error("It must be an absolute path that starts with '/'.")
+    st.error("The path must be an absolute path starts with '/'.")
     commond_error = True
 elif not os.path.exists(freesurfer_license_file):
     st.error("The FreeSurfer license file Path does not exist!")
@@ -119,7 +120,7 @@ if selected_option != "T1w only":
     else:
         deepprep_cmd += f' --bold_skip_frame {bold_skip_frame}'
 
-    bold_bandpass = st.text_input("BOLD bandpass range for confounds", value="0.01-0.08", help="the default is `0.01-0.08`.")
+    bold_bandpass = st.text_input("Bandpass filter", value="0.01-0.08", help="the default range is `0.01-0.08`.")
     if not bold_bandpass:
         deepprep_cmd += f' --bold_bandpass 0.01-0.08'
     else:
@@ -134,12 +135,12 @@ if selected_option != "T1w only":
             deepprep_cmd += ' --bold_sdc'
     with col5:
         bold_confounds = st.checkbox("bold_confounds", value=True,
-                                     help="generates confounds derived from BOLD fMRI, such as head motion variables and global signals; the default is True.")
+                                     help="generates confounds derived from BOLD fMRI, such as head motion variables and global signals, default is True.")
         if bold_confounds:
             deepprep_cmd += ' --bold_confounds'
 
 participant_label = st.text_input("the subject IDs (optional)",
-                                  help="the subject ID you want to process, i.e. 'sub-001 sub-002'.")
+                                  help="Identify the subjects you'd like to process by their IDs, i.e. 'sub-001 sub-002'.")
 if participant_label:
     participant_label.replace("'", "")
     participant_label.replace('"', "")
@@ -197,7 +198,7 @@ def run_command(cmd):
 st.write(f'-----------  ------------')
 st.write(f'{docker_cmd} pbfslab/deepprep {deepprep_cmd}')
 if st.button("Run", disabled=commond_error):
-    with st.spinner('Waiting for it to finish, please do not leave this page...'):
+    with st.spinner('Waiting for the process to finish, please do not leave this page...'):
         command = [f"/opt/DeepPrep/deepprep/deepprep.sh {deepprep_cmd}"]
         with st.expander("------------ running log ------------"):
             st.write_stream(run_command(command))

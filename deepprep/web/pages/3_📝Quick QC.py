@@ -11,10 +11,8 @@ st.markdown(f'# 📝Quick QC')
 st.write(
     """
     This page allows you to quickly perform quality control (QC) on your BOLD data.
-
-After adding the path, click the Run button, wait for the run to complete,and then click the Show button to view the results.
-
-More QC functions will be provided later, stay tuned!
+    Input the path first, and then click the 'Run' button. Once the process is complete, click 'Show' to view the results. 
+    More QC functions will be online, stay tuned!
     """
 )
 st.write(f'-----------  ------------')
@@ -27,7 +25,7 @@ if not bids_dir:
     st.error("The BIDS directory must be input!")
     commond_error = True
 elif not bids_dir.startswith('/'):
-    st.error("It must be an absolute path that starts with '/'.")
+    st.error("The path must be an absolute path starts with '/'.")
     commond_error = True
 elif not os.path.exists(bids_dir):
     st.error("The BIDS directory does not exist!")
@@ -35,12 +33,12 @@ elif not os.path.exists(bids_dir):
 else:
     deepprep_cmd += f' {bids_dir}'
 
-output_dir = st.text_input("Output directory:", help="The directory for the QC outputs.")
+output_dir = st.text_input("Output directory:", help="The directory to save the QC outputs.")
 if not output_dir:
     st.error("The output directory must be input!")
     commond_error = True
 elif not output_dir.startswith('/'):
-    st.error("It must be an absolute path that starts with '/'.")
+    st.error("The path must be an absolute path starts with '/'.")
     commond_error = True
 elif not os.path.exists(output_dir):
     st.error("The output directory does not exist!")
@@ -49,9 +47,9 @@ else:
     deepprep_cmd += f' {output_dir}'
 deepprep_cmd += f' participant'
 
-freesurfer_license_file = st.text_input("FreeSurfer license file path", value='/opt/freesurfer/license.txt', help="FreeSurfer license file path.You should replace license.txt path with your own FreeSurfer license! You can get your license file for free from https://surfer.nmr.mgh.harvard.edu/registration.html")
+freesurfer_license_file = st.text_input("FreeSurfer license file path", value='/opt/freesurfer/license.txt', help="FreeSurfer license file path. It is highly recommended to replace the license.txt path with your own FreeSurfer license! You can get it for free from https://surfer.nmr.mgh.harvard.edu/registration.html")
 if not freesurfer_license_file.startswith('/'):
-    st.error("It must be an absolute path that starts with '/'.")
+    st.error("The path must be an absolute path starts with '/'.")
     commond_error = True
 elif not os.path.exists(freesurfer_license_file):
     st.error("The FreeSurfer license file Path does not exist!")
@@ -64,7 +62,7 @@ else:
 #     st.error("The subjects directory must be input!")
 #     commond_error = True
 # elif not subjects_dir.startswith('/'):
-#     st.error("It must be an absolute path that starts with '/'.")
+#     st.error("The path must be an absolute path starts with '/'.")
 #     commond_error = True
 # elif not os.path.exists(subjects_dir):
 #     st.error("The subjects directory does not exist!")
@@ -72,11 +70,11 @@ else:
 # else:
 #     deepprep_cmd += f' --subjects_dir {subjects_dir}'
 
-task_id = st.text_input("Task ID (optional):", help="The task ID for the BOLD data.i.e. rest, motor, 'rest motor'")
+task_id = st.text_input("Task ID (optional):", help="The task ID of BOLD data. (i.e. rest, motor, 'rest motor')")
 if task_id:
     deepprep_cmd += f' --task_id {task_id}'
 
-subject_id = st.text_input("Subject ID (optional):", help="The subject ID for the BOLD data.i.e. '001 002'.")
+subject_id = st.text_input("Subject ID (optional):", help="Identify the subjects you'd like to process by their IDs. (i.e. '001 002')")
 if subject_id:
     if 'sub-' in subject_id:
         subject_id = subject_id.replace('sub-', '')
@@ -116,7 +114,7 @@ def run_command(cmd):
 st.write(f'-----------  ------------')
 st.write(f'qc {deepprep_cmd}')
 if st.button("Run", disabled=commond_error):
-    with st.spinner('Waiting for it to finish, please do not leave this page...'):
+    with st.spinner('Waiting for the process to finish, please do not leave this page...'):
         command = [f"/opt/DeepPrep/deepprep/web/pages/quickqc.sh {deepprep_cmd}"]
         with st.expander("------------ running log ------------"):
             st.write_stream(run_command(command))
