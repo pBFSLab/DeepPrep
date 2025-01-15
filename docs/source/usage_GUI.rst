@@ -53,7 +53,6 @@ DeepPrep is a preprocessing pipeline that can flexibly handle anatomical and fun
 Both the anatomical and functional parts can be run separately. However, preprocessed Recon is a mandatory prerequisite for executing the functional process.
 The DeepPrep workflow takes the directory of the dataset to be processed as input, which is required to be in a valid BIDS format.
 
-Experiment with it: `Preprocessing GUI`_
 
 Postprocessing of BOLD
 ======================
@@ -67,7 +66,6 @@ Surface space: bandpass -> regression -> smooth (optional)
 
 Volume space:  bandpass -> regression -> smooth (optional)
 
-Experiment with it: `Postprocessing GUI`_
 
 Quick QC
 ======================
@@ -75,7 +73,6 @@ This page allows you to quickly perform quality control (QC) on your BOLD data.
 Input the path first, and then click the ``Run`` button. Once the process is complete, click ``Show`` to view the results.
 More QC functions will be online, stay tuned!
 
-Experiment with it: `QuickQC GUI`_
 
 
 
