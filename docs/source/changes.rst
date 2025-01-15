@@ -9,9 +9,9 @@ What's new
 25.1.0 (Jan 13, 2025)
 -------------------------
 
-1. **New:** Released `Preprocessing GUI`_. Find more details here :ref:`gui-guide`.
-2. **New:** Released `Postprocessing GUI`_. Find more details here :ref:`gui-guide`.
-3. **New:** Released `QuickQC GUI`_. Find more details here :ref:`gui-guide`.
+1. **New:** Released Preprocessing GUI. Find more details here :ref:`gui-guide`.
+2. **New:** Released Postprocessing GUI. Find more details here :ref:`gui-guide`.
+3. **New:** Released QuickQC GUI. Find more details here :ref:`gui-guide`.
 4. **New:** GUIs are now compatible with the Windows system.
 5. **Update:** Postprocessing GUI now supports processing multiple spaces, tasks and subjects.
 6. **Update:** Deep learning modules can be run independently.
