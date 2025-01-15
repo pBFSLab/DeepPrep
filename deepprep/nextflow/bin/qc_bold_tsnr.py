@@ -138,10 +138,16 @@ if __name__ == '__main__':
     subject_workdir = Path(subject_resultdir) / f'{bold_name}_mctsnr'
     subject_workdir.mkdir(parents=True, exist_ok=True)
 
-    mc_tsnr_path = Path(subject_resultdir) / f'{bold_name}_desc-tsnr_bold.nii.gz'
 
+    mc_tsnr_path = Path(args.qc_result_path) / str(subject_workdir) / 'mc_tsnr.nii.gz'
     TSNR_test(bids_bold, mc_tsnr_path)
     rewrite_tsnr(mc_tsnr_path, brainmask)
+
+    output_tsnr_savepath = Path(subject_resultdir) / f'{bold_name}_desc-tsnr_bold.nii.gz'
+    try:
+        output_tsnr_savepath.unlink(missing_ok=True)
+    finally:
+        shutil.copyfile(mc_tsnr_path, output_tsnr_savepath)
 
     output_tsnr_savepath = subject_workdir / f'{bold_name}_mc_tsnr.png'
     McTSNR_scene = subject_workdir / 'McTSNR.scene'
