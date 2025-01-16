@@ -60,7 +60,7 @@ Ren, J.\*, An, N.\*, Lin, C., Zhang, Y., Sun, Z., Zhang, W., Li, S., Guo, N., Cu
 License
 --------
 
-   Copyright 2023-2025 The DeepPrep Developers
+   Copyright (c) 2023-2025 pBFS lab, Changping Laboratory All rights reserved.
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.

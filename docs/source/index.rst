@@ -15,6 +15,7 @@ Contents
    installation
    usage_local
    usage_cluster
+   usage_GUI
    processing
    outputs
    faq
