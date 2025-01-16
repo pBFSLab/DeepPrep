@@ -47,7 +47,7 @@ st.markdown(
     """
     #### Version
 
-    24.1.2 [What’s new](https://deepprep.readthedocs.io/en/latest/changes.html)
+    25.1.0 [What’s new](https://deepprep.readthedocs.io/en/latest/changes.html)
 
 """
 )
@@ -73,7 +73,7 @@ st.markdown(
 st.markdown(
     """
     #### License  
-    Copyright 2023 The DeepPrep Developers  
+    Copyright (c) 2023-2025 pBFS lab, Changping Laboratory All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at  
 

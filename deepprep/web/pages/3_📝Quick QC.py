@@ -8,14 +8,18 @@ import subprocess
 import os
 
 st.markdown(f'# 📝Quick QC')
-st.write(
-    """
-    This page allows you to quickly perform quality control (QC) on your BOLD data.
-    Input the path first, and then click the 'Run' button. Once the process is complete, click 'Show' to view the results. 
-    More QC functions will be online, stay tuned!
-    """
+st.markdown(
+"""
+    
+This page allows you to quickly perform quality control (QC) on your BOLD data.
+
+Input the path first, and then click the 'Run' button. Once the process is complete, click 'Show' to view the results. 
+
+More QC functions will be online, stay tuned!
+
+-----------------
+"""
 )
-st.write(f'-----------  ------------')
 
 deepprep_cmd = ''
 commond_error = False

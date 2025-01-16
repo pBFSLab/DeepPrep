@@ -8,13 +8,15 @@ import subprocess
 import os
 
 st.markdown(f'# ⚙️Postprocessing of BOLD')
-st.write(
+st.markdown(
     """
+    
 At present, this program is designed to process resting-state functional magnetic resonance imaging (rs-fMRI) data. The processed data can be utilized for calculating functional connectivity (FC) maps, individualized brain functional parcellation, or other relevant analyses.
 
 For task-based functional magnetic resonance imaging (task-fMRI) data, it is recommended to employ alternative tools for subsequent analysis, such as Statistical Parametric Mapping (SPM).
 
 #### processing steps
+
 Surface space: bandpass -> regression -> smooth (optional)
 
 Volume space:  bandpass -> regression -> smooth (optional)
