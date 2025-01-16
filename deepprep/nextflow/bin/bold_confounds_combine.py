@@ -70,7 +70,7 @@ if __name__ == '__main__':
     cols_copy = cols_replace.copy()
     for i in cols_copy:
         cols_replace.append(f'{i}_power2')
-    cols_concat = [f'e_comp_cor_{str(i).zfill(2)}' for i in range(10)]
+    cols_concat = [f'b_comp_cor_{str(i).zfill(2)}' for i in range(10)]
     for c in cols_replace:
         if c in df2.columns:
             df2[c] = df1[c]

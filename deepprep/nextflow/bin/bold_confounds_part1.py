@@ -101,17 +101,17 @@ def compile_regressors(bold_path,
     csf_wm = qnt_nifti(data_bandpass, [str(aseg_ventricles), str(aseg_csf), str(aseg_wm)])
 
     # Generate PCA regressors of bpss nifti.
-    e_comp_cor = regressors_PCA(data_bandpass, str(aseg_brainmask_bin))
+    b_comp_cor = regressors_PCA(data_bandpass, str(aseg_brainmask_bin))
 
 
     # Prepare regressors datas for download
     output_file = Path(output_file)
     label_header = ['global_signal', 'global_signal_derivative1', 'csf', 'csf_derivative1',
                     'white_matter', 'white_matter_derivative1', 'csf_wm', 'csf_wm_derivative1',
-                    'e_comp_cor_00', 'e_comp_cor_01', 'e_comp_cor_02', 'e_comp_cor_03', 'e_comp_cor_04',
-                    'e_comp_cor_05', 'e_comp_cor_06', 'e_comp_cor_07', 'e_comp_cor_08', 'e_comp_cor_09']
+                    'b_comp_cor_00', 'b_comp_cor_01', 'b_comp_cor_02', 'b_comp_cor_03', 'b_comp_cor_04',
+                    'b_comp_cor_05', 'b_comp_cor_06', 'b_comp_cor_07', 'b_comp_cor_08', 'b_comp_cor_09']
 
-    confounds_np = np.concatenate([whole_brain, csf, white_matter, csf_wm, e_comp_cor], axis=1)
+    confounds_np = np.concatenate([whole_brain, csf, white_matter, csf_wm, b_comp_cor], axis=1)
     confounds = pd.DataFrame(confounds_np, columns=label_header)
     # cal power2 of matter signal
     for label in label_header[:8]:
