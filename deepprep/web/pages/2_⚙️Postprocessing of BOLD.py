@@ -11,15 +11,17 @@ st.markdown(f'# ⚙️Postprocessing of BOLD')
 st.markdown(
     """
     
-At present, this program is designed to process resting-state functional magnetic resonance imaging (rs-fMRI) data. The processed data can be utilized for calculating functional connectivity (FC) maps, individualized brain functional parcellation, or other relevant analyses.
+Currently, this module is exclusively designed for resting-state functional magnetic resonance imaging (rs-fMRI) data post-processing, following the preprocessing steps. 
 
-For task-based functional magnetic resonance imaging (task-fMRI) data, it is recommended to employ alternative tools for subsequent analysis, such as Statistical Parametric Mapping (SPM).
+The postprocessed data can be utilized for calculating resting-state functional connectivity (RSFC), individualized brain functional parcellation, or other relevant analyses.
+
+For task-based fMRI (task-fMRI) data, it is recommended to employ alternative tools for subsequent analysis, such as FSL, SPM.
 
 #### processing steps
 
-Surface space: bandpass -> regression -> smooth (optional)
+Surface space: bandpass filtering -> regression -> smooth (optional)
 
-Volume space:  bandpass -> regression -> smooth (optional)
+Volume space:  bandpass filtering -> regression -> smooth (optional)
 
 -----------------
 """
@@ -127,7 +129,7 @@ else:
     assert len(bold_bandpass.split('-')) == 2
     deepprep_cmd += f' --bandpass {bold_bandpass}'
 
-participant_label = st.text_input("the subject IDs (optional)",
+participant_label = st.text_input("the subject IDs (optional)", placeholder="001 002",
                                   help="Identify the subjects you'd like to process by their IDs, i.e. '001 002'.")
 if participant_label:
     if 'sub-' in participant_label:
