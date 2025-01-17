@@ -8,13 +8,15 @@ import subprocess
 import os
 
 st.markdown(f'# ⚙️Postprocessing of BOLD')
-st.write(
+st.markdown(
     """
+    
 At present, this program is designed to process resting-state functional magnetic resonance imaging (rs-fMRI) data. The processed data can be utilized for calculating functional connectivity (FC) maps, individualized brain functional parcellation, or other relevant analyses.
 
 For task-based functional magnetic resonance imaging (task-fMRI) data, it is recommended to employ alternative tools for subsequent analysis, such as Statistical Parametric Mapping (SPM).
 
 #### processing steps
+
 Surface space: bandpass -> regression -> smooth (optional)
 
 Volume space:  bandpass -> regression -> smooth (optional)
@@ -65,7 +67,7 @@ elif not os.path.exists(freesurfer_license_file):
 else:
     deepprep_cmd += f' --fs_license_file {freesurfer_license_file}'
 
-confounds_file = st.text_input("Confounds File Path", value='/opt/DeepPrep/deepprep/rest/denoise/12motion_6param_10eCompCor.txt', help="The path to the text file that contains all the confound names needed for regression.")
+confounds_file = st.text_input("Confounds File Path", value='/opt/DeepPrep/deepprep/rest/denoise/12motion_6param_10bCompCor.txt', help="The path to the text file that contains all the confound names needed for regression.")
 if not confounds_file.startswith('/'):
     st.error("The path must be an absolute path that starts with '/'.")
     commond_error = True

@@ -8,8 +8,9 @@ import subprocess
 import os
 
 st.markdown(f'# 🚀Preprocessing of T1w & BOLD')
-st.write(
+st.markdown(
     """
+
 DeepPrep is a preprocessing pipeline that can flexibly handle anatomical and functional MRI data end-to-end, accommodating various sizes from a single participant to LARGE datasets.
 
 Both the anatomical and functional parts can be run separately. However, preprocessed Recon is a mandatory prerequisite for executing the functional process.
