@@ -44,9 +44,6 @@ if not output_dir:
 elif not output_dir.startswith('/'):
     st.error("The path must be an absolute path starts with '/'.")
     commond_error = True
-elif not os.path.exists(output_dir):
-    st.error("The output directory does not exist!")
-    commond_error = True
 else:
     deepprep_cmd += f' {output_dir}'
 deepprep_cmd += f' participant'
@@ -118,6 +115,7 @@ def run_command(cmd):
 st.write(f'-----------  ------------')
 st.write(f'qc {deepprep_cmd}')
 if st.button("Run", disabled=commond_error):
+    os.makedirs(output_dir, exist_ok=True)
     with st.spinner('Waiting for the process to finish, please do not leave this page...'):
         command = [f"/opt/DeepPrep/deepprep/web/pages/quickqc.sh {deepprep_cmd}"]
         with st.expander("------------ running log ------------"):
