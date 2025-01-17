@@ -11,11 +11,18 @@ st.markdown(f'# 📝Quick QC')
 st.markdown(
 """
     
-This page allows you to quickly perform quality control (QC) on your BOLD data.
+This page helps you quickly perform quality control (QC) on your BOLD data to screen out "bad" data before preprocessing.
 
-Input the path first, and then click the 'Run' button. Once the process is complete, click 'Show' to view the results. 
+Input the path first, and then click the ``Run`` button. Once the process is complete, click ``Show`` to view the results. 
 
-More QC functions will be online, stay tuned!
+Now, we support head motion estimation, and more QC functions will be online. Stay tuned!
+
+-----------------
+
+#### Motion Estimation: 
+
+1. FSL ``mcflirt`` [1] output: six dimensions
+2. FD (framewise displacement) [2] : one dimension
 
 -----------------
 """
@@ -169,3 +176,17 @@ if st.button(f"Show", disabled=commond_error):
     st.write(fd_df)
 
     st.success("Done!")
+
+
+"""
+-----------------
+#### References:
+
+[1] Jenkinson, M., Bannister, P., Brady, J. M. and Smith, S. M. Improved Optimisation for the Robust and Accurate Linear Registration and Motion Correction of Brain Images. NeuroImage, 17(2), 825-841, 2002.
+
+[2] Power et al., Spurious but systematic correlations in functional
+     connectivity MRI networks arise from subject motion, NeuroImage 59(3),
+     2012. doi:`10.1016/j.neuroimage.2011.10.018
+
+-----------------
+"""

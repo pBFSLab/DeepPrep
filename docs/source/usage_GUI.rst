@@ -56,6 +56,70 @@ We now provide our users with a user-friendly GUI to run:
 
 3. A quick QC report to visualize the results!
 
+
+Quick Start
+===========
+
+Step 1: Set up work directory.
+
+``export DEEPPREP_WORKDIR=<path>``
+
+Step 2: Run the docker command
+
+.. code-block:: none
+
+    #  GPU
+    sudo docker run -it --rm --user $(id -u):$(id -g) --gpus all -v $DEEPPREP_WORKDIR:$DEEPPREP_WORKDIR -p 8501:8501 registry.cn-beijing.aliyuncs.com/pbfslab/deepprep:25.1.0.beta.1
+
+    #  CPU
+    sudo docker run -it --rm --user $(id -u):$(id -g) -v $DEEPPREP_WORKDIR:$DEEPPREP_WORKDIR -p 8501:8501 registry.cn-beijing.aliyuncs.com/pbfslab/deepprep:25.1.0.beta.1
+
+
+Step 3: Start the GUI website
+
+Enter ``http://localhost:8501`` in the browser.
+
+
+Upon launching, you will see the main interface.
+
+.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/25.1.x/gui_page.png
+   :align: center
+
+|
+
+
+Tips
+====
+The red block indicates an input error.
+
+.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/25.1.x/reminder1.png
+   :align: center
+
+|
+
+ Once the input is entered correctly, the red block will disappear.
+
+.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/25.1.x/reminder2.png
+   :align: center
+
+|
+
+The small question mark explains the input requirements.
+
+.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/25.1.x/reminder3.png
+   :align: center
+
+|
+
+The ``Run`` button will become clickable once all inputs are entered correctly.
+
+.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/25.1.x/reminder4.png
+   :align: center
+
+|
+
+
+
 =============================
 Preprocessing of T1w & BOLD
 =============================
@@ -68,6 +132,11 @@ The DeepPrep workflow takes the directory of the dataset to be processed as inpu
 Main Interface Overview
 =======================
 Upon launching, you will see the main interface.
+
+.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/25.1.x/gui_page1.png
+   :align: center
+
+|
 
 Here’s a breakdown of key components:
 
@@ -108,6 +177,11 @@ Main Interface Overview
 =======================
 Upon launching, you will see the main interface.
 
+.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/25.1.x/gui_page2.png
+   :align: center
+
+|
+
 Here’s a breakdown of key components:
 
     + ``Preprocessing Result Path`` - The path to the preprocessed files, which are saved in a standard BIDS format by default.
@@ -135,6 +209,11 @@ More QC functions will be online, stay tuned!
 Main Interface Overview
 =======================
 Upon launching, you will see the main interface.
+
+.. image:: https://download.anning.info/ninganme-public/DeepPrep/docs/source/25.1.x/gui_page3.png
+   :align: center
+
+|
 
 Here’s a breakdown of key components:
 
