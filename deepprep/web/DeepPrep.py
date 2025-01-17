@@ -13,15 +13,19 @@ st.write("# Welcome to DeepPrep! 👋")
 
 st.markdown(
     """
-    DeepPrep: An accelerated, scalable, and robust pipeline for 
+    **DeepPrep:** An accelerated, scalable, and robust pipeline for 
     neuroimaging preprocessing empowered by deep learning.
+    
+DeepPrep is a preprocessing pipeline that can flexibly handle anatomical and functional MRI data end-to-end.
+It accommodates various sizes, from a single participant to **LARGE-scale datasets**, achieving a **10-fold acceleration** compared to the state-of-the-art pipeline.
+    
 """
 )
 
 st.markdown(
     """
     -----------------
-    ### Preprocessing
+    ### DeepPrep GUIs
 """
 )
 
@@ -47,17 +51,18 @@ st.markdown(
     """
     #### Version
 
-    25.1.0 [What’s new](https://deepprep.readthedocs.io/en/latest/changes.html)
+    25.1.0 [What’s new](https://deepprep.readthedocs.io/en/25.1.x/changes.html#what-s-new)
+
 
 """
 )
 
 st.markdown(
     """
-    #### Want to learn more?
+    #### Interested in learning more?
 
     - Check out [DeepPrep document](https://deepprep.readthedocs.io/en/latest/)
-    - Ask a question in our [issues page](https://github.com/pBFSLab/DeepPrep)
+    - Submit your question on our [issue page](https://github.com/pBFSLab/DeepPrep)
 
 """
 )
@@ -65,7 +70,7 @@ st.markdown(
 st.markdown(
     """
     #### Citation  
-    Ren, J.\*, An, N.\*, Lin, C., Zhang, Y., Sun, Z., Zhang, W., Li, S., Guo, N., Cui, W., Hu, Q. and Wang, W., 2024. *DeepPrep: An accelerated, scalable, and robust pipeline for neuroimaging preprocessing empowered by deep learning*. bioRxiv, pp.2024-03.  
+    Ren, J.\*, An, N.\*, Lin, C., Zhang, Y., Sun, Z., Zhang, W., Li, S., Guo, N., Cui, W., Hu, Q. Wang, W., Wu, X., Wang, Y., Jiang, T., Satterthwaite T. D., Wang, D. and Liu, H. 2024. DeepPrep: An accelerated, scalable, and robust pipeline for neuroimaging preprocessing empowered by deep learning. *Nature Methods (accepted)*.
     
 """
 )
