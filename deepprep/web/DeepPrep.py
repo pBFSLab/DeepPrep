@@ -47,7 +47,8 @@ st.markdown(
     """
     #### Version
 
-    25.1.0 [What’s new](https://deepprep.readthedocs.io/en/latest/changes.html)
+    25.1.0 [What’s new](https://deepprep.readthedocs.io/en/25.1.x/changes.html#what-s-new)
+
 
 """
 )
