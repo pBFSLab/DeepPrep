@@ -323,6 +323,7 @@ COPY deepprep/FastSurfer /opt/DeepPrep/deepprep/FastSurfer
 COPY deepprep/SynthMorph /opt/DeepPrep/deepprep/SynthMorph
 COPY deepprep/nextflow /opt/DeepPrep/deepprep/nextflow
 COPY deepprep/web /opt/DeepPrep/deepprep/web
+COPY deepprep/qc /opt/DeepPrep/deepprep/qc
 COPY deepprep/rest/denoise /opt/DeepPrep/deepprep/rest/denoise
 COPY deepprep/deepprep.sh /opt/DeepPrep/deepprep/deepprep.sh
 # release
@@ -330,7 +331,6 @@ ENV DEEPPREP_VERSION="25.1.0"
 
 RUN chmod 755 /opt/DeepPrep/deepprep/deepprep.sh && chmod 755 /opt/DeepPrep/deepprep/nextflow/bin/*.py
 RUN chmod 755 /opt/DeepPrep/deepprep/web/pages/*.sh && chmod 755 /opt/DeepPrep/deepprep/rest/denoise/bin/*.py
-ENV PATH="/opt/DeepPrep/deepprep/nextflow/bin:${PATH}"
 
 RUN find $HOME -type d -exec chmod go=u {} + && \
     find $HOME -type f -exec chmod go=u {} +

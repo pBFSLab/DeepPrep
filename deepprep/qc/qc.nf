@@ -10,6 +10,7 @@ process bold_get_bold_file_in_bids {
     val(bids_dir)
     val(subjects_dir)
     val(output_dir)
+    val(work_dir)
     val(subject_id)
     val(task_id)
     val(bold_only)
@@ -25,7 +26,7 @@ process bold_get_bold_file_in_bids {
     ${task_id ? "--task_id ${task_id}" : ""} \
     ${subject_id ? "--subject_id ${subject_id}" : ""} \
     --output_dir ${output_dir} \
-    --work_dir ${output_dir}/WorkDir
+    --work_dir ${work_dir}
     """
 }
 
@@ -81,7 +82,7 @@ workflow {
     }
     println "INFO: subjects_dir       : ${subjects_dir}"
 
-    subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, subjects_dir, qc_output_dir, subject_id, task_id, bold_only)
+    subject_boldfile_txt = bold_get_bold_file_in_bids(bids_dir, subjects_dir, qc_output_dir, work_dir, subject_id, task_id, bold_only)
     (subject_id, boldfile_id, subject_boldfile_txt) = subject_boldfile_txt.flatten().multiMap { it ->
                                                                                  a: it.name.split('_')[0]
                                                                                  c: it.name

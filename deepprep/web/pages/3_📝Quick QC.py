@@ -24,28 +24,25 @@ More QC functions will be online, stay tuned!
 deepprep_cmd = ''
 commond_error = False
 
-bids_dir = st.text_input("BIDS Path:", help="The directory of the BIDS dataset.")
+bids_dir = st.text_input("BIDS directory:", help="The directory of the BIDS dataset.")
 if not bids_dir:
-    st.error("The BIDS Path must be input!")
+    st.error("The BIDS directory must be input!")
     commond_error = True
 elif not bids_dir.startswith('/'):
     st.error("The path must be an absolute path starts with '/'.")
     commond_error = True
 elif not os.path.exists(bids_dir):
-    st.error("The BIDS Path does not exist!")
+    st.error("The BIDS directory does not exist!")
     commond_error = True
 else:
     deepprep_cmd += f' {bids_dir}'
 
-output_dir = st.text_input("Output Path:", help="The directory to save the QC outputs.")
+output_dir = st.text_input("Output directory:", help="The directory to save the QC outputs.")
 if not output_dir:
-    st.error("The Output Path must be input!")
+    st.error("The output directory must be input!")
     commond_error = True
 elif not output_dir.startswith('/'):
     st.error("The path must be an absolute path starts with '/'.")
-    commond_error = True
-elif not os.path.exists(output_dir):
-    st.error("The Output Path does not exist!")
     commond_error = True
 else:
     deepprep_cmd += f' {output_dir}'
@@ -74,11 +71,11 @@ else:
 # else:
 #     deepprep_cmd += f' --subjects_dir {subjects_dir}'
 
-task_id = st.text_input("BOLD task type (optional):", placeholder="i.e. rest, motor, 'rest motor'", help="The task ID of BOLD data. (i.e. rest, motor, 'rest motor')")
+task_id = st.text_input("Task ID (optional):", help="The task ID of BOLD data. (i.e. rest, motor, 'rest motor')")
 if task_id:
     deepprep_cmd += f' --task_id {task_id}'
 
-subject_id = st.text_input("Subject ID (optional):", placeholder="001 002", help="Identify the subjects you'd like to process by their IDs. (i.e. '001 002')")
+subject_id = st.text_input("Subject ID (optional):", help="Identify the subjects you'd like to process by their IDs. (i.e. '001 002')")
 if subject_id:
     if 'sub-' in subject_id:
         subject_id = subject_id.replace('sub-', '')
@@ -118,6 +115,7 @@ def run_command(cmd):
 st.write(f'-----------  ------------')
 st.write(f'qc {deepprep_cmd}')
 if st.button("Run", disabled=commond_error):
+    os.makedirs(output_dir, exist_ok=True)
     with st.spinner('Waiting for the process to finish, please do not leave this page...'):
         command = [f"/opt/DeepPrep/deepprep/web/pages/quickqc.sh {deepprep_cmd}"]
         with st.expander("------------ running log ------------"):
