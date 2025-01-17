@@ -10,8 +10,8 @@ import os
 st.markdown(f'# 🚀Preprocessing of T1w & BOLD')
 st.markdown(
     """
-
-DeepPrep is a preprocessing pipeline that can flexibly handle anatomical and functional MRI data end-to-end, accommodating various sizes from a single participant to LARGE datasets.
+DeepPrep is a preprocessing pipeline that can flexibly handle anatomical and functional MRI data end-to-end.
+It accommodates various sizes, from a single participant to LARGE-scale datasets, achieving a 10-fold acceleration compared to the state-of-the-art pipeline.
 
 Both the anatomical and functional parts can be run separately. However, preprocessed Recon is a mandatory prerequisite for executing the functional process.
 
@@ -46,9 +46,9 @@ elif not os.path.exists(bids_dir):
 else:
     deepprep_cmd += f' {bids_dir}'
 
-output_dir = st.text_input("output Path:", help="refers to the directory to save the DeepPrep outputs.")
+output_dir = st.text_input("Output Path:", help="refers to the directory to save the DeepPrep outputs.")
 if not output_dir:
-    st.error("The output Path must be input!")
+    st.error("The Output Path must be input!")
     deepprep_cmd += ' {output_dir}'
     commond_error = True
 elif not output_dir.startswith('/'):
@@ -143,7 +143,7 @@ if selected_option != "T1w only":
         if bold_confounds:
             deepprep_cmd += ' --bold_confounds'
 
-participant_label = st.text_input("the subject IDs (optional)",
+participant_label = st.text_input("the subject IDs (optional)", placeholder="001 002",
                                   help="Identify the subjects you'd like to process by their IDs, i.e. 'sub-001 sub-002'.")
 if participant_label:
     participant_label.replace("'", "")
