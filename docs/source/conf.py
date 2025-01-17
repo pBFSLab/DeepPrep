@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'DeepPrep'
-copyright = '2023-2025 pBFS lab, Changping Laboratory All rights reserved.'
+copyright = '2023-2025 pBFS lab, Changping Laboratory All rights reserved'
 author = 'deepprep'
 
 # -- General configuration ---------------------------------------------------
@@ -29,8 +29,13 @@ extensions = [ "sphinx.ext.autodoc",
                 "sphinx.ext.githubpages",
                 "sphinxcontrib.apidoc",
                 "nipype.sphinxext.apidoc",
-                'sphinx.ext.extlinks'
-                ]
+                'sphinx.ext.extlinks',
+                'sphinx_toolbox.sidebar_links',
+                'sphinx_toolbox.github'
+               ]
+
+github_username = 'pBFS'
+github_repository = '<pBFS repository>'
 
 # Mock modules in autodoc:
 autodoc_mock_imports = [

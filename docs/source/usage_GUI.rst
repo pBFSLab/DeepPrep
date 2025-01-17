@@ -86,7 +86,9 @@ Here’s a breakdown of key components:
 
 After you having filling up this page, a docker command will automatically generated at the end of this page. Click ``Run`` to execute this command.
 
-**DO NOT LEAVE THIS PAGE UNTIL THE PROCESS IS FINISHED!**
+.. warning::
+
+    **DO NOT LEAVE THIS PAGE UNTIL THE PROCESS IS FINISHED!**
 
 ======================
 Postprocessing of BOLD
@@ -119,7 +121,9 @@ Here’s a breakdown of key components:
 
 After you having filling up this page, a docker command will automatically generated at the end of this page. Click ``Run`` to execute this command.
 
-**DO NOT LEAVE THIS PAGE UNTIL THE PROCESS IS FINISHED!**
+.. warning::
+
+    **DO NOT LEAVE THIS PAGE UNTIL THE PROCESS IS FINISHED!**
 
 ========
 Quick QC
@@ -140,7 +144,9 @@ Here’s a breakdown of key components:
 
 After you having filling up this page, a docker command will automatically generated at the end of this page. Click ``Run`` to execute this command. Once the process is finished, users can click the ``Show`` button to view the results.
 
-**DO NOT LEAVE THIS PAGE UNTIL THE PROCESS IS FINISHED!**
+.. warning::
+
+    **DO NOT LEAVE THIS PAGE UNTIL THE PROCESS IS FINISHED!**
 
 .. container:: congratulation
 
