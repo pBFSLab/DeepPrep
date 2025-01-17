@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'DeepPrep'
-copyright = '2023-2025 pBFS lab, Changping Laboratory All rights reserved.'
+copyright = '2023-2025 pBFS lab, Changping Laboratory All rights reserved'
 author = 'deepprep'
 
 # -- General configuration ---------------------------------------------------
