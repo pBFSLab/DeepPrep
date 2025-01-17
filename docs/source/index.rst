@@ -11,12 +11,42 @@ Contents
 
 .. toctree::
    :maxdepth: 3
+   :caption: Installation
 
    installation
+
+
+.. toctree::
+   :maxdepth: 3
+   :caption: User Guide
+
    usage_local
    usage_cluster
    usage_GUI
+
+
+.. toctree::
+   :maxdepth: 3
+   :caption: Process and Outputs
+
    processing
    outputs
-   faq
+
+
+.. toctree::
+   :maxdepth: 3
+   :caption: Other Info
+
    changes
+
+.. toctree::
+   :maxdepth: 3
+   :caption: About us
+
+   faq
+
+
+.. sidebar-links::
+   :caption: Links
+
+   pBFS Lab <https://www.pbfslab.com>

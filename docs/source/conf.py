@@ -29,8 +29,13 @@ extensions = [ "sphinx.ext.autodoc",
                 "sphinx.ext.githubpages",
                 "sphinxcontrib.apidoc",
                 "nipype.sphinxext.apidoc",
-                'sphinx.ext.extlinks'
-                ]
+                'sphinx.ext.extlinks',
+                'sphinx_toolbox.sidebar_links',
+                'sphinx_toolbox.github'
+               ]
+
+github_username = 'pBFS'
+github_repository = '<pBFS repository>'
 
 # Mock modules in autodoc:
 autodoc_mock_imports = [
