@@ -38,15 +38,7 @@ Contents
    :caption: Other Info
 
    changes
-
-.. toctree::
-   :maxdepth: 3
-   :caption: About us
-
    faq
+   about_us
 
 
-.. sidebar-links::
-   :caption: Links
-
-   pBFS Lab <https://www.pbfslab.com>
