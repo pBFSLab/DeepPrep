@@ -45,7 +45,7 @@ Docker User Guide
 Command-Line Arguments
 ======================
 
-DeepPrep: Deep learning empowered preprocessing workflow 24.1.2:
+DeepPrep: Deep learning empowered preprocessing workflow 25.1.0:
 
 .. code-block:: none
 
@@ -70,7 +70,7 @@ Sample Docker Command
                  -v <bids_dir>:/input \
                  -v <output_dir>:/output \
                  -v <fs_license_file>:/fs_license.txt \
-                 pbfslab/deepprep:24.1.2 \
+                 pbfslab/deepprep:25.1.0 \
                  /input \
                  /output \
                  participant \
@@ -81,7 +81,7 @@ Sample Docker Command
     + ``<bids_dir>`` - refers to the directory of the input dataset, which should be in `BIDS format`_.
     + ``<output_dir>`` - refers to the directory for the outputs of DeepPrep.
     + ``<fs_license_file>`` - the directory of a valid FreeSurfer License.
-    + ``deepprep:24.1.2`` - the latest version of the Docker image. You can specify the version by ``deepprep:<version>``.
+    + ``deepprep:25.1.0`` - the latest version of the Docker image. You can specify the version by ``deepprep:<version>``.
     + ``participant`` - refers to the analysis level.
     + ``--bold_task_type`` - the task label of BOLD images (i.e. ``rest``, ``motor``).
 
@@ -125,7 +125,7 @@ The BIDS formatted sample contains one subject with one anatomical image and two
                  -v <test_sample_path>:/input \
                  -v <output_dir>:/output \
                  -v <fs_license_file>:/fs_license.txt \
-                 pbfslab/deepprep:24.1.2 \
+                 pbfslab/deepprep:25.1.0 \
                  /input \
                  /output \
                  participant \
@@ -148,7 +148,7 @@ The BIDS formatted sample contains one subject with one anatomical image and two
                  -v <test_sample_path>:/input \
                  -v <output_dir>:/output \
                  -v <fs_license_file>:/fs_license.txt \
-                 pbfslab/deepprep:24.1.2 \
+                 pbfslab/deepprep:25.1.0 \
                  /input \
                  /output \
                  participant \
@@ -173,9 +173,9 @@ Before You Start
 
 .. code-block:: none
 
-    $ sudo singularity build <saved_path>/deepprep_24.1.2.sif docker://pbfslab/deepprep:24.1.2
+    $ sudo singularity build <saved_path>/deepprep_25.1.0.sif docker://pbfslab/deepprep:25.1.0
 
-Then you will get: ``<saved_path>/deepprep_24.1.2.sif``
+Then you will get: ``<saved_path>/deepprep_25.1.0.sif``
 
 The Singularity can be executed in a manner similar to the Docker command.
 
@@ -195,7 +195,7 @@ Sample Singularity Command
     :linenos:
 
     $ singularity exec --cleanenv \
-                 <saved_path>/deepprep_24.1.2.sif \
+                 <saved_path>/deepprep_25.1.0.sif \
                  rsync -arv /home/deepprep/.nextflow/ $HOME/.nextflow/
 
 1. Here's a sample command only relies on CPU.
@@ -207,7 +207,7 @@ Sample Singularity Command
                  -B <bids_dir>:/input \
                  -B <output_dir>:/output \
                  -B <fs_license_file>:/fs_license.txt \
-                 <saved_path>/deepprep_24.1.2.sif \
+                 <saved_path>/deepprep_25.1.0.sif \
                  /input \
                  /output \
                  participant \
@@ -224,7 +224,7 @@ Sample Singularity Command
                  -B <bids_dir>:/input \
                  -B <output_dir>:/output \
                  -B <fs_license_file>:/fs_license.txt \
-                 <saved_path>/deepprep_24.1.2.sif \
+                 <saved_path>/deepprep_25.1.0.sif \
                  /input \
                  /output \
                  participant \

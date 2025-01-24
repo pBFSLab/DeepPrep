@@ -1,5 +1,5 @@
 Bootstrap: docker-daemon
-From: pbfslab/deepprep:24.1.2
+From: pbfslab/deepprep:25.1.0
 Stage: build
 
 %files
@@ -13,7 +13,7 @@ Stage: build
     echo "export NOW=\"${NOW}\"" >> $SINGULARITY_ENVIRONMENT
 
 %runscript
-    echo "Container was created $NOW. Version: 24.1.2"
+    echo "Container was created $NOW. Version: 25.1.0"
     echo "Arguments received: $*"
     exec /opt/DeepPrep/deepprep/deepprep.sh "$@"
 
@@ -28,7 +28,7 @@ Stage: build
 
 %labels
     Author anning@cpl.ac.cn
-    Version 24.1.2
+    Version 25.1.0
 
 %help
     This is a DeepPrep container used to preprocess sMRI and fMRI
