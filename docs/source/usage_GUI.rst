@@ -140,20 +140,20 @@ Upon launching, you will see the main interface.
 
 Here’s a breakdown of key components:
 
-    + ``select a process`` - This section allows users to decide which process to execute, either anatomical preprocessing pipeline, or functional preprocessing pipeline, or both. Selecting ``All`` to run the entire DeepPrep pipeline (both anatomical and functional). Selecting ``T1w only`` to run the anatomical part. To run functional part only by selecting ``BOLD only``, but make sure you have the preprocessed recon data ready, and input the path in the ``Recon Result Path`` section.
-    + ``select a device`` - Indicating the device you would like to use by selecting ``GPU`` or ``CPU``. The default is ``auto``, which will automatically selects a device to execute.
+    + ``select a process`` - This section allows users to choose which process to execute. Selecting ``All`` to run the entire DeepPrep pipeline (both anatomical and functional). Selecting ``T1w only`` to run the anatomical part. To run functional part only by selecting ``BOLD only``, make sure you have the preprocessed recon data ready and input the path in the ``Recon Result Path`` section.
+    + ``select a device`` - Indicating the device you would like to use by selecting ``GPU`` or ``CPU``. The default is ``auto``, which will automatically selects a device for execution.
     + ``BIDS Path`` - The path to the input dataset, which is required to be in a standard BIDS format.
     + ``output Path`` - The path to save the preprocessed results, which will be saved in a standard BIDS format.
-    + ``Recon Result Path (optional)`` - This section is only mandatory if user selects ``BOLD only`` in the ``select a process`` section. Otherwise, it is okay to leave this space blank, and the default path to store the results of anatomical data is ``<output_dir>/Recon``.
-    + ``FreeSurfer license file path`` - We highly recommend users to replace the default FreeSurfer license file with yours, which can be downloaded for free from https://surfer.nmr.mgh.harvard.edu/registration.html
+    + ``Recon Result Path (optional)`` - This section is mandatory only if the user selects ``BOLD only`` in the ``select a process`` section. Otherwise, it can be left blank. The default path for storing the results of anatomical data is ``<output_dir>/Recon``.
+    + ``FreeSurfer license file path`` - We highly recommend that users replace the default FreeSurfer license file with their own. You can download it for free from https://surfer.nmr.mgh.harvard.edu/registration.html
     + ``BOLD task type`` - The task type of the BOLD data. If there are multiple types (i.e. rest and motor), quote all the types and separate them with spaces like ``'rest motor'``.
     + ``CIFTI format`` - Selecting this section to have outputs in cifti format.
     + ``select the surface spaces: (optional)`` - Selecting all the surface spaces you would like to have, the default is ``fsaverage6``, other available options are ``fsnative``, ``fsaverage3`` to ``fsaverage5``.
     + ``select a normalized volume space: (optional)`` - Selecting a standard volume space, the default is ``MNI152NLin6Asym``.
-    + ``skip n frames of BOLD data`` - The number of frames you would like to skip in BOLD data, the default is ``2``.
+    + ``skip n frames of BOLD data`` - The number of frames you would like to skip in the BOLD data; the default is ``2``.
 
 
-After you having filling up this page, a docker command will automatically generated at the end of this page. Click ``Run`` to execute this command.
+After you fill out this page, a docker command will be automatically generated at the end of this page. Click ``Run`` to execute this command.
 
 .. warning::
 
@@ -168,9 +168,9 @@ For task-based functional magnetic resonance imaging (task-fMRI) data, it is rec
 
 **processing steps:**
 
-Surface space: bandpass -> regression -> smooth (optional)
+Surface space: bandpass filter -> regression -> smooth (optional)
 
-Volume space:  bandpass -> regression -> smooth (optional)
+Volume space:  bandpass filter -> regression -> smooth (optional)
 
 
 Main Interface Overview
@@ -186,14 +186,14 @@ Here’s a breakdown of key components:
 
     + ``Preprocessing Result Path`` - The path to the preprocessed files, which are saved in a standard BIDS format by default.
     + ``Output Path`` - The path to save the postprocessed results, which will be saved in a standard BIDS format.
-    + ``FreeSurfer license file path`` - We highly recommend users to replace the default FreeSurfer license file with yours, which can be downloaded for free from https://surfer.nmr.mgh.harvard.edu/registration.html
-    + ``Confounds File Path`` - A text file that lists all the confounds names, which will be used in regression. Feel free to replace this with your own confounds lists.
-    + ``BOLD task type`` - The task type of the BOLD data. If there are multiple types (i.e. rest and motor), quote all the types and separate them with spaces like ``'rest motor'``.
-    + ``skip n frames of BOLD data`` - The number of frames you would like to skip in BOLD data, the default is ``2``.
+    + ``FreeSurfer license file path`` - We highly recommend that users replace the default FreeSurfer license file with their own. You can download it for free from https://surfer.nmr.mgh.harvard.edu/registration.html
+    + ``Confounds File Path`` - A text file listing all the confounds names to be used in regression. Feel free to replace this with your own list of confounds.
+    + ``BOLD task type`` - The task type of the BOLD data. If there are multiple types (i.e. rest and motor), quote all types and separate them with spaces, like ``'rest motor'``.
+    + ``skip n frames of BOLD data`` - The number of frames you would like to skip in the BOLD data; the default is ``2``.
     + ``fwhm`` - The smooth kernel in mm.
     + ``bandpass filter`` - The default range is ``0.01-0.08``.
 
-After you having filling up this page, a docker command will automatically generated at the end of this page. Click ``Run`` to execute this command.
+After you fill out this page, a docker command will be automatically generated at the end of this page. Click ``Run`` to execute this command.
 
 .. warning::
 
@@ -219,9 +219,9 @@ Here’s a breakdown of key components:
 
     + ``BIDS Path`` - The path to the input dataset, which is required to be in a standard BIDS format.
     + ``Output Path`` - The path to save the quick QC results.
-    + ``FreeSurfer license file path`` - We highly recommend users to replace the default FreeSurfer license file with yours, which can be downloaded for free from https://surfer.nmr.mgh.harvard.edu/registration.html
+    + ``FreeSurfer license file path`` - We highly recommend that users replace the default FreeSurfer license file with their own. You can download it for free from https://surfer.nmr.mgh.harvard.edu/registration.html
 
-After you having filling up this page, a docker command will automatically generated at the end of this page. Click ``Run`` to execute this command. Once the process is finished, users can click the ``Show`` button to view the results.
+After you fill out this page, a docker command will be automatically generated at the end of this page. Click ``Run`` to execute this command.
 
 .. warning::
 
