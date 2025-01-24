@@ -12,9 +12,9 @@
 .. _download here: https://drive.google.com/drive/folders/13txuhCNW_nHG4NX3cl7HehlBJ1ZVB5CV
 .. _pBFS Lab: https://www.pbfslab.com
 .. _Prof. Hesheng Liu: https://www.pbfslab.com/#/team/heshengliu
-.. _Jianxun Ren: https://www.pbfslab.com/#/team/jianxunren
+.. _Dr. Jianxun Ren: https://www.pbfslab.com/#/team/jianxunren
 .. _Ning An: https://www.pbfslab.com/#/team/ningan
-.. _Cong Lin: https://www.pbfslab.com/#/team/conglin
+.. _Cong Lin: https://www.pbfslab.com/#/team/conglinlynn
 .. _Youjia Zhang: https://www.pbfslab.com/#/team/youjiazhang
 .. _Zhenyu Sun: https://www.pbfslab.com/#/team/zhenyusun
 .. _DeepPrep: https://github.com/pBFSLab/DeepPrep
