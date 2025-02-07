@@ -60,9 +60,7 @@ We now provide our users with a user-friendly GUI to run:
 Quick Start
 ===========
 
-Step 1: Set up work directory.
-
-``export DEEPPREP_WORKDIR=<path>``
+Step 1: Set up work directory: ``export DEEPPREP_WORKDIR=<path>``
 
 Step 2: Run the docker command
 
@@ -75,7 +73,7 @@ Step 2: Run the docker command
     sudo docker run -it --rm --user $(id -u):$(id -g) -v $DEEPPREP_WORKDIR:$DEEPPREP_WORKDIR -p 8501:8501 registry.cn-beijing.aliyuncs.com/pbfslab/deepprep:25.1.0.beta.1
 
 
-Step 3: Start the GUI website
+Step 3: Start the GUI website:
 
 Enter ``http://localhost:8501`` in the browser.
 
@@ -120,9 +118,9 @@ The ``Run`` button will become clickable once all inputs are entered correctly.
 
 
 
-=============================
-Preprocessing of T1w & BOLD
-=============================
+===============================
+1. Preprocessing of T1w & BOLD
+===============================
 
 DeepPrep is a preprocessing pipeline that can flexibly handle anatomical and functional MRI data end-to-end, accommodating various sizes from a single participant to LARGE datasets.
 Both the anatomical and functional parts can be run separately. However, preprocessed Recon is a mandatory prerequisite for executing the functional process.
@@ -159,14 +157,14 @@ After you fill out this page, a docker command will be automatically generated a
 
     **DO NOT LEAVE THIS PAGE UNTIL THE PROCESS IS FINISHED!**
 
-======================
-Postprocessing of BOLD
-======================
+=========================
+2. Postprocessing of BOLD
+=========================
 At present, this program is designed to process resting-state functional magnetic resonance imaging (rs-fMRI) data. The processed data can be utilized for calculating functional connectivity (FC) maps, individualized brain functional parcellation, or other relevant analyses.
 
 For task-based functional magnetic resonance imaging (task-fMRI) data, it is recommended to employ alternative tools for subsequent analysis, such as Statistical Parametric Mapping (SPM).
 
-**processing steps:**
+**Processing Steps:**
 
 Surface space: bandpass filter -> regression -> smooth (optional)
 
@@ -199,9 +197,9 @@ After you fill out this page, a docker command will be automatically generated a
 
     **DO NOT LEAVE THIS PAGE UNTIL THE PROCESS IS FINISHED!**
 
-========
-Quick QC
-========
+===========
+3. Quick QC
+===========
 This page allows you to quickly perform quality control (QC) on your BOLD data.
 Input the path first, and then click the ``Run`` button. Once the process is complete, click ``Show`` to view the results.
 More QC functions will be online, stay tuned!
