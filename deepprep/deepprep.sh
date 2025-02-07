@@ -181,9 +181,9 @@ cat "${common_config}" > "${run_config}"
 cat "${config_file}" >> "${run_config}"
 
 if [ -z "${fs_license_file}" ]; then
-  echo "WARNNING: You should replace license.txt path with your own FreeSurfer license! You can get your license file for free from https://surfer.nmr.mgh.harvard.edu/registration.html"
+  echo "WARNNING: It is highly recommended to replace the license.txt path with your own FreeSurfer license! You can get it for free from https://surfer.nmr.mgh.harvard.edu/registration.html"
   echo "WARNNING: Then add  --fs_license_file <your license file path> ."
-  fs_license_file="${deepprep_home}/deepprep/FreeSurfer/license.txt"
+  fs_license_file="${freesurfer_home}/license.txt"
 fi
 if [ ! -f "${fs_license_file}" ]; then
   echo "ERROR: fs_license_file is not exists : ${fs_license_file}"
