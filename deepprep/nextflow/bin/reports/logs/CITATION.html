@@ -1,119 +1,12 @@
-#! /usr/bin/env python3
-# -*- coding: utf-8 -*-
-# -------------------------------
-# @Author : Ning An        @Email : Ning An <ninganme0317@gmail.com>
-
-"""
-docker run -it --rm --user $(id -u):$(id -g) --gpus all -p 8501:8501 -v /mnt:/mnt pbfslab/deepprep:24.1.x
-"""
-
-import streamlit as st
-import streamlit.components.v1 as components
-
-st.write("# Welcome to DeepPrep! 👋")
-
-st.markdown(
-    """
-    **DeepPrep:** An accelerated, scalable, and robust pipeline for 
-    neuroimaging preprocessing empowered by deep learning.
-    
-DeepPrep is a preprocessing pipeline that can flexibly handle anatomical and functional MRI data end-to-end.
-It accommodates various sizes, from a single participant to **LARGE-scale datasets**, achieving a **10-fold acceleration** compared to the state-of-the-art pipeline.
-    
-"""
-)
-
-st.markdown(
-    """
-    -----------------
-    ### DeepPrep GUIs
-"""
-)
-
-st.page_link("pages/1_🚀Preprocessing of T1w & BOLD.py",
-    label="👉Preprocessing of T1w & BOLD🔗"
-)
-
-st.page_link("pages/2_⚙️Postprocessing of BOLD.py",
-    label="👉Postprocessing of BOLD🔗"
-)
-
-st.page_link("pages/3_📝Quick QC.py",
-    label="👉Quick QC of T1w & BOLD🔗"
-)
-
-st.markdown(
-    """
-    -----------------
-"""
-)
-
-st.markdown(
-    """
-    #### Version
-
-    25.1.0 [What’s new](https://deepprep.readthedocs.io/en/25.1.0/changes.html#what-s-new)
-
-
-"""
-)
-
-st.markdown(
-    """
-    #### Interested in learning more?
-
-    - Check out [DeepPrep document](https://deepprep.readthedocs.io/en/latest/)
-    - Submit your question on our [issue page](https://github.com/pBFSLab/DeepPrep)
-
-"""
-)
-
-st.markdown(
-    """
-    #### Citation  
-    Ren, J.\*, An, N.\*, Lin, C., Zhang, Y., Sun, Z., Zhang, W., Li, S., Guo, N., Cui, W., Hu, Q. Wang, W., Wu, X., Wang, Y., Jiang, T., Satterthwaite T. D., Wang, D. and Liu, H. (2025). DeepPrep: an accelerated, scalable and robust pipeline for neuroimaging preprocessing empowered by deep learning. Nature Methods. https://doi.org/10.1038/s41592-025-02599-1
-    
-"""
-)
-
-st.markdown(
-    """
-    #### License  
-    Copyright (c) 2023-2025 pBFS lab, Changping Laboratory All rights reserved.
-
-    Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at  
-
-       [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0)  
-
-    Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License. 
-    
-"""
-)
-
-st.markdown(
-    """
-    #### Methods  
-We kindly ask to report results preprocessed with this tool using the following boilerplate.
-
-"""
-)
-
-components.html(
-"""<head>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>"DeepPrep citation boilerplate"</title>
   <!--[if lt IE 9]>
     <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
   <![endif]-->
-      <style>
-        body {
-            background-color: #f0f0f0;
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            padding: 8px;
-        }
-    </style>
 </head>
 <body>
 <p style="margin-top:0pt; margin-bottom:14pt; text-align:justify; font-size:13pt;"><a name="OLE_LINK55"></a><a name="OLE_LINK56"><span style="font-family:'Times New Roman';">Anatomical and functional imaging data were preprocessed using DeepPrep 25.1.0 (Ren et al., 2025).</span></a></p>
@@ -145,5 +38,5 @@ components.html(
 <p style="margin-top:0pt; margin-bottom:0pt; font-size:13pt;"><span style="font-family:'Times New Roman';">Ren, J., An, N., Lin, C., Zhang, Y., Sun, Z., Zhang, W., Li, S., Guo, N., Cui, W., Hu, Q. Wang, W., Wu, X., Wang, Y., Jiang, T., Satterthwaite T. D., Wang, D. and Liu, H. 2025. &ldquo;DeepPrep: an accelerated, scalable and robust pipeline for neuroimaging preprocessing empowered by deep learning.&rdquo;&nbsp;</span><em><span style="font-family:'Times New Roman';">Nature Methods. </span></em><a href="https://doi.org/10.1038/s41592-025-02599-1" style="text-decoration:none;"><u><span style="font-family:'Times New Roman'; color:#800080;">https://doi.org/10.1038/s41592-025-02599-1</span></u></a><span style="font-family:'Times New Roman';">.</span></p>
 <p style="margin-top:0pt; margin-bottom:0pt;"><span style="font-family:'Times New Roman'; font-size:13pt;">Satterthwaite, Theodore D., Mark A. Elliott, Raphael T. Gerraty, Kosha Ruparel, James Loughead, Monica E. Calkins, Simon B. Eickhoff, et al. 2013.</span><span style="font-family:'Times New Roman'; font-size:13pt;">&nbsp;</span><span style="font-family:'Times New Roman'; font-size:13pt;">&ldquo;An improved framework for confound regression and filtering for control of motion artifact in the preprocessing of resting-state functional connectivity data.&rdquo;</span><span style="font-family:'Times New Roman'; font-size:13pt;">&nbsp;</span><em><span style="font-family:'Times New Roman'; font-size:13pt;">NeuroImage</span></em><span style="font-family:'Times New Roman'; font-size:13pt;">&nbsp;</span><span style="font-family:'Times New Roman'; font-size:13pt;">64 (1): 240&ndash;56.</span><span style="font-family:'Times New Roman'; font-size:13pt;">&nbsp;</span><a href="https://doi.org/10.1016/j.neuroimage.2012.08.052" style="text-decoration:none;"><u><span style="font-family:'Times New Roman'; font-size:13pt; color:#0000ff;">https://doi.org/10.1016/j.neuroimage.2012.08.052</span></u></a><span style="font-family:'Times New Roman'; font-size:13pt;">.</span></p>
 <p style="margin-top:0pt; margin-bottom:0pt; font-size:13pt;"><span style="font-family:'Times New Roman';">Woolrich, M. W., Ripley, B. D., Brady, M. and Smith, S. M. 2001. Temporal autocorrelation in univariate linear modeling of FMRI data.&nbsp;</span><em><span style="font-family:'Times New Roman';">Neuroimage </span></em><span style="font-family:'Times New Roman';">14, 1370-1386.&nbsp;</span><a href="https://doi.org:10.1006/nimg.2001.0931" style="text-decoration:none;"><u><span style="font-family:'Times New Roman'; color:#800080;">https://doi.org:10.1006/nimg.2001.0931</span></u></a><span style="font-family:'Times New Roman';">.</span></p>
-</body>""", height=3300
-)
+</body>
+</html>
