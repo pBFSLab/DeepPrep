@@ -45,7 +45,7 @@ Docker User Guide
 Command-Line Arguments
 ======================
 
-DeepPrep: Deep learning empowered preprocessing workflow 25.1.0:
+**DeepPrep:** Deep learning empowered preprocessing workflow 25.1.0:
 
 .. code-block:: none
 
@@ -77,7 +77,7 @@ Sample Docker Command
                  --bold_task_type rest \
                  --fs_license_file /fs_license.txt
 
-**Let's dig into the mandatory commands**
+**Let's dig into the mandatory commands:**
     + ``<bids_dir>`` - refers to the directory of the input dataset, which should be in `BIDS format`_.
     + ``<output_dir>`` - refers to the directory for the outputs of DeepPrep.
     + ``<fs_license_file>`` - the directory of a valid FreeSurfer License.
@@ -85,7 +85,7 @@ Sample Docker Command
     + ``participant`` - refers to the analysis level.
     + ``--bold_task_type`` - the task label of BOLD images (i.e. ``rest``, ``motor``).
 
-**Dig further (optional commands)**
+**Dig further (optional commands):**
     + ``--participant_label`` - the subject ID you want to process, i.e. ``'sub-001 sub-002'``. Otherwise, all the subjects in the ``<bids_dir>`` will be processed by default.
     + ``--subjects_dir`` - the output directory of *Recon* files, default is ``<output_dir>/Recon``.
     + ``--skip_bids_validation`` - with this flag, the BIDS format validation of the input dataset will be skipped.
@@ -189,7 +189,7 @@ The Singularity can be executed in a manner similar to the Docker command.
 Sample Singularity Command
 ==========================
 
-0. Firstly get deps of nextflow. This command will sync deps of nextflow into the $HOME/.nextflow dir.
+1. First, install the dependencies for Nextflow. This command will synchronize the dependencies of Nextflow into the ``$HOME/.nextflow dir``.
 
 .. code-block:: none
     :linenos:
@@ -198,7 +198,7 @@ Sample Singularity Command
                  <saved_path>/deepprep_25.1.0.sif \
                  rsync -arv /home/deepprep/.nextflow/ $HOME/.nextflow/
 
-1. Here's a sample command only relies on CPU.
+2. Here's a sample command only relies on CPU.
 
 .. code-block:: none
     :linenos:
@@ -215,7 +215,7 @@ Sample Singularity Command
                  --fs_license_file /fs_license.txt \
                  --device cpu
 
-2. If you wish to use GPU as well, add the ``--nv`` and ``--device gpu`` like:
+3. If you wish to use GPU as well, add the ``--nv`` and ``--device gpu`` like:
 
 .. code-block:: none
     :linenos:
