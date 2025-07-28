@@ -14,7 +14,7 @@ export DEEPPREP_HOME=${HOME}/DeepPrep
 mkdir -p ${DEEPPREP_HOME}/deepprep/model
 wget --content-disposition -P ${DEEPPREP_HOME}/deepprep/ https://download.anning.info/ninganme-public/DeepPrep/deps/model.zip && unzip ${DEEPPREP_HOME}/deepprep/model.zip -d ${DEEPPREP_HOME}/deepprep/model
 cd ${DEEPPREP_HOME}
-export DEEPPREP_VERSION='25.1.0'
+export DEEPPREP_VERSION='25.1.1'
 docker buildx build --progress=plain -t pbfslab/deepprep:${DEEPPREP_VERSION} -f Docker/ubuntu22.04.Dockerfile .
 
 docker save pbfslab/deepprep:${DEEPPREP_VERSION} -o ${DEEPPREP_IMAGE_OUTPUT_PATH}/deepprep_${DEEPPREP_VERSION}.tar.gz

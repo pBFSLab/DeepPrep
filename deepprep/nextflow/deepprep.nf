@@ -2704,6 +2704,50 @@ process anat_segstats {
 
 }
 
+process anat_get_mp2rage_file_in_bids {
+    input:  // https://www.nextflow.io/docs/latest/process.html#inputs
+    val(bids_dir)
+    val(participant_label)
+
+    output:
+    path "sub-*-mp2rage"
+
+    script:
+    script_py = "anat_get_mp2rage_file_in_bids.py"
+    if (participant_label.toString() == '') {
+        """
+        ${script_py} --bids-dir ${bids_dir}
+        """
+    }
+    else {
+        """
+        ${script_py} --bids-dir ${bids_dir} --subject-ids ${participant_label}
+        """
+    }
+
+}
+
+process anat_mp2rage_denoise {
+
+    label "maxForks_10"
+    cpus 1
+    memory '100 MB'
+
+    input:  // https://www.nextflow.io/docs/latest/process.html#inputs
+    val(subjects_dir)
+    each path(subject_mp2ragefile_txt)
+    val(mp2rage_config)
+
+    output:
+    // val("${subjects_dir}/*/mri/denoise/*_dec-mp2rage_T1w.nii.gz")
+    path "sub-*"
+
+    script:
+    """
+    anat_mp2rage_denoise.py --subjects-dir ${subjects_dir} --mp2ragefile-path ${subject_mp2ragefile_txt} --mp2rage-config ${mp2rage_config}
+    """
+}
+
 workflow anat_wf {
 
     take:
@@ -2737,7 +2781,13 @@ workflow anat_wf {
 
     device = params.device
 
-    subject_t1wfile_txt = anat_get_t1w_file_in_bids(bids_dir, participant_label, gpu_lock)
+    if (params.mp2rage.toString().toUpperCase() != 'TRUE'){
+        subject_t1wfile_txt = anat_get_t1w_file_in_bids(bids_dir, participant_label, gpu_lock)
+    }
+    else{
+        subject_mp2ragefile_txt = anat_get_mp2rage_file_in_bids(bids_dir, participant_label)
+        subject_t1wfile_txt = anat_mp2rage_denoise(subjects_dir, subject_mp2ragefile_txt, params.mp2rage_config)
+    }
     subject_id = anat_create_subject_orig_dir(subjects_dir, subject_t1wfile_txt, deepprep_version)
 
     anat_summary = anat_create_summary(bids_dir, subjects_dir, subject_id, qc_result_path, work_dir, deepprep_version)

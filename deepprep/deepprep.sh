@@ -20,6 +20,7 @@ deepprep-docker [bids_dir] [output_dir] [{participant}] [--bold_task_type '[task
                 [--fs_license_file PATH] [--participant_label '[sub-001 sub-002 sub-003 ...]']
                 [--subjects_dir PATH] [--skip_bids_validation]
                 [--anat_only] [--bold_only] [--bold_sdc] [--bold_confounds] [--bold_skip_frame 0]
+                [--mp2rage False] [--mp2rage_config 5]
                 [--bold_cifti] [--bold_surface_spaces '[None fsnative fsaverage fsaverage6 ...]']
                 [--bold_volume_space {None MNI152NLin6Asym MNI152NLin2009cAsym}] [--bold_volume_res {02 03...}]
                 [--device { {auto 0 1 2...} cpu}]

@@ -104,6 +104,7 @@ if __name__ == '__main__':
     bold_preproc_file = bold_preproc_json.get('bold_file', None)
     bids_database_path = bold_preproc_json.get('bids_database_path', None)
     space = bold_preproc_json.get('space', None)
+    subject_id = bold_preproc_json.get('subject_id', None)
     assert os.path.isfile(bold_preproc_file)
 
     layout_pre = BIDSLayout(args.bold_preprocess_dir, validate=False)
@@ -173,7 +174,11 @@ if __name__ == '__main__':
 
         fwhm = int(args.surface_fwhm)
         if fwhm > 0:
-            fsaverageN_smN(regression_file, smooth_file, hemi, space, fwhm)
+            if space == 'fsnative':
+                os.environ['SUBJECTS_DIR'] = args.subjects_dir
+                fsaverageN_smN(regression_file, smooth_file, hemi, subject_id, fwhm)
+            else:
+                fsaverageN_smN(regression_file, smooth_file, hemi, space, fwhm)
             assert os.path.exists(smooth_file)
             print(f'>>> {smooth_file}')
             with open(smooth_json_file, 'w') as f:

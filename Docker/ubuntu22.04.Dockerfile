@@ -326,11 +326,10 @@ COPY deepprep/SynthMorph /opt/DeepPrep/deepprep/SynthMorph
 COPY deepprep/nextflow /opt/DeepPrep/deepprep/nextflow
 COPY deepprep/web /opt/DeepPrep/deepprep/web
 COPY deepprep/qc /opt/DeepPrep/deepprep/qc
-COPY deepprep/rest/denoise /opt/DeepPrep/deepprep/rest/denoise
-COPY deepprep/TargetAutoPlaning /opt/DeepPrep/deepprep/TargetAutoPlaning
+COPY deepprep/rest /opt/DeepPrep/deepprep/rest
 COPY deepprep/deepprep.sh /opt/DeepPrep/deepprep/deepprep.sh
 # release
-ENV DEEPPREP_VERSION="25.1.0"
+ENV DEEPPREP_VERSION="25.1.1"
 
 RUN chmod 755 /opt/DeepPrep/deepprep/deepprep.sh && chmod 755 /opt/DeepPrep/deepprep/nextflow/bin/*.py
 RUN chmod 755 /opt/DeepPrep/deepprep/web/pages/*.sh && chmod 755 /opt/DeepPrep/deepprep/rest/denoise/bin/*.py
