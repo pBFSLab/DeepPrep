@@ -129,6 +129,18 @@ def apply_fieldmap2std(in_coeffs, target_ref_file, fmap_ref_file, transforms):
     return fmap_img
 
 
+def parse_string_to_dict(input_template):
+    result_dict = {'template': input_template.split(':', 1)[0] if ':' in input_template else input_template}
+
+    if ':' in input_template:
+        for pair in input_template.split(':', 1)[1].split(':'):
+            if '-' in pair:
+                key, value = pair.split('-', 1)
+                result_dict[key] = value
+
+    return result_dict
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="DeepPrep: Bold apply transform chain "
@@ -160,9 +172,6 @@ if __name__ == '__main__':
     parser.add_argument("--moving", required=False, default=None)
     args = parser.parse_args()
 
-    # load required files
-    fixed_file = tflow.get(args.template_space, desc=None, resolution=args.template_resolution, suffix='T1w', extension='nii.gz')
-    nonlinear_file = args.nonlinear_file
 
     # load the original BOLD
     with open(args.subject_boldfile_txt_bold, 'r') as f:
@@ -185,8 +194,21 @@ if __name__ == '__main__':
 
     transform_save_path = Path(args.work_dir) / 'bold_synthmorph_transform_chain' / args.bold_id
     transform_save_path.mkdir(exist_ok=True, parents=True)
-    output_path = Path(coreg_xfm.parent) / f'{args.bold_id}_space-{args.template_space}_res-{args.template_resolution}_desc-preproc_bold.nii.gz'
-    boldref_path = Path(coreg_xfm.parent) / f'{args.bold_id}_space-{args.template_space}_res-{args.template_resolution}_boldref.nii.gz'
+
+    # load required files and define output
+    template_dict = parse_string_to_dict(args.template_space)
+    template_space = template_dict['template']
+    if 'cohort' in template_dict.keys():
+        cohort = template_dict['cohort']
+        fixed_file = tflow.get(template_space, desc=None, resolution=args.template_resolution, cohort=template_dict['cohort'], suffix='T1w', extension='nii.gz')
+        output_path = Path(coreg_xfm.parent) / f'{args.bold_id}_space-{template_space}_cohort-{cohort}_res-{args.template_resolution}_desc-preproc_bold.nii.gz'
+        boldref_path = Path(coreg_xfm.parent) / f'{args.bold_id}_space-{template_space}_cohort-{cohort}_res-{args.template_resolution}_boldref.nii.gz'
+    else:
+        fixed_file = tflow.get(args.template_space, desc=None, resolution=args.template_resolution, suffix='T1w', extension='nii.gz')
+        output_path = Path(coreg_xfm.parent) / f'{args.bold_id}_space-{template_space}_res-{args.template_resolution}_desc-preproc_bold.nii.gz'
+        boldref_path = Path(coreg_xfm.parent) / f'{args.bold_id}_space-{template_space}_res-{args.template_resolution}_boldref.nii.gz'
+    nonlinear_file = args.nonlinear_file
+
 
     if args.bold_sdc.upper() == 'TRUE':
         args.bold_sdc = True
