@@ -1971,6 +1971,23 @@ process bold_synthmorph_norigid {
 }
 
 
+// 定义提取 cohort 的逻辑
+def extractCohort(String input) {
+    def cohortValue = null
+    if (input.contains(':')) {
+        input.split(':').each { part ->
+            if (part.contains('-')) {
+                def (key, value) = part.split('-', 2)
+                if (key.trim() == 'cohort') {
+                    cohortValue = value.trim()
+                    return cohortValue
+                }
+            }
+        }
+    }
+    return cohortValue
+}
+
 process bold_synthmorph_joint {
     // 22954
     tag "${subject_id}"
@@ -1990,15 +2007,28 @@ process bold_synthmorph_joint {
     val(gpu_lock)
 
     output:
-    tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/anat/${subject_id}_space-${template_space}_res-02_desc-skull_T1w.nii.gz")) //emit: t1_norigid_nii
-    tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/anat/${subject_id}_space-${template_space}_res-02_desc-noskull_T1w.nii.gz")) //emit: norm_norigid_nii
-    tuple(val(subject_id), val("${bold_preprocess_path}/${subject_id}/anat/${subject_id}_from-T1w_to-${template_space}_desc-joint_trans.nii.gz")) //emit: transvoxel
+    tuple(val(subject_id), val(t1_norigid_nii)) //emit: t1_norigid_nii
+    tuple(val(subject_id), val(norm_norigid_nii)) //emit: norm_norigid_nii
+    tuple(val(subject_id), val(transvoxel)) //emit: transvoxel
 
     script:
     gpu_script_py = "gpu_schedule_run.py"
     script_py = "${synthmorph_home}/bold_synthmorph_joint.py"
     synth_script = "${synthmorph_home}/mri_synthmorph_joint.py"
     gpu_vram = 18000  // VRAM  MB
+
+    if (template_space.contains("cohort")) {
+        cohort_value = extractCohort(template_space)
+        template = template_space.split(':')[0]
+        t1_norigid_nii = "${bold_preprocess_path}/${subject_id}/anat/${subject_id}_space-${template}_cohort-${cohort_value}_res-02_desc-skull_T1w.nii.gz"
+        norm_norigid_nii = "${bold_preprocess_path}/${subject_id}/anat/${subject_id}_space-${template}_cohort-${cohort_value}_res-02_desc-noskull_T1w.nii.gz"
+        transvoxel = "${bold_preprocess_path}/${subject_id}/anat/${subject_id}_from-T1w_to-${template}_cohort-${cohort_value}_desc-joint_trans.nii.gz"
+    }
+    else {
+        t1_norigid_nii = "${bold_preprocess_path}/${subject_id}/anat/${subject_id}_space-${template_space}_res-02_desc-skull_T1w.nii.gz"
+        norm_norigid_nii = "${bold_preprocess_path}/${subject_id}/anat/${subject_id}_space-${template_space}_res-02_desc-noskull_T1w.nii.gz"
+        transvoxel = "${bold_preprocess_path}/${subject_id}/anat/${subject_id}_from-T1w_to-${template_space}_desc-joint_trans.nii.gz"
+    }
     """
     ${gpu_script_py} ${device} ${gpu_vram} executor ${script_py} \
     --bold_preprocess_dir ${bold_preprocess_path} \
@@ -2146,13 +2176,25 @@ process bold_transform_chain {
     val(bold_sdc)
 
     output:
-    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-${template_space}_res-${template_resolution}_desc-preproc_bold.nii.gz"))
-    tuple(val(subject_id), val(bold_id), val("${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-${template_space}_res-${template_resolution}_boldref.nii.gz"))
+    tuple(val(subject_id), val(bold_id), val(preproc_bold))
+    tuple(val(subject_id), val(bold_id), val(boldref_file))
 
     script:
     task_id = bold_id.split('task-')[1].split('_')[0]
     script_py = "bold_apply_transform_chain.py"
 
+
+    if (template_space.contains("cohort")) {
+        cohort_value = extractCohort(template_space)
+        template = template_space.split(':')[0]
+        preproc_bold = "${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-${template}_cohort-${cohort_value}_res-${template_resolution}_desc-preproc_bold.nii.gz"
+        boldref_file = "${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-${template}_cohort-${cohort_value}_res-${template_resolution}_boldref.nii.gz"
+
+    }
+    else {
+        preproc_bold = "${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-${template_space}_res-${template_resolution}_desc-preproc_bold.nii.gz"
+        boldref_file = "${bold_preprocess_path}/${subject_id}/func/${bold_id}_space-${template_space}_res-${template_resolution}_boldref.nii.gz"
+    }
     """
     ${script_py} \
     --bids_dir ${bids_dir} \
