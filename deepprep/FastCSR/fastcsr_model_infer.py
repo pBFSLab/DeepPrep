@@ -25,7 +25,7 @@ class LevelsetPredictor(object):
         else:
             raise Exception('hemi parameter error')
 
-        params = torch.load(self.model_file, map_location=device)
+        params = torch.load(self.model_file, map_location=device, weights_only=False)
         self.plans = params['plans']
         self.network = self.create_network()
         self.network.load_state_dict(params['state_dict'])
