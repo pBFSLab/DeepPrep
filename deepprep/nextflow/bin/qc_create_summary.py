@@ -10,7 +10,7 @@ from reports.reports_node import SubjectSummary, TemplateDimensions, AboutSummar
 
 
 def get_t1w_and_bold(bids_dir, subject_ids, bold_task_type):
-    layout = bids.BIDSLayout(bids_dir, derivatives=False, index_metadata=True)
+    layout = bids.BIDSLayout(bids_dir, derivatives=False)
     t1w_files = []
     bold_files = []
 
