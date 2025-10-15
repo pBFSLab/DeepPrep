@@ -60,7 +60,7 @@ RUN apt-get update && \
 ## Install openjdk
 ENV LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/lib/jvm/java-11-openjdk-amd64/lib:/usr/lib/jvm/java-11-openjdk-amd64/lib/server" \
     JAVA_HOME="/usr/lib/jvm/java-11-openjdk-amd64"
-RUN mkdir -p /opt/nextflow/bin && cd /opt/nextflow/bin && wget -qO- https://get.nextflow.io | bash && \
+RUN mkdir -p /opt/nextflow/bin && cd /opt/nextflow/bin && wget -q https://github.com/nextflow-io/nextflow/releases/download/v24.10.3/nextflow | bash && \
     chmod 755 nextflow && ./nextflow && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 RUN /opt/nextflow/bin/nextflow

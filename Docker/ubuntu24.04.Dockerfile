@@ -55,12 +55,12 @@ FROM baseimage as nextflow
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     # open jdk
-    openjdk-17-jdk && \
+    openjdk-11-jdk && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 ## Install openjdk
-ENV LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/lib/jvm/java-17-openjdk-amd64/lib:/usr/lib/jvm/java-17-openjdk-amd64/lib/server" \
-    JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
-RUN mkdir -p /opt/nextflow/bin && cd /opt/nextflow/bin && wget -qO- https://get.nextflow.io | bash && \
+ENV LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/lib/jvm/java-11-openjdk-amd64/lib:/usr/lib/jvm/java-11-openjdk-amd64/lib/server" \
+    JAVA_HOME="/usr/lib/jvm/java-11-openjdk-amd64"
+RUN mkdir -p /opt/nextflow/bin && cd /opt/nextflow/bin && wget -q https://github.com/nextflow-io/nextflow/releases/download/v24.10.3/nextflow | bash && \
     chmod 755 nextflow && ./nextflow && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 RUN /opt/nextflow/bin/nextflow
@@ -109,11 +109,20 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends git && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 # nighres
-COPY nighres-1.5.2-py3-none-any.whl nighres-1.5.2-py3-none-any.whl
-RUN pip3 install --no-cache-dir nighres-1.5.2-py3-none-any.whl && rm nighres-1.5.2-py3-none-any.whl
+# JAVA-17
+#COPY nighres-1.5.2-py3-none-any.whl nighres-1.5.2-py3-none-any.whl
+#RUN pip3 install --no-cache-dir nighres-1.5.2-py3-none-any.whl && rm nighres-1.5.2-py3-none-any.whl
+#RUN apt-get update && \
+#    apt-get install -y --no-install-recommends git && \
+#    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# JAVA-11
+COPY nighres-1.5.2-py3-none-linux_x86_64.whl nighres-1.5.2-py3-none-linux_x86_64.whl
+RUN pip3 install --no-cache-dir nighres-1.5.2-py3-none-linux_x86_64.whl && rm nighres-1.5.2-py3-none-linux_x86_64.whl
 RUN apt-get update && \
     apt-get install -y --no-install-recommends git && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
 RUN pip3 install \
     # nighres-1.5.0-cp310-cp310-linux_x86_64.whl
 #    nighres==1.5.0  \
@@ -195,12 +204,12 @@ RUN apt-get update && \
     # redis
     redis-server \
     # open jdk
-    openjdk-17-jdk && \
+    openjdk-11-jdk && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 ## Install openjdk
-ENV LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/lib/jvm/java-17-openjdk-amd64/lib:/usr/lib/jvm/java-17-openjdk-amd64/lib/server" \
-    JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
+ENV LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/lib/jvm/java-11-openjdk-amd64/lib:/usr/lib/jvm/java-11-openjdk-amd64/lib/server" \
+    JAVA_HOME="/usr/lib/jvm/java-11-openjdk-amd64"
 
 #### Install Redis
 RUN sed -i '147c\supervised systemd' /etc/redis/redis.conf
