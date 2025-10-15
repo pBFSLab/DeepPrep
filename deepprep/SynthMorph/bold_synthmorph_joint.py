@@ -3,6 +3,7 @@ from pathlib import Path
 import argparse
 import os
 import templateflow.api as tflow
+from gpu_check import auto_device
 
 
 def parse_string_to_dict(input_template):
@@ -49,11 +50,15 @@ if __name__ == '__main__':
     parser.add_argument("--norm_native2mm", required=True)
     parser.add_argument("--synth_model_path", required=True)
     parser.add_argument("--template_space", required=True)
+    parser.add_argument("--device", required=True)
     args = parser.parse_args()
 
+    CUDA_VISIBLE_DEVICES = auto_device(args.device)
+    os.environ['CUDA_VISIBLE_DEVICES'] = CUDA_VISIBLE_DEVICES
     preprocess_dir = Path(args.bold_preprocess_dir) / args.subject_id
     subj_anat_dir = Path(preprocess_dir) / 'anat'
     subj_anat_dir.mkdir(parents=True, exist_ok=True)
+
 
     T1_2mm = args.t1_native2mm  # subj_func_dir / f'{args.subject_id}_space-T1w_res-2mm_desc-skull_T1w.nii.gz'
     norm_2mm = args.norm_native2mm  # subj_func_dir / f'{args.subject_id}_space-T1w_res-2mm_desc-noskull_T1w.nii.gz'

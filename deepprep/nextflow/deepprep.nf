@@ -2037,7 +2037,8 @@ process bold_synthmorph_joint {
     --t1_native2mm ${t1_native2mm} \
     --norm_native2mm ${norm_native2mm} \
     --template_space ${template_space} \
-    --synth_model_path ${synth_model_path}
+    --synth_model_path ${synth_model_path} \
+    --device ${device}
     """
 }
 

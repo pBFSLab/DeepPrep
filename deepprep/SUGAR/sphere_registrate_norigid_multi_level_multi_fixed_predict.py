@@ -344,7 +344,7 @@ def train_val(config):
         models = []
         for model_file in config['model_files'][:config["ico_index"] + 1]:
             print(f'<<< model : {model_file}')
-            model = torch.load(model_file, map_location=device)['model']
+            model = torch.load(model_file, map_location=device, weights_only=False)['model']
             model.to(device)
             model.eval()
             models.append(model)

@@ -207,13 +207,79 @@ def run_command(cmd):
     process.wait()
 
 
+def run_command_with_display(cmd, max_lines=50):
+    """
+    Run command and display latest output in a scrolling manner
+    max_lines: Maximum number of lines to display, default 50 lines
+    """
+    import time
+
+    # Create an empty container for displaying output
+    output_container = st.empty()
+    output_lines = []
+
+    process = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,  # Redirect stderr to stdout
+        text=True,
+        shell=True,
+        bufsize=1,
+        universal_newlines=True
+    )
+
+    while True:
+        line = process.stdout.readline()
+        if line == "" and process.poll() is not None:
+            break
+        if line:
+            output_lines.append(line.rstrip())
+
+            # Keep only the latest max_lines
+            if len(output_lines) > max_lines:
+                output_lines = output_lines[-max_lines:]
+
+            # Update display content
+            display_text = '\n'.join(output_lines)
+            output_container.code(display_text, language='bash')
+
+            # Brief delay to avoid excessive updates
+            time.sleep(0.1)
+
+    # Final check for stderr
+    stderr = process.stderr
+    if stderr:
+        remaining_stderr = stderr.read()
+        if remaining_stderr:
+            output_lines.append(f"ERROR: {remaining_stderr}")
+            if len(output_lines) > max_lines:
+                output_lines = output_lines[-max_lines:]
+            display_text = '\n'.join(output_lines)
+            output_container.code(display_text, language='bash')
+
+    process.wait()
+
+    # If process returns non-zero code, display error message
+    if process.returncode != 0:
+        output_lines.append(f"Process exit code: {process.returncode}")
+        display_text = '\n'.join(output_lines)
+        output_container.code(display_text, language='bash')
+        st.error(f"Command execution failed, exit code: {process.returncode}")
+    else:
+        st.success("Command executed successfully!")
+
+    return process.returncode == 0
+
+
 st.write(f'-----------  ------------')
 st.write(f'{docker_cmd} pbfslab/deepprep {deepprep_cmd}')
+max_display_lines = 200
 if st.button("Run", disabled=commond_error):
     with st.spinner('Waiting for the process to finish, please do not leave this page...'):
         command = [f"/opt/DeepPrep/deepprep/deepprep.sh {deepprep_cmd}"]
         with st.expander("------------ running log ------------"):
-            st.write_stream(run_command(command))
+            # st.write_stream(run_command(command))
+            run_command_with_display(command, max_display_lines)
         import time
         time.sleep(2)
     st.success("Done!")

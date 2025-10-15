@@ -605,7 +605,7 @@ if is_mat:
 else:
     prop.update(mid_space=True, int_steps=arg.steps, skip_affine=arg.model == 'deform')
     model = vxm.networks.HyperVxmJoint(**prop)
-    inputs = (np.asarray([arg.hyper]), *inputs)
+    inputs = (tf.constant([arg.hyper], dtype=tf.float32), *inputs)
 
 
 # Weights.

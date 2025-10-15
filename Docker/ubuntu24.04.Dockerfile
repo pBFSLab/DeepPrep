@@ -2,7 +2,8 @@
 
 FROM ubuntu:jammy-20240627.1 as baseimage
 
-ARG DEPENDENCE_URL="http://localhost"
+#ARG DEPENDENCE_URL="http://localhost"
+ARG DEPENDENCE_URL=http://30.30.30.204
 #ARG DEPENDENCE_URL="https://download.anning.info/ninganme-public"
 
 ARG DEBIAN_FRONTEND=noninteractive
@@ -39,7 +40,7 @@ FROM baseimage as afni
 RUN wget --content-disposition -P /opt/ ${DEPENDENCE_URL}/DeepPrep/deps/AFNI_linux-ubuntu-22-64_24.0.00.tar.gz && tar -C /opt -xzvf /opt/AFNI_linux-ubuntu-22-64_24.0.00.tar.gz && rm /opt/AFNI_linux-ubuntu-22-64_24.0.00.tar.gz
 RUN wget --content-disposition -P /opt/ ${DEPENDENCE_URL}/DeepPrep/deps/libxp6_1.0.2-2_amd64.deb
 
-# ANTs 2.3.1
+# ANTs 2.6.2
 ##RUN apt-get update && apt-get install -y --no-install-recommends build-essential && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 ##RUN cd ~ && \
 ##    git clone https://github.com/cookpa/antsInstallExample.git && \
@@ -48,8 +49,7 @@ RUN wget --content-disposition -P /opt/ ${DEPENDENCE_URL}/DeepPrep/deps/libxp6_1
 ##    cp -r install /opt/ANTs && \
 ##    cd ~ && rm -r antsInstallExample
 FROM baseimage as ants
-RUN wget --content-disposition -P /opt/ ${DEPENDENCE_URL}/DeepPrep/deps/ANTs_linux-ubuntu22-amd64_2.3.1.tar.gz && tar -C /opt -xzvf /opt/ANTs_linux-ubuntu22-amd64_2.3.1.tar.gz && rm /opt/ANTs_linux-ubuntu22-amd64_2.3.1.tar.gz
-
+RUN wget --content-disposition -P /opt/ ${DEPENDENCE_URL}/DeepPrep/deps/ants-2.6.2-ubuntu-24.04-X64.tar.gz && tar -C /opt -xzvf /opt/ants-2.6.2-ubuntu-24.04-X64.tar.gz && rm /opt/ants-2.6.2-ubuntu-24.04-X64.tar.gz
 # Nextflow
 FROM baseimage as nextflow
 RUN apt-get update && \
@@ -66,7 +66,7 @@ RUN mkdir -p /opt/nextflow/bin && cd /opt/nextflow/bin && wget -q https://github
 RUN /opt/nextflow/bin/nextflow
 
 # micromamba
-FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04 as micromamba
+FROM nvidia/cuda:12.9.0-cudnn-runtime-ubuntu24.04 as micromamba
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends curl build-essential wget && \
@@ -74,7 +74,7 @@ RUN apt-get update && \
 WORKDIR /
 RUN curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
 ENV MAMBA_ROOT_PREFIX="/opt/conda"
-RUN micromamba create -y -n deepprep -c conda-forge python=3.10.14 pip
+RUN micromamba create -y -n deepprep -c conda-forge python=3.11.3 pip
 RUN micromamba shell init -s bash && echo "micromamba activate deepprep" >> $HOME/.bashrc
 
 # UV_USE_IO_URING for apparent race-condition (https://github.com/nodejs/node/issues/48444)
@@ -91,37 +91,66 @@ ENV PATH="/opt/conda/envs/deepprep/bin:$PATH" \
 #    apt-get -y --no-install-recommends install python3-jcc && \
 #    cd nighres && ln -sf /usr/lib/jvm/java-11-openjdk-amd64 /usr/lib/jvm/default-java && \
 #    bash build.sh && pip3 install .
-#RUN pip3 config set global.extra-index-url "https://download.pytorch.org/whl/cu118"
+#RUN pip3 config set global.extra-index-url "https://download.pytorch.org/whl/cu129"
 RUN apt-get update && \
     apt-get install -y --no-install-recommends git && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+# pytorch
 RUN pip3 install \
-    # https://data.pyg.org/whl/torch-2.0.1+cu118.html
-    pyg_lib==0.3.1+pt20cu118 torch_scatter==2.1.2+pt20cu118 torch_sparse==0.6.18+pt20cu118 torch_cluster==1.6.3+pt20cu118 torch_spline_conv==1.2.2+pt20cu118 \
-    # https://download.pytorch.org/whl/cu118
-    torch==2.0.1+cu118 torchvision==0.15.2+cu118 torchaudio==2.0.2 \
-    # https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/py310_cu118_pyt201/download.html
-    pytorch3d==0.7.4 \
+    # https://data.pyg.org/whl/torch-2.8.0+cu129.html \
+    torch_scatter==2.1.2+pt28cu129 torch_sparse==0.6.18+pt28cu129 torch_cluster==1.6.3+pt28cu129 torch_spline_conv==1.2.2+pt28cu129 \
+    -f https://data.pyg.org/whl/torch-2.8.0+cu129.html \
+    && rm -rf /tmp/* /var/tmp/*
+RUN pip3 install \
+    # https://download.pytorch.org/whl/cu129
+    torch torchvision --index-url https://download.pytorch.org/whl/cu129 \
+    && rm -rf /tmp/* /var/tmp/*
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends git && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+# nighres
+# JAVA-17
+#COPY nighres-1.5.2-py3-none-any.whl nighres-1.5.2-py3-none-any.whl
+#RUN pip3 install --no-cache-dir nighres-1.5.2-py3-none-any.whl && rm nighres-1.5.2-py3-none-any.whl
+#RUN apt-get update && \
+#    apt-get install -y --no-install-recommends git && \
+#    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# JAVA-11
+COPY nighres-1.5.2-py3-none-linux_x86_64.whl nighres-1.5.2-py3-none-linux_x86_64.whl
+RUN pip3 install --no-cache-dir nighres-1.5.2-py3-none-linux_x86_64.whl && rm nighres-1.5.2-py3-none-linux_x86_64.whl
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends git && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN pip3 install \
     # nighres-1.5.0-cp310-cp310-linux_x86_64.whl
-    nighres==1.5.0  \
-    open3d==0.17.0 \
+#    nighres==1.5.0  \
+    open3d==0.18.0 \
     sh==2.0.6 dynaconf==3.2.3 wand==0.6.11 \
-    tensorflow==2.11.1 \
     # SUGAR torch-geometric <= 2.2.0
     torch-geometric==2.2.0 \
+    antspyx==0.6.1 \
     nnunet==1.7.1 \
     bids==0.0 nipype==1.8.6 niworkflows==1.10.0 matplotlib==3.8.4 SimpleITK==2.3.0 nitime==0.10.1 \
     git+https://github.com/NingAnMe/fmriprep.git@deepprep smriprep==0.13.2 sdcflows==2.8.1 scipy==1.11.4 \
     git+https://github.com/Deep-MI/LaPy.git@v1.0.1 \
-    git+https://github.com/voxelmorph/voxelmorph.git@ca28315d0ba24cd8946ac4f6ed081e049e5264fe \
+    git+https://github.com/lincong8722/voxelmorph.git@deepprep \
     git+https://github.com/NingAnMe/mriqc.git@deepprep \
-    --trusted-host localhost -f http://localhost/DeepPrep/deps/cp310_whl \
     && pip3 cache purge && rm -rf /tmp/* /var/tmp/*
-
+# tensorflow
+COPY tensorflow-2.20.0.dev0+selfbuilt-cp311-cp311-linux_x86_64.whl tensorflow-2.20.0.dev0+selfbuilt-cp311-cp311-linux_x86_64.whl
+RUN pip3 install --no-cache-dir tensorflow-2.20.0.dev0+selfbuilt-cp311-cp311-linux_x86_64.whl \
+     "protobuf<5.0" \
+    && rm -f tensorflow-2.20.0.dev0+selfbuilt-cp311-cp311-linux_x86_64.whl
+# Pytorch3d
+COPY pytorch3d-0.7.8+pt2.8.0cu129-cp311-cp311-linux_x86_64.whl pytorch3d-0.7.8+pt2.8.0cu129-cp311-cp311-linux_x86_64.whl
+RUN pip3 install --no-cache-dir pytorch3d-0.7.8+pt2.8.0cu129-cp311-cp311-linux_x86_64.whl \
+    && rm -f pytorch3d-0.7.8+pt2.8.0cu129-cp311-cp311-linux_x86_64.whl
 # SynthMorph
 RUN pip3 install numpy==1.26.4 && pip3 cache purge && rm -rf /tmp/* /var/tmp/*
 RUN pip3 install git+https://github.com/freesurfer/surfa.git@ded5f1d3d90e223050ab7792ac4760c3242e43c7 && pip3 cache purge && rm -rf /tmp/* /var/tmp/*
-RUN pip uninstall neurite -y && pip3 install git+https://github.com/adalca/neurite@682f828b7b5fa652d7205c894c7fe667f1a26251 && pip3 cache purge && rm -rf /tmp/* /var/tmp/*
+RUN pip uninstall neurite -y && pip3 install git+https://github.com/lincong8722/neurite.git@deepprep && pip3 cache purge && rm -rf /tmp/* /var/tmp/*
 # matplotlib
 #RUN pip3 install matplotlib==3.8.4 && pip3 cache purge && rm -rf /tmp/* /var/tmp/*
 # mriqc
@@ -129,14 +158,18 @@ RUN pip3 install mriqc-learn==0.0.2 --no-deps && pip3 cache purge && rm -rf /tmp
 # python-redis-lock
 RUN pip3 install python-redis-lock==4.0.0  && pip3 cache purge && rm -rf /tmp/* /var/tmp/*
 
-RUN pip3 install streamlit==1.38.0 protobuf==3.20  && pip3 cache purge && rm -rf /tmp/* /var/tmp/*
+RUN pip3 install streamlit==1.38.0 protobuf==4.21.6  && pip3 cache purge && rm -rf /tmp/* /var/tmp/*
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends git && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN pip3 install git+https://github.com/netneurolab/neuromaps.git@ae3c88a60746c0137dc81b15130a12a25946252b && pip3 cache purge && rm -rf /tmp/* /var/tmp/*
 
 RUN pip3 install pyvista==0.45.2 && pip3 cache purge && rm -rf /tmp/* /var/tmp/*
 
 # Start from this Docker image
-FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
+FROM nvidia/cuda:12.9.0-cudnn-runtime-ubuntu24.04
 
 ##
 #COPY Docker/source.list /etc/apt/sources.list
@@ -253,7 +286,7 @@ ENV PATH="${FSLDIR}/bin:${PATH}"
 COPY --from=workbench /opt/workbench /opt/workbench
 ENV PATH="/opt/workbench/bin_linux64:${PATH}"
 
-## ANTs  2.3.1
+## ANTs  2.6.2
 COPY --from=ants /opt/ANTs /opt/ANTs
 ENV ANTSPATH="/opt/ANTs/bin"
 ENV ANTS_RANDOM_SEED=14193
@@ -303,8 +336,8 @@ RUN python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin6Asym', d
     python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin2009cAsym', label='brain', resolution=1, suffix='probseg', extension='nii.gz')"
 
 #### default template for CIFTI
-RUN python3 -c "from neuromaps.datasets import fetch_fsaverage; fetch_fsaverage(density='41k')" && \
-    python3 -c "from neuromaps.datasets import fetch_fslr; fetch_fslr(density='32k')"
+#RUN python3 -c "from neuromaps.datasets import fetch_fsaverage; fetch_fsaverage(density='41k')" && \
+#    python3 -c "from neuromaps.datasets import fetch_fslr; fetch_fslr(density='32k')"
 RUN python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin6Asym', resolution='02', suffix='dseg', atlas='HCP', raise_empty=True)" && \
     python3 -c "import templateflow.api as tflow; tflow.get('fsaverage', density='41k', suffix='sphere', raise_empty=True)" && \
     python3 -c "import templateflow.api as tflow; tflow.get('fsLR', density='32k', suffix='midthickness', raise_empty=True)" && \
@@ -313,16 +346,21 @@ RUN python3 -c "import templateflow.api as tflow; tflow.get('MNI152NLin6Asym', r
 RUN find $HOME/.cache/templateflow -type d -exec chmod go=u {} + && \
     find $HOME/.cache/templateflow -type f -exec chmod go=u {} +
 
+RUN mkdir -p /usr/local/cuda/nvvm/libdevice && \
+    cp /opt/conda/envs/deepprep/lib/python3.11/site-packages/triton/backends/nvidia/lib/libdevice.10.bc \
+       /usr/local/cuda/nvvm/libdevice/
+
+COPY deepprep/model/SynthMorph /opt/model/SynthMorph
 COPY deepprep/model/FastCSR /opt/model/FastCSR
 COPY deepprep/model/SUGAR /opt/model/SUGAR
-COPY deepprep/model/SynthMorph /opt/model/SynthMorph
+
 
 # Dev
 COPY deepprep/FreeSurfer /opt/freesurfer
 COPY deepprep/FastCSR /opt/DeepPrep/deepprep/FastCSR
 COPY deepprep/SUGAR /opt/DeepPrep/deepprep/SUGAR
-COPY deepprep/FastSurfer /opt/DeepPrep/deepprep/FastSurfer
 COPY deepprep/SynthMorph /opt/DeepPrep/deepprep/SynthMorph
+COPY deepprep/FastSurfer /opt/DeepPrep/deepprep/FastSurfer
 COPY deepprep/nextflow /opt/DeepPrep/deepprep/nextflow
 COPY deepprep/web /opt/DeepPrep/deepprep/web
 COPY deepprep/qc /opt/DeepPrep/deepprep/qc

@@ -30,7 +30,8 @@ Volume space:  bandpass filtering -> regression -> smooth (optional)
 deepprep_cmd = ''
 commond_error = False
 
-bids_dir = st.text_input("Preprocessing Result Path:", help="refers to the directory containing the preprocessed BOLD results by DeepPrep, which should be in BIDS format.")
+bids_dir = st.text_input("Preprocessing Result Path:",
+                         help="refers to the directory containing the preprocessed BOLD results by DeepPrep, which should be in BIDS format.")
 if not bids_dir:
     st.error("The Preprocessing Result Path must be input!")
     deepprep_cmd += ' {bids_dir}'
@@ -63,7 +64,8 @@ else:
     deepprep_cmd += f' {output_dir}'
 deepprep_cmd += f' participant'
 
-freesurfer_license_file = st.text_input("FreeSurfer license file path", value='/opt/freesurfer/license.txt', help="FreeSurfer license file path. It is highly recommended to replace the license.txt path with your own FreeSurfer license! You can get it for free from https://surfer.nmr.mgh.harvard.edu/registration.html")
+freesurfer_license_file = st.text_input("FreeSurfer license file path", value='/opt/freesurfer/license.txt',
+                                        help="FreeSurfer license file path. It is highly recommended to replace the license.txt path with your own FreeSurfer license! You can get it for free from https://surfer.nmr.mgh.harvard.edu/registration.html")
 if not freesurfer_license_file.startswith('/'):
     st.error("The path must be an absolute path that starts with '/'.")
     commond_error = True
@@ -73,7 +75,9 @@ elif not os.path.exists(freesurfer_license_file):
 else:
     deepprep_cmd += f' --fs_license_file {freesurfer_license_file}'
 
-confounds_file = st.text_input("Confounds File Path", value='/opt/DeepPrep/deepprep/rest/denoise/12motion_6param_10bCompCor.txt', help="The path to the text file that contains all the confound names needed for regression.")
+confounds_file = st.text_input("Confounds File Path",
+                               value='/opt/DeepPrep/deepprep/rest/denoise/12motion_6param_10bCompCor.txt',
+                               help="The path to the text file that contains all the confound names needed for regression.")
 if not confounds_file.startswith('/'):
     st.error("The path must be an absolute path that starts with '/'.")
     commond_error = True
@@ -83,7 +87,8 @@ elif not os.path.exists(confounds_file):
 else:
     deepprep_cmd += f' --confounds_index_file {confounds_file}'
 
-bold_task_type = st.text_input("BOLD task type", placeholder="i.e. rest, motor, 'rest motor'", help="The task label of BOLD images. If there are multiple tasks, separate them with spaces.")
+bold_task_type = st.text_input("BOLD task type", placeholder="i.e. rest, motor, 'rest motor'",
+                               help="The task label of BOLD images. If there are multiple tasks, separate them with spaces.")
 if bold_task_type:
     if 'task-' in bold_task_type:
         bold_task_type = bold_task_type.replace('task-', '')
@@ -94,7 +99,9 @@ else:
     st.error("The BOLD task type must be input!")
     commond_error = True
 
-spaces = st.multiselect("required output spaces (optional)", ["T1w", "MNI152NLin6Asym", "MNI152NLin2009cAsym", "fsnative", "fsaverage6", "fsaverage5", "fsaverage4", "fsaverage3"], help="select the output spaces you need")
+spaces = st.multiselect("required output spaces (optional)",
+                        ["T1w", "MNI152NLin6Asym", "MNI152NLin2009cAsym", "fsnative", "fsaverage6", "fsaverage5",
+                         "fsaverage4", "fsaverage3"], help="select the output spaces you need")
 if spaces:
     spaces = ' '.join(spaces)
     deepprep_cmd += f" --space '{spaces}'"
@@ -114,7 +121,8 @@ if "fsnative" in spaces:
     else:
         deepprep_cmd += f' --subjects_dir {subjects_dir}'
 
-bold_skip_frame = st.text_input("skip n frames of BOLD data", value="2", help="skip n frames of BOLD fMRI; the default is `2`.")
+bold_skip_frame = st.text_input("skip n frames of BOLD data", value="2",
+                                help="skip n frames of BOLD fMRI; the default is `2`.")
 if not bold_skip_frame:
     deepprep_cmd += f' --skip_frame 2'
 else:
@@ -143,7 +151,8 @@ if participant_label:
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    skip_bids_validation = st.checkbox("skip_bids_validation", value=True, help="with this flag, the BIDS format validation step of the input dataset will be skipped.")
+    skip_bids_validation = st.checkbox("skip_bids_validation", value=True,
+                                       help="with this flag, the BIDS format validation step of the input dataset will be skipped.")
     if skip_bids_validation:
         deepprep_cmd += ' --skip_bids_validation'
 with col2:
@@ -176,13 +185,80 @@ def run_command(cmd):
     process.wait()
 
 
+def run_command_with_display(cmd, max_lines=50):
+    """
+    Run command and display latest output in a scrolling manner
+    max_lines: Maximum number of lines to display, default 50 lines
+    """
+    import time
+
+    # Create an empty container for displaying output
+    output_container = st.empty()
+    output_lines = []
+
+    process = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,  # Redirect stderr to stdout
+        text=True,
+        shell=True,
+        bufsize=1,
+        universal_newlines=True
+    )
+
+    while True:
+        line = process.stdout.readline()
+        if line == "" and process.poll() is not None:
+            break
+        if line:
+            output_lines.append(line.rstrip())
+
+            # Keep only the latest max_lines
+            if len(output_lines) > max_lines:
+                output_lines = output_lines[-max_lines:]
+
+            # Update display content
+            display_text = '\n'.join(output_lines)
+            output_container.code(display_text, language='bash')
+
+            # Brief delay to avoid excessive updates
+            time.sleep(0.1)
+
+    # Final check for stderr
+    stderr = process.stderr
+    if stderr:
+        remaining_stderr = stderr.read()
+        if remaining_stderr:
+            output_lines.append(f"ERROR: {remaining_stderr}")
+            if len(output_lines) > max_lines:
+                output_lines = output_lines[-max_lines:]
+            display_text = '\n'.join(output_lines)
+            output_container.code(display_text, language='bash')
+
+    process.wait()
+
+    # If process returns non-zero code, display error message
+    if process.returncode != 0:
+        output_lines.append(f"Process exit code: {process.returncode}")
+        display_text = '\n'.join(output_lines)
+        output_container.code(display_text, language='bash')
+        st.error(f"Command execution failed, exit code: {process.returncode}")
+    else:
+        st.success("Command executed successfully!")
+
+    return process.returncode == 0
+
+
 st.write(f'-----------  ------------')
 st.write(f'postprocess {deepprep_cmd}')
+max_display_lines = 200
 if st.button("Run", disabled=commond_error):
     with st.spinner('Waiting for the process to finish, please do not leave this page...'):
         command = [f"/opt/DeepPrep/deepprep/web/pages/postprocess.sh {deepprep_cmd}"]
         with st.expander("------------ running log ------------"):
-            st.write_stream(run_command(command))
+            # st.write_stream(run_command(command))
+            run_command_with_display(command, max_display_lines)
         import time
+
         time.sleep(2)
     st.success("Done!")
