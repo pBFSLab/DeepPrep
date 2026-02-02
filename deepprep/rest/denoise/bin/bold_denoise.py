@@ -36,7 +36,8 @@ def fsaverageN_smN(input_path, output_path, hemi, space, fwhm=6):
                     '--hemi', hemi,
                     '--s', space,
                     '--sval', input_path,
-                    '--label-src', hemi + '.cortex.label',
+                    # '--label-src', hemi + '.cortex.label',
+                    '--no-cortex',
                     '--fwhm', str(fwhm),
                     '--tval', output_path,
                     '--reshape'
