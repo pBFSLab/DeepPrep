@@ -54,7 +54,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     CUDA_VISIBLE_DEVICES = auto_device(args.device)
-    os.environ['CUDA_VISIBLE_DEVICES'] = CUDA_VISIBLE_DEVICES
+    print(CUDA_VISIBLE_DEVICES)
+    if CUDA_VISIBLE_DEVICES == "cpu":
+        os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+    else:
+        os.environ['CUDA_VISIBLE_DEVICES'] = CUDA_VISIBLE_DEVICES
     preprocess_dir = Path(args.bold_preprocess_dir) / args.subject_id
     subj_anat_dir = Path(preprocess_dir) / 'anat'
     subj_anat_dir.mkdir(parents=True, exist_ok=True)
